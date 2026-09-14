@@ -72,8 +72,8 @@ function validateResult(value) {
 async function runCompetitionAiReview(record, request = fetch) {
   const apiKey = String(process.env.AI_API_KEY || '').trim();
   if (!apiKey) throw new Error('ai_api_key_not_configured');
-  const model = String(process.env.AI_MODEL || 'kimi-k2.5').trim();
-  const baseUrl = String(process.env.AI_BASE_URL || 'https://api.moonshot.cn/v1').replace(/\/$/, '');
+  const model = String(process.env.AI_MODEL || 'kimi-for-coding').trim();
+  const baseUrl = String(process.env.AI_BASE_URL || 'https://api.kimi.com/coding/v1').replace(/\/$/, '');
   const evidence = await collectEvidence(record, request);
   const content = [{ type:'text', text:`审核以下赛事记录。只能依据提供的来源正文或图片作判断；证据不足必须选择 insufficient_evidence。核对届次、主办方、报名时间、资格、费用、赛制和报名入口。结果仅供人工复核。\n赛事记录：${JSON.stringify(compactRecord(record))}\n来源读取结果：${JSON.stringify(evidence.map(item => ({ ...item, imageUrl:undefined })))}` }];
   for (const item of evidence.filter(item => item.imageUrl)) content.push({ type:'image_url', image_url:{ url:item.imageUrl } });
@@ -92,7 +92,7 @@ async function runCompetitionAiReview(record, request = fetch) {
   if (!response.ok) throw new Error(`ai_provider_error:${response.status}:${payload?.error?.message || 'unknown'}`);
   const text = payload?.choices?.[0]?.message?.content;
   const result = validateResult(JSON.parse(text));
-  return { ...result, provider:'moonshot', model, prompt_version:PROMPT_VERSION, reviewed_at:new Date().toISOString(), response_id:payload.id || null };
+  return { ...result, provider:'kimi-code', model, prompt_version:PROMPT_VERSION, reviewed_at:new Date().toISOString(), response_id:payload.id || null };
 }
 
 module.exports = { collectEvidence, compactRecord, htmlToText, runCompetitionAiReview, validateResult };

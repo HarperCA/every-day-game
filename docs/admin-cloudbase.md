@@ -19,7 +19,7 @@
 2. `admin_state` 权限选择“无权限（仅管理员/云函数可读写）”。
 3. 打开“云函数/托管 → adminData → 函数配置 → 环境变量”。
 4. 新增变量名 `ADMIN_TOKEN`，值复制项目根目录 `.admin-token.local` 中等号后的内容。
-5. 为 Kimi 赛事审核增加云函数环境变量：`AI_PROVIDER=moonshot`、`AI_BASE_URL=https://api.moonshot.cn/v1`、`AI_MODEL=kimi-k2.5` 和 `AI_API_KEY`。密钥只能保存在云函数中。
+5. 为 Kimi Code 赛事审核增加云函数环境变量：`AI_PROVIDER=kimi-code`、`AI_BASE_URL=https://api.kimi.com/coding/v1`、`AI_MODEL=kimi-for-coding` 和 `AI_API_KEY`。密钥只能保存在云函数中。该接入消耗 Kimi Code 会员额度；若改用产品级开放平台，只需替换这四个环境变量。
 6. 在“身份认证 → 登录方式”开启“匿名登录”，供网页获取调用云函数所需的临时用户会话；匿名用户不能直接读写管理集合。
 7. 在 Web 安全域名中加入后台正式域名。开发期间按 CloudBase 控制台要求配置 localhost/本地调试来源。
 
