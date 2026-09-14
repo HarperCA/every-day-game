@@ -1,0 +1,7 @@
+packages:
+  - apps/admin
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  core-js-pure: false
+  esbuild: true

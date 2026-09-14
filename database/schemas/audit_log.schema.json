@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audit_log",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "actor_id", "action", "object_type", "object_id", "changed_fields", "created_at"],
+  "properties": {
+    "id": {"type": "string"},
+    "actor_id": {"type": "string"},
+    "action": {"enum": ["create", "update", "reset", "submit_review", "approve", "reject", "publish", "unpublish", "archive", "offline", "system_validation_run", "manual_review_pass", "manual_review_reject", "profession_mapping_update", "feedback_ai_queue", "feedback_accept", "feedback_reject", "feedback_spotcheck_correct", "feedback_spotcheck_incorrect", "feedback_update", "ai_job_retry", "ai_job_manual", "ai_job_resolve", "ai_job_update"]},
+    "object_type": {"enum": ["event_master", "event_edition", "event_track", "event_schedule", "recommendation", "data_source", "feedback", "ai_job"]},
+    "object_id": {"type": "string"},
+    "record_name": {"type": "string"},
+    "changed_fields": {"type": "array", "items": {"type": "string"}},
+    "before": {"type": ["object", "null"]},
+    "after": {"type": ["object", "null"]},
+    "request_id": {"type": ["string", "null"]},
+    "reason": {"type": ["string", "null"]},
+    "created_at": {"type": "string", "format": "date-time"}
+  }
+}

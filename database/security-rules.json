@@ -1,0 +1,19 @@
+{
+  "version": "1.1.0",
+  "public_read": {
+    "event_edition_public_cache": "doc.data_status == 'published' && doc.system_validation == 'passed' && doc.manual_review == 'passed'",
+    "other_collections": false
+  },
+  "authenticated_user": {
+    "favorite": "仅云函数按openid映射的user_id读写，用户只能访问自己的记录",
+    "reminder": "仅云函数按openid映射的user_id读写，用户只能访问自己的记录",
+    "feedback": "仅云函数创建；客户端不得查询集合"
+  },
+  "admin_write": {
+    "direct_client_write": false,
+    "required": ["服务端管理员会话", "JSON Schema字段校验", "data_version乐观锁", "audit_log审计记录"],
+    "publish_gate": "system_validation == passed && manual_review == passed && valid_official_source_count > 0"
+  },
+  "admin_only_collections": ["admin_state", "ai_job", "audit_log"],
+  "default": {"read": false, "write": false}
+}

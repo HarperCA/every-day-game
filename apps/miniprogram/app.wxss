@@ -1,0 +1,8 @@
+page { background: #f5f7fa; color: #172033; font-size: 28rpx; }
+button { border-radius: 16rpx; }
+.page { min-height: 100vh; padding: 24rpx 24rpx 48rpx; box-sizing: border-box; }
+.card { background: #fff; border: 1rpx solid #e6ebf1; border-radius: 22rpx; box-shadow: 0 6rpx 18rpx rgba(32, 68, 92, .05); }
+.muted { color: #6b778c; }
+.section-title { font-size: 32rpx; font-weight: 700; margin: 34rpx 0 18rpx; }
+.primary { background: #087e8b !important; color: #fff !important; }
+

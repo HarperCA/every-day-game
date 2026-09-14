@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.1.0",
+  "generated_at": "2026-08-20T13:48:27.367876+00:00",
+  "cloudbase_env_id": null,
+  "counts": {
+    "profession_category": 14,
+    "event_master": 30,
+    "event_edition": 30,
+    "event_track": 30,
+    "event_schedule": 30,
+    "data_source": 90,
+    "event_profession": 112,
+    "recommendation": 30,
+    "event_edition_public_cache": 0,
+    "favorite": 0,
+    "reminder": 0,
+    "feedback": 0,
+    "ai_job": 0,
+    "audit_log": 0
+  },
+  "public_cache_release_gate": "published + system_validation passed + manual_review passed",
+  "upload_performed": false
+}

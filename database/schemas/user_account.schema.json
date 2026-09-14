@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "user_account",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["openid", "status", "created_at", "updated_at", "last_login_at"],
+  "properties": {
+    "openid": {"type": "string", "minLength": 1},
+    "appid": {"type": ["string", "null"]},
+    "unionid": {"type": ["string", "null"]},
+    "status": {"enum": ["active", "disabled"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "last_login_at": {"type": "string", "format": "date-time"},
+    "feedback_rate_window_started_at": {"type": "string", "format": "date-time"},
+    "feedback_rate_count": {"type": "integer", "minimum": 0, "maximum": 20}
+  }
+}

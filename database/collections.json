@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.1.0",
+  "collections": [
+    "event_master",
+    "event_edition",
+    "event_track",
+    "event_schedule",
+    "data_source",
+    "profession_category",
+    "event_profession",
+    "user_account",
+    "favorite",
+    "reminder",
+    "recommendation",
+    "feedback",
+    "admin_state",
+    "audit_log",
+    "ai_job",
+    "event_edition_public_cache"
+  ],
+  "relations": {
+    "event_edition.event_id": "event_master.id",
+    "event_track.edition_id": "event_edition.id",
+    "event_schedule.track_id": "event_track.id",
+    "data_source.edition_id": "event_edition.id",
+    "event_profession.edition_id": "event_edition.id",
+    "event_profession.profession_id": "profession_category.id",
+    "favorite.edition_id": "event_edition.id",
+    "reminder.edition_id": "event_edition.id",
+    "recommendation.edition_id": "event_edition.id"
+  },
+  "event_edition_fields": {
+    "participation_format": ["个人赛", "团队赛", "个人或团队均可", "暂未明确"],
+    "team_size_category": ["1人", "2～3人", "4～5人", "6人及以上", "人数范围不固定", "暂未明确"],
+    "fee_type": ["免费", "收费", "不同赛项费用不同", "暂未公布"],
+    "registration_organization": ["自行报名", "学校统一报名", "两种方式均可", "需先校内选拔", "以赛区或学校通知为准", "暂未明确"],
+    "source_policy": "仅按官方资料明确内容录入；不得由AI推断，缺失时使用暂未明确或暂未公布"
+  },
+  "schemas": {
+    "user_account": "schemas/user_account.schema.json",
+    "favorite": "schemas/favorite.schema.json",
+    "event_edition": "schemas/event_edition.schema.json",
+    "event_edition_public_cache": "schemas/event_edition_public_cache.schema.json",
+    "audit_log": "schemas/audit_log.schema.json",
+    "reminder": "schemas/reminder.schema.json",
+    "feedback": "schemas/feedback.schema.json",
+    "admin_state": "schemas/admin_state.schema.json",
+    "ai_job": "schemas/ai_job.schema.json"
+  },
+  "contracts": {
+    "feedback_ai_review_result": "schemas/feedback_ai_review_result.schema.json"
+  },
+  "write_contract": {
+    "admin": "管理员写入必须经服务端会话、字段校验、乐观锁和audit_log记录",
+    "publish": "仅system_validation=passed且manual_review=passed时生成公开缓存",
+    "client": "小程序客户端不得直接写业务集合"
+  }
+}

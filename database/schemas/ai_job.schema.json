@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ai_job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "edition_id", "job_type", "status", "error_code", "error_message", "retry_count", "max_retries", "last_attempt_at", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string"},
+    "edition_id": {"type": "string"},
+    "job_type": {"enum": ["recommendation_generate", "source_extract", "data_validation", "feedback_review"]},
+    "status": {"enum": ["failed", "queued", "running", "manual_required", "resolved"]},
+    "provider": {"type": ["string", "null"]},
+    "model": {"type": ["string", "null"]},
+    "request_payload_hash": {"type": ["string", "null"]},
+    "error_code": {"type": "string"},
+    "error_message": {"type": "string", "maxLength": 4000},
+    "retry_count": {"type": "integer", "minimum": 0},
+    "max_retries": {"type": "integer", "minimum": 0},
+    "last_attempt_at": {"type": "string", "format": "date-time"},
+    "next_retry_at": {"type": ["string", "null"], "format": "date-time"},
+    "locked_by": {"type": ["string", "null"]},
+    "locked_at": {"type": ["string", "null"], "format": "date-time"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "resolved_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

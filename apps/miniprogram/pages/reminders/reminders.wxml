@@ -1,0 +1,15 @@
+<view class="page">
+  <view class="page-heading"><view class="page-title">我的提醒</view><view class="page-subtitle">共 {{items.length}} 项，站内提醒保存在当前设备</view></view>
+  <view wx:if="{{loading && items.length === 0}}"><view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view></view>
+  <view wx:elif="{{error}}" class="state card"><view class="state-title">提醒加载失败</view><view class="muted">{{error}}</view><button size="mini" bindtap="retry">重新加载</button></view>
+  <view wx:elif="{{items.length === 0}}" class="state card"><view class="empty-icon">⏰</view><view class="state-title">还没有设置提醒</view><view class="muted">进入赛事详情，可设置报名开始或报名截止提醒。</view><button class="primary find-button" bindtap="goFindCompetition">去发现赛事</button></view>
+  <view wx:else>
+    <view class="reminder-card card" wx:for="{{items}}" wx:key="id">
+      <view class="card-head"><text class="event-badge">{{item.eventLabel}}</text><text class="change-badge" wx:if="{{item.changeLabel}}">{{item.changeLabel}}</text><text class="expired-badge" wx:elif="{{item.isManualRequired}}">多次发送失败，请重新授权</text><text class="expired-badge" wx:elif="{{item.isExpired}}">提醒时间已到</text></view>
+      <view class="competition-name" data-edition-id="{{item.editionId}}" bindtap="openDetail">{{item.competitionName}}</view><view class="edition">{{item.editionName}}</view>
+      <view class="time-block"><view><text>目标时间</text><text>{{item.targetAtDisplay}}</text></view><view><text>提醒时间</text><text>{{item.remindAtDisplay}}</text></view><view><text>提前设置</text><text>{{item.advanceLabel}}</text></view></view>
+      <view class="authorization {{item.authorizationStatus === 'accepted' ? 'authorized' : ''}}">{{item.authorizationLabel}}</view>
+      <view class="card-actions"><button wx:if="{{item.authorizationStatus !== 'accepted' || item.isManualRequired}}" size="mini" data-id="{{item.id}}" bindtap="authorize">{{item.isManualRequired ? '重新授权' : '稍后授权'}}</button><button size="mini" data-edition-id="{{item.editionId}}" data-event-type="{{item.eventType}}" bindtap="editReminder">编辑</button><button class="delete-button" size="mini" data-id="{{item.id}}" bindtap="deleteReminder">删除</button></view>
+    </view>
+  </view>
+</view>

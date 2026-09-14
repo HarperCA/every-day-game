@@ -1,0 +1,22 @@
+{
+  "name": "college-competition-miniapp",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "data:convert": "python scripts/convert_excel.py",
+    "data:validate": "python scripts/validate_seed.py",
+    "data:import:dry": "python scripts/import_seed.py --dry-run",
+    "data:import:prepare": "python scripts/import_seed.py",
+    "sources:verify": "node scripts/verify_source_urls.mjs",
+    "test:data": "python -m unittest discover -s tests -p test_*.py",
+    "test": "pnpm test:data && vitest run",
+    "admin:dev": "pnpm --dir apps/admin dev",
+    "admin:build": "pnpm --dir apps/admin build",
+    "admin:verify:cloud": "pnpm --dir apps/admin verify:cloud",
+    "public:verify:cloud": "pnpm --dir apps/admin verify:public-cloud"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

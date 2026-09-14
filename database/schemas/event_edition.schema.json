@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "event_edition",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "event_id", "edition_name", "event_level", "participation_format", "team_size_category", "fee_type", "registration_organization", "data_status", "system_validation", "manual_review"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "edition_name": {"type": "string", "minLength": 1},
+    "year": {"type": ["integer", "null"], "minimum": 2000, "maximum": 2100},
+    "event_level": {"enum": ["国家级", "省级/区域级", "其他/未明确"]},
+    "participation_format": {"enum": ["个人赛", "团队赛", "个人或团队均可", "暂未明确"]},
+    "team_size_category": {"enum": ["1人", "2～3人", "4～5人", "6人及以上", "人数范围不固定", "暂未明确"]},
+    "fee_type": {"enum": ["免费", "收费", "不同赛项费用不同", "暂未公布"]},
+    "registration_organization": {"enum": ["自行报名", "学校统一报名", "两种方式均可", "需先校内选拔", "以赛区或学校通知为准", "暂未明确"]},
+    "team_size": {"type": "string"},
+    "registration_method": {"type": "string"},
+    "fees": {"type": "string"},
+    "data_status": {"enum": ["draft", "pending_system_validation", "pending_manual_review", "published", "reviewing", "archived", "offline"]},
+    "system_validation": {"enum": ["not_run", "passed", "failed"]},
+    "manual_review": {"enum": ["pending", "passed", "rejected"]},
+    "last_verified_at": {"type": ["string", "null"], "format": "date-time"},
+    "created_at": {"type": ["string", "null"], "format": "date-time"},
+    "updated_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

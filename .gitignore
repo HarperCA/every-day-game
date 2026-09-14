@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.tmp/
+.env
+*.local
+miniprogram_npm/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+apps/miniprogram/project.private.config.json
+apps/admin/vite.config.js
+apps/admin/vite.config.d.ts

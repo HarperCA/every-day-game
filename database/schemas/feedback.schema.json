@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "user_id", "edition_id", "competition_name", "category", "content", "status", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string"},
+    "user_id": {"type": "string"},
+    "edition_id": {"type": "string"},
+    "competition_name": {"type": "string", "minLength": 1, "maxLength": 200},
+    "category": {"enum": ["time", "registration_link", "eligibility", "rules", "other"]},
+    "content": {"type": "string", "minLength": 5, "maxLength": 2000},
+    "evidence_url": {"type": ["string", "null"], "format": "uri"},
+    "status": {"enum": ["pending_ai_review", "ai_queued", "ai_passed", "ai_flagged", "human_reviewing", "accepted", "rejected"]},
+    "ai_decision": {"enum": ["accepted", "rejected", null]},
+    "ai_risk_level": {"enum": ["low", "medium", "high", null]},
+    "ai_conclusion": {"type": ["string", "null"], "maxLength": 4000},
+    "ai_evidence_summary": {"type": ["string", "null"], "maxLength": 4000},
+    "ai_reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+    "ai_job_id": {"type": ["string", "null"]},
+    "spot_check_status": {"enum": ["not_checked", "correct", "incorrect", null]},
+    "spot_checked_at": {"type": ["string", "null"], "format": "date-time"},
+    "reviewer_id": {"type": ["string", "null"]},
+    "review_note": {"type": ["string", "null"], "maxLength": 2000},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "resolved_at": {"type": ["string", "null"], "format": "date-time"},
+    "data_version": {"type": "integer", "minimum": 1}
+  }
+}

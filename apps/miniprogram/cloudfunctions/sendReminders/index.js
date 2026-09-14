@@ -1,0 +1,106 @@
+const cloud = require('wx-server-sdk');
+const { assertScheduledInvocation, failureDeliveryStatus, isDeliverableScheduleStatus } = require('./reminderDelivery');
+
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
+const db = cloud.database();
+const command = db.command;
+const TEMPLATE_ID = '1-cgPt-WP5tLOUwCNBhr5YMtEIQ-SneYzQbWTURiTCo';
+const configuredBatchSize = Number(process.env.REMINDER_BATCH_SIZE || 1);
+const BATCH_SIZE = Number.isInteger(configuredBatchSize) ? Math.min(50, Math.max(1, configuredBatchSize)) : 1;
+const MAX_RETRIES = 3;
+const STALE_REMINDER_MS = 24 * 60 * 60 * 1000;
+const CLAIM_TIMEOUT_MS = 15 * 60 * 1000;
+
+function truncate(value, limit) {
+  return Array.from(String(value || '')).slice(0, limit).join('');
+}
+
+function formatShanghaiTime(value) {
+  const date = new Date(value);
+  const local = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  const pad = part => String(part).padStart(2, '0');
+  return `${local.getUTCFullYear()}年${pad(local.getUTCMonth() + 1)}月${pad(local.getUTCDate())}日 ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
+}
+
+function errorText(error) {
+  const code = error && (error.errCode || error.errcode || error.code);
+  const message = error && (error.errMsg || error.errmsg || error.message);
+  return truncate([code, message].filter(Boolean).join(': ') || 'subscribe_message_send_failed', 500);
+}
+
+async function recoverTimedOutClaims(now) {
+  const expiredClaimAt = new Date(now.getTime() - CLAIM_TIMEOUT_MS).toISOString();
+  await db.collection('reminder').where({ delivery_status:'queued', updated_at:command.lte(expiredClaimAt) }).update({
+    data:{ delivery_status:'failed', retry_count:command.inc(1), last_error:'send_claim_timeout', updated_at:now.toISOString() },
+  });
+}
+
+async function claimReminder(item, now) {
+  const result = await db.collection('reminder').where({ _id:item._id, delivery_status:item.delivery_status }).update({
+    data:{ delivery_status:'queued', updated_at:now.toISOString() },
+  });
+  return Boolean(result.stats && result.stats.updated === 1);
+}
+
+async function sendReminder(item, now) {
+  const user = await db.collection('user_account').doc(item.user_id).get();
+  if (!user.data || !user.data.openid) throw new Error('user_openid_not_found');
+  const taskName = truncate(item.task_name || `${item.competition_name || '大学生竞赛'}·${item.event_label || '报名'}提醒`, 20);
+  await cloud.openapi.subscribeMessage.send({
+    touser:user.data.openid,
+    templateId:item.subscription_template_id || TEMPLATE_ID,
+    page:`pages/detail/detail?id=${encodeURIComponent(item.edition_id)}`,
+    miniprogramState:process.env.MINIPROGRAM_STATE || 'developer',
+    lang:'zh_CN',
+    data:{
+      thing1:{ value:taskName },
+      time2:{ value:formatShanghaiTime(item.remind_at) },
+    },
+  });
+  await db.collection('reminder').doc(item._id).update({
+    data:{ delivery_status:'sent', sent_at:now.toISOString(), last_error:null, updated_at:now.toISOString() },
+  });
+}
+
+exports.main = async event => {
+  assertScheduledInvocation(event, cloud.getWXContext());
+  const now = new Date();
+  await recoverTimedOutClaims(now);
+  const due = await db.collection('reminder').where({
+    authorization_status:'accepted',
+    delivery_status:command.in(['pending','failed']),
+    schedule_change_status:command.in(['normal','time_updated','postponed']),
+    remind_at:command.lte(now.toISOString()),
+  }).orderBy('remind_at', 'asc').limit(BATCH_SIZE).get();
+  const summary = { scanned:due.data.length, sent:0, failed:0, manualRequired:0, expired:0, skipped:0 };
+  for (const item of due.data) {
+    if (!isDeliverableScheduleStatus(item.schedule_change_status)) { summary.skipped += 1; continue; }
+    const retries = Number(item.retry_count || 0);
+    if (retries >= MAX_RETRIES) {
+      await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'manual_required', updated_at:now.toISOString() } });
+      summary.manualRequired += 1;
+      continue;
+    }
+    if (now.getTime() - new Date(item.remind_at).getTime() > STALE_REMINDER_MS) {
+      await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'expired', updated_at:now.toISOString() } });
+      summary.expired += 1;
+      continue;
+    }
+    if (!await claimReminder(item, now)) { summary.skipped += 1; continue; }
+    try {
+      await sendReminder(item, now);
+      summary.sent += 1;
+    } catch (error) {
+      const retryCount = retries + 1;
+      const deliveryStatus = failureDeliveryStatus(retryCount, MAX_RETRIES);
+      await db.collection('reminder').doc(item._id).update({
+        data:{ delivery_status:deliveryStatus, retry_count:retryCount, last_error:errorText(error), updated_at:now.toISOString() },
+      });
+      if (deliveryStatus === 'manual_required') summary.manualRequired += 1;
+      else summary.failed += 1;
+      console.error('send reminder failed', { reminderId:item.id, retryCount, error });
+    }
+  }
+  console.log('send reminders completed', summary);
+  return summary;
+};

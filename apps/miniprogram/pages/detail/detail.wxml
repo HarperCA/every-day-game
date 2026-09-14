@@ -1,0 +1,52 @@
+<view class="page" wx:if="{{item}}">
+  <view wx:if="{{item.preview}}" class="preview-banner">开发预览数据 · 尚未完成人工核验</view>
+  <view class="summary card">
+    <view class="status">{{item.registrationStatus}}</view>
+    <view class="title">{{item.name}}</view>
+    <view class="muted">{{item.editionName}}</view>
+    <view class="tag-row"><text>{{item.eventLevel}}</text><text wx:for="{{item.objectiveTags}}" wx:key="*this">{{item}}</text></view>
+    <button class="ghost {{isFavorite ? 'favorited' : ''}}" bindtap="favorite">{{isFavorite ? '已收藏 · 点击取消' : '收藏赛事'}}</button>
+  </view>
+  <view class="recommendation card">
+    <view class="recommendation-head"><text>{{item.recommendationLevel}}</text><text class="reference">仅供参考</text></view>
+    <view class="label">适合对象</view><view>{{item.recommendation.suitable_for}}</view>
+    <view class="label">推荐理由</view><view class="bullet" wx:for="{{item.recommendation.reasons}}" wx:key="*this">· {{item}}</view>
+    <view class="label">限制条件</view><view class="bullet" wx:for="{{item.recommendation.limitations}}" wx:key="*this">· {{item}}</view>
+    <view class="label">准备建议</view><view>{{item.recommendation.preparation}}</view>
+    <view class="confidence">推荐可信度：{{item.recommendation.confidence}}</view>
+  </view>
+  <view class="section-title">关键时间</view>
+  <view class="info card"><view><text>报名开始</text><text>{{item.registrationStartDate || '待公布'}}</text></view><view><text>报名截止</text><text>{{item.registrationEndDate || '待公布'}}</text></view><view><text>比赛开始</text><text>{{item.competitionStartDate || '待公布'}}</text></view><view><text>比赛结束</text><text>{{item.competitionEndDate || '待公布'}}</text></view></view>
+  <view class="section-title">参赛与规则</view>
+  <view class="text-card card"><view class="label">参赛对象与资格</view><view>{{item.participants || '待官方资料补充'}}</view><view class="label">团队人数</view><view>{{item.teamSize || '以具体赛项为准'}}</view><view class="label">赛项/组别</view><view>{{item.track.name}}</view><view class="label">比赛形式与作品要求</view><view>{{item.formatAndRules}}</view><view class="label">报名费及其他费用</view><view>{{item.fees}}</view></view>
+  <view class="section-title">官方信息</view>
+  <view class="text-card card"><view class="label">主办单位</view><view>{{item.organizer}}</view><view class="label">官方报名方式</view><view>{{item.registrationMethod}}</view><view class="label">官方来源</view><view class="source" wx:for="{{item.sources}}" wx:key="id">{{item.source_type}} · {{item.url}}</view><view class="label">最后核验时间</view><view>{{item.lastVerifiedDate}}</view><view wx:if="{{item.preview}}" class="notice">链接仅完成格式校验，尚未进行本轮在线可达性复核。</view><view wx:else class="notice">该公开记录已通过系统验证和管理员人工复核；请在报名前再次核对主办方最新通知。</view></view>
+  <button class="reminder-action action" bindtap="openReminderPanel">{{reminderCount ? '管理提醒 · ' + reminderCount + '项' : '设置提醒'}}</button>
+  <button class="primary action" disabled="{{!item.registrationUrlUsable}}" bindtap="copyRegistrationUrl">{{item.registrationUrlUsable ? '复制官方报名链接' : '官方报名链接待更新'}}</button>
+  <button class="secondary action" bindtap="feedback">信息纠错</button>
+  <view class="disclaimer">是否计入综测、保研或校内竞赛认定，请以本校最新文件为准。平台推荐仅供参考，不代表学校、主办单位或官方认定。</view>
+  <view wx:if="{{reminderPanelVisible}}" class="reminder-mask" bindtap="closeReminderPanel" catchtouchmove="blockPanelTap">
+    <view class="reminder-sheet" catchtap="blockPanelTap">
+      <view class="sheet-handle"></view>
+      <view class="sheet-head"><view><view class="sheet-title">设置提醒</view><view class="sheet-subtitle">先选择事件，再选择一个或多个提前时间</view></view><text class="sheet-close" bindtap="closeReminderPanel">×</text></view>
+      <scroll-view class="sheet-scroll" scroll-y>
+        <view class="reminder-section">
+          <view class="reminder-label">提醒事件</view>
+          <view class="event-options"><view class="event-option {{reminderEventType === item.value ? 'option-active' : ''}} {{item.available ? '' : 'option-disabled'}}" wx:for="{{reminderEvents}}" wx:key="value" data-value="{{item.value}}" bindtap="selectReminderEvent"><view>{{item.label}}</view><text>{{item.targetText}}</text></view></view>
+        </view>
+        <view class="reminder-section">
+          <view class="reminder-label">提前时间</view>
+          <view class="advance-options"><view class="advance-option {{item.selected ? 'option-active' : ''}} {{item.available ? '' : 'option-disabled'}}" wx:for="{{advanceOptions}}" wx:key="key" data-key="{{item.key}}" bindtap="toggleAdvance">{{item.label}}</view></view>
+        </view>
+        <view class="reminder-section">
+          <view class="custom-head"><view class="reminder-label">自定义时间</view><switch checked="{{customSelected}}" color="#087e8b" bindchange="toggleCustom" disabled="{{!customAvailable}}" /></view>
+          <view class="custom-row {{customSelected ? '' : 'custom-disabled'}}"><picker mode="date" value="{{customDate}}" start="{{customMinDate}}" bindchange="onCustomDateChange"><view>{{customDate || '选择日期'}}</view></picker><picker mode="time" value="{{customTime}}" bindchange="onCustomTimeChange"><view>{{customTime}}</view></picker></view>
+        </view>
+        <view class="reminder-tip">已经过去的提醒时间不可选择。保存后才会请求微信通知授权；拒绝授权不会删除站内提醒。</view>
+      </scroll-view>
+      <view class="sheet-actions"><button class="cancel-sheet" bindtap="closeReminderPanel">取消</button><button class="primary" bindtap="saveReminder">保存提醒</button></view>
+    </view>
+  </view>
+</view>
+<view wx:elif="{{loading}}" class="page state">正在加载赛事资料…</view>
+<view wx:else class="page state">{{error}}</view>

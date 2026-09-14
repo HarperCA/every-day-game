@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="page-heading">
+    <view class="page-title">我的收藏</view>
+    <view class="page-subtitle">共 {{items.length}} 场，收藏保存在当前设备</view>
+  </view>
+
+  <view wx:if="{{loading && items.length === 0}}">
+    <view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view></view><view></view><view></view>
+    </view>
+  </view>
+
+  <view wx:elif="{{error}}" class="state card">
+    <view class="state-title">收藏加载失败</view>
+    <view class="muted">{{error}}</view>
+    <button class="retry" size="mini" bindtap="retry">重新加载</button>
+  </view>
+
+  <view wx:elif="{{items.length === 0}}" class="state card">
+    <view class="empty-icon">☆</view>
+    <view class="state-title">还没有收藏赛事</view>
+    <view class="muted">在赛事列表或详情页点击收藏，就能在这里快速找到。</view>
+    <button class="primary find-button" bindtap="goFindCompetition">去发现赛事</button>
+  </view>
+
+  <view wx:else>
+    <view class="favorite-card card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="card-head">
+        <view class="status-row">
+          <text class="status {{item.statusClass}}">{{item.registrationStatus}}</text>
+          <text wx:if="{{item.isEnded}}" class="ended-mark">已结束</text>
+        </view>
+        <text class="verified">核验 {{item.lastVerifiedDate}}</text>
+      </view>
+      <view class="competition-name">{{item.name}}</view>
+      <view class="edition">{{item.editionName}}</view>
+      <view class="tags">
+        <text class="tag">{{item.eventLevel}}</text>
+        <text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="recommendation">
+        <text>{{item.recommendationLevel}}</text>
+        <text class="reference">仅供参考</text>
+      </view>
+      <view class="reason">{{item.recommendationReasons[0]}}</view>
+      <view class="card-footer">
+        <view>
+          <view class="deadline" wx:if="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}</view>
+          <view class="deadline" wx:else>报名时间待官方公布</view>
+          <view class="favorite-date">收藏于 {{item.favoriteAt}}</view>
+        </view>
+        <button class="cancel-button" size="mini" data-id="{{item.id}}" catchtap="cancelFavorite">取消收藏</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="notice">纠错内容会进入管理员审核，不会由 AI 自动改写赛事信息。</view>
+  <view class="card">
+    <view class="competition"><text>纠错赛事</text><strong>{{competitionName}}</strong></view>
+    <label class="field">
+      <text>问题类型</text>
+      <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">{{categories[categoryIndex].label}} <text>›</text></view>
+      </picker>
+    </label>
+    <label class="field">
+      <text>问题说明 <i>必填</i></text>
+      <你直接运行textarea maxlength="2000" value="{{content}}" bindinput="onContentInput" placeholder="请说明哪里有误，以及你认为正确的信息。不要填写身份证号、密码等敏感信息。" />
+      <small>{{content.length}} / 2000</small>
+    </label>
+    <label class="field">
+      <text>证据链接 <i>选填</i></text>
+      <input type="text" value="{{evidenceUrl}}" bindinput="onEvidenceInput" placeholder="https:// 主办方通知或官网页面" />
+    </label>
+  </view>
+  <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在提交…' : '提交纠错'}}</button>
+</view>

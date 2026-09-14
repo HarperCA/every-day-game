@@ -1,0 +1,20 @@
+{
+  "*": {
+    "invoke": false
+  },
+  "login": {
+    "invoke": "auth != null"
+  },
+  "userData": {
+    "invoke": "auth != null"
+  },
+  "adminData": {
+    "invoke": "auth != null"
+  },
+  "publicData": {
+    "invoke": true
+  },
+  "sendReminders": {
+    "invoke": false
+  }
+}

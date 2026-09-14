@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "admin_state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["records", "version", "updated_at", "updated_by"],
+  "properties": {
+    "records": {"type": "array", "maxItems": 1000},
+    "version": {"type": "integer", "minimum": 1},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "updated_by": {"type": "string"}
+  }
+}

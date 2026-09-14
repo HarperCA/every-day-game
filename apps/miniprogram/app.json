@@ -1,0 +1,27 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/feedback/feedback",
+    "pages/favorites/favorites",
+    "pages/reminders/reminders",
+    "pages/my/my",
+    "pages/info/info"
+  ],
+  "window": {
+    "navigationBarTitleText": "大学生竞赛助手",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f7fa"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#087e8b",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {"pagePath": "pages/index/index", "text": "找比赛"},
+      {"pagePath": "pages/my/my", "text": "我的"}
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,30 @@
+{
+  "indexes": [
+    {"collection":"user_account","fields":["openid"],"unique":true},
+    {"collection":"event_edition","fields":["event_id","year"],"unique":true},
+    {"collection":"event_edition","fields":["data_status","last_verified_at"]},
+    {"collection":"event_edition_public_cache","fields":["registration_status","event_level","participation_format"]},
+    {"collection":"event_edition_public_cache","fields":["team_size_category","fee_type","registration_organization"]},
+    {"collection":"event_edition_public_cache","fields":["registration_status","sort_weight","registration_end"]},
+    {"collection":"event_edition_public_cache","fields":["event_level","sort_weight"]},
+    {"collection":"event_edition_public_cache","fields":["participation_format","team_size_category","sort_weight"]},
+    {"collection":"event_schedule","fields":["edition_id","registration_end"]},
+    {"collection":"event_profession","fields":["profession_id","edition_id"]},
+    {"collection":"favorite","fields":["user_id","edition_id"],"unique":true},
+    {"collection":"reminder","fields":["user_id","id"],"unique":true},
+    {"collection":"reminder","fields":["user_id","delivery_status","remind_at"]},
+    {"collection":"reminder","fields":["authorization_status","delivery_status","schedule_change_status","remind_at"]},
+    {"collection":"reminder","fields":["edition_id","delivery_status","target_at"]},
+    {"collection":"reminder","fields":["delivery_status","remind_at","retry_count"]},
+    {"collection":"reminder","fields":["delivery_status","updated_at"]},
+    {"collection":"recommendation","fields":["edition_id","event_data_version","rule_version"],"unique":true},
+    {"collection":"feedback","fields":["status","created_at"]},
+    {"collection":"feedback","fields":["edition_id","status","created_at"]},
+    {"collection":"feedback","fields":["status","ai_risk_level","ai_reviewed_at"]},
+    {"collection":"feedback","fields":["status","spot_check_status","ai_reviewed_at"]},
+    {"collection":"ai_job","fields":["status","next_retry_at","retry_count"]},
+    {"collection":"ai_job","fields":["edition_id","job_type","status"]},
+    {"collection":"audit_log","fields":["object_type","object_id","created_at"]},
+    {"collection":"audit_log","fields":["actor_id","action","created_at"]}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "reminder",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "user_id", "edition_id", "competition_name", "task_name", "event_type", "event_label", "target_at", "advance_key", "advance_label", "offset_ms", "remind_at", "authorization_status", "delivery_status", "schedule_change_status", "created_at", "updated_at"],
+  "properties": {
+    "id": {"type": "string"},
+    "user_id": {"type": "string"},
+    "edition_id": {"type": "string"},
+    "competition_name": {"type": "string", "minLength": 1},
+    "task_name": {"type": "string", "minLength": 1, "maxLength": 20},
+    "event_type": {"enum": ["registration_start", "registration_end"]},
+    "event_label": {"type": "string"},
+    "target_at": {"type": "string", "format": "date-time"},
+    "advance_key": {"enum": ["1d", "3d", "5d", "7d", "15d", "1m", "3m", "custom"]},
+    "advance_label": {"type": "string"},
+    "offset_ms": {"type": "integer", "exclusiveMinimum": 0},
+    "remind_at": {"type": "string", "format": "date-time"},
+    "authorization_status": {"enum": ["not_requested", "accepted", "rejected", "unavailable"]},
+    "delivery_status": {"enum": ["pending", "queued", "sent", "failed", "manual_required", "expired", "cancelled"]},
+    "schedule_change_status": {"enum": ["normal", "time_updated", "postponed", "cancelled"]},
+    "subscription_template_id": {"type": ["string", "null"]},
+    "retry_count": {"type": "integer", "minimum": 0},
+    "last_error": {"type": ["string", "null"]},
+    "data_version": {"type": "integer", "minimum": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "sent_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

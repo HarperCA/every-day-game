@@ -1,0 +1,14 @@
+{"id": "profession-01", "name": "计算机与AI", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-02", "name": "电子信息", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-03", "name": "机械与自动化", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-04", "name": "数学与统计", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-05", "name": "经管与商科", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-06", "name": "设计与艺术", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-07", "name": "建筑与土木", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-08", "name": "材料与化工", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-09", "name": "能源与环境", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-10", "name": "生物与医药", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-11", "name": "农林与食品", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-12", "name": "人文与法学", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-13", "name": "外语与教育", "parent_id": null, "level": "category", "aliases": []}
+{"id": "profession-14", "name": "综合/不限专业", "parent_id": null, "level": "category", "aliases": []}

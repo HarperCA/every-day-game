@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "feedback_ai_review_result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["feedback_id", "decision", "risk_level", "conclusion", "evidence_summary", "evidence_refs", "model", "provider", "prompt_version", "reviewed_at"],
+  "properties": {
+    "feedback_id": {"type": "string"},
+    "decision": {"enum": ["accepted", "rejected", "flagged"]},
+    "risk_level": {"enum": ["low", "medium", "high"]},
+    "issue_codes": {"type": "array", "items": {"enum": ["evidence_insufficient", "source_conflict", "source_unreachable", "information_outdated", "field_mismatch", "unsafe_content", "other"]}},
+    "conclusion": {"type": "string", "minLength": 5, "maxLength": 4000},
+    "evidence_summary": {"type": "string", "minLength": 5, "maxLength": 4000},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "model": {"type": "string"},
+    "provider": {"type": "string"},
+    "prompt_version": {"type": "string"},
+    "reviewed_at": {"type": "string", "format": "date-time"}
+  }
+}
