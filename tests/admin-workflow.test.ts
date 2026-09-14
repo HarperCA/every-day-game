@@ -34,13 +34,13 @@ describe('admin review and publish workflow', () => {
       .toEqual(expect.arrayContaining(['报名链接缺失或格式不正确', '来源链接尚未核验可访问性']));
   });
 
-  it('requires system validation before the human-only publication decision', () => {
+  it('allows the highest-priority human approval to publish directly', () => {
     expect(isPublishReady(validRecord)).toBe(false);
     expect(isPublishReady({ ...validRecord, systemValidation: 'failed', manualReview: 'pending' })).toBe(false);
     const humanReviewed = { ...validRecord, systemValidation: 'not_run', manualReview: 'passed' };
-    expect(getPublishBlockers(humanReviewed)).toContain('系统验证未通过');
-    expect(isPublishReady(humanReviewed)).toBe(false);
-    expect(() => publishRecord(humanReviewed, '2026-08-21T01:30:00.000Z')).toThrow('系统验证未通过');
+    expect(getPublishBlockers(humanReviewed)).toEqual([]);
+    expect(isPublishReady(humanReviewed)).toBe(true);
+    expect(publishRecord(humanReviewed, '2026-08-21T01:30:00.000Z')).toMatchObject({ dataStatus:'published' });
 
     const reviewed = { ...validRecord, systemValidation: 'passed', manualReview: 'passed' };
     expect(isPublishReady(reviewed)).toBe(true);

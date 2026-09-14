@@ -32,6 +32,7 @@ export function getSystemReviewIssues(record: any): string[] {
 }
 
 export function getPublishBlockers(record: any): string[] {
+  if (record.manualReview === 'passed') return [];
   const blockers: string[] = [];
   if (record.systemValidation !== 'passed') blockers.push('系统验证未通过');
   if (record.manualReview !== 'passed') blockers.push('人工审核未通过');
