@@ -4,6 +4,7 @@ const { nextStateVersion, normalizeStateVersion } = require('./stateVersion');
 const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbackMerge');
 const { buildSafeAuditEntry } = require('./auditValidation');
 const { syncPublicCache } = require('./publicCache');
+const { runCompetitionAiReview } = require('./competitionAiReview');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -178,6 +179,14 @@ async function bootstrap() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  if (event.action === 'runCompetitionAiReview') {
+    const id = String(event.recordId || '').trim();
+    if (!id) throw new Error('invalid_record_id');
+    const state = await loadState('competitions');
+    const record = state.records.find(item => item.id === id);
+    if (!record) throw new Error('competition_not_found');
+    return runCompetitionAiReview(record);
+  }
   if (event.action === 'saveRecords') {
     const records = requireRecords(event.records, MAX_RECORDS, 'records');
     return saveState('competitions', records, event.expectedVersion, (transaction, current) => syncPublicCache(transaction, current.records || [], records), event.auditEntry);

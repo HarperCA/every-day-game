@@ -145,6 +145,21 @@ export function queueCloudFeedbacks(records: FeedbackRecord[], submittedUpdates:
 }
 export const queueCloudAiJobs = (records: AiJobRecord[]) => enqueueState('saveAiJobs', 'aiJobs', { records });
 
+export interface CompetitionAiReviewResult {
+  decision: 'recommend_approve' | 'needs_changes' | 'insufficient_evidence';
+  risk_level: 'low' | 'medium' | 'high';
+  summary: string;
+  issues: Array<{ field:string; finding:string; recommendation:string; evidence_ref:string }>;
+  evidence_refs: string[];
+  provider: string;
+  model: string;
+  prompt_version: string;
+  reviewed_at: string;
+  response_id: string | null;
+}
+
+export const requestCompetitionAiReview = (recordId: string) => callAdmin<CompetitionAiReviewResult>('runCompetitionAiReview', { recordId });
+
 export function cloudEnvironmentId() {
   return CLOUD_ENV_ID;
 }
