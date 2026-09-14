@@ -45,19 +45,17 @@ function htmlToText(html) {
 
 async function collectEvidence(record, request = fetch) {
   const uniqueUrls = [...new Set((record.sources || []).map(source => source.url).filter(url => /^https?:\/\//i.test(url)))].slice(0, 3);
-  const evidence = [];
-  for (const url of uniqueUrls) {
+  return Promise.all(uniqueUrls.map(async url => {
     try {
       const response = await request(url, { redirect:'follow', signal:AbortSignal.timeout(12000), headers:{ 'User-Agent':'competition-review/1.0' } });
       const contentType = response.headers.get('content-type') || '';
-      if (!response.ok) { evidence.push({ url, status:`http_${response.status}`, text:'' }); continue; }
-      if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) evidence.push({ url, status:'image', imageUrl:url });
-      else evidence.push({ url, status:'reachable', text:htmlToText(await response.text()) });
+      if (!response.ok) return { url, status:`http_${response.status}`, text:'' };
+      if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) return { url, status:'image', imageUrl:url };
+      return { url, status:'reachable', text:htmlToText(await response.text()) };
     } catch (error) {
-      evidence.push({ url, status:'unreachable', text:'', error:String(error?.message || error).slice(0,300) });
+      return { url, status:'unreachable', text:'', error:String(error?.message || error).slice(0,300) };
     }
-  }
-  return evidence;
+  }));
 }
 
 function validateResult(value) {

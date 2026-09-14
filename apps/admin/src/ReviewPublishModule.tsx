@@ -72,7 +72,7 @@ export default function ReviewPublishModule({ records, setRecords, setAudits, se
 
   async function aiReview(record: any) {
     setAiReviewingId(record.id);
-    setNotice(`${record.name} 正在进行 Kimi AI 审核…`);
+    setNotice(`${record.name} 正在进行 Kimi AI 审核（正在并行读取官方来源，请稍候）…`);
     try {
       const result = await requestCompetitionAiReview(record.id);
       const updated = { ...record, aiReview:result, updatedAt:new Date().toISOString(), updatedBy:'kimi-review-assistant' };
