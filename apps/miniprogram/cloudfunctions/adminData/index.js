@@ -11,6 +11,7 @@ const db = cloud.database();
 const MAX_RECORDS = 100;
 const MAX_FEEDBACKS = 1000;
 const MAX_AI_JOBS = 1000;
+const WEEKLY_AI_TRIGGER = 'competition-ai-review-every-monday';
 
 function requireAdmin(event) {
   const expected = process.env.ADMIN_TOKEN;
@@ -177,6 +178,41 @@ async function bootstrap() {
   };
 }
 
+async function runAiReviewPool(records, concurrency = 5) {
+  const results = new Map();
+  const failures = [];
+  let cursor = 0;
+  async function worker() {
+    while (cursor < records.length) {
+      const record = records[cursor++];
+      try {
+        results.set(record.id, await runCompetitionAiReview(record));
+      } catch (error) {
+        failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
+      }
+    }
+  }
+  await Promise.all(Array.from({ length:Math.min(concurrency, records.length) }, () => worker()));
+  return { results, failures };
+}
+
+async function runWeeklyCompetitionAiReview() {
+  const state = await loadState('competitions');
+  const startedAt = new Date().toISOString();
+  if (!state.records.length) return { scanned:0, succeeded:0, failed:0, startedAt, completedAt:new Date().toISOString() };
+  const configuredConcurrency = Number(process.env.AI_REVIEW_CONCURRENCY || 5);
+  const concurrency = Number.isInteger(configuredConcurrency) ? Math.min(10, Math.max(1, configuredConcurrency)) : 5;
+  const { results, failures } = await runAiReviewPool(state.records, concurrency);
+  const now = new Date().toISOString();
+  const records = state.records.map(record => results.has(record.id)
+    ? { ...record, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-weekly-review' }
+    : record);
+  if (results.size) await saveState('competitions', records, state.version);
+  const summary = { scanned:state.records.length, succeeded:results.size, failed:failures.length, failures, startedAt, completedAt:now };
+  await db.collection('ai_review_runs').add({ data:{ ...summary, trigger:'weekly', failures:failures.slice(0, 20) } });
+  return summary;
+}
+
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
   if (event.action === 'runCompetitionAiReview') {
@@ -213,6 +249,10 @@ async function handle(event) {
 
 exports.main = async event => {
   try {
+    const context = cloud.getWXContext();
+    if (event?.Type === 'Timer' && event?.TriggerName === WEEKLY_AI_TRIGGER && event?.Time && !context?.OPENID) {
+      return { ok:true, data:await runWeeklyCompetitionAiReview() };
+    }
     if (event?.action === 'login') {
       const secret = process.env.ADMIN_TOKEN;
       requireStaticAdminToken(event.adminToken, secret);
@@ -225,3 +265,5 @@ exports.main = async event => {
     return { ok: false, message: error instanceof Error ? error.message : 'admin_data_failed' };
   }
 };
+
+exports.runAiReviewPool = runAiReviewPool;

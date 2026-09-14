@@ -70,5 +70,6 @@ pnpm sources:verify
 - 微信登录、收藏/提醒云同步、纠错提交和订阅消息发送已接入 CloudBase 云函数；正式运行仍需在微信后台完成 AppID、隐私保护指引、订阅消息模板、云函数触发器和安全域名配置，并进行真机验收。
 - 管理后台已接入受 `ADMIN_TOKEN` 保护的 CloudBase 管理云函数和远程持久化；长期口令只在登录时提交一次，后续使用8小时短期签名会话。赛事、纠错和 AI 任务保存使用事务内版本检查，旧页面不会静默覆盖新修改；当前仍是单一超级管理员模式，尚未实现多管理员账号与角色权限。
 - 赛事审核页已接入 Kimi 多模态审核助手。当前按 Kimi Code 配置：在 `adminData` 云函数设置 `AI_PROVIDER=kimi-code`、`AI_API_KEY`、`AI_MODEL=kimi-for-coding` 和 `AI_BASE_URL=https://api.kimi.com/coding/v1`；AI 只提供带证据的复核建议，最终通过与发布仍由管理员操作。
+- 审核发布页支持勾选部分赛事、选择当前筛选结果或一键检测全部赛事；`adminData` 云函数每周一 03:00 自动对全部赛事运行一次 AI 检测，结果保存在赛事记录中并写入 `ai_review_runs` 运行记录。可用 `AI_REVIEW_CONCURRENCY`（1–10，默认 5）控制并发量。
 - 推荐来自底稿结构化迁移，全部待系统重新验证与管理员人工核验，不能作为正式发布数据。
 - `publicData` 云函数和公开缓存事务已实现，但当前环境尚未应用 `database/function-security-rules.json`，匿名只读验收会返回 `EXCEED_AUTHORITY`；在权限规则应用且首条合规缓存生成前，`USE_CLOUD_PUBLIC_DATA` 保持 `false`。

@@ -32,6 +32,14 @@
 .save-notice button { border:0; background:none; color:#47777c; font-size:20px; }
 .admin-toolbar { flex-wrap:wrap; }
 .admin-toolbar input { flex:1; }
+.admin-toolbar input[type="checkbox"] { flex:none; }
+.admin-toolbar > button { border:1px solid #cfd9df; border-radius:9px; background:#fff; padding:10px 14px; color:#176b75; }
+.admin-toolbar > button:disabled { opacity:.5; cursor:not-allowed; }
+.admin-toolbar > .primary-button { background:#087e8b; border-color:#087e8b; color:#fff; }
+.weekly-ai-note,.ai-batch-progress { align-self:center; color:#667786; font-size:12px; }
+.ai-batch-progress { color:#08717d; font-weight:700; }
+.table-check { display:flex; align-items:center; gap:6px; }
+.table-check input,td > input[type="checkbox"] { width:16px; height:16px; accent-color:#087e8b; }
 .panel-footer { display:flex; justify-content:space-between; align-items:center; }
 .panel-footer div { display:flex; gap:8px; }
 .panel-footer button { border:1px solid #d7dfe5; border-radius:7px; background:#fff; padding:6px 12px; color:#49606b; }
