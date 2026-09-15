@@ -148,6 +148,16 @@ console.log(JSON.stringify({
     aiJobs:Array.isArray(bootstrap.aiJobs) ? bootstrap.aiJobs.length : -1,
     audits:Array.isArray(bootstrap.audits) ? bootstrap.audits.length : -1,
   },
+  publishState:(() => {
+    const records = Array.isArray(bootstrap.records) ? bootstrap.records : [];
+    return {
+      total:records.length,
+      published:records.filter(record => record.dataStatus === 'published').length,
+      manualReviewPassed:records.filter(record => record.manualReview === 'passed').length,
+      systemValidationPassed:records.filter(record => record.systemValidation === 'passed').length,
+      aiReviewed:records.filter(record => record.aiReview).length,
+    };
+  })(),
   aiReview,
   lastAiReviewRun:bootstrap.lastAiReviewRun ?? null,
   lastReminderInvocation:await call({ action:'reminderInvocationLog', sessionToken:login.sessionToken }).catch(() => null),

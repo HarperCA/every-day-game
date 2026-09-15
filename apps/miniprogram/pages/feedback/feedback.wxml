@@ -10,7 +10,7 @@
     </label>
     <label class="field">
       <text>问题说明 <i>必填</i></text>
-      <你直接运行textarea maxlength="2000" value="{{content}}" bindinput="onContentInput" placeholder="请说明哪里有误，以及你认为正确的信息。不要填写身份证号、密码等敏感信息。" />
+      <textarea maxlength="2000" value="{{content}}" bindinput="onContentInput" placeholder="请说明哪里有误，以及你认为正确的信息。不要填写身份证号、密码等敏感信息。" />
       <small>{{content.length}} / 2000</small>
     </label>
     <label class="field">
