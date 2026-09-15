@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-09-15T13:20:54.927Z",
+  "candidateSource": "阿里云天池",
+  "candidateCount": 14,
+  "masterCount": 30,
+  "policy": "只做规则能确定的判断。uncertain 一律交人工或 AI，不硬猜。产出不写库。",
+  "counts": {
+    "duplicate": 0,
+    "likely_duplicate": 0,
+    "uncertain": 0,
+    "new": 14,
+    "invalid": 0
+  },
+  "duplicate": [],
+  "likely_duplicate": [],
+  "uncertain": [],
+  "new": [
+    {
+      "candidate": "蚂蚁灵波具身大模型挑战赛",
+      "externalId": "tianchi-532514",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532514",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.826,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.17，低于判重阈值",
+      "values": {
+        "reward_amount": 280000,
+        "reward_tier": "10万-50万",
+        "participant_count": 169,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "CHIP2026-医学NLP代码自动生成测评 ——识别符合临床试验入组标准的患者",
+      "externalId": "tianchi-532480",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532480",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.962,
+      "reason": "最接近的是与「全国大学生医学创新大赛暨“一带一路”国际竞赛」相似度 0.04，低于判重阈值",
+      "values": {
+        "reward_amount": 0,
+        "reward_tier": "无现金奖励",
+        "participant_count": 108,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "2026 SMP第十四届全国社会媒体处理大会-大模型图网络决策挑战赛",
+      "externalId": "tianchi-532511",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532511",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.86,
+      "reason": "最接近的是与「全国大学生电子商务“创新、创意及创业”挑战赛」相似度 0.14，低于判重阈值",
+      "values": {
+        "reward_amount": 55000,
+        "reward_tier": "1万-10万",
+        "participant_count": 348,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "CHIP2026-面向生物医学全文的特定患者表型概念识别任务",
+      "externalId": "tianchi-532512",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532512",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.943,
+      "reason": "最接近的是与「全国大学生物理实验竞赛」相似度 0.06，低于判重阈值",
+      "values": {
+        "reward_amount": 0,
+        "reward_tier": "无现金奖励",
+        "participant_count": 304,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解",
+      "externalId": "tianchi-532510",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532510",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.886,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 20000,
+        "reward_tier": "1万-10万",
+        "participant_count": 742,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "2026-具身仿真合成挑战赛",
+      "externalId": "tianchi-532506",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532506",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.81,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.19，低于判重阈值",
+      "values": {
+        "reward_amount": 100000,
+        "reward_tier": "10万-50万",
+        "participant_count": 234,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "2026-具身安全应用挑战赛",
+      "externalId": "tianchi-532507",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532507",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.81,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.19，低于判重阈值",
+      "values": {
+        "reward_amount": 100000,
+        "reward_tier": "10万-50万",
+        "participant_count": 186,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "2026-跨本体具身认知极限联合挑战赛",
+      "externalId": "tianchi-532508",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532508",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.846,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.15，低于判重阈值",
+      "values": {
+        "reward_amount": 100000,
+        "reward_tier": "10万-50万",
+        "participant_count": 184,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "欧莱雅美妆科技黑客松 - 赛题1 数据共情者 - 消费者的AI管家",
+      "externalId": "tianchi-532503",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532503",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.949,
+      "reason": "最接近的是与「挑战杯课外学术科技作品竞赛」相似度 0.05，低于判重阈值",
+      "values": {
+        "reward_amount": 200000,
+        "reward_tier": "10万-50万",
+        "participant_count": 451,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "欧莱雅美妆科技黑客松 - 赛题2 信任守护师 - 创造者的AI卫士",
+      "externalId": "tianchi-532496",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532496",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.949,
+      "reason": "最接近的是与「挑战杯课外学术科技作品竞赛」相似度 0.05，低于判重阈值",
+      "values": {
+        "reward_amount": 200000,
+        "reward_tier": "10万-50万",
+        "participant_count": 233,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "欧莱雅美妆科技黑客松 - 赛题3 无界体验家 - 用爱(AI)让美触手可及",
+      "externalId": "tianchi-532497",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532497",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.949,
+      "reason": "最接近的是与「挑战杯课外学术科技作品竞赛」相似度 0.05，低于判重阈值",
+      "values": {
+        "reward_amount": 200000,
+        "reward_tier": "10万-50万",
+        "participant_count": 256,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "CSIG图像图形技术挑战赛-赛道一：生成式图像增强可控性挑战",
+      "externalId": "tianchi-532499",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532499",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.897,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.10，低于判重阈值",
+      "values": {
+        "reward_amount": 200000,
+        "reward_tier": "10万-50万",
+        "participant_count": 502,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "CSIG图像图形技术挑战赛-赛道二：生成式图像增强轻量模型设计挑战",
+      "externalId": "tianchi-532500",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532500",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.905,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.10，低于判重阈值",
+      "values": {
+        "reward_amount": 200000,
+        "reward_tier": "10万-50万",
+        "participant_count": 394,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "第七届CSIG图像图形技术挑战赛—复杂工业场景异常检测算法挑战赛",
+      "externalId": "tianchi-532482",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532482",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.895,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 40000,
+        "reward_tier": "1万-10万",
+        "participant_count": 1080,
+        "scale_tier": "千人-1万"
+      }
+    }
+  ],
+  "invalid": []
+}

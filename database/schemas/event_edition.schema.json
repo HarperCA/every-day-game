@@ -22,6 +22,17 @@
     "manual_review": {"enum": ["pending", "passed", "rejected"]},
     "last_verified_at": {"type": ["string", "null"], "format": "date-time"},
     "created_at": {"type": ["string", "null"], "format": "date-time"},
-    "updated_at": {"type": ["string", "null"], "format": "date-time"}
+    "updated_at": {"type": ["string", "null"], "format": "date-time"},
+    "reward_amount": {"type": ["number", "null"], "minimum": 0, "description": "现金奖金总额（元）。来源给出数值时填写，否则 null。"},
+    "reward_tier": {"enum": ["无现金奖励", "万元以下", "1万-10万", "10万-50万", "50万以上", "暂未公布"]},
+    "reward_highlights": {"type": "array", "items": {"enum": ["保研考研加分", "实习或直通面试", "就业绿色通道", "创业扶持", "国际交流", "证书荣誉", "实物奖品", "现金奖金"]}, "uniqueItems": true, "description": "非现金回报。权重高于现金奖金。"},
+    "rewards": {"type": "string", "description": "奖励原文描述。"},
+    "participant_count": {"type": ["number", "null"], "minimum": 0},
+    "participant_unit": {"enum": ["队", "人", "暂未公布"]},
+    "scale_tier": {"enum": ["千人以下", "千人-1万", "1万-10万", "10万以上", "暂未公布"]},
+    "participant_scale": {"type": "string", "description": "参赛规模原文描述。"},
+    "region": {"type": "string", "description": "省级行政区名。国家级赛事留空。"},
+    "lifecycle": {"enum": ["长期举办", "首届", "不定期", "疑似停办", "已停办", "暂未明确"], "description": "赛事生命周期，独立于 data_status（后者是数据编辑状态）。"},
+    "recognition": {"type": "array", "maxItems": 4, "items": {"type": "object", "required": ["path", "level", "evidence"], "additionalProperties": false, "properties": {"path": {"enum": ["保研考研", "求职就业", "出国留学", "创业融资"]}, "level": {"enum": ["高", "中", "低", "暂未明确"]}, "evidence": {"type": "string", "minLength": 1, "maxLength": 300, "description": "认可度的出处。没有出处的认可不可复核，会被丢弃。"}, "scope": {"type": "array", "items": {"type": "string", "maxLength": 40}, "maxItems": 8, "description": "具体岗位或方向。为空表示该路径下通用。"}}}, "description": "分路径分岗位的认可度。含金量的主要依据，权重高于现金奖金。"}
   }
 }

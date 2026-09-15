@@ -1,3 +1,6 @@
+// 价值评分与排序算法都与 adminData 共用同一份实现（内容必须逐字一致，由测试守护）。
+const { rankRecords } = require('./competitionRanking.js');
+
 const MAX_PUBLIC_RECORDS = 500;
 
 function assertPublicRecordCapacity(records) {
@@ -23,6 +26,7 @@ function currentRegistrationStatus(item, now = new Date()) {
   return '报名中';
 }
 
+
 function filterPublicRecords(records, query = {}, now = new Date()) {
   const keyword = String(query.keyword || '').trim().toLowerCase().slice(0, 100);
   const filtered = records.map(item => ({ ...item, registration_status:currentRegistrationStatus(item, now) })).filter(item => {
@@ -35,12 +39,19 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
     if (query.teamSizeCategory && item.team_size_category !== query.teamSizeCategory) return false;
     if (query.feeType && item.fee_type !== query.feeType) return false;
     if (query.registrationOrganization && item.registration_organization !== query.registrationOrganization) return false;
+    if (query.region && item.region !== query.region) return false;
+    if (query.lifecycle && item.lifecycle !== query.lifecycle) return false;
+    // 默认不展示已停办的赛事，但允许显式查询 —— 用户搜它时应看到「已停办」而不是搜不到。
+    if (!query.lifecycle && item.lifecycle === '已停办') return false;
+    // 已截止是硬过滤而不是降权：报不上名的赛事排在第 50 位依然是噪声。
+    if (!query.registrationStatus && item.registration_status === '已截止') return false;
     return true;
-  }).sort((a, b) => Number(a.sort_weight || 0) - Number(b.sort_weight || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN'));
+  });
+  const ranked = rankRecords(filtered, query, now);
   const page = Math.max(1, Math.min(100, Number.isInteger(query.page) ? query.page : 1));
   const pageSize = Math.max(1, Math.min(100, Number.isInteger(query.pageSize) ? query.pageSize : 8));
-  const visible = Math.min(filtered.length, page * pageSize);
-  return { items:filtered.slice(0, visible), total:filtered.length, hasMore:visible < filtered.length, preview:false };
+  const visible = Math.min(ranked.length, page * pageSize);
+  return { items:ranked.slice(0, visible), total:ranked.length, hasMore:visible < ranked.length, preview:false };
 }
 
 module.exports = { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, MAX_PUBLIC_RECORDS, normalizePublicRecordId };

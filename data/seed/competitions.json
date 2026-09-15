@@ -976,7 +976,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "报名截止时间来自教育部2026通知"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp002-2025",
@@ -1016,7 +1027,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "展示最近一届时必须明确“已结束”，不要误显示为可报名"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp003-2026",
@@ -1055,7 +1077,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "当前日期只对应已核验的揭榜挂帅赛项，后续应按赛项补行"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp004-2026",
@@ -1095,7 +1128,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "报名状态为平台判断；用户端须提示“以本校/赛区截止为准”"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp005-2026",
@@ -1133,7 +1177,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "不同通知对报名截止日表述存在1天差异，发布时以官网当前页为准"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp006-2026",
@@ -1170,7 +1225,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "应在9月1日前触发“即将报名”提醒"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp007-2026",
@@ -1207,7 +1273,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "本行仅对应第一场网络预选赛；第二场应新增赛项行"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp008-2026",
@@ -1245,7 +1322,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "官网名称使用“软件和信息技术大赛”"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp009-2026",
@@ -1285,7 +1373,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "缺少全国统一报名截止日，状态以当前赛程阶段人工覆盖"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp010-2026",
@@ -1322,7 +1421,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "部分学校通知仍写6月30日，官网存在延期更新，发布时附最后核验时间"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp011-2026",
@@ -1359,7 +1469,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "创新实践能力赛与作品赛需后续拆为不同赛项行"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp012-2026",
@@ -1398,7 +1519,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "2026是专题赛，不应误写为奇数年全国主体赛"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp013-2026",
@@ -1437,7 +1569,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "全国并无统一校内截止日，用户端提示以学校为准"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp014-2026",
@@ -1476,7 +1619,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "杯赛必须作为独立赛项维护，以免规则混用"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp015-2026",
@@ -1514,7 +1668,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "需按赛项补充具体软件、设备和赛程"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp016-2027",
@@ -1554,7 +1719,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "信息完整但时间待公布；每天检查官方赛季页面即可，不必频繁调用AI"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp017-2026",
@@ -1592,7 +1768,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "主体需保留，RMUC、RMUL、ROBOCON分别新增赛项行"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp018-2026",
@@ -1631,7 +1818,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "全国统一报名截止不适用，用户端显示“以校内/赛区通知为准”"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp019-2027",
@@ -1670,7 +1868,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "全国总决赛为2027，当前录入的是赛季而非自然年度"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp020-2026",
@@ -1709,7 +1918,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "需继续补录全国赛最终日期；现阶段不影响显示已截止"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp021-2026",
@@ -1747,7 +1967,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "官网当前时间轴优先于早期第一轮通知"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp022-2026",
@@ -1785,7 +2016,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "国际赛道和产业赛道需分别新增行，不能复用主赛道人数规则"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp023-2026",
@@ -1822,7 +2064,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "收费、赛道与人数需要从当届细则继续结构化"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp024-2026",
@@ -1860,7 +2113,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "在华留学生组报名可延长，前台应按组别显示提示"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp025-2025",
@@ -1898,7 +2162,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "不要把2026贵州省赛当成全国第十届主体赛"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp026-2026",
@@ -1936,7 +2211,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "用户端必须提示不同赛区可能早于全国官网截止"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp027-2026",
@@ -1975,7 +2261,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "前台应显示“部分专项赛报名中”，不能代表主赛道仍开放"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp028-2026",
@@ -2015,7 +2312,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "无全国统一报名截止日，保留人工状态覆盖并显示校内提示"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp029-2026",
@@ -2052,7 +2360,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "科学探究类需要新增独立赛项行，不能复用本行日期"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     },
     {
       "id": "edition-cmp030-2026",
@@ -2092,7 +2411,18 @@
         "excel_system_validation": "通过",
         "excel_manual_review": "待审核",
         "excel_admin_note": "旧称只放别名字段，前台主名称使用2026官方名称"
-      }
+      },
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": null,
+      "participant_unit": "暂未公布",
+      "scale_tier": "暂未公布",
+      "participant_scale": "",
+      "region": "",
+      "lifecycle": "暂未明确",
+      "recognition": []
     }
   ],
   "event_tracks": [

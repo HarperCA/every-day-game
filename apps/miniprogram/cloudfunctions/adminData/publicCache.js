@@ -1,3 +1,4 @@
+const { valueFields } = require('./competitionValue.js');
 const REGISTRATION_STATUSES = new Set(['时间待公布', '即将报名', '报名中', '已截止']);
 const RECOMMENDATION_WEIGHT = { '强烈推荐':0, '值得参加':1, '适合练手':2, '高难挑战':3, '谨慎报名':4, '信息不足':5 };
 
@@ -68,8 +69,11 @@ function toPublicCache(record, now = new Date()) {
     recommendation_preparation:String(record.recommendation?.preparation || ''),
     recommendation_confidence:String(record.recommendation?.confidence || ''),
     sources:(record.sources || []).filter(source => source?.id && source.source_type && source.is_official && source.validity_status === 'valid' && /^https?:\/\//i.test(source.url || '')).map(source => ({ id:source.id, source_type:source.source_type, url:source.url })),
+    ...valueFields(record),
     last_verified_at:record.lastVerifiedAt || null,
     search_text:[record.name, record.editionName, record.organizer, ...aliases, ...(record.objectiveTags || [])].filter(Boolean).join(' ').toLowerCase(),
+    // 与路径无关的排序基准：报名状态 > 推荐等级。
+    // 价值分是分路径分岗位的，不能压进一个标量，所以排序在查询层按用户目标叠加。
     sort_weight:(REGISTRATION_STATUSES.has(status) ? ['报名中','即将报名','时间待公布','已截止'].indexOf(status) : 3) * 10 + (RECOMMENDATION_WEIGHT[recommendation] ?? 5),
     data_status:'published',
     system_validation:'passed',

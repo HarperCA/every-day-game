@@ -44,6 +44,18 @@
     "sort_weight": {"type": "integer", "minimum": 0},
     "data_status": {"const": "published"},
     "system_validation": {"const": "passed"},
-    "manual_review": {"const": "passed"}
+    "manual_review": {"const": "passed"},
+    "reward_amount": {"type": ["number", "null"], "minimum": 0},
+    "reward_tier": {"enum": ["无现金奖励", "万元以下", "1万-10万", "10万-50万", "50万以上", "暂未公布"]},
+    "reward_highlights": {"type": "array", "items": {"enum": ["保研考研加分", "实习或直通面试", "就业绿色通道", "创业扶持", "国际交流", "证书荣誉", "实物奖品", "现金奖金"]}},
+    "rewards": {"type": "string"},
+    "participant_count": {"type": ["number", "null"], "minimum": 0},
+    "participant_unit": {"enum": ["队", "人", "暂未公布"]},
+    "scale_tier": {"enum": ["千人以下", "千人-1万", "1万-10万", "10万以上", "暂未公布"]},
+    "participant_scale": {"type": "string"},
+    "region": {"type": "string"},
+    "lifecycle": {"enum": ["长期举办", "首届", "不定期", "疑似停办", "已停办", "暂未明确"]},
+    "recognition": {"type": "array", "maxItems": 4, "items": {"type": "object", "required": ["path", "level", "evidence"], "additionalProperties": false, "properties": {"path": {"enum": ["保研考研", "求职就业", "出国留学", "创业融资"]}, "level": {"enum": ["高", "中", "低", "暂未明确"]}, "evidence": {"type": "string", "minLength": 1, "maxLength": 300, "description": "认可度的出处。没有出处的认可不可复核，会被丢弃。"}, "scope": {"type": "array", "items": {"type": "string", "maxLength": 40}, "maxItems": 8, "description": "具体岗位或方向。为空表示该路径下通用。"}}}, "description": "分路径分岗位的认可度。含金量的主要依据，权重高于现金奖金。"},
+    "value_scores": {"type": "object", "additionalProperties": false, "properties": {"保研考研": {"type": "number", "minimum": 0, "maximum": 9}, "求职就业": {"type": "number", "minimum": 0, "maximum": 9}, "出国留学": {"type": "number", "minimum": 0, "maximum": 9}, "创业融资": {"type": "number", "minimum": 0, "maximum": 9}}, "description": "各目标路径下的推荐价值分。由认可度和非现金回报主导，现金奖金最多贡献 1 分。"}
   }
 }

@@ -1,0 +1,662 @@
+{
+  "generatedAt": "2026-09-15T13:19:24.196Z",
+  "source": "阿里云天池",
+  "listApi": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+  "policy": "仅填充接口可事实读出的字段。认可度、非现金回报、地域、生命周期留空，待 AI 抽取与人工确认。候选不直接入库。",
+  "fetchStats": {
+    "requests": 1,
+    "cacheHits": 0,
+    "blocked": 0,
+    "errors": 0
+  },
+  "failures": [],
+  "candidateCount": 14,
+  "candidates": [
+    {
+      "externalId": "tianchi-532514",
+      "name": "蚂蚁灵波具身大模型挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532514",
+      "introduction": "蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起，是一场面向具身智能开发者的算法挑战赛。\n\n赛事基于开源 LingBot-VLA 2.0 模型搭建统一评测体系，由线上初赛和线下真机黑客马拉松两个阶段组成，面向全球企业、高校、个人开发者及技术爱好者开放。\n\n本次赛事希望让更多开发者真正上手 LingBot-VLA 2.0，在统一任务与真实机器人场景中验证模型复现、训练调优、泛化评测和真机适配能力，推动具身智能技术从模型能力走向真实落地。",
+      "tags": [
+        "机器人",
+        "计算机视觉‌"
+      ],
+      "reward_amount": 280000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 280000 元（天池列表接口 bonus 字段）",
+      "participant_count": 169,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 169 支队伍（抓取时点）",
+      "registration_start": "2026-09-10T16:00:00.000Z",
+      "registration_end": "2026-10-26T15:59:59.000Z",
+      "competition_start": "2026-09-10T16:00:00.000Z",
+      "competition_end": "2026-11-15T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532514",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532480",
+      "name": "CHIP2026-医学NLP代码自动生成测评 ——识别符合临床试验入组标准的患者",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532480",
+      "introduction": "本任务基于CHIP2025-CP03升级，聚焦医学NLP代码自动生成，以识别符合临床试验入组/出组标准的患者。提供17类48条筛选标准及FHIR FSH定义，需按FHIR Message Bundle递交。评测大模型引导小语言模型(SLM)生成代码的可运行性、标准符合性、查询准确性与稳定性。背景强调CDSS需临床全程参与，但知识产权壁垒阻碍协同；大模型编码与FHIR兼容助系统适配，而SLM引入幻觉与可解释性挑战。本任务为科研、产品及政策提供支撑。",
+      "tags": [
+        "‌医疗健康"
+      ],
+      "reward_amount": 0,
+      "reward_tier": "无现金奖励",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 108,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 108 支队伍（抓取时点）",
+      "registration_start": "2026-08-30T16:00:00.000Z",
+      "registration_end": "2026-10-07T15:59:59.000Z",
+      "competition_start": "2026-08-30T16:00:00.000Z",
+      "competition_end": "2026-10-12T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532480",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532511",
+      "name": "2026 SMP第十四届全国社会媒体处理大会-大模型图网络决策挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532511",
+      "introduction": "第十四届全国社会媒体处理大会（SMP 2026）将于2026年11月12日至15日在北京召开。本届大会的主题是“大模型驱动人机共生”，旨在探索在大模型和智能体快速发展给人类社会带来的颠覆性变化以及构建人机和谐共生的社会新生态的路径。\nSMP 2026挑战赛由中国中文信息学会社会媒体处理专委会主办，天池平台为指定赛事平台。本次比赛以外星文明降临地球的科幻故事为背景，邀请广大开发者和相关技术团队，通过科学的算法与策略设计，探索解决网络演化预测与有效干预等核心难题。",
+      "tags": [
+        "程序设计",
+        "智能体",
+        "大语言模型"
+      ],
+      "reward_amount": 55000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 55000 元（天池列表接口 bonus 字段）",
+      "participant_count": 348,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 348 支队伍（抓取时点）",
+      "registration_start": "2026-08-29T16:00:00.000Z",
+      "registration_end": "2026-09-30T01:59:59.000Z",
+      "competition_start": "2026-08-29T16:00:00.000Z",
+      "competition_end": "2026-10-23T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532511",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532512",
+      "name": "CHIP2026-面向生物医学全文的特定患者表型概念识别任务",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532512",
+      "introduction": "第十二届中国健康信息处理大会（CHIP 2026）评测",
+      "tags": [
+        "‌医疗健康",
+        "自然语言处理",
+        "大语言模型"
+      ],
+      "reward_amount": 0,
+      "reward_tier": "无现金奖励",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 304,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 304 支队伍（抓取时点）",
+      "registration_start": "2026-08-19T16:00:00.000Z",
+      "registration_end": "2026-09-27T15:59:59.000Z",
+      "competition_start": "2026-08-19T16:00:00.000Z",
+      "competition_end": "2026-09-27T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532512",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532510",
+      "name": "知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532510",
+      "introduction": "本赛题面向图片和 PDF 文件中的复杂表格识别与内容理解。参赛者需要读取\n题目清单，识别目标文档中的表格结构和表格内容，并完成结构恢复、内容提取\n或简单推理计算，最终提交可自动评分的 Excel 结果文件。",
+      "tags": [
+        "自然语言处理",
+        "大语言模型"
+      ],
+      "reward_amount": 20000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 20000 元（天池列表接口 bonus 字段）",
+      "participant_count": 742,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 742 支队伍（抓取时点）",
+      "registration_start": "2026-08-06T16:00:00.000Z",
+      "registration_end": "2026-09-30T03:59:59.000Z",
+      "competition_start": "2026-08-06T16:00:00.000Z",
+      "competition_end": "2026-09-30T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532510",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532506",
+      "name": "2026-具身仿真合成挑战赛",
+      "seriesName": "2026-具身极限挑战赛",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532506",
+      "introduction": "仿真资产是具身智能发展的重要基础，广泛应用于仿真场景构建、机器人训练以及仿真到现实的部署验证。本次比赛是全球首个聚焦多设备真实视频到可交互仿真资产端到端生成与系统评测的具身仿真合成挑战赛。参赛队伍需基于多设备采集的真实物体视频，构建自动化处理流水线，生成结构准确、外观真实、物理可信且可交互的高质量仿真就绪型资产。",
+      "tags": [],
+      "reward_amount": 100000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
+      "participant_count": 234,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 234 支队伍（抓取时点）",
+      "registration_start": "2026-07-29T16:00:00.000Z",
+      "registration_end": "2026-09-21T05:59:59.000Z",
+      "competition_start": "2026-07-29T16:00:00.000Z",
+      "competition_end": "2026-11-15T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532506",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532507",
+      "name": "2026-具身安全应用挑战赛",
+      "seriesName": "2026-具身极限挑战赛",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532507",
+      "introduction": "围绕“感知—决策—执行”完整闭环，设置视觉感知、空间感知、任务决策、控制通信、状态估计、执行反馈六个攻击环节，考察具身智能模型在遭受多域攻击时的异常发现、链路识别、危险阻断、降级处置与任务恢复等能力。本次比赛是全球首个以具身安全为核心命题，特别支持VLA、WAM等多模态融合技术的具身安全应用挑战赛，旨在检验多模态感知与决策系统在复杂攻击下的鲁棒性。每类赛题包含简单、中等和困难等难度，正式评测中的攻击形式与参数不公开，重点考察具身模型面对未知异常的泛化防御能力。",
+      "tags": [],
+      "reward_amount": 100000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
+      "participant_count": 186,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 186 支队伍（抓取时点）",
+      "registration_start": "2026-07-29T16:00:00.000Z",
+      "registration_end": "2026-09-21T05:59:59.000Z",
+      "competition_start": "2026-07-29T16:00:00.000Z",
+      "competition_end": "2026-11-15T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532507",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532508",
+      "name": "2026-跨本体具身认知极限联合挑战赛",
+      "seriesName": "2026-具身极限挑战赛",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532508",
+      "introduction": "本赛道聚焦具身智能从仿真训练走向多型号真机验证，探索机器人策略在不同本体和真实物理环境中的迁移能力。本次赛事是全球首个跨本体、跨平台、跨场景仿真+真机挑战赛。",
+      "tags": [
+        "机器人"
+      ],
+      "reward_amount": 100000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
+      "participant_count": 184,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 184 支队伍（抓取时点）",
+      "registration_start": "2026-07-29T16:00:00.000Z",
+      "registration_end": "2026-09-21T05:59:59.000Z",
+      "competition_start": "2026-07-29T16:00:00.000Z",
+      "competition_end": "2026-11-15T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532508",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532503",
+      "name": "欧莱雅美妆科技黑客松 - 赛题1 数据共情者 - 消费者的AI管家",
+      "seriesName": "欧莱雅第二届美妆科技黑客松 - 用 AI 造点美",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532503",
+      "introduction": "作为全球美妆科技创新的重要实践平台，2026 欧莱雅美妆科技黑客松汇聚全球青年创新力量，面向海内外高校在校学生开放报名。赛事聚焦人工智能与美妆产业融合创新，围绕真实业务场景设置挑战赛题，鼓励参赛团队运用 AI、多模态、智能交互等前沿技术，探索美妆行业的创新应用与未来体验。 在这里，创意不仅停留于概念，更有机会与产业需求深度连接。赛事希望发掘兼具技术创新力与商业应用价值的青年团队，为未来美妆科技的发展注入更多创新灵感与实践成果。",
+      "tags": [
+        "多模态",
+        "智能体"
+      ],
+      "reward_amount": 200000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
+      "participant_count": 451,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 451 支队伍（抓取时点）",
+      "registration_start": "2026-07-16T16:00:00.000Z",
+      "registration_end": "2026-10-20T15:59:59.000Z",
+      "competition_start": "2026-07-16T16:00:00.000Z",
+      "competition_end": "2026-10-20T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532503",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532496",
+      "name": "欧莱雅美妆科技黑客松 - 赛题2 信任守护师 - 创造者的AI卫士",
+      "seriesName": "欧莱雅第二届美妆科技黑客松 - 用 AI 造点美",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532496",
+      "introduction": "作为全球美妆科技创新的重要实践平台，2026 欧莱雅美妆科技黑客松汇聚全球青年创新力量，面向海内外高校在校学生开放报名。赛事聚焦人工智能与美妆产业融合创新，围绕真实业务场景设置挑战赛题，鼓励参赛团队运用 AI、多模态、智能交互等前沿技术，探索美妆行业的创新应用与未来体验。\n在这里，创意不仅停留于概念，更有机会与产业需求深度连接。赛事希望发掘兼具技术创新力与商业应用价值的青年团队，为未来美妆科技的发展注入更多创新灵感与实践成果。",
+      "tags": [
+        "多模态",
+        "智能体"
+      ],
+      "reward_amount": 200000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
+      "participant_count": 233,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 233 支队伍（抓取时点）",
+      "registration_start": "2026-07-16T16:00:00.000Z",
+      "registration_end": "2026-10-20T15:59:59.000Z",
+      "competition_start": "2026-07-16T16:00:00.000Z",
+      "competition_end": "2026-10-20T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532496",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532497",
+      "name": "欧莱雅美妆科技黑客松 - 赛题3 无界体验家 - 用爱(AI)让美触手可及",
+      "seriesName": "欧莱雅第二届美妆科技黑客松 - 用 AI 造点美",
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532497",
+      "introduction": "作为全球美妆科技创新的重要实践平台，2026 欧莱雅美妆科技黑客松汇聚全球青年创新力量，面向海内外高校在校学生开放报名。赛事聚焦人工智能与美妆产业融合创新，围绕真实业务场景设置挑战赛题，鼓励参赛团队运用 AI、多模态、智能交互等前沿技术，探索美妆行业的创新应用与未来体验。\n在这里，创意不仅停留于概念，更有机会与产业需求深度连接。赛事希望发掘兼具技术创新力与商业应用价值的青年团队，为未来美妆科技的发展注入更多创新灵感与实践成果。",
+      "tags": [
+        "多模态",
+        "智能体"
+      ],
+      "reward_amount": 200000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
+      "participant_count": 256,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 256 支队伍（抓取时点）",
+      "registration_start": "2026-07-16T16:00:00.000Z",
+      "registration_end": "2026-10-20T15:59:59.000Z",
+      "competition_start": "2026-07-16T16:00:00.000Z",
+      "competition_end": "2026-10-20T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532497",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532499",
+      "name": "CSIG图像图形技术挑战赛-赛道一：生成式图像增强可控性挑战",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532499",
+      "introduction": "CSIG图像图形技术挑战赛是由中国图象图形学学会（CSIG）主办的系列赛事，旨在促进图像图形技术及相关产业的发展和应用，解决企业面临的技术难题，扩大企业宣传面，帮助企业吸引更多的优秀人才。为推动国内高等院校、科研院所在Camera及其相关领域在读学生的培养，选拔优秀人才，中国图象图形学学会、华为终端有限公司携手举办第三届\"Camera学术之星\"影像算法技术竞赛与研讨会。",
+      "tags": [
+        "计算机视觉‌"
+      ],
+      "reward_amount": 200000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
+      "participant_count": 502,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 502 支队伍（抓取时点）",
+      "registration_start": "2026-07-02T16:00:00.000Z",
+      "registration_end": "2026-09-20T09:59:59.000Z",
+      "competition_start": "2026-07-02T16:00:00.000Z",
+      "competition_end": "2026-09-20T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532499",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532500",
+      "name": "CSIG图像图形技术挑战赛-赛道二：生成式图像增强轻量模型设计挑战",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532500",
+      "introduction": "CSIG图像图形技术挑战赛是由中国图象图形学学会（CSIG）主办的系列赛事，旨在促进图像图形技术及相关产业的发展和应用，解决企业面临的技术难题，扩大企业宣传面，帮助企业吸引更多的优秀人才。为推动国内高等院校、科研院所在Camera及其相关领域在读学生的培养，选拔优秀人才，中国图象图形学学会、华为终端有限公司携手举办第三届\"Camera学术之星\"影像算法技术竞赛与研讨会。",
+      "tags": [
+        "计算机视觉‌"
+      ],
+      "reward_amount": 200000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
+      "participant_count": 394,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 394 支队伍（抓取时点）",
+      "registration_start": "2026-06-30T16:00:00.000Z",
+      "registration_end": "2026-09-20T15:59:59.000Z",
+      "competition_start": "2026-06-30T16:00:00.000Z",
+      "competition_end": "2026-09-20T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532500",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "tianchi-532482",
+      "name": "第七届CSIG图像图形技术挑战赛—复杂工业场景异常检测算法挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://tianchi.aliyun.com/competition/entrance/532482",
+      "introduction": "CSIG图像图形技术挑战赛是由中国图像图形学会（CSIG）主办的系列赛事。本赛道为第七届CSIG图像图形技术挑战赛，由荣旗科技、CSIG视觉检测专委会承办，赛道基于业界极具挑战性的真实工业多视角数据集 Real-IAD Variety（160类，近20万图）。重点考察大模型在面对超大规模类别的异常分类与像素级缺陷分割能力，以及在遭遇全新产品冷启动时，模型在未见类别（零样本/Zero-Shot）上的极限泛化水平。总奖金池4万元，冠军将角逐CSIG挑战赛年度总决赛。",
+      "tags": [
+        "计算机视觉‌",
+        "工业制造"
+      ],
+      "reward_amount": 40000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 40000 元（天池列表接口 bonus 字段）",
+      "participant_count": 1080,
+      "participant_unit": "队",
+      "scale_tier": "千人-1万",
+      "participant_scale": "已报名 1080 支队伍（抓取时点）",
+      "registration_start": "2026-05-12T16:00:00.000Z",
+      "registration_end": "2026-09-30T15:59:59.000Z",
+      "competition_start": "2026-05-12T16:00:00.000Z",
+      "competition_end": "2026-09-30T15:59:59.000Z",
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "evidence": {
+        "source": "阿里云天池",
+        "url": "https://tianchi.aliyun.com/competition/entrance/532482",
+        "api": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
+        "fields": [
+          "reward_amount",
+          "participant_count",
+          "registration_start",
+          "registration_end"
+        ],
+        "fetchedAt": "2026-09-15T13:19:24.196Z"
+      },
+      "needsReview": [
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    }
+  ]
+}
