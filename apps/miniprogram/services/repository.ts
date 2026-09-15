@@ -1,6 +1,7 @@
 const seed = require('../data/competitions');
 import { USE_CLOUD_PUBLIC_DATA } from '../config/cloud';
 import { callPublicData } from './cloudSession';
+import { schoolTimingAdvice } from './timing';
 
 const STATUS_WEIGHT: Record<string, number> = { '报名中': 0, '即将报名': 1, '时间待公布': 2, '已截止': 3 };
 const RECOMMENDATION_WEIGHT: Record<string, number> = { '强烈推荐': 0, '值得参加': 1, '适合练手': 2, '高难挑战': 3, '谨慎报名': 4, '信息不足': 5 };
@@ -47,6 +48,11 @@ function hydrate(item: any) {
     recommendationLevel: item.recommendation.recommendation,
     recommendationReasons: item.recommendation.reasons,
     registrationUrlUsable: /^https?:\/\//.test(item.registrationUrl || ''),
+    // 预览走本地种子数据，没有经过云函数，所以在这里算
+    ...(() => {
+      const timing = schoolTimingAdvice(item.registrationOrganization || '');
+      return { schoolTimingDependent: timing.dependent, schoolTimingNote: timing.note, timingReliability: timing.reliability };
+    })(),
     preview: true,
   };
 }
@@ -68,7 +74,11 @@ function hydratePublic(item: any) {
     track:{ name:item.track_name || '以当届官方通知为准' }, sources:item.sources || [],
     recommendationLevel:item.recommendation || '信息不足', recommendationReasons:item.recommendation_reasons || [],
     recommendation:{ recommendation:item.recommendation || '信息不足', suitable_for:item.recommendation_suitable_for || '', reasons:item.recommendation_reasons || [], limitations:item.recommendation_limitations || [], preparation:item.recommendation_preparation || '', confidence:item.recommendation_confidence || '' },
-    registrationUrlUsable:/^https?:\/\//.test(item.registration_url || ''), qualityIssues:[], preview:false,
+    registrationUrlUsable:/^https?:\/\//.test(item.registration_url || ''), qualityIssues:[],
+    // 已发布记录由云函数算好，直接读，避免两处逻辑漂移
+    schoolTimingDependent:Boolean(item.school_timing_dependent), schoolTimingNote:item.school_timing_note || '',
+    timingReliability:item.timing_reliability || 'unverified',
+    preview:false,
   };
 }
 

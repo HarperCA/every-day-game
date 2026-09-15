@@ -60,6 +60,15 @@ function collectText(record = {}) {
   ].filter(value => typeof value === 'string').join('\n');
 }
 
+// 只在本校举办的竞赛不收：学生对自己学校的赛事本来就知情，雷达没有增量价值。
+//
+// 但「校内选拔」完全不同 —— 它是国赛/省赛的第一个环节，而且往往是学生真正要赶的
+// 那个截止日期（校内选拔可能比国赛报名早两个月）。漏掉它，用户看到的国赛日期
+// 就是他已经没资格用的日期。两者的区别在于有没有上级赛事。
+function isSchoolOnly(record = {}) {
+  return record.tier === '校级' && !record.parentEventId && !record.advancesTo;
+}
+
 function admissionSignals(record = {}) {
   const text = collectText(record);
   const authority = scanPatterns(text, AUTHORITY_PATTERNS);
@@ -92,6 +101,15 @@ function assessAdmission(record = {}) {
   const signals = admissionSignals(record);
   const { score, redFlagScore, positives, redFlags } = signals;
 
+  // 范围之外，先于价值判断：再好的纯校级赛事也不收。
+  if (isSchoolOnly(record)) {
+    return {
+      verdict:'out_of_scope',
+      reason:'仅本校举办、无上级赛事，学生本来就知情，不在收录范围',
+      ...signals,
+    };
+  }
+
   // 规模和知名度都不参与判定 —— 冷门正是我们要找的。
   if (redFlagScore >= REJECT_SCORE && score < redFlagScore) {
     return {
@@ -118,5 +136,5 @@ function assessAdmission(record = {}) {
 
 module.exports = {
   AUTHORITY_PATTERNS, RED_FLAGS, ADMIT_SCORE, REJECT_SCORE,
-  admissionSignals, assessAdmission,
+  isSchoolOnly, admissionSignals, assessAdmission,
 };

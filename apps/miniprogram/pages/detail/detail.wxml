@@ -17,6 +17,10 @@
   </view>
   <view class="section-title">关键时间</view>
   <view class="info card"><view><text>报名开始</text><text>{{item.registrationStartDate || '待公布'}}</text></view><view><text>报名截止</text><text>{{item.registrationEndDate || '待公布'}}</text></view><view><text>比赛开始</text><text>{{item.competitionStartDate || '待公布'}}</text></view><view><text>比赛结束</text><text>{{item.competitionEndDate || '待公布'}}</text></view></view>
+  <view wx:if="{{item.schoolTimingDependent}}" class="timing-warning card timing-{{item.timingReliability}}">
+    <view class="timing-head">{{item.timingReliability === 'school_controlled' ? '以上日期不是你要赶的时间' : '以上日期未经确认'}}</view>
+    <view class="timing-note">{{item.schoolTimingNote}}</view>
+  </view>
   <view class="section-title">参赛与规则</view>
   <view class="text-card card"><view class="label">参赛对象与资格</view><view>{{item.participants || '待官方资料补充'}}</view><view class="label">团队人数</view><view>{{item.teamSize || '以具体赛项为准'}}</view><view class="label">赛项/组别</view><view>{{item.track.name}}</view><view class="label">比赛形式与作品要求</view><view>{{item.formatAndRules}}</view><view class="label">报名费及其他费用</view><view>{{item.fees}}</view></view>
   <view class="section-title">官方信息</view>

@@ -187,3 +187,32 @@ describe('deployment safety', () => {
     expect(publicCopy).toBe(admin);
   });
 });
+
+describe('school-controlled timing raises urgency', () => {
+  const { SCHOOL_TIMING_URGENCY_FLOOR } = require('../apps/miniprogram/cloudfunctions/adminData/competitionRanking.js');
+
+  it('grades the floor by how reliable the official date is', () => {
+    // 「确定由学校决定」比「不知道怎么组织」更急，但后者同样不能当成可靠。
+    const open = record({ registration_start:days(-30), registration_end:days(90) });
+    const at = reliability => urgencyScore({ ...open, timing_reliability:reliability }, now);
+    expect(at('official')).toBeLessThan(at('unverified'));
+    expect(at('unverified')).toBeLessThan(at('school_controlled'));
+  });
+
+  it('stops a far-off official deadline from looking relaxed', () => {
+    // 官方还剩 90 天，但校内选拔很可能正好在这段时间进行。
+    const open = record({ registration_start:days(-30), registration_end:days(90) });
+    expect(urgencyScore(open, now)).toBeLessThan(SCHOOL_TIMING_URGENCY_FLOOR);
+    expect(urgencyScore({ ...open, school_timing_dependent:true }, now)).toBe(SCHOOL_TIMING_URGENCY_FLOOR);
+  });
+
+  it('only raises a floor, never boosts what is already urgent', () => {
+    const soon = record({ registration_start:days(-30), registration_end:days(10) });
+    expect(urgencyScore({ ...soon, school_timing_dependent:true }, now)).toBe(urgencyScore(soon, now));
+  });
+
+  it('does not resurrect a contest that already closed', () => {
+    const closed = record({ registration_start:days(-60), registration_end:days(-1), school_timing_dependent:true });
+    expect(urgencyScore(closed, now)).toBe(0);
+  });
+});

@@ -48,6 +48,57 @@ export function nameSimilarity(a, b) {
   return (2 * shared) / (left.size + right.size);
 }
 
+// 同一个比赛常常同时存在校赛、省赛、国赛：名字几乎一样，
+// 但报名时间、评分标准、进入难度、含金量都不同。
+// 这三种既不能合并成一条（用户报的是他那一层），也不是三个不同的赛事。
+const SCOPE_PREFIX = /^(全国|中国|国际|世界|亚洲)/;
+const TIER_MARKERS = [
+  { pattern:/(省赛|省级选拔赛|省级复赛|省赛区)/, tier:'省级' },
+  { pattern:/(校赛|校内选拔赛|校级选拔)/, tier:'校级' },
+  { pattern:/(赛区|分区赛|区域赛|大区赛)/, tier:'区域级' },
+  { pattern:/(全国总决赛|全国决赛|国赛)/, tier:'全国' },
+];
+// 顺序即优先级。学校那条必须排除「大学生」——
+// 否则「全国大学生数学建模竞赛」里的「大学」会被当成校名。
+const REGION_PREFIXES = [
+  { pattern:/^(.{2,7}?(?:省|自治区|特别行政区))/, tier:'省级' },
+  { pattern:/^(.{2,6}?市)/, tier:'省级' },
+  { pattern:/^(.{2,6}?赛区)/, tier:'区域级' },
+  { pattern:/^(.{2,12}?(?:大学|学院|学校))(?!生)/, tier:'校级' },
+];
+
+// 返回层级与地域，并给出剥掉层级限定后的「赛事本体名」。
+// 本体名用来判断两条记录是不是同一个比赛的不同层级。
+export function detectTier(name) {
+  let core = normalizeName(name);
+  let tier = '';
+  let region = '';
+
+  // 先剥「全国/中国」这类范围限定，否则它会干扰后面的地域识别
+  const scope = SCOPE_PREFIX.exec(core);
+  if (scope) {
+    core = core.slice(scope[1].length);
+    tier = '全国';
+  }
+
+  for (const marker of TIER_MARKERS) {
+    if (marker.pattern.test(core)) { tier = marker.tier; break; }
+  }
+
+  for (const prefix of REGION_PREFIXES) {
+    const hit = prefix.pattern.exec(core);
+    if (hit) {
+      region = hit[1];
+      core = core.slice(hit[1].length);
+      if (!tier || tier === '全国') tier = prefix.tier;
+      break;
+    }
+  }
+
+  for (const marker of TIER_MARKERS) core = core.replace(marker.pattern, '');
+  return { core, tier, region };
+}
+
 export function hostOf(url) {
   try {
     return new URL(String(url)).hostname.replace(/^www\./, '').toLowerCase();
@@ -57,6 +108,8 @@ export function hostOf(url) {
 }
 
 // 判定阈值。调高 = 更多条目落到人工，调低 = 更容易错误合并。
+// 包含匹配的最短长度：短名称（如「挑战杯」）会同时命中多个不同赛事。
+export const MIN_CONTAINMENT_LENGTH = 6;
 export const DUPLICATE_THRESHOLD = 0.82;
 export const UNCERTAIN_THRESHOLD = 0.55;
 
@@ -68,12 +121,18 @@ export function matchCandidate(candidate, masters = []) {
     return { verdict:'invalid', matchedId:null, confidence:0, reason:'候选没有可用名称' };
   }
 
+  const normalizedCandidate = normalizeName(candidateName);
   let best = { master:null, score:0, reason:'' };
+  // 赛事名被长标题包住的情况：新闻标题「XX大赛决赛在YY大学成功举办」里嵌着完整赛事名，
+  // 但前后文本会把相似度稀释到阈值以下。这类必须靠包含匹配，不能靠相似度。
+  let contained = { master:null, name:'', length:0 };
+
   for (const master of masters) {
     const names = [master.standard_name, ...(master.aliases || [])].filter(Boolean);
     for (const name of names) {
+      const normalizedName = normalizeName(name);
       // 规范化后完全相同：同一赛事的不同届次或不同写法
-      if (normalizeName(name) === normalizeName(candidateName)) {
+      if (normalizedName === normalizedCandidate) {
         return {
           verdict:'duplicate',
           matchedId:master.id,
@@ -81,8 +140,46 @@ export function matchCandidate(candidate, masters = []) {
           reason:`名称规范化后与「${name}」完全一致`,
         };
       }
+      // 包含匹配只用标准名，不用别名：标准名带「全国」这类限定词，
+      // 而别名是简称 ——「四川省大学生物理实验竞赛」会包含别名「物理实验竞赛」，
+      // 那样就把省赛吞进国赛了。太短的标准名同样跳过。
+      if (name === master.standard_name
+        && normalizedName.length >= MIN_CONTAINMENT_LENGTH
+        && normalizedCandidate.includes(normalizedName)
+        && normalizedName.length > contained.length) {
+        contained = { master, name, length:normalizedName.length };
+      }
       const score = nameSimilarity(name, candidateName);
       if (score > best.score) best = { master, score, reason:`与「${name}」相似度 ${score.toFixed(2)}` };
+    }
+  }
+
+  if (contained.master) {
+    return {
+      verdict:'duplicate',
+      matchedId:contained.master.id,
+      confidence:1,
+      reason:`标题中完整包含「${contained.name}」`,
+    };
+  }
+
+  // 剥掉层级和地域限定后再比一次：命中说明是同一个比赛的另一层级。
+  // 这类必须单独成条（报名时间、评分标准、进入难度都不同），
+  // 但要挂在同一个赛事下，而不是当成互不相干的新赛事。
+  const candidateTier = detectTier(candidateName);
+  if (candidateTier.tier && candidateTier.core.length >= MIN_CONTAINMENT_LENGTH) {
+    for (const master of masters) {
+      const masterCore = detectTier(master.standard_name).core;
+      if (masterCore.length >= MIN_CONTAINMENT_LENGTH && masterCore === candidateTier.core) {
+        return {
+          verdict:'same_event_other_tier',
+          matchedId:master.id,
+          confidence:1,
+          tier:candidateTier.tier,
+          region:candidateTier.region,
+          reason:`与「${master.standard_name}」是同一赛事的${candidateTier.tier}层级${candidateTier.region ? `（${candidateTier.region}）` : ''}`,
+        };
+      }
     }
   }
 
@@ -122,7 +219,7 @@ export function matchCandidate(candidate, masters = []) {
 }
 
 export function classifyCandidates(candidates = [], masters = []) {
-  const buckets = { duplicate:[], likely_duplicate:[], uncertain:[], new:[], invalid:[] };
+  const buckets = { duplicate:[], same_event_other_tier:[], likely_duplicate:[], uncertain:[], new:[], invalid:[] };
   for (const candidate of candidates) {
     const match = matchCandidate(candidate, masters);
     buckets[match.verdict].push({ candidate, match });

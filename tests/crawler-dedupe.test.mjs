@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
 import {
-  DUPLICATE_THRESHOLD, classifyCandidates, hostOf, matchCandidate, nameSimilarity, normalizeName,
+  DUPLICATE_THRESHOLD, classifyCandidates, detectTier, hostOf, matchCandidate, nameSimilarity, normalizeName,
 } from '../scripts/crawler/lib/dedupe.mjs';
 
 const require = createRequire(import.meta.url);
@@ -23,6 +23,27 @@ describe('name normalization', () => {
   it('keeps the part that actually names the contest', () => {
     expect(normalizeName('第十九届挑战杯')).toBe('挑战杯');
     expect(normalizeName('')).toBe('');
+  });
+});
+
+describe('tier detection', () => {
+  it('does not mistake 大学生 for a school name', () => {
+    // 「全国大学生数学建模竞赛」里的「大学」曾被当成校名，本体名被切成「生数学建模竞赛」。
+    const national = detectTier('全国大学生数学建模竞赛');
+    expect(national.tier).toBe('全国');
+    expect(national.region).toBe('');
+    expect(national.core).toBe('大学生数学建模竞赛');
+  });
+
+  it('strips the tier qualifier so two tiers share one core name', () => {
+    expect(detectTier('四川省大学生物理实验竞赛').core)
+      .toBe(detectTier('全国大学生物理实验竞赛').core);
+  });
+
+  it('leaves a plain contest name untouched', () => {
+    const plain = detectTier('蚂蚁灵波具身大模型挑战赛');
+    expect(plain.tier).toBe('');
+    expect(plain.region).toBe('');
   });
 });
 
@@ -59,6 +80,44 @@ describe('matching against the existing library', () => {
     const match = matchCandidate({ name:'中国国际“互联网+”大学生创新创业大赛' }, masters);
     expect(['duplicate', 'likely_duplicate']).toContain(match.verdict);
     expect(match.reason).toContain('互联网+');
+  });
+
+  it('recognizes a contest whose name is buried inside a news headline', () => {
+    // 新闻和获奖公示的标题里嵌着完整赛事名，但前后文本会把相似度稀释到阈值以下。
+    // 实测就是这样把库里已有的机械创新设计大赛误判成「未收录」的。
+    const headline = matchCandidate({ name:'“博实杯”第十二届全国大学生机械创新设计大赛常规赛全国决赛在哈尔滨工业大学成功举办' }, masters);
+    expect(headline.verdict).toBe('duplicate');
+    expect(headline.reason).toContain('完整包含');
+
+    const notice = matchCandidate({ name:'关于公布第十一届全国大学生机械创新设计大赛决赛评审结果的通知' }, masters);
+    expect(notice.verdict).toBe('duplicate');
+  });
+
+  it('links a provincial contest to its national parent without merging them', () => {
+    // 同一个比赛常有校赛、省赛、国赛：报名时间、评分标准、进入难度都不同，
+    // 所以不能合并成一条；但它也不是新赛事，要挂在同一个赛事下。
+    const provincial = matchCandidate({ name:'四川省大学生物理实验竞赛' }, masters);
+    expect(provincial.verdict).toBe('same_event_other_tier');
+    expect(provincial.tier).toBe('省级');
+    expect(provincial.region).toBe('四川省');
+    const parent = masters.find(master => master.id === provincial.matchedId);
+    expect(parent.standard_name).toContain('物理实验竞赛');
+  });
+
+  it('recognizes school and regional tiers too', () => {
+    const regional = matchCandidate({ name:'华东赛区大学生物理实验竞赛' }, masters);
+    expect(regional.verdict).toBe('same_event_other_tier');
+    expect(regional.tier).toBe('区域级');
+
+    const municipal = matchCandidate({ name:'北京市大学生数学建模竞赛' }, masters);
+    expect(municipal.verdict).toBe('same_event_other_tier');
+    expect(municipal.region).toBe('北京市');
+  });
+
+  it('keeps two contests sharing a brand apart under containment matching', () => {
+    const startup = matchCandidate({ name:'“挑战杯”中国大学生创业计划竞赛' }, masters);
+    const academic = masters.find(master => master.standard_name.includes('课外学术科技作品'));
+    expect(startup.matchedId).not.toBe(academic.id);
   });
 
   it('treats an unrelated contest as new', () => {

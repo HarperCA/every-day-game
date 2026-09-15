@@ -139,7 +139,42 @@ function deriveScaleTier(count) {
   if (value < 100000) return '1万-10万';
   return '10万以上';
 }
+// 有近一半的赛事（实测 14/30）报名时间实际由学校决定：校内选拔、学校统一报名、
+// 或以赛区通知为准。这类赛事官网上的截止日期不是用户可执行的日期 ——
+// 他所在学校的选拔可能早几周甚至几个月，而且各校不同，我们无法知道。
+//
+// 正确做法不是猜一个时间，而是明确告诉用户「这个日期不作数，去查你们学校」。
+// 显示官方日期而不加说明，会让用户以为还有时间，等他发现时组队早就结束了。
+// 官方日期本质上只是参考值：学校可能早就组织完了，官网也可能没更新。
+// 可靠程度分三档，「不知道」必须单独成一档 ——
+// 把未确认的当成可靠，等于替主办方向用户担保一个我们没核实过的日期。
+const TIMING_RELIABILITY = {
+  '需先校内选拔':'school_controlled',
+  '学校统一报名':'school_controlled',
+  '以赛区或学校通知为准':'school_controlled',
+  '两种方式均可':'unverified',
+  '暂未明确':'unverified',
+  '自行报名':'official',
+};
+const SCHOOL_TIMING_NOTES = {
+  '需先校内选拔':'需先通过校内选拔。校赛时间各校不同，通常远早于官方截止日，很可能已经开始组队。',
+  '学校统一报名':'由学校统一报名。你校的内部截止日期通常早于官方日期。',
+  '以赛区或学校通知为准':'报名时间以赛区或学校通知为准，官方日期仅供参考。',
+  '两种方式均可':'可自行报名，也可能由学校统一组织，两条路的截止时间不一定相同。',
+  '暂未明确':'报名组织方式尚未确认，官方日期可能不是你实际要赶的时间。',
+};
+const SCHOOL_TIMING_ACTION = '请尽快向教务处、学院或指导老师确认本校安排，不要等到官方截止日。';
+
+function schoolTimingAdvice(record = {}) {
+  const organization = record.registrationOrganization || record.registration_organization || '';
+  const reliability = TIMING_RELIABILITY[organization] || 'unverified';
+  if (reliability === 'official') return { dependent:false, reliability, organization, note:'' };
+  const note = SCHOOL_TIMING_NOTES[organization] || SCHOOL_TIMING_NOTES['暂未明确'];
+  return { dependent:true, reliability, organization, note:`${note}${SCHOOL_TIMING_ACTION}` };
+}
+
 function valueFields(record = {}) {
+  const timing = schoolTimingAdvice(record);
   const amount = Number(record.rewardAmount);
   const count = Number(record.participantCount);
   return {
@@ -155,6 +190,9 @@ function valueFields(record = {}) {
     lifecycle:normalizeEnum(record.lifecycle, LIFECYCLES, '暂未明确'),
     recognition:normalizeRecognition(record.recognition),
     value_scores:valueScores(record),
+    school_timing_dependent:timing.dependent,
+    school_timing_note:timing.note,
+    timing_reliability:timing.reliability,
   };
 }
 
@@ -163,4 +201,5 @@ module.exports = {
   RECOGNITION_PATHS, RECOGNITION_LEVELS, MAX_VALUE_SCORE,
   deriveRewardTier, deriveScaleTier,
   normalizeRecognition, valueScores, bestValueScore, valueFields,
+  SCHOOL_TIMING_NOTES, TIMING_RELIABILITY, schoolTimingAdvice,
 };

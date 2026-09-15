@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { assessAdmission, admissionSignals } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAdmission.js');
+const { assessAdmission, admissionSignals, isSchoolOnly } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAdmission.js');
 
 describe('obscure is not the same as worthless', () => {
   it('never rejects a contest for being small or unknown', () => {
@@ -55,6 +55,38 @@ describe('detecting a worthless contest', () => {
     // 不少正规赛事收报名费；不少水赛反而免费，靠后续培训收费。
     const paid = { organizer:'中国自动化学会', fees:'每队报名费 200 元', introduction:'全国组委会统一组织。' };
     expect(assessAdmission(paid).verdict).toBe('admit');
+  });
+});
+
+describe('school-only contests are out of scope', () => {
+  it('excludes a contest that only its own school runs', () => {
+    // 学生对自己学校的赛事本来就知情，雷达没有增量价值。
+    const internal = {
+      tier:'校级', organizer:'某大学教务处',
+      introduction:'面向我校在校生的程序设计竞赛。',
+    };
+    expect(assessAdmission(internal).verdict).toBe('out_of_scope');
+  });
+
+  it('keeps a school round that feeds a larger contest', () => {
+    // 校内选拔是国赛的第一个环节，而且往往比国赛报名早两个月 ——
+    // 漏掉它，用户看到的国赛日期就是他已经没资格用的日期。
+    const qualifier = {
+      tier:'校级', parentEventId:'event-cmp004', organizer:'某大学教务处',
+      introduction:'全国大学生数学建模竞赛校内选拔赛。',
+    };
+    expect(assessAdmission(qualifier).verdict).not.toBe('out_of_scope');
+    expect(isSchoolOnly(qualifier)).toBe(false);
+  });
+
+  it('never excludes provincial or national tiers', () => {
+    expect(assessAdmission({ tier:'省级', organizer:'四川省教育厅' }).verdict).not.toBe('out_of_scope');
+    expect(assessAdmission({ tier:'全国', organizer:'教育部高等教育司' }).verdict).toBe('admit');
+  });
+
+  it('does not exclude a record whose tier is unknown', () => {
+    // 层级缺失时不能当成校级，否则会误杀还没标注层级的记录。
+    expect(assessAdmission({ organizer:'中国图象图形学学会' }).verdict).not.toBe('out_of_scope');
   });
 });
 

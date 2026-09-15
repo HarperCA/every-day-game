@@ -155,3 +155,52 @@ describe('query-time ranking by the user goal', () => {
     expect(filterPublicRecords([local, academic], { region:'四川省' }, at).items.map(item => item.id)).toEqual(['local']);
   });
 });
+
+describe('contests whose timing the school decides', () => {
+  const { schoolTimingAdvice } = require('../apps/miniprogram/cloudfunctions/adminData/competitionValue.js');
+
+  it('flags the three ways a school controls the real deadline', () => {
+    // 实测 30 条里有 14 条属于这种，接近一半 —— 不是边缘情况。
+    for (const organization of ['需先校内选拔', '学校统一报名', '以赛区或学校通知为准']) {
+      const advice = schoolTimingAdvice({ registrationOrganization:organization });
+      expect(advice.dependent).toBe(true);
+      expect(advice.note).toContain('教务处');
+    }
+  });
+
+  it('says nothing only when the student can enter directly', () => {
+    const direct = schoolTimingAdvice({ registrationOrganization:'自行报名' });
+    expect(direct.dependent).toBe(false);
+    expect(direct.reliability).toBe('official');
+    expect(direct.note).toBe('');
+  });
+
+  it('does not treat an unconfirmed organization as a reliable date', () => {
+    // 「不知道报名怎么组织」不等于「官方日期可信」。把未确认的当成可靠，
+    // 等于替主办方向用户担保一个我们没核实过的日期。
+    for (const organization of ['暂未明确', '两种方式均可']) {
+      const advice = schoolTimingAdvice({ registrationOrganization:organization });
+      expect(advice.reliability).toBe('unverified');
+      expect(advice.note).not.toBe('');
+    }
+    // 字段缺失同样是「不知道」，不能默认可靠。
+    expect(schoolTimingAdvice({}).reliability).toBe('unverified');
+  });
+
+  it('warns that team-building may already have started', () => {
+    // 校内选拔往往早几周到几个月；显示官方日期而不说明，
+    // 会让用户以为还有时间，等他发现时组队早就结束了。
+    const advice = schoolTimingAdvice({ registrationOrganization:'需先校内选拔' });
+    expect(advice.note).toContain('组队');
+    expect(advice.note).toContain('不要等到官方截止日');
+  });
+
+  it('publishes the flag and the note to the miniprogram', () => {
+    const cached = toPublicCache({ ...publishable, registrationOrganization:'需先校内选拔' }, at);
+    expect(cached.school_timing_dependent).toBe(true);
+    expect(cached.school_timing_note).toContain('校内选拔');
+    expect(cached.timing_reliability).toBe('school_controlled');
+    expect(toPublicCache(publishable, at).school_timing_dependent).toBe(false);
+    expect(toPublicCache(publishable, at).timing_reliability).toBe('official');
+  });
+});

@@ -30,6 +30,10 @@ const RECOMMENDATION_SCORE = { '强烈推荐':1, '值得参加':0.8, '适合练�
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const SHORT_WINDOW_DAYS = 14; // 报名期短于两周：容易还没听说就已经截止
+// 官方日期的可靠度决定紧迫度下限：提醒用户「现在就去查本校安排」。
+// 「确定由学校决定」比「不知道怎么组织」更急，但后者同样不能当成可靠。
+const TIMING_URGENCY_FLOOR = { school_controlled:0.75, unverified:0.6, official:0 };
+const SCHOOL_TIMING_URGENCY_FLOOR = TIMING_URGENCY_FLOOR.school_controlled;
 
 // 报名窗口总长度。缺开始时间时返回 null，调用方退回绝对天数判断。
 function registrationWindowDays(item) {
@@ -57,10 +61,18 @@ function urgencyScore(item, now) {
     // 短窗口赛事：只要还没截止就应当排在前面，因为再不看就没了。
     return daysLeft <= 1 ? 0.85 : 1;
   }
-  if (daysLeft <= 3) return windowDays !== null && daysLeft / windowDays >= 0.2 ? 0.9 : 0.6;
-  if (daysLeft <= 21) return 1;     // 黄金窗口
-  if (daysLeft <= 60) return 0.75;
-  return 0.45;
+  let score;
+  if (daysLeft <= 3) score = windowDays !== null && daysLeft / windowDays >= 0.2 ? 0.9 : 0.6;
+  else if (daysLeft <= 21) score = 1;     // 黄金窗口
+  else if (daysLeft <= 60) score = 0.75;
+  else score = 0.45;
+
+  // 官方日期不一定是可执行日期：校内选拔往往早几周到几个月，学校可能早就组织完了。
+  // 官方还剩 60 天时显示「不紧急」是错的 —— 校赛很可能正好在这段时间进行。
+  // 这里只抬到一个下限，不是加分：本来就紧迫的不受影响。
+  const floor = TIMING_URGENCY_FLOOR[item.timing_reliability]
+    ?? (item.school_timing_dependent ? SCHOOL_TIMING_URGENCY_FLOOR : 0);
+  return Math.max(score, floor);
 }
 
 // 机会窗口：不抢就错过的那一类。
@@ -185,7 +197,7 @@ function rankRecords(items, query = {}, now = new Date()) {
 
 module.exports = {
   WEIGHTS, RECOMMENDATION_SCORE, DIVERSITY_LAMBDA, DIVERSITY_POOL,
-  SHORT_WINDOW_DAYS, registrationWindowDays, urgencyScore, opportunityScore,
+  SHORT_WINDOW_DAYS, SCHOOL_TIMING_URGENCY_FLOOR, TIMING_URGENCY_FLOOR, registrationWindowDays, urgencyScore, opportunityScore,
   goalMatchScore, professionMatchScore, accessibilityScore, completenessScore,
   relevance, similarity, diversify, rankRecords,
 };
