@@ -164,14 +164,48 @@ function toFieldSuggestions(verified, sourceUrl) {
   return suggestions;
 }
 
-async function extractFromDetailPage(url, request, { contestName = '', chatTimeoutMs, maxTokens } = {}) {
+// 前后端分离的站点，静态抓取只拿得到导航骨架。
+// 实测天池两个不同赛事的详情页抓出来一字不差，全是「首页 天池大赛 数据集…」。
+// 把这种骨架送进模型，只会烧配额换垃圾 —— 所以先判断正文是否真的在讲这场赛事。
+// 真正拦住天池的是下面的名称检查（它有 665 字，长度关过得去）；
+// 这个下限只是兜底：正文不到两百字的页面，抽出来也没有复核价值。
+const BOILERPLATE_MIN_CHARS = 200;
+
+function looksLikeContestPage(text, contestName) {
+  const value = String(text || '');
+  if (value.length < BOILERPLATE_MIN_CHARS) return false;
+  const name = String(contestName || '').trim();
+  if (!name) return true; // 没给名称就无从判断，交由后续的引文回查兜底
+  // 赛事名常被拆开写，取其中较长的片段做判断，避免整串精确匹配过于苛刻
+  const core = name.replace(/[（(][^）)]*[）)]/g, '').replace(/[\s　“”"']/g, '');
+  const probes = [core, core.slice(0, 8), core.slice(-8)].filter(item => item.length >= 4);
+  const normalized = value.replace(/[\s　]/g, '');
+  return probes.some(probe => normalized.includes(probe));
+}
+
+// text 可由调用方传入：前后端分离的站点需要走各自的接口取正文，
+// 那件事在服务器侧的爬虫里做（不受 60 秒限制），这里只负责抽取。
+// 引文仍然只对传入的这段文本回查，所以「证据可复核」这一性质不受影响。
+async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens } = {}) {
   const config = readAiConfig();
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
 
-  const page = await fetchDetailPage(url, request);
+  const page = text
+    ? { url, status:'ok', text:String(text).slice(0, PAGE_TEXT_LIMIT), providedByCaller:true }
+    : await fetchDetailPage(url, request);
   if (page.status !== 'ok' || !page.text) {
     // 抓不到页面时不调模型：没有正文，任何抽取都只能是编造。
     return { ok:false, status:page.status, url, promptVersion:PROMPT_VERSION, error:page.error || null };
+  }
+  if (!looksLikeContestPage(page.text, contestName)) {
+    return {
+      ok:false,
+      status:'page_is_boilerplate',
+      url,
+      promptVersion:PROMPT_VERSION,
+      sourceChars:page.text.length,
+      error:'正文里找不到该赛事的名称，多半是前后端分离站点的导航骨架；请改用该站的详情接口取正文后经 text 传入。',
+    };
   }
 
   const send = resolveRequest(request);
@@ -211,6 +245,6 @@ async function extractFromDetailPage(url, request, { contestName = '', chatTimeo
 
 module.exports = {
   PROMPT_VERSION, PAGE_TEXT_LIMIT, MIN_QUOTE_LENGTH, MAX_QUOTE_LENGTH,
-  buildExtractPrompt, extractFromDetailPage, fetchDetailPage,
+  BOILERPLATE_MIN_CHARS, buildExtractPrompt, extractFromDetailPage, fetchDetailPage, looksLikeContestPage,
   normalizeForQuoteMatch, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 };

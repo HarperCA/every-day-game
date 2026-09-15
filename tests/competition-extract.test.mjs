@@ -7,7 +7,12 @@ const {
   fetchDetailPage, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
 
-const SOURCE = '本次大赛由中国图象图形学学会主办，中国科学技术大学承办。优胜队伍可获得直通终面资格，并颁发获奖证书。报名由各高校统一组织，请联系所在学校教务处。';
+// 用接近真实通知页的长度：太短的正文会被 looksLikeContestPage 当成骨架挡掉。
+const SOURCE = '本次大赛由中国图象图形学学会主办，中国科学技术大学承办。优胜队伍可获得直通终面资格，并颁发获奖证书。报名由各高校统一组织，请联系所在学校教务处。'
+  + '参赛对象为全日制在校本科生与研究生，每队不超过三人，可跨校组队，须由一名指导教师推荐。'
+  + '初赛为线上提交，复赛与决赛在承办单位现场进行，具体时间以官方后续通知为准。'
+  + '参赛不收取任何报名费用，往返交通与住宿由参赛单位自理。'
+  + '作品须为原创，严禁抄袭，一经发现取消参赛资格并通报所在学校。';
 
 describe('quotes are checked against the page word for word', () => {
   it('accepts a quote that really appears in the text', () => {
@@ -199,6 +204,72 @@ describe('never writes to the database', () => {
       expect(result.ok).toBe(true);
       expect(result.applied).toBe(false);
       expect(result.suggestions[0].field).toBe('organizer');
+    } finally {
+      if (original === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = original;
+    }
+  });
+});
+
+describe('refusing a page that only rendered its navigation', () => {
+  const { BOILERPLATE_MIN_CHARS, looksLikeContestPage } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  // 实测从服务器抓天池详情页的结果：两个不同赛事抓出来一字不差，全是导航。
+  const TIANCHI_SHELL = '算法大赛-天池大赛-阿里云的赛制 天池 首页 天池大赛 天池学习 数据集 技术圈 更多 探索发现 '
+    + 'IEEE AICAS 2025 小白入门系列 历届大赛答辩PPT及视频 个人 登录后您可以获得 报名大赛 学习课程 参与活动 '
+    + '评论/积分/反馈 中国站登录 International 关于天池 天池协议 常见问题 联系我们 加入我们 友情链接';
+
+  it('rejects the shell of a client-rendered site', () => {
+    // 这段有 665 字，长度关过得去 —— 拦住它的是「正文里没有这场赛事的名字」。
+    const shell = TIANCHI_SHELL.repeat(3);
+    expect(shell.length).toBeGreaterThan(BOILERPLATE_MIN_CHARS);
+    expect(looksLikeContestPage(shell, '蚂蚁灵波具身大模型挑战赛')).toBe(false);
+  });
+
+  it('accepts a page that actually names the contest', () => {
+    const real = '蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起，面向全球开发者开放。'.repeat(6);
+    expect(looksLikeContestPage(real, '蚂蚁灵波具身大模型挑战赛')).toBe(true);
+  });
+
+  it('does not call the model for a shell page', async () => {
+    // 把导航骨架送进模型只会烧配额换垃圾。
+    let modelCalled = false;
+    const request = url => {
+      if (url.includes('chat/completions')) { modelCalled = true; return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'application/json' }, text:async () => '{}' }); }
+      if (url.endsWith('/robots.txt')) return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/plain' }, text:async () => '' });
+      return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/html' }, text:async () => `<p>${TIANCHI_SHELL.repeat(3)}</p>` });
+    };
+    const original = process.env.AI_API_KEY;
+    process.env.AI_API_KEY = 'test-key';
+    try {
+      const result = await extractFromDetailPage('https://tianchi.aliyun.com/competition/entrance/532514', request, { contestName:'蚂蚁灵波具身大模型挑战赛' });
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe('page_is_boilerplate');
+      expect(modelCalled).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = original;
+    }
+  });
+
+  it('accepts text the caller fetched through the site own api', async () => {
+    // 前后端分离的站点要走各自的接口取正文，那件事在服务器侧爬虫里做。
+    let modelCalled = false;
+    const request = url => {
+      if (url.includes('chat/completions')) {
+        modelCalled = true;
+        return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'application/json' },
+          text:async () => JSON.stringify({ choices:[{ message:{ content:JSON.stringify({ organizer:null, reward_highlights:[], authority_signals:[], recognition_hints:[], missing:[] }) } }] }) });
+      }
+      return Promise.resolve({ ok:false, status:404, headers:{ get:() => 'text/html' }, text:async () => '' });
+    };
+    const original = process.env.AI_API_KEY;
+    process.env.AI_API_KEY = 'test-key';
+    try {
+      const result = await extractFromDetailPage('https://tianchi.aliyun.com/competition/entrance/532514', request, {
+        contestName:'蚂蚁灵波具身大模型挑战赛',
+        text:'蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起。奖金设置：一等奖1名，现金80000元。'.repeat(4),
+      });
+      expect(result.ok).toBe(true);
+      expect(modelCalled).toBe(true);
     } finally {
       if (original === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = original;
     }
