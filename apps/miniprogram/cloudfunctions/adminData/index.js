@@ -13,9 +13,14 @@ const MAX_RECORDS = 100;
 const MAX_FEEDBACKS = 1000;
 const MAX_AI_JOBS = 1000;
 // 实测：单条审核约 50 秒，且 Kimi 端并发请求是排队的，3 条并发只会让后两条超时。
-// 所以定时任务每次只处理 1 条，50 秒模型超时 + 状态读写仍在 60 秒硬上限内。
+// 所以定时任务每次只处理 1 条。模型超时按剩余预算动态计算（见 runScheduledCompetitionAiReview），
+// 因为取证耗时不可预测；超限会被平台直接掐断，连失败记录都写不下。
 const SCHEDULED_BATCH_LIMIT = 1;
-const SCHEDULED_CHAT_TIMEOUT_MS = 50000;
+const SCHEDULED_CHAT_TIMEOUT_MS = 40000;
+// 整次调用的自设预算，必须明显小于平台 60 秒硬上限。
+const SCHEDULED_BUDGET_MS = 47000;
+const SCHEDULED_SAVE_RESERVE_MS = 9000;
+const SCHEDULED_MIN_CHAT_TIMEOUT_MS = 15000;
 const SCHEDULED_MAX_TOKENS = 2000;
 const MANUAL_CHAT_TIMEOUT_MS = 50000;
 const MANUAL_MAX_TOKENS = 2600;
@@ -215,6 +220,7 @@ function scheduledBatchLimit() {
 // 一次调用只跑一批并发请求：证据抓取最多 8 秒、模型调用最多 40 秒，
 // 加上读写状态仍在 60 秒硬上限内。跑不完的记录留给下一次定时触发。
 async function runScheduledCompetitionAiReview(trigger = 'timer') {
+  const startedMs = Date.now();
   const startedAt = new Date().toISOString();
   const summary = {
     trigger, startedAt, completedAt:startedAt,
@@ -227,8 +233,17 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
     const due = selectStaleRecords(state.records, { limit });
     summary.selected = due.length;
     if (due.length) {
+      // 云函数 60 秒是硬上限，超限会被直接掐断、连失败记录都写不下。
+      // 取证耗时不可预测，所以按“已用掉多少”动态压缩模型调用的超时，
+      // 并为写回状态和运行日志留出固定余量。
+      const elapsed = Date.now() - startedMs;
+      const chatTimeoutMs = Math.max(
+        SCHEDULED_MIN_CHAT_TIMEOUT_MS,
+        Math.min(SCHEDULED_CHAT_TIMEOUT_MS, SCHEDULED_BUDGET_MS - elapsed - SCHEDULED_SAVE_RESERVE_MS),
+      );
+      summary.chatTimeoutMs = chatTimeoutMs;
       const { results, failures } = await runAiReviewPool(due, due.length, {
-        chatTimeoutMs:SCHEDULED_CHAT_TIMEOUT_MS,
+        chatTimeoutMs,
         maxTokens:SCHEDULED_MAX_TOKENS,
         concise:true,
       });

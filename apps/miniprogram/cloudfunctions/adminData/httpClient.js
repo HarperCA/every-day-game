@@ -26,6 +26,16 @@ function requestOnce(url, options, timeoutMs) {
       reject(new Error(`invalid_url:${url}`));
       return;
     }
+    // 必须是总时长超时，不能只用 request.setTimeout —— 后者是 socket 空闲超时，
+    // 而大模型会持续吐 token，连接一直有数据，空闲超时永远不触发，
+    // 调用就会一路跑到云函数 60 秒硬上限被平台掐断。
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      fn(value);
+    };
     const transport = target.protocol === 'http:' ? http : https;
     const request = transport.request(target, {
       method:options.method || 'GET',
@@ -33,18 +43,20 @@ function requestOnce(url, options, timeoutMs) {
     }, response => {
       const chunks = [];
       response.on('data', chunk => chunks.push(chunk));
-      response.on('end', () => resolve({
+      response.on('end', () => finish(resolve, {
         status:response.statusCode || 0,
         headers:response.headers,
         location:response.headers.location,
         body:Buffer.concat(chunks),
       }));
-      response.on('error', reject);
+      response.on('error', error => finish(reject, error));
     });
-    request.setTimeout(timeoutMs, () => {
-      request.destroy(new Error(`request_timeout_after_${timeoutMs}ms`));
-    });
-    request.on('error', reject);
+    const deadline = setTimeout(() => {
+      request.destroy();
+      finish(reject, new Error(`request_timeout_after_${timeoutMs}ms`));
+    }, timeoutMs);
+    request.setTimeout(timeoutMs, () => request.destroy());
+    request.on('error', error => finish(reject, error));
     if (options.body) request.write(options.body);
     request.end();
   });

@@ -88,6 +88,32 @@ AI 审核会抓取赛事记录中登记的官方来源（最多 3 个）供模�
 
 配置、cron 写法、触发器名、上传方式均已逐一排除，**判定为环境级限制**：该云开发环境（**体验版**）中定时触发器不实际运行。腾讯云计费文档提到触发器能力处于内测阶段，与此现象一致。
 
+### 当前的替代方案：本机任务计划
+
+AI 审核已改由**本机 Windows 任务计划**驱动，绕开失效的云端触发器：
+
+| 项 | 值 |
+|---|---|
+| 任务名 | `DailyContest-AIReview` |
+| 频率 | 每 5 分钟 |
+| 实际执行 | `scripts/run-scheduled-ai-review.vbs` → `run-scheduled-ai-review.cmd` |
+| 日志 | `.tmp/ai-review.log` |
+
+`.vbs` 包装层的作用是隐藏控制台窗口，否则每 5 分钟会闪一个黑框。`.cmd` 内的注释必须保持 ASCII —— 中文注释会因代码页问题导致批处理解析失败。
+
+常用命令：
+
+```powershell
+schtasks /Query /TN "DailyContest-AIReview" /FO LIST   # 查看状态
+schtasks /Run   /TN "DailyContest-AIReview"            # 立即跑一次
+schtasks /Change /TN "DailyContest-AIReview" /DISABLE  # 暂停
+schtasks /Delete /TN "DailyContest-AIReview" /F        # 删除
+```
+
+**局限**：电脑关机就停。因此该方案只适用于 AI 审核（辅助性质，可以断）；**提醒推送需要 7×24，本机方案不成立**，仍需常开服务器或等待平台触发器可用。
+
+**并发注意**：`saveState` 带乐观锁，同时跑多个审核实例会产生 `state_version_conflict` 并浪费一次模型调用。手动批量检测时应先暂停该任务。
+
 **可能的出路**（均需环境变更，非代码改动）：
 
 1. 将环境升级为按量付费版本后重试

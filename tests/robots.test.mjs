@@ -66,3 +66,27 @@ describe('robots.txt', () => {
     expect(pickGroup(groups, 'b-crawler').rules[0].path).toBe('/x');
   });
 });
+
+describe('http client total-duration timeout', () => {
+  const { nodeFetch } = require('../apps/miniprogram/cloudfunctions/adminData/httpClient.js');
+  const http = require('node:http');
+
+  it('aborts a response that keeps trickling data past the deadline', async () => {
+    // 模拟大模型持续吐 token：连接一直有数据，socket 空闲超时不会触发。
+    const server = http.createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      const tick = setInterval(() => res.write('token '), 50);
+      res.on('close', () => clearInterval(tick));
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address();
+    try {
+      const started = Date.now();
+      await expect(nodeFetch(`http://127.0.0.1:${port}/`, { timeoutMs: 600 }))
+        .rejects.toThrow(/request_timeout_after_600ms/);
+      expect(Date.now() - started).toBeLessThan(3000);
+    } finally {
+      server.close();
+    }
+  });
+});
