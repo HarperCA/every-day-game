@@ -19,7 +19,11 @@ const {
   loadRobots, parseModelJson, readAiConfig, resolveRequest, timeoutSignal,
 } = require('./competitionAiReview');
 
-const PROMPT_VERSION = 'competition-extract-kimi-v1';
+const PROMPT_VERSION = 'competition-extract-v2-anchor';
+// 批量抽取走 EXTRACT_ 前缀的配置，未设置时逐项回退到通用的 AI_*。
+// 抽取是突发型负载：几百场集中跑会撞上会员制的窗口配额，
+// 而审核是低频的，留在原供应商上不受影响。
+const EXTRACT_CONFIG_PREFIX = 'EXTRACT_';
 const PAGE_TIMEOUT_MS = 8000;
 // 云函数硬上限是 60 秒，被平台掐死时什么都拿不到，连失败原因都没有。
 // 所以自己先收口：总预算 52 秒，留 8 秒给平台调度和返回序列化。
@@ -279,7 +283,7 @@ function looksLikeContestPage(text, contestName) {
 // 那件事在服务器侧的爬虫里做（不受 60 秒限制），这里只负责抽取。
 // 引文仍然只对传入的这段文本回查，所以「证据可复核」这一性质不受影响。
 async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens, startedAt = Date.now() } = {}) {
-  const config = readAiConfig();
+  const config = readAiConfig(process.env, EXTRACT_CONFIG_PREFIX);
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
 
   // 传进来的正文也要去标签：接口返回的富文本里常夹着 <img> <p>，
@@ -348,6 +352,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
     promptVersion:PROMPT_VERSION,
     sourceChars:page.text.length,
     elapsedMs:Date.now() - startedAt,
+    model:config.model,
     extracted:verified,
     suggestions:toFieldSuggestions(verified, url),
     droppedCount:verified.dropped.length,
@@ -359,7 +364,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
 module.exports = {
   PROMPT_VERSION, PAGE_TEXT_LIMIT, MIN_QUOTE_LENGTH, MAX_QUOTE_LENGTH,
   ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, BOILERPLATE_MIN_CHARS, MAX_ANCHOR_OCCURRENCES,
-  TOTAL_BUDGET_MS, MIN_CHAT_TIMEOUT_MS, DEFAULT_MAX_TOKENS, remainingChatBudget,
+  TOTAL_BUDGET_MS, MIN_CHAT_TIMEOUT_MS, DEFAULT_MAX_TOKENS, EXTRACT_CONFIG_PREFIX, remainingChatBudget,
   buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, looksLikeContestPage,
   normalizeForQuoteMatch, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 };

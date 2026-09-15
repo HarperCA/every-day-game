@@ -37,12 +37,28 @@ const resultSchema = {
   },
 };
 
-function readAiConfig(env = process.env) {
+// prefix 允许某类任务走另一个供应商。
+//
+// 为什么需要：Kimi 会员制带 5 小时窗口配额，审核是低频的（每条记录几天一次），
+// 窗口够用；但批量抽取是突发的 —— 几百场赛事集中跑，窗口一到批次就断在中间。
+// 按量计费的供应商没有窗口限制，正适合这一类。
+//
+// 未设置带前缀的变量时逐项回退到通用的 AI_*，所以不配就是维持原状。
+function readAiConfig(env = process.env, prefix = '') {
+  const pick = (name, fallback) => String(env[`${prefix}${name}`] || env[name] || fallback || '').trim();
+  const baseUrl = pick('AI_BASE_URL', DEFAULT_BASE_URL).replace(/\/+$/, '');
+  const ownKey = prefix ? String(env[`${prefix}AI_API_KEY`] || '').trim() : '';
+  const ownBaseUrl = prefix ? String(env[`${prefix}AI_BASE_URL`] || '').trim().replace(/\/+$/, '') : '';
+  // 指定了另一个服务地址却没给对应的密钥时，逐项回退会把原供应商的密钥
+  // 发到新地址去 —— 那等于把密钥泄露给第三方。这种配置一律视为未配置。
+  if (prefix && ownBaseUrl && ownBaseUrl !== String(env.AI_BASE_URL || DEFAULT_BASE_URL).trim().replace(/\/+$/, '') && !ownKey) {
+    return { provider:pick('AI_PROVIDER', 'kimi-code'), apiKey:'', model:pick('AI_MODEL', DEFAULT_MODEL), baseUrl, keyMissingForOwnBaseUrl:true };
+  }
   return {
-    provider:String(env.AI_PROVIDER || 'kimi-code').trim(),
-    apiKey:String(env.AI_API_KEY || '').trim(),
-    model:String(env.AI_MODEL || DEFAULT_MODEL).trim(),
-    baseUrl:String(env.AI_BASE_URL || DEFAULT_BASE_URL).trim().replace(/\/+$/, ''),
+    provider:pick('AI_PROVIDER', 'kimi-code'),
+    apiKey:pick('AI_API_KEY', ''),
+    model:pick('AI_MODEL', DEFAULT_MODEL),
+    baseUrl,
   };
 }
 
@@ -61,6 +77,22 @@ function aiReviewConfigStatus(env = process.env, request = globalThis.fetch) {
     usingDefaultModel:!String(env.AI_MODEL || '').trim(),
     usingDefaultBaseUrl:!String(env.AI_BASE_URL || '').trim(),
     configuredEnvKeys:AI_ENV_KEYS.filter(key => String(env[key] || '').trim().length > 0),
+    // 批量抽取可以指向另一个供应商；没配 EXTRACT_* 时这里会与上面完全一致。
+    extract:(() => {
+      const extractConfig = readAiConfig(env, 'EXTRACT_');
+      return {
+        provider:extractConfig.provider,
+        model:extractConfig.model,
+        baseUrl:extractConfig.baseUrl,
+        apiKeyConfigured:extractConfig.apiKey.length > 0,
+        apiKeyLength:extractConfig.apiKey.length,
+        // 为真说明抽取和审核共用同一套配置，没有单独指定供应商
+        sharesReviewProvider:extractConfig.baseUrl === config.baseUrl && extractConfig.apiKey === config.apiKey,
+        // 为真表示配错了：指向了另一个服务地址却没给对应密钥，抽取会拒绝运行
+        keyMissingForOwnBaseUrl:Boolean(extractConfig.keyMissingForOwnBaseUrl),
+        configuredEnvKeys:AI_ENV_KEYS.map(key => `EXTRACT_${key}`).filter(key => String(env[key] || '').trim().length > 0),
+      };
+    })(),
     nodeVersion:typeof process !== 'undefined' ? process.version : 'unknown',
     fetchAvailable:typeof request === 'function',
     httpClient:typeof request === 'function' ? 'global-fetch' : 'node-https-fallback',

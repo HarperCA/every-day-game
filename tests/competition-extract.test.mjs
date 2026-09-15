@@ -419,3 +419,65 @@ describe('max_tokens is a ceiling, not a target', () => {
     expect(DEFAULT_MAX_TOKENS).toBeGreaterThanOrEqual(1600);
   });
 });
+
+describe('batch extraction can point at a different provider', () => {
+  const { readAiConfig, aiReviewConfigStatus } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+  const kimi = { AI_API_KEY:'k'.repeat(72), AI_MODEL:'kimi-for-coding', AI_BASE_URL:'https://api.kimi.com/coding/v1' };
+
+  it('falls back to the review provider when nothing extra is configured', () => {
+    // 不配 EXTRACT_* 就是维持原状，不该有任何行为变化。
+    const extract = readAiConfig({ ...kimi }, 'EXTRACT_');
+    expect(extract.apiKey).toBe(kimi.AI_API_KEY);
+    expect(extract.baseUrl).toBe(kimi.AI_BASE_URL);
+    expect(aiReviewConfigStatus({ ...kimi }, () => {}).extract.sharesReviewProvider).toBe(true);
+  });
+
+  it('uses its own provider when fully configured', () => {
+    // 抽取是突发型负载：几百场集中跑会撞上会员制的窗口配额。
+    const extract = readAiConfig({
+      ...kimi, EXTRACT_AI_BASE_URL:'https://api.deepseek.com',
+      EXTRACT_AI_API_KEY:'d'.repeat(35), EXTRACT_AI_MODEL:'deepseek-flash',
+    }, 'EXTRACT_');
+    expect(extract.baseUrl).toBe('https://api.deepseek.com');
+    expect(extract.model).toBe('deepseek-flash');
+    expect(extract.apiKey).toHaveLength(35);
+  });
+
+  it('refuses to send one provider key to another provider url', () => {
+    // 只配地址、漏配密钥时，逐项回退会把 Kimi 的密钥发到 DeepSeek 去 ——
+    // 那等于把密钥泄露给第三方。这种配置一律当成未配置。
+    const broken = readAiConfig({ ...kimi, EXTRACT_AI_BASE_URL:'https://api.deepseek.com' }, 'EXTRACT_');
+    expect(broken.apiKey).toBe('');
+    expect(broken.keyMissingForOwnBaseUrl).toBe(true);
+  });
+
+  it('surfaces the misconfiguration without leaking either key', () => {
+    const status = aiReviewConfigStatus({ ...kimi, EXTRACT_AI_BASE_URL:'https://api.deepseek.com' }, () => {});
+    expect(status.extract.keyMissingForOwnBaseUrl).toBe(true);
+    expect(status.extract.apiKeyConfigured).toBe(false);
+    const serialized = JSON.stringify(status);
+    expect(serialized).not.toContain('kkkk');
+    expect(serialized).not.toContain('dddd');
+  });
+
+  it('records which model actually produced a result', async () => {
+    const request = url => {
+      if (url.endsWith('/robots.txt')) return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/plain' }, text:async () => '' });
+      if (url.includes('chat/completions')) {
+        return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'application/json' },
+          text:async () => JSON.stringify({ choices:[{ message:{ content:JSON.stringify({ organizer:null, reward_highlights:[], authority_signals:[], recognition_hints:[], missing:[] }) } }] }) });
+      }
+      return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/html' }, text:async () => `<p>${SOURCE}</p>` });
+    };
+    const saved = { key:process.env.AI_API_KEY, model:process.env.EXTRACT_AI_MODEL };
+    process.env.AI_API_KEY = 'test-key';
+    process.env.EXTRACT_AI_MODEL = 'deepseek-flash';
+    try {
+      const result = await extractFromDetailPage('https://example.com/notice', request);
+      expect(result.model).toBe('deepseek-flash');
+    } finally {
+      if (saved.key === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = saved.key;
+      if (saved.model === undefined) delete process.env.EXTRACT_AI_MODEL; else process.env.EXTRACT_AI_MODEL = saved.model;
+    }
+  });
+});
