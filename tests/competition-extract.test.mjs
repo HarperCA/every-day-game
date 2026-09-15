@@ -114,7 +114,7 @@ describe('the prompt', () => {
     const prompt = buildExtractPrompt('正文', '某赛事');
     expect(prompt).toContain('不得改写');
     expect(prompt).toContain('不要根据常识');
-    expect(prompt).toContain('编造的 quote 会被系统丢弃');
+    expect(prompt).toContain('定位不到的整条作废');
   });
 
   it('tells the model the contest name is not evidence', () => {
@@ -299,5 +299,123 @@ describe('registration organization must land on the schema enum', () => {
     const prompt = buildExtractPrompt('正文', '某赛事');
     for (const value of REGISTRATION_ORGANIZATIONS) expect(prompt).toContain(value);
     expect(prompt).toContain('不要自己造措辞');
+  });
+});
+
+describe('anchors instead of full quotes', () => {
+  const {
+    ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, MAX_ANCHOR_OCCURRENCES, expandAnchor,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  const TEXT = '大赛由教育部、共青团中央和江苏省人民政府联合主办，南京大学承办。'
+    + '参赛团队通过登录全国大学生创业服务网进行报名。获奖团队可获得创业扶持资金。';
+
+  it('expands a short anchor into the whole sentence around it', () => {
+    // 让模型逐字重打整句是最主要的耗时来源 —— 它在重新生成我们本来就有的文本。
+    expect(expandAnchor('共青团中央', TEXT)).toBe('大赛由教育部、共青团中央和江苏省人民政府联合主办，南京大学承办。');
+    expect(expandAnchor('创业扶持资金', TEXT)).toBe('获奖团队可获得创业扶持资金。');
+  });
+
+  it('returns evidence taken from the source, not from the model', () => {
+    // 扩展出来的句子直接来自原文，所以证据比模型转写的更可靠。
+    const expanded = expandAnchor('全国大学生创业服务网', TEXT);
+    expect(TEXT).toContain(expanded);
+  });
+
+  it('refuses an anchor it cannot find', () => {
+    expect(expandAnchor('并不存在的一段文字', TEXT)).toBeNull();
+  });
+
+  it('refuses an anchor too short to locate anything specific', () => {
+    expect(expandAnchor('大赛', TEXT)).toBeNull();
+    expect(expandAnchor('x'.repeat(ANCHOR_MAX_LENGTH + 1), TEXT)).toBeNull();
+    expect('共青团中央'.length).toBeGreaterThanOrEqual(ANCHOR_MIN_LENGTH);
+  });
+
+  it('refuses an anchor that appears all over the page', () => {
+    // 判断锚点够不够具体，靠的是出现次数而不是长度。
+    const repetitive = '参赛团队须知。'.repeat(MAX_ANCHOR_OCCURRENCES + 5);
+    expect(expandAnchor('参赛团队须知', repetitive)).toBeNull();
+  });
+
+  it('tolerates whitespace and punctuation drift in the anchor', () => {
+    expect(expandAnchor('共青团中央和江苏省', TEXT)).not.toBeNull();
+    expect(expandAnchor('共青团中央 和江苏省', TEXT)).not.toBeNull();
+  });
+
+  it('still accepts a full quote for callers that supply one', () => {
+    const verified = verifyAgainstSource({
+      organizer:{ value:'中国图象图形学学会', quote:'中国图象图形学学会主办' },
+    }, SOURCE);
+    expect(verified.organizer.value).toBe('中国图象图形学学会');
+  });
+
+  it('prefers the anchor when both are present', () => {
+    const verified = verifyAgainstSource({
+      organizer:{ value:'教育部', anchor:'共青团中央', quote:'这句原文里没有' },
+    }, TEXT);
+    expect(verified.organizer.quote).toContain('共青团中央');
+  });
+
+  it('asks the model for anchors, not whole sentences', () => {
+    const prompt = buildExtractPrompt('正文', '某赛事');
+    expect(prompt).toContain('anchor');
+    expect(prompt).toContain('不要抄整句');
+    expect(prompt).toContain('每个数组最多 4 项');
+  });
+});
+
+describe('staying inside the 60 second cloud function limit', () => {
+  const {
+    MIN_CHAT_TIMEOUT_MS, TOTAL_BUDGET_MS, remainingChatBudget,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  it('gives the model whatever is left after fetching the page', () => {
+    // 被平台掐死时什么都拿不到，连失败原因都没有，所以自己先收口。
+    const start = 1_000_000;
+    expect(remainingChatBudget(start, undefined, start + 20_000))
+      .toBeLessThan(remainingChatBudget(start, undefined, start + 5_000));
+    expect(remainingChatBudget(start, undefined, start)).toBeLessThanOrEqual(TOTAL_BUDGET_MS);
+  });
+
+  it('never lets fetch plus chat exceed the budget', () => {
+    const start = 1_000_000;
+    for (const spent of [0, 3_000, 10_000, 25_000, 40_000]) {
+      const budget = remainingChatBudget(start, 60_000, start + spent);
+      expect(spent + Math.max(budget, 0)).toBeLessThan(TOTAL_BUDGET_MS);
+    }
+  });
+
+  it('reports budget_exhausted instead of firing a doomed request', async () => {
+    let modelCalled = false;
+    const request = url => {
+      if (url.includes('chat/completions')) { modelCalled = true; return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'application/json' }, text:async () => '{}' }); }
+      if (url.endsWith('/robots.txt')) return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/plain' }, text:async () => '' });
+      return Promise.resolve({ ok:true, status:200, headers:{ get:() => 'text/html' }, text:async () => `<p>${SOURCE}</p>` });
+    };
+    const original = process.env.AI_API_KEY;
+    process.env.AI_API_KEY = 'test-key';
+    try {
+      // 假装这次调用已经开始了 50 秒 —— 剩下的时间不够再发一次模型请求。
+      const result = await extractFromDetailPage('https://example.com/notice', request, {
+        contestName:'', startedAt:Date.now() - (TOTAL_BUDGET_MS - MIN_CHAT_TIMEOUT_MS + 1000),
+      });
+      expect(result.ok).toBe(false);
+      expect(result.status).toBe('budget_exhausted');
+      expect(modelCalled).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = original;
+    }
+  });
+});
+
+describe('max_tokens is a ceiling, not a target', () => {
+  const { DEFAULT_MAX_TOKENS } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  it('leaves enough room that the model does not return empty content', () => {
+    // 收紧到 900 会让 kimi-for-coding 返回空内容 —— 它先消耗 token 做内部推理。
+    // 本轮早先在 AI 审核上踩过同一个坑，抽取这里又踩了一次。
+    // 降低耗时要靠减少实际生成量（锚点），不是靠压上限。
+    expect(DEFAULT_MAX_TOKENS).toBeGreaterThanOrEqual(1600);
   });
 });
