@@ -81,13 +81,14 @@ async function sendReminder(item, now) {
 
 exports.main = async event => {
   const wxContext = cloud.getWXContext();
+  let via;
   try {
-    assertScheduledInvocation(event, wxContext);
+    via = assertScheduledInvocation(event, wxContext, process.env.DISPATCH_SECRET);
   } catch (error) {
     await logInvocation(event, wxContext, `rejected:${error && error.message}`);
     throw error;
   }
-  await logInvocation(event, wxContext, 'accepted');
+  await logInvocation(event, wxContext, `accepted:${via}`);
   const now = new Date();
   await recoverTimedOutClaims(now);
   const due = await db.collection('reminder').where({

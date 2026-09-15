@@ -313,6 +313,17 @@ async function handle(event) {
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
   // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
   if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');
+  // 触发提醒推送：sendReminders 不接受匿名调用（平台返回 EXCEED_AUTHORITY），
+  // 所以由已通过管理员认证的 adminData 内部转发，并带上共享密钥。
+  if (event.action === 'dispatchReminders') {
+    const dispatchSecret = String(process.env.DISPATCH_SECRET || '');
+    if (dispatchSecret.length < 24) throw new Error('dispatch_secret_not_configured');
+    const response = await cloud.callFunction({
+      name:'sendReminders',
+      data:{ action:'dispatch', dispatchSecret },
+    });
+    return response.result || { dispatched:true };
+  }
   // 只读：sendReminders 写下的最近一次调用记录，用于确认它的定时触发器是否生效。
   if (event.action === 'reminderInvocationLog') {
     try {
