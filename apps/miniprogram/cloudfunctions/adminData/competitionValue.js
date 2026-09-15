@@ -22,6 +22,8 @@ const REWARD_HIGHLIGHTS = ['保研考研加分', '实习或直通面试', '就�
 const SCALE_TIERS = ['千人以下', '千人-1万', '1万-10万', '10万以上', '暂未公布'];
 const PARTICIPANT_UNITS = ['队', '人', '暂未公布'];
 const LIFECYCLES = ['长期举办', '首届', '不定期', '疑似停办', '已停办', '暂未明确'];
+// 与 event_edition schema 的同名字段保持一致，抽取结果必须落在这几个值里。
+const REGISTRATION_ORGANIZATIONS = ['自行报名', '学校统一报名', '两种方式均可', '需先校内选拔', '以赛区或学校通知为准', '暂未明确'];
 
 const RECOGNITION_PATHS = ['保研考研', '求职就业', '出国留学', '创业融资'];
 const RECOGNITION_LEVELS = ['高', '中', '低', '暂未明确'];
@@ -197,7 +199,7 @@ function valueFields(record = {}) {
 }
 
 module.exports = {
-  REWARD_TIERS, REWARD_HIGHLIGHTS, SCALE_TIERS, PARTICIPANT_UNITS, LIFECYCLES,
+  REWARD_TIERS, REWARD_HIGHLIGHTS, SCALE_TIERS, PARTICIPANT_UNITS, LIFECYCLES, REGISTRATION_ORGANIZATIONS,
   RECOGNITION_PATHS, RECOGNITION_LEVELS, MAX_VALUE_SCORE,
   deriveRewardTier, deriveScaleTier,
   normalizeRecognition, valueScores, bestValueScore, valueFields,

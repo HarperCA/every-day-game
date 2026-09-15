@@ -12,7 +12,7 @@
 //    这是防编造最硬的一道闸 —— 模型可以答错，但答不出一句页面上没有的话。
 // 三、产出是建议，不写库。发布与否由人决定，和 getPublishBlockers 一致。
 const { isAllowed } = require('./robots');
-const { REWARD_HIGHLIGHTS, RECOGNITION_PATHS, RECOGNITION_LEVELS } = require('./competitionValue');
+const { REWARD_HIGHLIGHTS, RECOGNITION_PATHS, RECOGNITION_LEVELS, REGISTRATION_ORGANIZATIONS } = require('./competitionValue');
 const {
   USER_AGENT, adjustRequestOptions, callChatCompletion, htmlToText,
   loadRobots, parseModelJson, readAiConfig, resolveRequest, timeoutSignal,
@@ -94,8 +94,8 @@ function buildExtractPrompt(pageText, contestName) {
     `  level 只能取：${RECOGNITION_LEVELS.join('、')}；scope 为岗位或方向的字符串数组，正文没提就给空数组。`,
     '  只有正文明确写了「获奖可获得保研加分」「优胜者直通终面」这类内容才能给，',
     '  不要因为主办方是大公司就推断企业认可度高。',
-    'registration_organization: {value, quote} 或 null —— 报名由谁组织，按正文原话判断，',
-    '  例如需先校内选拔、学校统一报名、自行报名。',
+    `registration_organization: {value, quote} 或 null —— 报名由谁组织。value 只能取：${REGISTRATION_ORGANIZATIONS.join('、')}。`,
+    '  按正文原话对应到最接近的一项；正文没写清楚就不要返回该项，不要自己造措辞。',
     'missing: 字符串数组 —— 正文里没有写到、因此无法抽取的关键项。',
     '',
     contestName ? `赛事名称（仅供定位，不可作为证据）：${contestName}` : '',
@@ -115,7 +115,10 @@ function verifyAgainstSource(parsed, sourceText) {
   };
 
   const organizer = keepWithQuote(parsed.organizer, 'organizer');
-  const registrationOrganization = keepWithQuote(parsed.registration_organization, 'registration_organization');
+  // 这个字段在 event_edition schema 里是枚举，模型返回散文会直接违反约束
+  const registrationOrganization = REGISTRATION_ORGANIZATIONS.includes(parsed.registration_organization?.value)
+    ? keepWithQuote(parsed.registration_organization, 'registration_organization')
+    : null;
 
   const rewardHighlights = (Array.isArray(parsed.reward_highlights) ? parsed.reward_highlights : [])
     .filter(item => REWARD_HIGHLIGHTS.includes(item?.value))
@@ -190,8 +193,10 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
   const config = readAiConfig();
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
 
+  // 传进来的正文也要去标签：接口返回的富文本里常夹着 <img> <p>，
+  // 留着既浪费 token，又会让引文回查因为标签而对不上。
   const page = text
-    ? { url, status:'ok', text:String(text).slice(0, PAGE_TEXT_LIMIT), providedByCaller:true }
+    ? { url, status:'ok', text:htmlToText(text).slice(0, PAGE_TEXT_LIMIT), providedByCaller:true }
     : await fetchDetailPage(url, request);
   if (page.status !== 'ok' || !page.text) {
     // 抓不到页面时不调模型：没有正文，任何抽取都只能是编造。

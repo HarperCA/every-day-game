@@ -275,3 +275,29 @@ describe('refusing a page that only rendered its navigation', () => {
     }
   });
 });
+
+describe('registration organization must land on the schema enum', () => {
+  const { REGISTRATION_ORGANIZATIONS } = require('../apps/miniprogram/cloudfunctions/adminData/competitionValue.js');
+
+  it('rejects prose even when the quote is genuine', () => {
+    // 试跑时模型返回了「参赛团队自行通过全国大学生创业服务网报名」——
+    // 引文是真的，但这个值不在枚举里，直接填会违反 event_edition schema。
+    const verified = verifyAgainstSource({
+      registration_organization:{ value:'参赛团队自行通过平台报名', quote:'报名由各高校统一组织' },
+    }, SOURCE);
+    expect(verified.registration_organization).toBeNull();
+  });
+
+  it('accepts a value that is on the enum', () => {
+    const verified = verifyAgainstSource({
+      registration_organization:{ value:'学校统一报名', quote:'报名由各高校统一组织' },
+    }, SOURCE);
+    expect(verified.registration_organization.value).toBe('学校统一报名');
+  });
+
+  it('spells the enum out in the prompt', () => {
+    const prompt = buildExtractPrompt('正文', '某赛事');
+    for (const value of REGISTRATION_ORGANIZATIONS) expect(prompt).toContain(value);
+    expect(prompt).toContain('不要自己造措辞');
+  });
+});

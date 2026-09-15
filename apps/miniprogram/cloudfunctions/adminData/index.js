@@ -327,6 +327,9 @@ async function handle(event) {
     if (!/^https?:\/\//i.test(url)) throw new Error('invalid_detail_url');
     return extractFromDetailPage(url, undefined, {
       contestName:String(event.contestName || '').slice(0, 120),
+      // 前后端分离的站点由调用方走它自己的接口取正文后传进来；
+      // 上限比 PAGE_TEXT_LIMIT 略宽，留给去标签前的余量。
+      text:String(event.text || '').slice(0, 20000),
       chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS,
     });
   }
