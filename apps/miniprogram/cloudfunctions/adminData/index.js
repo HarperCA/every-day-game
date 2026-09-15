@@ -5,6 +5,7 @@ const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbac
 const { buildSafeAuditEntry } = require('./auditValidation');
 const { syncPublicCache } = require('./publicCache');
 const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview } = require('./competitionAiReview');
+const { extractFromDetailPage } = require('./competitionExtract');
 const { countStaleRecords, nextFailureMark, runStatus, selectStaleRecords } = require('./aiReviewSchedule');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -317,6 +318,17 @@ async function handle(event) {
     // 同时允许 data: URI，用于测试内联 base64 是否比远程 URL 更被接受
     if (!/^(https?:\/\/|data:image\/)/i.test(imageUrl)) throw new Error('invalid_image_url');
     return probeImageCapability(imageUrl, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS });
+  }
+  // 从一个详情页抽取字段建议。抓取拿到的列表接口只给得出奖金和参赛规模，
+  // 「主办方是谁」「有没有直通面试」藏在正文里，收录判定卡在这一步。
+  // 抽取只产出建议并逐字回查引文，不写库。
+  if (event.action === 'extractFromDetailPage') {
+    const url = String(event.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) throw new Error('invalid_detail_url');
+    return extractFromDetailPage(url, undefined, {
+      contestName:String(event.contestName || '').slice(0, 120),
+      chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS,
+    });
   }
   // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
   if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');

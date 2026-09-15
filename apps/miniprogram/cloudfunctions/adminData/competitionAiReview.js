@@ -327,7 +327,11 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
 }
 
 module.exports = {
+  USER_AGENT,
   adjustRequestOptions,
+  callChatCompletion,
+  loadRobots,
+  timeoutSignal,
   aiReviewConfigStatus,
   buildRequestBody,
   collectEvidence,
