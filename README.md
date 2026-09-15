@@ -69,7 +69,9 @@ pnpm sources:verify
 - 赛事URL可运行 `pnpm sources:verify` 生成 `reports/source-url-verification.json` 传输层可达性报告；该报告不自动修改 `validity_status`，也不等同于官方性、时效性和内容相关性的人工核验。
 - 微信登录、收藏/提醒云同步、纠错提交和订阅消息发送已接入 CloudBase 云函数；正式运行仍需在微信后台完成 AppID、隐私保护指引、订阅消息模板、云函数触发器和安全域名配置，并进行真机验收。
 - 管理后台已接入受 `ADMIN_TOKEN` 保护的 CloudBase 管理云函数和远程持久化；长期口令只在登录时提交一次，后续使用8小时短期签名会话。赛事、纠错和 AI 任务保存使用事务内版本检查，旧页面不会静默覆盖新修改；当前仍是单一超级管理员模式，尚未实现多管理员账号与角色权限。
-- 赛事审核页已接入 Kimi 多模态审核助手。当前按 Kimi Code 配置：在 `adminData` 云函数设置 `AI_PROVIDER=kimi-code`、`AI_API_KEY`、`AI_MODEL=kimi-for-coding` 和 `AI_BASE_URL=https://api.kimi.com/coding/v1`；AI 只提供带证据的复核建议，最终通过与发布仍由管理员操作。
-- 审核发布页支持勾选部分赛事、选择当前筛选结果或一键检测全部赛事；`adminData` 云函数每周一 03:00 自动对全部赛事运行一次 AI 检测，结果保存在赛事记录中并写入 `ai_review_runs` 运行记录。可用 `AI_REVIEW_CONCURRENCY`（1–10，默认 5）控制并发量。
+- 赛事审核页已接入 Kimi 多模态审核助手。当前按 Kimi Code 配置：在 `adminData` 云函数设置 `AI_PROVIDER=kimi-code`、`AI_API_KEY`、`AI_MODEL=kimi-for-coding` 和 `AI_BASE_URL=https://api.kimi.com/coding/v1`；AI 只提供带证据的复核建议，最终通过与发布仍由管理员操作。云函数超时需调到 60 秒，且环境变量改完要重新部署；运行时不限版本，Nodejs16 及以下会自动退回内置 `https` 客户端。配置是否生效可在审核发布页点“检查 AI 配置”自查，或运行 `pnpm admin:verify:cloud`，两者都不回传密钥内容。
+- 审核发布页支持勾选部分赛事、选择当前筛选结果或一键检测全部赛事。自动检测受微信云开发 60 秒函数超时硬上限约束，且实测耗时主要来自模型输出生成、Kimi 端并发请求会排队，因此：定时器每 5 分钟触发一次，每次只处理 1 条「距上次审核超过 7 天」的赛事（从未审核过的优先），模型超时 50 秒并限制输出长度，单条实测约 22 秒；批量检测也改为逐条串行。连续失败的赛事按 `失败次数 × 6 小时` 退避（最长一周），避免无限重试烧额度。每次运行无论成功、部分完成还是抛错都写入 `admin_state/ai_review_runs`（保留最近 20 次，复用已有集合，不需要新建），最近一次状态显示在审核发布页工具栏，也可用 `pnpm admin:verify:cloud` 查看。
+- 🔴 **该云开发环境中没有任何定时触发器注册成功**，`adminData` 与 `sendReminders` 两个独立云函数均经探针验证在 5 分钟 cron 周期下连续 7 分钟零调用。直接后果是**用户提醒推送完全不工作**（无报错、无日志，故障不可感知），上线前必须解决；详见 `docs/admin-cloudbase.md`。
+- ⚠️ **定时触发器至今未生效，自动 AI 审核实际不可用**，需人工在审核发布页点「检测全部」（当前 30 场规模约 10 分钟跑完）。已确认不是代码问题：云函数现已接受任意 Timer 事件，cron 两种写法都试过，在 5 分钟周期下连续观察 7 分钟以上零事件到达，即 `adminData` 上没有注册任何触发器。待查方向、验证方法和**疑似同样失效的 `sendReminders` 提醒推送**见 `docs/admin-cloudbase.md` 的「未决问题：定时触发器从未生效」。项目规模扩大后此项必须解决。
 - 推荐来自底稿结构化迁移，全部待系统重新验证与管理员人工核验，不能作为正式发布数据。
 - `publicData` 云函数和公开缓存事务已实现，但当前环境尚未应用 `database/function-security-rules.json`，匿名只读验收会返回 `EXCEED_AUTHORITY`；在权限规则应用且首条合规缓存生成前，`USE_CLOUD_PUBLIC_DATA` 保持 `false`。

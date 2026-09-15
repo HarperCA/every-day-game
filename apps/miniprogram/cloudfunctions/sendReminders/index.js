@@ -10,6 +10,7 @@ const BATCH_SIZE = Number.isInteger(configuredBatchSize) ? Math.min(50, Math.max
 const MAX_RETRIES = 3;
 const STALE_REMINDER_MS = 24 * 60 * 60 * 1000;
 const CLAIM_TIMEOUT_MS = 15 * 60 * 1000;
+const INVOCATION_LOG_DOC = 'reminder_runs';
 
 function truncate(value, limit) {
   return Array.from(String(value || '')).slice(0, limit).join('');
@@ -26,6 +27,22 @@ function errorText(error) {
   const code = error && (error.errCode || error.errcode || error.code);
   const message = error && (error.errMsg || error.errmsg || error.message);
   return truncate([code, message].filter(Boolean).join(': ') || 'subscribe_message_send_failed', 500);
+}
+
+// 探针：记录最近一次调用，用于确认定时触发器是否真的在触发。
+// 这个函数超时只有 3 秒，所以只做一次覆盖写，不读取历史。
+async function logInvocation(event, context, outcome) {
+  try {
+    await db.collection('admin_state').doc(INVOCATION_LOG_DOC).set({ data:{ last:{
+      at:new Date().toISOString(),
+      eventType:(event && event.Type) || null,
+      triggerName:(event && event.TriggerName) || null,
+      hasOpenid:Boolean(context && context.OPENID),
+      outcome,
+    } } });
+  } catch (error) {
+    console.error('reminder invocation log failed', error);
+  }
 }
 
 async function recoverTimedOutClaims(now) {
@@ -63,7 +80,14 @@ async function sendReminder(item, now) {
 }
 
 exports.main = async event => {
-  assertScheduledInvocation(event, cloud.getWXContext());
+  const wxContext = cloud.getWXContext();
+  try {
+    assertScheduledInvocation(event, wxContext);
+  } catch (error) {
+    await logInvocation(event, wxContext, `rejected:${error && error.message}`);
+    throw error;
+  }
+  await logInvocation(event, wxContext, 'accepted');
   const now = new Date();
   await recoverTimedOutClaims(now);
   const due = await db.collection('reminder').where({

@@ -8,7 +8,7 @@ import { collectChangedFields } from './editorUtils';
 import ReviewPublishModule from './ReviewPublishModule';
 import ProfessionMappingModule from './ProfessionMappingModule';
 import { isPublishReady } from './adminWorkflow';
-import { cloudEnvironmentId, connectAdminCloud, describeCloudError, disconnectAdminCloud, initializeCloudRecords } from './adminCloud';
+import { cloudEnvironmentId, connectAdminCloud, describeCloudError, disconnectAdminCloud, initializeCloudRecords, type AiReviewRun } from './adminCloud';
 import { hydrateOperationStores } from './operationsStore';
 
 const statusLabels: Record<string, string> = {
@@ -35,6 +35,7 @@ export default function App() {
   const [cloudSyncError, setCloudSyncError] = useState('');
   const [records, setRecords] = useState<any[]>(() => loadAdminRecords(seedCompetitions as any[]));
   const [audits, setAudits] = useState(() => loadAuditEntries());
+  const [lastAiReviewRun, setLastAiReviewRun] = useState<AiReviewRun | null>(null);
   const [dataStatus, setDataStatus] = useState('');
   const [signupStatus, setSignupStatus] = useState('');
   const [participationFormat, setParticipationFormat] = useState('');
@@ -119,6 +120,7 @@ export default function App() {
       setAudits(bootstrap.audits);
       replaceAuditCache(bootstrap.audits);
       hydrateOperationStores(bootstrap.feedbacks, bootstrap.aiJobs);
+      setLastAiReviewRun(bootstrap.lastAiReviewRun ?? null);
       setLoggedIn(true);
       setCloudSyncState('synced');
     } catch (error) {
@@ -140,7 +142,7 @@ export default function App() {
         <div className="table-wrap"><table><thead><tr><th>赛事与届次</th><th>报名状态</th><th>更多筛选字段</th><th>数据状态</th><th>推荐</th><th>异常</th><th>最后核验</th><th>操作</th></tr></thead><tbody>{visibleRows.map((item:any)=><tr key={item.id}><td><b>{item.name}</b><small>{item.editionName}</small></td><td><span className="status">{registrationStatus(item)}</span></td><td className="filter-fields"><span>{item.participationFormat}</span><span>{item.teamSizeCategory}</span><span>{item.feeType}</span><span>{item.registrationOrganization}</span></td><td>{statusLabels[item.dataStatus]}<small>{isPublishReady(item) ? '可进入发布流程' : '发布门槛未通过'}</small></td><td>{item.recommendation.recommendation}<small>仅供参考</small></td><td>{item.qualityIssues.length} 项</td><td>{item.lastVerifiedAt?.slice(0,10) || '待核验'}</td><td><button className="link" onClick={()=>{setEditing({...item});setEditorErrors([])}}>编辑</button></td></tr>)}</tbody></table></div>
         <footer className="panel-footer"><span>显示 {rows.length} / {records.length} 条 · 第 {Math.min(page,pageCount)} / {pageCount} 页</span><div><button disabled={page<=1} onClick={()=>setPage(value=>Math.max(1,value-1))}>上一页</button><button disabled={page>=pageCount} onClick={()=>setPage(value=>Math.min(pageCount,value+1))}>下一页</button></div></footer>
       </section>
-      <section className="audit-panel"><div><h2>最近操作记录</h2><p>最近100条关键写操作同步保存至 CloudBase audit_log 集合。</p></div>{audits.length ? <ul>{audits.slice(0,5).map(entry=><li key={entry.id}><b>{entry.recordName}</b><span>{entry.action === 'reset' ? '恢复种子数据' : `${entry.action} · ${entry.changedFields.join('、')}`}</span><time>{entry.createdAt.slice(0,19).replace('T',' ')}</time></li>)}</ul> : <div className="empty-audit">暂无云端操作记录</div>}</section></>:activeSection==='review_publish'?<ReviewPublishModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice} onEdit={record=>{setEditing(structuredClone(record));setEditorErrors([])}}/>:activeSection==='profession_mapping'?<ProfessionMappingModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice}/>:<OperationModules key={activeSection} section={activeSection} records={records} setRecords={setRecords} audits={audits} setAudits={setAudits} setNotice={setNotice}/>}</main>
+      <section className="audit-panel"><div><h2>最近操作记录</h2><p>最近100条关键写操作同步保存至 CloudBase audit_log 集合。</p></div>{audits.length ? <ul>{audits.slice(0,5).map(entry=><li key={entry.id}><b>{entry.recordName}</b><span>{entry.action === 'reset' ? '恢复种子数据' : `${entry.action} · ${entry.changedFields.join('、')}`}</span><time>{entry.createdAt.slice(0,19).replace('T',' ')}</time></li>)}</ul> : <div className="empty-audit">暂无云端操作记录</div>}</section></>:activeSection==='review_publish'?<ReviewPublishModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice} lastAiReviewRun={lastAiReviewRun} onEdit={record=>{setEditing(structuredClone(record));setEditorErrors([])}}/>:activeSection==='profession_mapping'?<ProfessionMappingModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice}/>:<OperationModules key={activeSection} section={activeSection} records={records} setRecords={setRecords} audits={audits} setAudits={setAudits} setNotice={setNotice}/>}</main>
     {editing && <CompetitionEditor editing={editing} setEditing={setEditing} errors={editorErrors} onCancel={()=>setEditing(null)} onSave={saveEditor}/>}
   </div>;
 }

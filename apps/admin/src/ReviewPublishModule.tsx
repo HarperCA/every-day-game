@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
 import { persistAdminRecordsWithAudit, type AuditEntry } from './dataStore';
 import { getPublishBlockers, isPublishReady, publishRecord, runSystemReview, unpublishRecord, workflowStatusLabels } from './adminWorkflow';
-import { describeCloudError, requestCompetitionAiReview } from './adminCloud';
+import { describeAiReviewConfig, describeAiReviewRun, describeCloudError, requestAiReviewConfig, requestCompetitionAiReview, type AiReviewRun } from './adminCloud';
 
 interface Props {
   records: any[];
   setRecords: (records: any[]) => void;
   setAudits: (audits: AuditEntry[]) => void;
   setNotice: (notice: string) => void;
+  lastAiReviewRun?: AiReviewRun | null;
   onEdit: (record: any) => void;
 }
 
-export default function ReviewPublishModule({ records, setRecords, setAudits, setNotice, onEdit }: Props) {
+export default function ReviewPublishModule({ records, setRecords, setAudits, setNotice, lastAiReviewRun = null, onEdit }: Props) {
   const [keyword, setKeyword] = useState('');
   const [filter, setFilter] = useState('needs_review');
   const [aiReviewingId, setAiReviewingId] = useState('');
@@ -70,6 +71,15 @@ export default function ReviewPublishModule({ records, setRecords, setAudits, se
     setNotice(updated.systemValidation === 'passed' ? `${record.name} 系统验证通过` : `${record.name} 系统验证发现 ${updated.systemReviewIssues.length} 项问题`);
   }
 
+  async function checkAiConfig() {
+    setNotice('正在检查云函数的 AI 配置…');
+    try {
+      setNotice(describeAiReviewConfig(await requestAiReviewConfig()));
+    } catch (error) {
+      setNotice(`读取 AI 配置失败：${describeCloudError(error)}`);
+    }
+  }
+
   async function aiReview(record: any) {
     setAiReviewingId(record.id);
     setNotice(`${record.name} 正在进行 Kimi AI 审核（正在并行读取官方来源，请稍候）…`);
@@ -111,7 +121,8 @@ export default function ReviewPublishModule({ records, setRecords, setAudits, se
         }
       }
     }
-    await Promise.all(Array.from({ length:Math.min(3, targets.length) }, () => worker()));
+    // Kimi 端并发请求是排队的，多路并发只会让每条都逼近云函数 60 秒上限，所以逐条跑。
+    await worker();
     if (results.size) {
       const now = new Date().toISOString();
       const next = records.map(record => results.has(record.id)
@@ -158,7 +169,7 @@ export default function ReviewPublishModule({ records, setRecords, setAudits, se
     <header><div><h1>审核发布</h1><p>每周自动全量检测；也可手动全选或勾选部分赛事运行 Kimi。AI 只给出复核建议，不会自动发布。</p></div></header>
     <section className="metrics"><article><span>待人工审核</span><strong>{records.filter(x => x.manualReview !== 'passed' && x.dataStatus !== 'published').length}</strong></article><article><span>发布受阻</span><strong>{records.filter(x => x.dataStatus !== 'published' && getPublishBlockers(x).length > 0).length}</strong></article><article><span>发布就绪</span><strong>{records.filter(isPublishReady).length}</strong></article><article><span>已发布</span><strong>{records.filter(x => x.dataStatus === 'published').length}</strong></article></section>
     <section className="panel workflow-panel">
-      <div className="toolbar admin-toolbar"><input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="搜索赛事或届次"/><select value={filter} onChange={event => setFilter(event.target.value)}><option value="needs_review">待人工审核</option><option value="problems">发布受阻</option><option value="ready">发布就绪</option><option value="published">已发布</option><option value="all">全部赛事</option></select><button className="primary-button" disabled={Boolean(aiReviewingId) || selectedIds.length === 0} onClick={() => aiReviewBatch(selectedIds)}>检测已选（{selectedIds.length}）</button><button disabled={Boolean(aiReviewingId) || records.length === 0} onClick={() => aiReviewBatch(records.map(record => record.id))}>检测全部（{records.length}）</button><span className="weekly-ai-note">自动检测：每周一 03:00</span>{aiBatchProgress && <span className="ai-batch-progress">正在检测 {aiBatchProgress.completed}/{aiBatchProgress.total}</span>}</div>
+      <div className="toolbar admin-toolbar"><input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="搜索赛事或届次"/><select value={filter} onChange={event => setFilter(event.target.value)}><option value="needs_review">待人工审核</option><option value="problems">发布受阻</option><option value="ready">发布就绪</option><option value="published">已发布</option><option value="all">全部赛事</option></select><button className="primary-button" disabled={Boolean(aiReviewingId) || selectedIds.length === 0} onClick={() => aiReviewBatch(selectedIds)}>检测已选（{selectedIds.length}）</button><button disabled={Boolean(aiReviewingId) || records.length === 0} onClick={() => aiReviewBatch(records.map(record => record.id))}>检测全部（{records.length}）</button><button onClick={checkAiConfig}>检查 AI 配置</button><span className={`weekly-ai-note${lastAiReviewRun?.status === 'failed' ? ' ai-run-failed' : ''}`}>{describeAiReviewRun(lastAiReviewRun)}</span>{aiBatchProgress && <span className="ai-batch-progress">正在检测 {aiBatchProgress.completed}/{aiBatchProgress.total}</span>}</div>
       <div className="table-wrap"><table><thead><tr><th><label className="table-check"><input type="checkbox" checked={allVisibleSelected} onChange={event => toggleVisibleSelection(event.target.checked)}/>选择</label></th><th>赛事</th><th>AI 审核</th><th>人工审核</th><th>发布门槛</th><th>数据状态</th><th>操作</th></tr></thead><tbody>{rows.map(record => {
         const blockers = getPublishBlockers(record);
         const ai = record.aiReview;

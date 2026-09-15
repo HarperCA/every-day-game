@@ -4,14 +4,23 @@ const { nextStateVersion, normalizeStateVersion } = require('./stateVersion');
 const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbackMerge');
 const { buildSafeAuditEntry } = require('./auditValidation');
 const { syncPublicCache } = require('./publicCache');
-const { runCompetitionAiReview } = require('./competitionAiReview');
+const { aiReviewConfigStatus, runCompetitionAiReview } = require('./competitionAiReview');
+const { countStaleRecords, nextFailureMark, runStatus, selectStaleRecords } = require('./aiReviewSchedule');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const MAX_RECORDS = 100;
 const MAX_FEEDBACKS = 1000;
 const MAX_AI_JOBS = 1000;
-const WEEKLY_AI_TRIGGER = 'competition-ai-review-every-monday';
+// 实测：单条审核约 50 秒，且 Kimi 端并发请求是排队的，3 条并发只会让后两条超时。
+// 所以定时任务每次只处理 1 条，50 秒模型超时 + 状态读写仍在 60 秒硬上限内。
+const SCHEDULED_BATCH_LIMIT = 1;
+const SCHEDULED_CHAT_TIMEOUT_MS = 50000;
+const SCHEDULED_MAX_TOKENS = 2000;
+const MANUAL_CHAT_TIMEOUT_MS = 50000;
+const MANUAL_MAX_TOKENS = 2600;
+const AI_RUN_LOG_DOC = 'ai_review_runs';
+const MAX_AI_RUN_LOG = 20;
 
 function requireAdmin(event) {
   const expected = process.env.ADMIN_TOKEN;
@@ -161,12 +170,13 @@ function auditToAdmin(item) {
 }
 
 async function bootstrap() {
-  const [competitionState, feedbackState, submittedFeedbacks, aiJobState, auditResult] = await Promise.all([
+  const [competitionState, feedbackState, submittedFeedbacks, aiJobState, auditResult, lastAiReviewRun] = await Promise.all([
     loadState('competitions'),
     loadState('feedbacks'),
     loadSubmittedFeedbacks(),
     loadState('ai_jobs'),
     db.collection('audit_log').orderBy('created_at', 'desc').limit(100).get(),
+    loadLastAiReviewRun(),
   ]);
   const feedbacks = mergeFeedbackRecords(feedbackState.records, submittedFeedbacks, MAX_FEEDBACKS);
   return {
@@ -174,11 +184,12 @@ async function bootstrap() {
     feedbacks,
     aiJobs:aiJobState.records,
     audits:(auditResult.data || []).map(auditToAdmin),
+    lastAiReviewRun,
     stateVersions:{ records:competitionState.version, feedbacks:feedbackState.version, aiJobs:aiJobState.version },
   };
 }
 
-async function runAiReviewPool(records, concurrency = 5) {
+async function runAiReviewPool(records, concurrency = 5, options = {}) {
   const results = new Map();
   const failures = [];
   let cursor = 0;
@@ -186,7 +197,7 @@ async function runAiReviewPool(records, concurrency = 5) {
     while (cursor < records.length) {
       const record = records[cursor++];
       try {
-        results.set(record.id, await runCompetitionAiReview(record));
+        results.set(record.id, await runCompetitionAiReview(record, undefined, options));
       } catch (error) {
         failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
       }
@@ -196,32 +207,114 @@ async function runAiReviewPool(records, concurrency = 5) {
   return { results, failures };
 }
 
-async function runWeeklyCompetitionAiReview() {
-  const state = await loadState('competitions');
+function scheduledBatchLimit() {
+  const configured = Number(process.env.AI_REVIEW_CONCURRENCY || SCHEDULED_BATCH_LIMIT);
+  return Number.isInteger(configured) ? Math.min(10, Math.max(1, configured)) : SCHEDULED_BATCH_LIMIT;
+}
+
+// 一次调用只跑一批并发请求：证据抓取最多 8 秒、模型调用最多 40 秒，
+// 加上读写状态仍在 60 秒硬上限内。跑不完的记录留给下一次定时触发。
+async function runScheduledCompetitionAiReview(trigger = 'timer') {
   const startedAt = new Date().toISOString();
-  if (!state.records.length) return { scanned:0, succeeded:0, failed:0, startedAt, completedAt:new Date().toISOString() };
-  const configuredConcurrency = Number(process.env.AI_REVIEW_CONCURRENCY || 5);
-  const concurrency = Number.isInteger(configuredConcurrency) ? Math.min(10, Math.max(1, configuredConcurrency)) : 5;
-  const { results, failures } = await runAiReviewPool(state.records, concurrency);
-  const now = new Date().toISOString();
-  const records = state.records.map(record => results.has(record.id)
-    ? { ...record, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-weekly-review' }
-    : record);
-  if (results.size) await saveState('competitions', records, state.version);
-  const summary = { scanned:state.records.length, succeeded:results.size, failed:failures.length, failures, startedAt, completedAt:now };
-  await db.collection('ai_review_runs').add({ data:{ ...summary, trigger:'weekly', failures:failures.slice(0, 20) } });
+  const summary = {
+    trigger, startedAt, completedAt:startedAt,
+    selected:0, succeeded:0, failed:0, remaining:0,
+    status:'failed', failures:[],
+  };
+  try {
+    const state = await loadState('competitions');
+    const limit = scheduledBatchLimit();
+    const due = selectStaleRecords(state.records, { limit });
+    summary.selected = due.length;
+    if (due.length) {
+      const { results, failures } = await runAiReviewPool(due, due.length, {
+        chatTimeoutMs:SCHEDULED_CHAT_TIMEOUT_MS,
+        maxTokens:SCHEDULED_MAX_TOKENS,
+        concise:true,
+      });
+      const now = new Date().toISOString();
+      const failureById = new Map(failures.map(item => [item.recordId, item.error]));
+      const records = state.records.map(record => {
+        if (results.has(record.id)) {
+          const { aiReviewFailure, ...rest } = record; // 成功后清除退避标记
+          return { ...rest, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-scheduled-review' };
+        }
+        if (failureById.has(record.id)) {
+          return { ...record, aiReviewFailure:nextFailureMark(record, failureById.get(record.id)) };
+        }
+        return record;
+      });
+      // 失败也要落盘，否则退避计数永远是 0，同一条记录会被无限重试。
+      if (results.size || failures.length) await saveState('competitions', records, state.version);
+      summary.succeeded = results.size;
+      summary.failed = failures.length;
+      summary.failures = failures.slice(0, 20);
+      summary.remaining = countStaleRecords(records);
+    }
+    summary.status = runStatus(summary);
+  } catch (error) {
+    summary.error = String(error?.message || error).slice(0, 500);
+    summary.status = runStatus({ ...summary, errored:true });
+  }
+  summary.completedAt = new Date().toISOString();
+  summary.createdAt = summary.completedAt;
+  // 成功、部分完成还是抛错都要落一条运行记录，否则定时任务失败时后台完全无感。
+  await appendAiReviewRun(summary);
   return summary;
+}
+
+// 运行日志写进已有的 admin_state，而不是另建集合：
+// 云开发的集合必须先手动创建，写一个不存在的集合会静默失败，等于没有错误上报。
+async function appendAiReviewRun(summary) {
+  try {
+    let runs = [];
+    try {
+      const current = await db.collection('admin_state').doc(AI_RUN_LOG_DOC).get();
+      runs = Array.isArray(current.data?.runs) ? current.data.runs : [];
+    } catch (error) {
+      if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error;
+    }
+    await db.collection('admin_state').doc(AI_RUN_LOG_DOC).set({ data:{
+      runs:[summary, ...runs].slice(0, MAX_AI_RUN_LOG),
+      updated_at:new Date().toISOString(),
+    } });
+  } catch (error) {
+    console.error('ai review run log write failed', error);
+  }
+}
+
+async function loadLastAiReviewRun() {
+  try {
+    const result = await db.collection('admin_state').doc(AI_RUN_LOG_DOC).get();
+    const runs = Array.isArray(result.data?.runs) ? result.data.runs : [];
+    return runs[0] || null;
+  } catch (error) {
+    return null;
+  }
 }
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
+  // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
+  if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');
+  // 只读：sendReminders 写下的最近一次调用记录，用于确认它的定时触发器是否生效。
+  if (event.action === 'reminderInvocationLog') {
+    try {
+      const result = await db.collection('admin_state').doc('reminder_runs').get();
+      return result.data?.last || null;
+    } catch (error) {
+      return null;
+    }
+  }
   if (event.action === 'runCompetitionAiReview') {
     const id = String(event.recordId || '').trim();
     if (!id) throw new Error('invalid_record_id');
     const state = await loadState('competitions');
     const record = state.records.find(item => item.id === id);
     if (!record) throw new Error('competition_not_found');
-    return runCompetitionAiReview(record);
+    // 手动审核同样受 60 秒函数上限约束，只是允许比定时任务更长的结论。
+    return runCompetitionAiReview(record, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS, maxTokens:MANUAL_MAX_TOKENS });
   }
   if (event.action === 'saveRecords') {
     const records = requireRecords(event.records, MAX_RECORDS, 'records');
@@ -241,7 +334,7 @@ async function handle(event) {
   if (event.action === 'saveAiJobs') return saveState('ai_jobs', requireRecords(event.records, MAX_AI_JOBS, 'ai_jobs'), event.expectedVersion);
   if (event.action === 'appendAudit') {
     const safeEntry = buildSafeAuditEntry(event.entry);
-    await db.collection('audit_log').doc(entry.id).set({ data: safeEntry });
+    await db.collection('audit_log').doc(safeEntry.id).set({ data: safeEntry });
     return { saved: 1 };
   }
   throw new Error('unsupported_action');
@@ -250,8 +343,10 @@ async function handle(event) {
 exports.main = async event => {
   try {
     const context = cloud.getWXContext();
-    if (event?.Type === 'Timer' && event?.TriggerName === WEEKLY_AI_TRIGGER && event?.Time && !context?.OPENID) {
-      return { ok:true, data:await runWeeklyCompetitionAiReview() };
+    // 接受任何定时事件：adminData 只有这一个定时任务，按名字精确匹配只会让
+    // 改名或手工新建的触发器被静默丢弃。trigger 字段记下真实名字便于排查。
+    if (event?.Type === 'Timer' && event?.Time && !context?.OPENID) {
+      return { ok:true, data:await runScheduledCompetitionAiReview(event.TriggerName || 'timer') };
     }
     if (event?.action === 'login') {
       const secret = process.env.ADMIN_TOKEN;
@@ -267,3 +362,4 @@ exports.main = async event => {
 };
 
 exports.runAiReviewPool = runAiReviewPool;
+exports.runScheduledCompetitionAiReview = runScheduledCompetitionAiReview;

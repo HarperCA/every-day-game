@@ -1,4 +1,13 @@
+const { nodeFetch } = require('./httpClient');
+
 const PROMPT_VERSION = 'competition-review-kimi-v1';
+const DEFAULT_MODEL = 'kimi-for-coding';
+const DEFAULT_BASE_URL = 'https://api.kimi.com/coding/v1';
+const EVIDENCE_TIMEOUT_MS = 5000;
+// 正文越长模型生成越慢，而云函数只有 60 秒。8000 字符足够覆盖报名通知正文。
+const EVIDENCE_TEXT_LIMIT = 8000;
+const CHAT_TIMEOUT_MS = 60000;
+const AI_ENV_KEYS = ['AI_PROVIDER', 'AI_API_KEY', 'AI_MODEL', 'AI_BASE_URL', 'AI_REVIEW_CONCURRENCY'];
 
 const resultSchema = {
   type:'object', additionalProperties:false,
@@ -21,6 +30,49 @@ const resultSchema = {
   },
 };
 
+function readAiConfig(env = process.env) {
+  return {
+    provider:String(env.AI_PROVIDER || 'kimi-code').trim(),
+    apiKey:String(env.AI_API_KEY || '').trim(),
+    model:String(env.AI_MODEL || DEFAULT_MODEL).trim(),
+    baseUrl:String(env.AI_BASE_URL || DEFAULT_BASE_URL).trim().replace(/\/+$/, ''),
+  };
+}
+
+// 只报告配置是否存在，绝不回传密钥内容；长度用于发现误粘的引号或空格。
+function aiReviewConfigStatus(env = process.env, request = globalThis.fetch) {
+  const config = readAiConfig(env);
+  const rawKey = String(env.AI_API_KEY || '');
+  return {
+    provider:config.provider,
+    model:config.model,
+    baseUrl:config.baseUrl,
+    apiKeyConfigured:config.apiKey.length > 0,
+    apiKeyLength:config.apiKey.length,
+    apiKeyHasSurroundingWhitespace:rawKey.length !== rawKey.trim().length,
+    apiKeyLooksQuoted:/^["'].*["']$/.test(config.apiKey),
+    usingDefaultModel:!String(env.AI_MODEL || '').trim(),
+    usingDefaultBaseUrl:!String(env.AI_BASE_URL || '').trim(),
+    configuredEnvKeys:AI_ENV_KEYS.filter(key => String(env[key] || '').trim().length > 0),
+    nodeVersion:typeof process !== 'undefined' ? process.version : 'unknown',
+    fetchAvailable:typeof request === 'function',
+    httpClient:typeof request === 'function' ? 'global-fetch' : 'node-https-fallback',
+    abortTimeoutAvailable:typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function',
+  };
+}
+
+// Nodejs16 及以下没有全局 fetch，退回内置 https 实现，不要求改云函数运行时。
+function resolveRequest(request) {
+  if (typeof request === 'function') return request;
+  if (typeof globalThis.fetch === 'function') return globalThis.fetch;
+  return nodeFetch;
+}
+
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+  return undefined;
+}
+
 function compactRecord(record) {
   return {
     id:record.id, name:record.name, edition_name:record.editionName,
@@ -40,14 +92,15 @@ function htmlToText(html) {
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&#39;/g, "'").replace(/&quot;/gi, '"')
-    .replace(/\s+/g, ' ').trim().slice(0, 18000);
+    .replace(/\s+/g, ' ').trim().slice(0, EVIDENCE_TEXT_LIMIT);
 }
 
-async function collectEvidence(record, request = fetch) {
+async function collectEvidence(record, request) {
+  const send = resolveRequest(request);
   const uniqueUrls = [...new Set((record.sources || []).map(source => source.url).filter(url => /^https?:\/\//i.test(url)))].slice(0, 3);
   return Promise.all(uniqueUrls.map(async url => {
     try {
-      const response = await request(url, { redirect:'follow', signal:AbortSignal.timeout(12000), headers:{ 'User-Agent':'competition-review/1.0' } });
+      const response = await send(url, { redirect:'follow', signal:timeoutSignal(EVIDENCE_TIMEOUT_MS), timeoutMs:EVIDENCE_TIMEOUT_MS, headers:{ 'User-Agent':'competition-review/1.0' } });
       const contentType = response.headers.get('content-type') || '';
       if (!response.ok) return { url, status:`http_${response.status}`, text:'' };
       if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) return { url, status:'image', imageUrl:url };
@@ -67,30 +120,136 @@ function validateResult(value) {
   return value;
 }
 
-async function runCompetitionAiReview(record, request = fetch) {
-  const apiKey = String(process.env.AI_API_KEY || '').trim();
-  if (!apiKey) throw new Error('ai_api_key_not_configured');
-  const model = String(process.env.AI_MODEL || 'kimi-for-coding').trim();
-  const baseUrl = String(process.env.AI_BASE_URL || 'https://api.kimi.com/coding/v1').replace(/\/$/, '');
-  const evidence = await collectEvidence(record, request);
-  const content = [{ type:'text', text:`审核以下赛事记录。只能依据提供的来源正文或图片作判断；证据不足必须选择 insufficient_evidence。核对届次、主办方、报名时间、资格、费用、赛制和报名入口。结果仅供人工复核。\n赛事记录：${JSON.stringify(compactRecord(record))}\n来源读取结果：${JSON.stringify(evidence.map(item => ({ ...item, imageUrl:undefined })))}` }];
-  for (const item of evidence.filter(item => item.imageUrl)) content.push({ type:'image_url', image_url:{ url:item.imageUrl } });
-  const response = await request(`${baseUrl}/chat/completions`, {
-    method:'POST', headers:{ Authorization:`Bearer ${apiKey}`, 'Content-Type':'application/json' },
-    body:JSON.stringify({
-      model, messages:[
-        { role:'system', content:'你是严谨的大学生竞赛数据审核助手。不得将推测写成事实，不得代替管理员批准或发布。' },
-        { role:'user', content },
-      ],
-      response_format:{ type:'json_schema', json_schema:{ name:'competition_ai_review', strict:true, schema:resultSchema } },
-      temperature:0.1,
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(`ai_provider_error:${response.status}:${payload?.error?.message || 'unknown'}`);
-  const text = payload?.choices?.[0]?.message?.content;
-  const result = validateResult(JSON.parse(text));
-  return { ...result, provider:'kimi-code', model, prompt_version:PROMPT_VERSION, reviewed_at:new Date().toISOString(), response_id:payload.id || null };
+// 模型常把 JSON 包在 ```json 围栏里，直接 JSON.parse 会抛错。
+function parseModelJson(text) {
+  const raw = String(text || '').trim();
+  if (!raw) throw new Error('ai_review_empty_response');
+  const unfenced = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(unfenced);
+  } catch (error) {
+    const start = unfenced.indexOf('{');
+    const end = unfenced.lastIndexOf('}');
+    if (start === -1 || end <= start) throw new Error(`ai_review_unparsable_response:${unfenced.slice(0, 200)}`);
+    return JSON.parse(unfenced.slice(start, end + 1));
+  }
 }
 
-module.exports = { collectEvidence, compactRecord, htmlToText, runCompetitionAiReview, validateResult };
+function buildResponseFormat(useJsonSchema) {
+  return useJsonSchema
+    ? { type:'json_schema', json_schema:{ name:'competition_ai_review', strict:true, schema:resultSchema } }
+    : { type:'json_object' };
+}
+
+const DEFAULT_REQUEST_OPTIONS = { useJsonSchema:true, includeTemperature:true };
+
+function buildRequestBody(config, messages, options) {
+  const body = { model:config.model, messages, response_format:buildResponseFormat(options.useJsonSchema) };
+  // kimi-for-coding 只接受 temperature=1，省略该字段等同于用模型默认值。
+  if (options.includeTemperature) body.temperature = 0.1;
+  // 生成长度是这套流程里最主要的耗时来源，云函数只有 60 秒，必须封顶。
+  if (Number(options.maxTokens) > 0) body.max_tokens = Number(options.maxTokens);
+  return body;
+}
+
+// 各家模型对可选参数的支持不一致，按 provider 返回的 4xx 提示逐项降级，而不是一次性放弃。
+function adjustRequestOptions(status, raw, options) {
+  if (status !== 400 && status !== 404 && status !== 422) return null;
+  const message = String(raw || '');
+  if (options.includeTemperature && /temperature/i.test(message)) return { ...options, includeTemperature:false };
+  if (options.useJsonSchema && /response_format|json_schema|schema|not support|unsupported/i.test(message)) return { ...options, useJsonSchema:false };
+  return null;
+}
+
+async function callChatCompletion(request, config, messages, options) {
+  const chatTimeoutMs = Number(options.chatTimeoutMs) > 0 ? Number(options.chatTimeoutMs) : CHAT_TIMEOUT_MS;
+  const response = await request(`${config.baseUrl}/chat/completions`, {
+    method:'POST',
+    headers:{ Authorization:`Bearer ${config.apiKey}`, 'Content-Type':'application/json' },
+    body:JSON.stringify(buildRequestBody(config, messages, options)),
+    signal:timeoutSignal(chatTimeoutMs),
+    timeoutMs:chatTimeoutMs,
+  });
+  const raw = await response.text();
+  let payload = null;
+  try { payload = JSON.parse(raw); } catch (_ignored) { /* provider 也可能返回非 JSON 的错误页 */ }
+  return { ok:response.ok, status:response.status, payload, raw };
+}
+
+function buildPrompt(record, evidence, concise = false) {
+  return [
+    '审核以下赛事记录。只能依据提供的来源正文或图片作判断；证据不足必须选择 insufficient_evidence。',
+    '核对届次、主办方、报名时间、资格、费用、赛制和报名入口。结果仅供人工复核。',
+    // 定时任务受 60 秒云函数上限约束，必须压缩输出长度。
+    concise ? 'summary 控制在 150 字以内，issues 最多 5 条，每条 finding 和 recommendation 各不超过 60 字。' : '',
+    '只输出一个 JSON 对象，不要加解释文字或 Markdown 围栏。字段要求：',
+    'decision 取 recommend_approve | needs_changes | insufficient_evidence；risk_level 取 low | medium | high；',
+    'summary 为字符串；issues 为数组，每项含 field、finding、recommendation、evidence_ref；evidence_refs 为字符串数组。',
+    `赛事记录：${JSON.stringify(compactRecord(record))}`,
+    `来源读取结果：${JSON.stringify(evidence.map(item => ({ ...item, imageUrl:undefined })))}`,
+  ].filter(Boolean).join('\n');
+}
+
+async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxTokens, concise = false } = {}) {
+  const config = readAiConfig();
+  if (!config.apiKey) {
+    throw new Error('ai_api_key_not_configured:请在云开发控制台的 adminData 云函数环境变量中添加 AI_API_KEY，保存后重新部署云函数');
+  }
+  const send = resolveRequest(request);
+
+  const evidence = await collectEvidence(record, send);
+  const images = evidence.filter(item => item.imageUrl);
+  const promptText = buildPrompt(record, evidence, concise);
+  // 纯文本模型对数组形式的 content 支持不一致，没有图片时退回普通字符串。
+  const userContent = images.length
+    ? [{ type:'text', text:promptText }, ...images.map(item => ({ type:'image_url', image_url:{ url:item.imageUrl } }))]
+    : promptText;
+  const messages = [
+    { role:'system', content:'你是严谨的大学生竞赛数据审核助手。不得将推测写成事实，不得代替管理员批准或发布。只输出 JSON。' },
+    { role:'user', content:userContent },
+  ];
+
+  let options = { ...DEFAULT_REQUEST_OPTIONS, chatTimeoutMs, maxTokens };
+  let attempt = await callChatCompletion(send, config, messages, options);
+  for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
+    const next = adjustRequestOptions(attempt.status, attempt.raw, options);
+    if (!next) break;
+    options = next;
+    attempt = await callChatCompletion(send, config, messages, options);
+  }
+  if (!attempt.ok) {
+    const detail = attempt.payload?.error?.message || String(attempt.raw || '').slice(0, 300) || 'unknown';
+    throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
+  }
+
+  const choice = attempt.payload?.choices?.[0];
+  // 内容为空通常是 max_tokens 截断，把 finish_reason 带出来才能判断是截断还是过滤。
+  if (!String(choice?.message?.content || '').trim()) {
+    throw new Error(`ai_review_empty_response:finish_${choice?.finish_reason || 'unknown'}`);
+  }
+  const result = validateResult(parseModelJson(choice.message.content));
+  return {
+    ...result,
+    provider:config.provider || 'kimi-code',
+    model:config.model,
+    prompt_version:PROMPT_VERSION,
+    response_format:options.useJsonSchema ? 'json_schema' : 'json_object',
+    temperature_sent:options.includeTemperature,
+    reviewed_at:new Date().toISOString(),
+    response_id:attempt.payload?.id || null,
+  };
+}
+
+module.exports = {
+  adjustRequestOptions,
+  aiReviewConfigStatus,
+  buildRequestBody,
+  collectEvidence,
+  compactRecord,
+  htmlToText,
+  parseModelJson,
+  readAiConfig,
+  resolveRequest,
+  runCompetitionAiReview,
+  validateResult,
+};

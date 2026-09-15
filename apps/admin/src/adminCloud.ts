@@ -30,12 +30,36 @@ export function describeCloudError(error: unknown): string {
   return String(error || 'CloudBase 管理后台连接失败');
 }
 
+export interface AiReviewRun {
+  trigger: string;
+  status: 'idle' | 'partial' | 'completed' | 'failed';
+  startedAt: string;
+  completedAt: string;
+  selected: number;
+  succeeded: number;
+  failed: number;
+  remaining: number;
+  failures: Array<{ recordId:string; recordName:string; error:string }>;
+  error?: string;
+}
+
 export interface AdminCloudBootstrap {
   records: any[];
   audits: AuditEntry[];
   feedbacks: FeedbackRecord[];
   aiJobs: AiJobRecord[];
+  lastAiReviewRun: AiReviewRun | null;
   stateVersions: Record<StateKey, number>;
+}
+
+export function describeAiReviewRun(run: AiReviewRun | null): string {
+  if (!run) return '自动检测：尚无运行记录';
+  const at = run.completedAt ? new Date(run.completedAt).toLocaleString('zh-CN') : '';
+  if (run.status === 'failed') return `⚠️ 自动检测失败（${at}）：${run.error || run.failures[0]?.error || '原因未记录'}`;
+  if (run.status === 'idle') return `自动检测正常（${at}）：暂无到期赛事`;
+  const tail = run.remaining > 0 ? `，还剩 ${run.remaining} 条待检测` : '，已全部检测完毕';
+  const failed = run.failed > 0 ? `，失败 ${run.failed} 条` : '';
+  return `自动检测（${at}）：成功 ${run.succeeded} 条${failed}${tail}`;
 }
 
 function emit(state: 'syncing' | 'synced' | 'error', message = '') {
@@ -159,6 +183,35 @@ export interface CompetitionAiReviewResult {
 }
 
 export const requestCompetitionAiReview = (recordId: string) => callAdmin<CompetitionAiReviewResult>('runCompetitionAiReview', { recordId });
+
+export interface AiReviewConfigStatus {
+  provider: string;
+  model: string;
+  baseUrl: string;
+  apiKeyConfigured: boolean;
+  apiKeyLength: number;
+  apiKeyHasSurroundingWhitespace: boolean;
+  apiKeyLooksQuoted: boolean;
+  usingDefaultModel: boolean;
+  usingDefaultBaseUrl: boolean;
+  configuredEnvKeys: string[];
+  nodeVersion: string;
+  fetchAvailable: boolean;
+  httpClient: 'global-fetch' | 'node-https-fallback';
+  abortTimeoutAvailable: boolean;
+}
+
+export const requestAiReviewConfig = () => callAdmin<AiReviewConfigStatus>('aiReviewConfig');
+
+export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
+  const problems: string[] = [];
+  if (!status.apiKeyConfigured) problems.push('AI_API_KEY 未配置：请在云开发控制台的 adminData 云函数环境变量中添加，保存后重新部署');
+  if (status.apiKeyHasSurroundingWhitespace) problems.push('AI_API_KEY 首尾有空格或换行');
+  if (status.apiKeyLooksQuoted) problems.push('AI_API_KEY 被引号包住了，请只填密钥本身');
+  const client = status.httpClient === 'global-fetch' ? '全局 fetch' : '内置 https 兜底（运行时无 fetch，不影响使用）';
+  const summary = `运行时 ${status.nodeVersion}；网络客户端 ${client}；模型 ${status.model}${status.usingDefaultModel ? '（默认值）' : ''}；地址 ${status.baseUrl}${status.usingDefaultBaseUrl ? '（默认值）' : ''}；已配置变量：${status.configuredEnvKeys.join('、') || '无'}`;
+  return problems.length ? `AI 配置有问题 → ${problems.join('；')}。${summary}` : `AI 配置正常（密钥长度 ${status.apiKeyLength}）。${summary}`;
+}
 
 export function cloudEnvironmentId() {
   return CLOUD_ENV_ID;

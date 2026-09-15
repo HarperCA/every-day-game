@@ -1,9 +1,9 @@
 {
   "triggers": [
     {
-      "name": "competition-ai-review-every-monday",
+      "name": "competition-ai-review-batch",
       "type": "timer",
-      "config": "0 0 3 * * 1 *"
+      "config": "0 0/5 * * * * *"
     }
   ]
 }

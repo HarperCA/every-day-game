@@ -12,6 +12,10 @@ if (!adminToken) throw new Error('missing ADMIN_TOKEN in .admin-token.local');
 
 const env = process.env.VITE_CLOUDBASE_ENV_ID || 'daily-contest-dev-d8dbbhc653e221';
 const writeCheck = process.argv.includes('--write-check');
+// 真实调用一次 Kimi，会消耗额度，所以默认关闭。只读取赛事，不写回任何数据。
+const aiCheck = process.argv.includes('--ai-check');
+// 手动触发一次定时批量检测，用于把「触发器没建」和「函数跑不完」区分开。
+const scheduledCheck = process.argv.includes('--scheduled-check');
 const app = cloudbase.init({ env });
 const auth = app.auth();
 
@@ -28,8 +32,8 @@ if (!await withTimeout(auth.getLoginState(), 'getLoginState')) {
 }
 console.error('[verify-admin-cloud] requesting short-lived admin session');
 
-async function call(data) {
-  const response = await withTimeout(app.callFunction({ name:'adminData', data, parse:true }), `adminData:${data.action}`);
+async function call(data, timeoutMs = 15000) {
+  const response = await withTimeout(app.callFunction({ name:'adminData', data, parse:true }), `adminData:${data.action}`, timeoutMs);
   const result = typeof response?.result === 'string' ? JSON.parse(response.result) : response?.result;
   if (!result?.ok) throw new Error(result?.message || 'adminData returned an invalid response');
   return result.data;
@@ -38,6 +42,65 @@ async function call(data) {
 const login = await call({ action:'login', adminToken });
 if (!login?.sessionToken) throw new Error('adminData login did not return a session token');
 const bootstrap = await call({ action:'bootstrap', sessionToken:login.sessionToken });
+
+// 只回报 AI 配置是否存在和运行时能力，云函数不会回传密钥内容。
+console.error('[verify-admin-cloud] checking adminData AI review configuration');
+let aiReview;
+try {
+  aiReview = await call({ action:'aiReviewConfig', sessionToken:login.sessionToken });
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  aiReview = message.includes('unsupported_action')
+    ? { error:'云端 adminData 仍是旧版本，缺少 aiReviewConfig，请重新部署云函数' }
+    : { error:message };
+}
+if (!aiReview.error) {
+  aiReview.blockers = [
+    !aiReview.apiKeyConfigured && 'AI_API_KEY 未配置：在 adminData 环境变量中添加后重新部署云函数',
+    aiReview.apiKeyHasSurroundingWhitespace && 'AI_API_KEY 首尾有空格或换行',
+    aiReview.apiKeyLooksQuoted && 'AI_API_KEY 被引号包住了，请只填密钥本身',
+  ].filter(Boolean);
+}
+let scheduledRun;
+if (scheduledCheck) {
+  console.error('[verify-admin-cloud] manually running one scheduled AI review batch');
+  const startedAt = Date.now();
+  try {
+    scheduledRun = { ...await call({ action:'runScheduledAiReview', sessionToken:login.sessionToken }, 120000), clientElapsedMs:Date.now() - startedAt };
+  } catch (error) {
+    scheduledRun = { ok:false, clientElapsedMs:Date.now() - startedAt, error:error instanceof Error ? error.message : String(error) };
+  }
+}
+
+let aiLiveRun;
+if (aiCheck) {
+  const sample = bootstrap.records[0];
+  if (!sample) throw new Error('no competition record available for --ai-check');
+  console.error(`[verify-admin-cloud] running one live Kimi review on "${sample.name}"`);
+  const startedAt = Date.now();
+  try {
+    const review = await call({ action:'runCompetitionAiReview', sessionToken:login.sessionToken, recordId:sample.id }, 120000);
+    aiLiveRun = {
+      ok:true,
+      recordName:sample.name,
+      elapsedMs:Date.now() - startedAt,
+      decision:review.decision,
+      riskLevel:review.risk_level,
+      responseFormat:review.response_format,
+      issueCount:Array.isArray(review.issues) ? review.issues.length : -1,
+      evidenceCount:Array.isArray(review.evidence_refs) ? review.evidence_refs.length : -1,
+      summary:review.summary,
+    };
+  } catch (error) {
+    aiLiveRun = {
+      ok:false,
+      recordName:sample.name,
+      elapsedMs:Date.now() - startedAt,
+      error:error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 let optimisticLock;
 if (writeCheck) {
   const expectedVersion = bootstrap.stateVersions?.records;
@@ -85,6 +148,11 @@ console.log(JSON.stringify({
     aiJobs:Array.isArray(bootstrap.aiJobs) ? bootstrap.aiJobs.length : -1,
     audits:Array.isArray(bootstrap.audits) ? bootstrap.audits.length : -1,
   },
+  aiReview,
+  lastAiReviewRun:bootstrap.lastAiReviewRun ?? null,
+  lastReminderInvocation:await call({ action:'reminderInvocationLog', sessionToken:login.sessionToken }).catch(() => null),
+  ...(scheduledRun ? { scheduledRun } : {}),
+  ...(aiLiveRun ? { aiLiveRun } : {}),
   ...(optimisticLock ? { optimisticLock } : {}),
 }, null, 2));
 process.exit(0);
