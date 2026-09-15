@@ -8,6 +8,7 @@
     "pages/my/my",
     "pages/info/info"
   ],
+  "lazyCodeLoading": "requiredComponents",
   "window": {
     "navigationBarTitleText": "大学生竞赛助手",
     "navigationBarBackgroundColor": "#ffffff",

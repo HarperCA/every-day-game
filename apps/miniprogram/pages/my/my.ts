@@ -38,15 +38,7 @@ Page({
   },
   openFavorites() { wx.navigateTo({ url: '/pages/favorites/favorites' }); },
   openReminders() { wx.navigateTo({ url: '/pages/reminders/reminders' }); },
-  openFeedbackHelp() {
-    wx.showModal({
-      title:'信息纠错',
-      content:'请先在“找比赛”中打开具体赛事，再在详情页底部点击“信息纠错”。这样管理员才能准确关联需要复核的赛事。',
-      confirmText:'去找比赛',
-      cancelText:'知道了',
-      success:(result: any) => { if (result.confirm) wx.switchTab({ url:'/pages/index/index' }); },
-    });
-  },
+  openFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   openRecommendationGuide() { wx.navigateTo({ url: '/pages/info/info?type=recommendation' }); },
   openPrivacyGuide() { wx.navigateTo({ url: '/pages/info/info?type=privacy' }); },
   openAbout() { wx.navigateTo({ url: '/pages/info/info?type=about' }); },

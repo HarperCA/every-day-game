@@ -15,6 +15,7 @@ const MAX_REMINDER_WRITE_BATCH = 10;
 const MAX_REMINDERS_PER_EVENT = 8;
 const MAX_EXISTING_EVENT_REMINDERS = 50;
 const MAX_FEEDBACKS_PER_DAY = 20;
+const MAX_FEEDBACK_LIST = 50;
 
 async function currentUserId() {
   const { OPENID } = cloud.getWXContext();
@@ -50,6 +51,23 @@ function buildTaskName(competitionName, eventLabel, maxLength = 20) {
 
 function favoriteToClient(item) {
   return { editionId: item.edition_id, createdAt: new Date(item.created_at).toISOString() };
+}
+
+// 只回传用户自己提交的内容和处理状态。
+// 管理员的 review_note 属于内部备注，不对用户公开。
+function feedbackToClient(item) {
+  return {
+    id:item.id,
+    editionId:item.edition_id,
+    competitionName:item.competition_name || '',
+    category:item.category,
+    content:item.content,
+    evidenceUrl:item.evidence_url || '',
+    status:item.status || 'pending_ai_review',
+    createdAt:item.created_at,
+    updatedAt:item.updated_at || item.created_at,
+    resolvedAt:item.resolved_at || null,
+  };
 }
 
 function reminderToDatabase(item, userId) {
@@ -139,6 +157,11 @@ async function handle(action, event, userId) {
       await transaction.collection('feedback').doc(record.id).set({ data:record });
     });
     return { id:record.id, status:record.status, createdAt:record.created_at };
+  }
+  if (action === 'listFeedback') {
+    const result = await db.collection('feedback').where({ user_id:userId })
+      .orderBy('created_at', 'desc').limit(MAX_FEEDBACK_LIST).get();
+    return result.data.map(feedbackToClient);
   }
   if (action === 'listFavorites') {
     const result = await db.collection('favorite').where({ user_id: userId }).limit(MAX_FAVORITES).get();

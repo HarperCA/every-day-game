@@ -14,7 +14,7 @@
     <button wx:if="{{loginState === 'idle'}}" class="wechat-login" size="mini" bindtap="requestWechatLogin">微信登录</button>
     <button wx:if="{{loginState === 'failed'}}" class="wechat-login" size="mini" bindtap="requestWechatLogin">重新登录</button>
   </view>
-  <view class="menu card"><view bindtap="openFavorites">我的收藏<text>{{favoriteCount}} 场 ›</text></view><view bindtap="openReminders">我的提醒<text>{{reminderCount}} 项 ›</text></view><view bindtap="openFeedbackHelp">信息纠错<text>从赛事详情提交 ›</text></view></view>
+  <view class="menu card"><view bindtap="openFavorites">我的收藏<text>{{favoriteCount}} 场 ›</text></view><view bindtap="openReminders">我的提醒<text>{{reminderCount}} 项 ›</text></view><view bindtap="openFeedback">信息纠错<text>提交与进度 ›</text></view></view>
   <view class="menu card"><view bindtap="openRecommendationGuide">推荐等级说明<text>›</text></view><view bindtap="openPrivacyGuide">隐私说明<text>›</text></view><view bindtap="openAbout">关于<text>›</text></view></view>
   <view class="privacy">只有点击“微信登录”并在弹窗中确认后，才会使用微信云开发身份同步收藏与提醒或提交信息纠错；不采集手机号、真实姓名、学校、学号、成绩或个人画像。</view>
 </view>
