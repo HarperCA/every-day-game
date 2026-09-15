@@ -124,3 +124,33 @@ describe('competition AI review', () => {
     expect(adjustRequestOptions(400, 'invalid temperature', stripped)).toBeNull();
   });
 });
+
+describe('image evidence', () => {
+  const imageResponse = bytes => ({
+    ok: true,
+    status: 200,
+    headers: { get: name => (name.toLowerCase() === 'content-type' ? 'image/jpeg' : null) },
+    arrayBuffer: async () => Buffer.alloc(bytes, 7).buffer,
+    text: async () => '',
+  });
+
+  const request = url => (url.endsWith('/robots.txt')
+    ? Promise.resolve({ ok: false, status: 404, headers: { get: () => '' }, text: async () => '' })
+    : Promise.resolve(imageResponse(10)));
+
+  it('inlines images as base64 because the provider rejects remote image urls', async () => {
+    const [evidence] = await collectEvidence({ sources: [{ url: 'https://a.example/poster.jpg' }] }, request);
+    expect(evidence.status).toBe('image');
+    expect(evidence.imageUrl).toMatch(/^data:image\/jpeg;base64,/);
+    expect(evidence.imageUrl).not.toBe('https://a.example/poster.jpg');
+  });
+
+  it('skips images too large to inline', async () => {
+    const big = url => (url.endsWith('/robots.txt')
+      ? Promise.resolve({ ok: false, status: 404, headers: { get: () => '' }, text: async () => '' })
+      : Promise.resolve(imageResponse(2_000_000)));
+    const [evidence] = await collectEvidence({ sources: [{ url: 'https://a.example/huge.jpg' }] }, big);
+    expect(evidence.status).toBe('image_too_large');
+    expect(evidence.imageUrl).toBeUndefined();
+  });
+});

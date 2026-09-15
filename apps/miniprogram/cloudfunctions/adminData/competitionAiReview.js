@@ -10,6 +10,9 @@ const ROBOTS_TIMEOUT_MS = 3000;
 const USER_AGENT = 'competition-review/1.0 (+admin source verification; contact via site owner)';
 // 正文越长模型生成越慢，而云函数只有 60 秒。8000 字符足够覆盖报名通知正文。
 const EVIDENCE_TEXT_LIMIT = 8000;
+// 图片必须内联成 base64（远程 URL 被 provider 拒绝），base64 会膨胀约 1/3，
+// 加上云函数 60 秒预算，超过这个大小的图不值得带上。
+const MAX_INLINE_IMAGE_BYTES = 1500000;
 const CHAT_TIMEOUT_MS = 60000;
 const AI_ENV_KEYS = ['AI_PROVIDER', 'AI_API_KEY', 'AI_MODEL', 'AI_BASE_URL', 'AI_REVIEW_CONCURRENCY'];
 
@@ -134,7 +137,16 @@ async function collectEvidence(record, request) {
       const response = await send(url, { redirect:'follow', signal:timeoutSignal(EVIDENCE_TIMEOUT_MS), timeoutMs:EVIDENCE_TIMEOUT_MS, headers:{ 'User-Agent':USER_AGENT } });
       const contentType = response.headers.get('content-type') || '';
       if (!response.ok) return { url, status:`http_${response.status}`, text:'' };
-      if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) return { url, status:'image', imageUrl:url };
+      // 实测：Kimi 端点拒绝远程图片 URL（400 unsupported image url），必须内联 base64。
+      // 这条多模态分支此前从未被触发过，所以这个问题一直没暴露。
+      if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.length > MAX_INLINE_IMAGE_BYTES) {
+          return { url, status:'image_too_large', text:'', bytes:buffer.length };
+        }
+        const mime = contentType.split(';')[0].trim();
+        return { url, status:'image', bytes:buffer.length, imageUrl:`data:${mime};base64,${buffer.toString('base64')}` };
+      }
       return { url, status:'reachable', text:htmlToText(await response.text()) };
     } catch (error) {
       return { url, status:'unreachable', text:'', error:String(error?.message || error).slice(0,300) };
@@ -221,6 +233,42 @@ function buildPrompt(record, evidence, concise = false) {
   ].filter(Boolean).join('\n');
 }
 
+// 探测当前配置的模型是否真的接受图片输入。
+// 审核代码里一直有多模态分支，但 30 场赛事的来源全是网页，这条路从未被触发过，
+// 所以「能不能看图」此前是未知而不是「能」。这里用最小请求把它测出来。
+async function probeImageCapability(imageUrl, request, { chatTimeoutMs = 40000 } = {}) {
+  const config = readAiConfig();
+  if (!config.apiKey) throw new Error('ai_api_key_not_configured');
+  const send = resolveRequest(request);
+  const messages = [{
+    role:'user',
+    content:[
+      { type:'text', text:'这张图里有文字吗？如果有，原样写出你能看清的文字；如果看不到图片，直接回答「无法看到图片」。' },
+      { type:'image_url', image_url:{ url:imageUrl } },
+    ],
+  }];
+  const response = await send(`${config.baseUrl}/chat/completions`, {
+    method:'POST',
+    headers:{ Authorization:`Bearer ${config.apiKey}`, 'Content-Type':'application/json' },
+    body:JSON.stringify({ model:config.model, messages, max_tokens:400 }),
+    signal:timeoutSignal(chatTimeoutMs),
+    timeoutMs:chatTimeoutMs,
+  });
+  const raw = await response.text();
+  let payload = null;
+  try { payload = JSON.parse(raw); } catch (_ignored) { /* provider 可能返回非 JSON 错误页 */ }
+  return {
+    imageUrl,
+    model:config.model,
+    baseUrl:config.baseUrl,
+    httpStatus:response.status,
+    ok:response.ok,
+    error:response.ok ? null : (payload?.error?.message || String(raw).slice(0, 300)),
+    answer:payload?.choices?.[0]?.message?.content || null,
+    finishReason:payload?.choices?.[0]?.finish_reason || null,
+  };
+}
+
 async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxTokens, concise = false } = {}) {
   const config = readAiConfig();
   if (!config.apiKey) {
@@ -286,6 +334,7 @@ module.exports = {
   compactRecord,
   htmlToText,
   parseModelJson,
+  probeImageCapability,
   readAiConfig,
   resolveRequest,
   runCompetitionAiReview,

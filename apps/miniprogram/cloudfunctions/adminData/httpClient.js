@@ -14,6 +14,8 @@ function buildResponse(status, headers, body) {
     headers:{ get:name => headers[String(name).toLowerCase()] ?? null },
     text:async () => body.toString('utf8'),
     json:async () => JSON.parse(body.toString('utf8')),
+    // 图片证据需要按二进制读出来转 base64，Node 16 上走的正是这个兜底实现。
+    arrayBuffer:async () => body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
   };
 }
 

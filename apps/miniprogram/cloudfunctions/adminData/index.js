@@ -4,7 +4,7 @@ const { nextStateVersion, normalizeStateVersion } = require('./stateVersion');
 const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbackMerge');
 const { buildSafeAuditEntry } = require('./auditValidation');
 const { syncPublicCache } = require('./publicCache');
-const { aiReviewConfigStatus, runCompetitionAiReview } = require('./competitionAiReview');
+const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview } = require('./competitionAiReview');
 const { countStaleRecords, nextFailureMark, runStatus, selectStaleRecords } = require('./aiReviewSchedule');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -311,6 +311,13 @@ async function loadLastAiReviewRun() {
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
+  // 一次性探测：当前模型是否真的接受图片输入。
+  if (event.action === 'aiImageProbe') {
+    const imageUrl = String(event.imageUrl || '').trim();
+    // 同时允许 data: URI，用于测试内联 base64 是否比远程 URL 更被接受
+    if (!/^(https?:\/\/|data:image\/)/i.test(imageUrl)) throw new Error('invalid_image_url');
+    return probeImageCapability(imageUrl, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS });
+  }
   // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
   if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');
   // 触发提醒推送：sendReminders 不接受匿名调用（平台返回 EXCEED_AUTHORITY），

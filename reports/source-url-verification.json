@@ -1,429 +1,416 @@
 {
-  "generatedAt": "2026-09-08T01:18:36.827Z",
-  "input": "C:\\Users\\h2377\\Desktop\\每日竞赛\\data\\seed\\competitions.json",
+  "generatedAt": "2026-09-15T11:32:36.889Z",
+  "input": "/opt/daily-contest/verify/data/seed/competitions.json",
   "policy": "Transport reachability only. This report does not prove that a page is official, current, or semantically relevant and does not change validity_status.",
   "sourceCount": 90,
   "uniqueUrlCount": 49,
   "counts": {
-    "network_error": 8,
-    "reachable": 39,
+    "network_error": 12,
+    "reachable": 33,
+    "reachable_restricted": 1,
+    "timeout": 1,
     "transient_failure": 2
   },
   "results": [
     {
       "url": "https://cy.ncss.cn/",
-      "checkedAt": "2026-09-08T01:18:12.526Z",
+      "checkedAt": "2026-09-15T11:31:58.722Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://cy.ncss.cn/",
-      "latencyMs": 258
+      "latencyMs": 4067
     },
     {
       "url": "https://www.moe.gov.cn/srcsite/A08/s5672/202607/t20260731_1445670.html",
-      "checkedAt": "2026-09-08T01:18:12.563Z",
+      "checkedAt": "2026-09-15T11:31:58.895Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "http://www.moe.gov.cn/srcsite/A08/s5672/202607/t20260731_1445670.html",
-      "latencyMs": 225
+      "latencyMs": 3501
     },
     {
       "url": "https://2025.tiaozhanbei.net/",
-      "checkedAt": "2026-09-08T01:18:12.564Z",
+      "checkedAt": "2026-09-15T11:31:58.898Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://2025.tiaozhanbei.net/",
-      "latencyMs": 845
+      "latencyMs": 1385
     },
     {
       "url": "https://www.xinhuanet.com/20251104/843a1f024bfc420fa8a58c474abb9e80/c.html",
-      "checkedAt": "2026-09-08T01:18:12.565Z",
+      "checkedAt": "2026-09-15T11:31:58.900Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.xinhuanet.com/20251104/843a1f024bfc420fa8a58c474abb9e80/c.html",
-      "latencyMs": 140
+      "latencyMs": 944
     },
     {
       "url": "https://2026.tiaozhanbei.net/",
-      "checkedAt": "2026-09-08T01:18:12.567Z",
+      "checkedAt": "2026-09-15T11:31:58.903Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://2026.tiaozhanbei.net/",
-      "latencyMs": 840
+      "latencyMs": 1499
     },
     {
       "url": "https://www.dhu.edu.cn/2026/0426/c5974a426338/pagem.htm",
-      "checkedAt": "2026-09-08T01:18:12.568Z",
-      "result": "reachable",
-      "method": "GET",
-      "status": 200,
-      "finalUrl": "https://www.dhu.edu.cn/2026/0426/c5974a426338/pagem.htm",
-      "latencyMs": 694
+      "checkedAt": "2026-09-15T11:31:58.905Z",
+      "result": "network_error",
+      "error": "TypeError: fetch failed <- ETIMEDOUT"
     },
     {
       "url": "http://www.mcm.edu.cn/",
-      "checkedAt": "2026-09-08T01:18:12.705Z",
+      "checkedAt": "2026-09-15T11:31:59.845Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.mcm.edu.cn/",
-      "latencyMs": 840
+      "latencyMs": 2283
     },
     {
       "url": "https://cumcm.cnki.net/",
-      "checkedAt": "2026-09-08T01:18:12.785Z",
-      "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
-      "finalUrl": "https://cumcm.cnki.net/",
-      "latencyMs": 768
+      "checkedAt": "2026-09-15T11:32:00.283Z",
+      "result": "network_error",
+      "error": "TypeError: fetch failed <- ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames: Host: cumcm.cnki.net. is not in the cert's altnames: DNS:*.cdn.myqcloud.com, DNS:*.2144.cn, DNS:*.2144.com, DNS:*.4399.com, DNS:*.5054399.com, DNS:*.58cdn.com.cn, DNS:*.bldimg.com, DNS:*.cdn-go.cn, DNS:*.cntv.qcloudcdn.com, DNS:*.danmu.com, DNS:*.dd.cdntips.net, DNS:*.dd.qq.com, DNS:*.dianping.com, DNS:*.dl.txcdns.com, DNS:*.dlied1.cdntips.net, DNS:*.dpfile.com, DNS:*.ffnews.cn, DNS:*.file"
     },
     {
       "url": "http://tjjmds.ai-learning.net/",
-      "checkedAt": "2026-09-08T01:18:12.788Z",
+      "checkedAt": "2026-09-15T11:32:00.402Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "http://tjjmds.ai-learning.net/",
-      "latencyMs": 146
+      "latencyMs": 878
     },
     {
       "url": "http://www.cupoe.cn/",
-      "checkedAt": "2026-09-08T01:18:12.934Z",
+      "checkedAt": "2026-09-15T11:32:00.711Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- ENOTFOUND: getaddrinfo ENOTFOUND www.cupoe.cn"
     },
     {
       "url": "https://icpc.global/",
-      "checkedAt": "2026-09-08T01:18:13.404Z",
+      "checkedAt": "2026-09-15T11:32:01.012Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://icpc.global/",
-      "latencyMs": 1478
+      "latencyMs": 240
     },
     {
       "url": "https://icpc.pintia.cn/",
-      "checkedAt": "2026-09-08T01:18:13.407Z",
+      "checkedAt": "2026-09-15T11:32:01.103Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://uep.pintia.cn/landing/icpc",
-      "latencyMs": 435
+      "latencyMs": 3827
     },
     {
       "url": "https://icpc.pku.edu.cn/tzgg/12450f30353743ccaa302be16a7a1d85.htm",
-      "checkedAt": "2026-09-08T01:18:13.409Z",
+      "checkedAt": "2026-09-15T11:32:01.252Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://icpc.pku.edu.cn/tzgg/12450f30353743ccaa302be16a7a1d85.htm",
-      "latencyMs": 138
+      "latencyMs": 1885
     },
     {
       "url": "https://dasai.lanqiao.cn/",
-      "checkedAt": "2026-09-08T01:18:13.424Z",
+      "checkedAt": "2026-09-15T11:32:01.280Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://dasai.lanqiao.cn/",
-      "latencyMs": 192
+      "latencyMs": 2087
     },
     {
       "url": "https://www.jsjds.com.cn/",
-      "checkedAt": "2026-09-08T01:18:13.545Z",
+      "checkedAt": "2026-09-15T11:32:02.128Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.jsjds.com.cn/",
-      "latencyMs": 207
+      "latencyMs": 1679
     },
     {
       "url": "https://2026.jsjds.com.cn/account/Register",
-      "checkedAt": "2026-09-08T01:18:13.547Z",
+      "checkedAt": "2026-09-15T11:32:02.396Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://2026.jsjds.com.cn/account/Register",
-      "latencyMs": 175
+      "latencyMs": 1440
     },
     {
       "url": "https://jiaowu.buaa.edu.cn/info/1016/8840.htm",
-      "checkedAt": "2026-09-08T01:18:13.553Z",
+      "checkedAt": "2026-09-15T11:32:02.790Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://jiaowu.buaa.edu.cn/info/1016/8840.htm",
-      "latencyMs": 126
+      "latencyMs": 1180
     },
     {
       "url": "https://www.cnsoftbei.com/",
-      "checkedAt": "2026-09-08T01:18:13.616Z",
-      "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
-      "finalUrl": "https://www.cnsoftbei.com/",
-      "latencyMs": 2079
+      "checkedAt": "2026-09-15T11:32:03.137Z",
+      "result": "network_error",
+      "error": "TypeError: fetch failed <- UND_ERR_SOCKET: other side closed"
     },
     {
       "url": "https://www.cnsoftbei.com/content-74-1250-1.html",
-      "checkedAt": "2026-09-08T01:18:13.679Z",
-      "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
-      "finalUrl": "https://www.cnsoftbei.com/content-74-1250-1.html",
-      "latencyMs": 292
+      "checkedAt": "2026-09-15T11:32:03.367Z",
+      "result": "network_error",
+      "error": "TypeError: fetch failed <- UND_ERR_SOCKET: other side closed"
     },
     {
       "url": "http://www.ciscn.cn/",
-      "checkedAt": "2026-09-08T01:18:13.722Z",
+      "checkedAt": "2026-09-15T11:32:03.808Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "http://www.ciscn.cn/",
-      "latencyMs": 304
+      "latencyMs": 2018
     },
     {
       "url": "https://www.nuedc-training.com.cn/",
-      "checkedAt": "2026-09-08T01:18:13.752Z",
+      "checkedAt": "2026-09-15T11:32:03.836Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.nuedc-training.com.cn/",
-      "latencyMs": 299
+      "latencyMs": 1692
     },
     {
       "url": "https://www.nuedc-training.com.cn/index/news/details/new_id/353",
-      "checkedAt": "2026-09-08T01:18:13.842Z",
+      "checkedAt": "2026-09-15T11:32:03.970Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.nuedc-training.com.cn/index/news/details/new_id/353",
-      "latencyMs": 172
+      "latencyMs": 2128
     },
     {
       "url": "https://www.smartcarrace.com/",
-      "checkedAt": "2026-09-08T01:18:13.971Z",
+      "checkedAt": "2026-09-15T11:32:04.930Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- CERT_HAS_EXPIRED: certificate has expired"
     },
     {
       "url": "https://univ.ciciec.com/",
-      "checkedAt": "2026-09-08T01:18:14.014Z",
+      "checkedAt": "2026-09-15T11:32:05.528Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://univ.ciciec.com/",
-      "latencyMs": 1996
+      "latencyMs": 2094
     },
     {
       "url": "https://www.siemenscup-cimc.org.cn/",
-      "checkedAt": "2026-09-08T01:18:14.026Z",
+      "checkedAt": "2026-09-15T11:32:05.826Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.siemenscup-cimc.org.cn/",
-      "latencyMs": 381
+      "latencyMs": 2158
     },
     {
       "url": "https://www.siemenscup-cimc.org.cn/joinflow/index",
-      "checkedAt": "2026-09-08T01:18:14.051Z",
+      "checkedAt": "2026-09-15T11:32:06.098Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.siemenscup-cimc.org.cn/joinflow/index",
-      "latencyMs": 365
+      "latencyMs": 1571
     },
     {
       "url": "https://www.huawei.com/minisite/ict-competition-2025-2026-global/cn/",
-      "checkedAt": "2026-09-08T01:18:14.309Z",
-      "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
+      "checkedAt": "2026-09-15T11:32:06.384Z",
+      "result": "reachable_restricted",
+      "method": "GET",
+      "status": 403,
       "finalUrl": "https://www.huawei.com/minisite/ict-competition-2025-2026-global/cn/",
-      "latencyMs": 72
+      "latencyMs": 123
     },
     {
       "url": "https://www.robomaster.com/zh-CN/robo/overview",
-      "checkedAt": "2026-09-08T01:18:14.381Z",
+      "checkedAt": "2026-09-15T11:32:06.388Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.robomaster.com/zh-CN/robo/overview",
-      "latencyMs": 1289
+      "latencyMs": 3312
     },
     {
       "url": "https://www.robomaster.com/zh-CN/robo/rm",
-      "checkedAt": "2026-09-08T01:18:14.407Z",
+      "checkedAt": "2026-09-15T11:32:06.730Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.robomaster.com/zh-CN/robo/rm",
-      "latencyMs": 996
+      "latencyMs": 1401
     },
     {
       "url": "https://12umic.hit.edu.cn/",
-      "checkedAt": "2026-09-08T01:18:14.416Z",
+      "checkedAt": "2026-09-15T11:32:07.622Z",
       "result": "reachable",
       "method": "GET",
       "status": 200,
       "finalUrl": "https://12umic.hit.edu.cn/",
-      "latencyMs": 177
+      "latencyMs": 1084
     },
     {
       "url": "https://gcxl.edu.cn/",
-      "checkedAt": "2026-09-08T01:18:14.832Z",
+      "checkedAt": "2026-09-15T11:32:07.669Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames: Host: gcxl.edu.cn. is not in the cert's altnames: DNS:*.dlut.edu.cn, DNS:dlut.edu.cn"
     },
     {
       "url": "https://www.cusdc.org.cn/",
-      "checkedAt": "2026-09-08T01:18:14.882Z",
+      "checkedAt": "2026-09-15T11:32:07.984Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- ENOTFOUND: getaddrinfo ENOTFOUND www.cusdc.org.cn"
     },
     {
       "url": "https://iche.zju.edu.cn/",
-      "checkedAt": "2026-09-08T01:18:14.939Z",
+      "checkedAt": "2026-09-15T11:32:08.131Z",
       "result": "transient_failure",
       "method": "GET",
       "status": 500,
       "finalUrl": "https://iche.zju.edu.cn/",
-      "latencyMs": 124
+      "latencyMs": 1095
     },
     {
       "url": "https://iche.zju.edu.cn/a/sstz/1656.html",
-      "checkedAt": "2026-09-08T01:18:15.251Z",
+      "checkedAt": "2026-09-15T11:32:08.290Z",
       "result": "transient_failure",
       "method": "GET",
       "status": 500,
       "finalUrl": "https://iche.zju.edu.cn/a/sstz/1656.html",
-      "latencyMs": 198
+      "latencyMs": 1691
     },
     {
       "url": "https://www.jienengjianpai.org/",
-      "checkedAt": "2026-09-08T01:18:15.294Z",
+      "checkedAt": "2026-09-15T11:32:08.525Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.jienengjianpai.org/",
-      "latencyMs": 1358
+      "latencyMs": 2408
     },
     {
       "url": "https://www.jienengjianpai.org/sys-nd/36.html",
-      "checkedAt": "2026-09-08T01:18:15.403Z",
+      "checkedAt": "2026-09-15T11:32:09.688Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.jienengjianpai.org/sys-nd/36.html",
-      "latencyMs": 1112
+      "latencyMs": 1696
     },
     {
       "url": "https://www.3chuang.net/",
-      "checkedAt": "2026-09-08T01:18:15.607Z",
+      "checkedAt": "2026-09-15T11:32:09.700Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.3chuang.net/",
-      "latencyMs": 209
+      "latencyMs": 1467
     },
     {
       "url": "https://www.china-cssc.org/",
-      "checkedAt": "2026-09-08T01:18:15.670Z",
+      "checkedAt": "2026-09-15T11:32:09.716Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- UND_ERR_CONNECT_TIMEOUT: Connect Timeout Error (attempted addresses: 39.105.152.161:443, 8.140.56.4:443, timeout: 10000ms)"
     },
     {
       "url": "https://www.china-cssc.org/list-550-1.html",
-      "checkedAt": "2026-09-08T01:18:15.695Z",
+      "checkedAt": "2026-09-15T11:32:10.645Z",
       "result": "network_error",
-      "error": "TypeError: fetch failed <- UND_ERR_CONNECT_TIMEOUT: Connect Timeout Error (attempted addresses: 39.105.152.161:443, 8.140.56.4:443, timeout: 10000ms)"
+      "error": "TypeError: fetch failed <- UND_ERR_CONNECT_TIMEOUT: Connect Timeout Error (attempted addresses: 8.140.56.4:443, 39.105.152.161:443, timeout: 10000ms)"
     },
     {
       "url": "https://dspt.clppx.org.cn/pkIndex/wlsj/wlsjdshome",
-      "checkedAt": "2026-09-08T01:18:15.816Z",
+      "checkedAt": "2026-09-15T11:32:10.933Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- UND_ERR_CONNECT_TIMEOUT: Connect Timeout Error (attempted address: dspt.clppx.org.cn:443, timeout: 10000ms)"
     },
     {
       "url": "https://www.sun-ada.net/",
-      "checkedAt": "2026-09-08T01:18:16.010Z",
+      "checkedAt": "2026-09-15T11:32:11.168Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.sun-ada.net/",
-      "latencyMs": 409
+      "latencyMs": 2645
     },
     {
       "url": "https://www.sun-ada.net/about_intrs2.html",
-      "checkedAt": "2026-09-08T01:18:16.420Z",
+      "checkedAt": "2026-09-15T11:32:11.384Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.sun-ada.net/about_intrs2.html",
-      "latencyMs": 331
+      "latencyMs": 1680
     },
     {
       "url": "https://www.ncda.org.cn/",
-      "checkedAt": "2026-09-08T01:18:16.515Z",
+      "checkedAt": "2026-09-15T11:32:11.495Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.ncda.org.cn/",
-      "latencyMs": 257
+      "latencyMs": 3212
     },
     {
       "url": "https://www.fd.show/",
-      "checkedAt": "2026-09-08T01:18:16.652Z",
+      "checkedAt": "2026-09-15T11:32:13.064Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://www.fd.show/",
-      "latencyMs": 306
+      "latencyMs": 1327
     },
     {
       "url": "https://ucc.fltrp.com/",
-      "checkedAt": "2026-09-08T01:18:16.752Z",
+      "checkedAt": "2026-09-15T11:32:13.813Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://ucc.fltrp.com/",
-      "latencyMs": 210
+      "latencyMs": 1158
     },
     {
       "url": "https://ucc.fltrp.com/c/2026-03-21/541241.shtml",
-      "checkedAt": "2026-09-08T01:18:16.772Z",
+      "checkedAt": "2026-09-15T11:32:14.391Z",
       "result": "reachable",
       "method": "HEAD",
       "status": 200,
       "finalUrl": "https://ucc.fltrp.com/c/2026-03-21/541241.shtml",
-      "latencyMs": 223
+      "latencyMs": 1141
     },
     {
       "url": "https://www.culsc.cn/",
-      "checkedAt": "2026-09-08T01:18:16.958Z",
-      "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
-      "finalUrl": "https://www.culsc.cn/",
-      "latencyMs": 116
+      "checkedAt": "2026-09-15T11:32:14.709Z",
+      "result": "timeout",
+      "error": "23: The operation was aborted due to timeout"
     },
     {
       "url": "https://www.culsc.cn/#/EdunoticeDetail?id=571&type=4",
-      "checkedAt": "2026-09-08T01:18:16.962Z",
+      "checkedAt": "2026-09-15T11:32:14.971Z",
       "result": "reachable",
-      "method": "HEAD",
-      "status": 200,
+      "method": "GET",
+      "status": 206,
       "finalUrl": "https://www.culsc.cn/",
-      "latencyMs": 116
+      "latencyMs": 5641
     },
     {
       "url": "https://www.jcyxds.com/",
-      "checkedAt": "2026-09-08T01:18:16.995Z",
+      "checkedAt": "2026-09-15T11:32:15.532Z",
       "result": "network_error",
       "error": "TypeError: fetch failed <- ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames: Host: www.jcyxds.com. is not in the cert's altnames: DNS:*.moocollege.com, DNS:moocollege.com"
     }

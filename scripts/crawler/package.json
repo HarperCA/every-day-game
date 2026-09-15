@@ -1,0 +1,14 @@
+{
+  "name": "daily-contest-crawler",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "赛事来源抓取。独立于 pnpm 工作区自包含，便于整目录部署到服务器。",
+  "dependencies": {
+    "cheerio": "1.0.0-rc.12",
+    "iconv-lite": "0.6.3"
+  },
+  "optionalDependencies": {
+    "pdf-parse": "1.1.1"
+  }
+}
