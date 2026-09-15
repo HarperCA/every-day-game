@@ -1,9 +1,13 @@
 const { nodeFetch } = require('./httpClient');
+const { isAllowed } = require('./robots');
 
 const PROMPT_VERSION = 'competition-review-kimi-v1';
 const DEFAULT_MODEL = 'kimi-for-coding';
 const DEFAULT_BASE_URL = 'https://api.kimi.com/coding/v1';
 const EVIDENCE_TIMEOUT_MS = 5000;
+const ROBOTS_TIMEOUT_MS = 3000;
+// 诚实标识来源和用途，便于站方识别与联系，不伪装成浏览器。
+const USER_AGENT = 'competition-review/1.0 (+admin source verification; contact via site owner)';
 // 正文越长模型生成越慢，而云函数只有 60 秒。8000 字符足够覆盖报名通知正文。
 const EVIDENCE_TEXT_LIMIT = 8000;
 const CHAT_TIMEOUT_MS = 60000;
@@ -95,12 +99,39 @@ function htmlToText(html) {
     .replace(/\s+/g, ' ').trim().slice(0, EVIDENCE_TEXT_LIMIT);
 }
 
+// 每个来源域名只取一次 robots.txt；取不到按惯例视为允许抓取。
+async function loadRobots(send, origin, cache) {
+  if (cache.has(origin)) return cache.get(origin);
+  const pending = (async () => {
+    try {
+      const response = await send(`${origin}/robots.txt`, {
+        redirect:'follow', signal:timeoutSignal(ROBOTS_TIMEOUT_MS), timeoutMs:ROBOTS_TIMEOUT_MS,
+        headers:{ 'User-Agent':USER_AGENT },
+      });
+      if (!response.ok) return '';
+      const contentType = response.headers.get('content-type') || '';
+      if (/html/i.test(contentType)) return ''; // 站点用首页兜底 404，不是真的 robots.txt
+      return await response.text();
+    } catch (_error) {
+      return '';
+    }
+  })();
+  cache.set(origin, pending);
+  return pending;
+}
+
 async function collectEvidence(record, request) {
   const send = resolveRequest(request);
   const uniqueUrls = [...new Set((record.sources || []).map(source => source.url).filter(url => /^https?:\/\//i.test(url)))].slice(0, 3);
+  const robotsCache = new Map();
   return Promise.all(uniqueUrls.map(async url => {
     try {
-      const response = await send(url, { redirect:'follow', signal:timeoutSignal(EVIDENCE_TIMEOUT_MS), timeoutMs:EVIDENCE_TIMEOUT_MS, headers:{ 'User-Agent':'competition-review/1.0' } });
+      const target = new URL(url);
+      const robots = await loadRobots(send, target.origin, robotsCache);
+      if (robots && !isAllowed(robots, USER_AGENT, target.pathname)) {
+        return { url, status:'blocked_by_robots', text:'' };
+      }
+      const response = await send(url, { redirect:'follow', signal:timeoutSignal(EVIDENCE_TIMEOUT_MS), timeoutMs:EVIDENCE_TIMEOUT_MS, headers:{ 'User-Agent':USER_AGENT } });
       const contentType = response.headers.get('content-type') || '';
       if (!response.ok) return { url, status:`http_${response.status}`, text:'' };
       if (/^image\/(jpeg|png|gif|webp)/i.test(contentType)) return { url, status:'image', imageUrl:url };
@@ -233,6 +264,13 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
     provider:config.provider || 'kimi-code',
     model:config.model,
     prompt_version:PROMPT_VERSION,
+    // 记录每个来源实际读到了什么，用于事后核对模型的结论是否真有证据支撑。
+    evidence_status:evidence.map(item => ({
+      url:item.url,
+      status:item.status,
+      chars:(item.text || '').length,
+      ...(item.error ? { error:item.error.slice(0, 120) } : {}),
+    })),
     response_format:options.useJsonSchema ? 'json_schema' : 'json_object',
     temperature_sent:options.includeTemperature,
     reviewed_at:new Date().toISOString(),

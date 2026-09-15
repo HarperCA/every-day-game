@@ -89,6 +89,7 @@ if (aiCheck) {
       responseFormat:review.response_format,
       issueCount:Array.isArray(review.issues) ? review.issues.length : -1,
       evidenceCount:Array.isArray(review.evidence_refs) ? review.evidence_refs.length : -1,
+      evidenceStatus:review.evidence_status || null,
       summary:review.summary,
     };
   } catch (error) {

@@ -32,13 +32,21 @@ describe('competition AI review', () => {
   it('loads multiple evidence sources concurrently', async () => {
     const started = [];
     const resolvers = [];
-    const request = url => new Promise(resolve => {
+    const request = url => {
       started.push(url);
-      resolvers.push(() => resolve({ ok:true, headers:{ get:() => 'text/html' }, text:async () => '<p>official</p>' }));
-    });
+      // robots.txt 立即以 404 响应；延迟机制只用于正文，便于观察正文是否并行。
+      if (url.endsWith('/robots.txt')) {
+        return Promise.resolve({ ok:false, status:404, headers:{ get:() => '' }, text:async () => '' });
+      }
+      return new Promise(resolve => {
+        resolvers.push(() => resolve({ ok:true, headers:{ get:() => 'text/html' }, text:async () => '<p>official</p>' }));
+      });
+    };
     const pending = collectEvidence({ sources:[{ url:'https://a.example' }, { url:'https://b.example' }] }, request);
-    await Promise.resolve();
-    expect(started).toEqual(['https://a.example', 'https://b.example']);
+    await new Promise(resolve => setImmediate(resolve));
+    // 先并行查两个域名的 robots.txt，再并行抓正文。
+    expect(started.slice(0, 2)).toEqual(['https://a.example/robots.txt', 'https://b.example/robots.txt']);
+    expect(started.slice(2)).toEqual(['https://a.example', 'https://b.example']);
     resolvers.forEach(resolve => resolve());
     await expect(pending).resolves.toHaveLength(2);
   });
