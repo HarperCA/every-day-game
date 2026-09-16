@@ -40,9 +40,12 @@ const DEFAULT_MAX_TOKENS = 2000;
 
 // 返回这次调用还能给模型多少时间。低于最小值说明抓页面已经耗掉太多，
 // 与其发一个注定超时的请求，不如直接放弃。
-function remainingChatBudget(startedAt, requested, now = Date.now()) {
+//
+// totalBudgetMs 可以放宽：52 秒是云函数 60 秒上限倒推出来的，
+// 同一份代码跑在服务器上没有这个约束，批量抽取可以给模型更多时间。
+function remainingChatBudget(startedAt, requested, now = Date.now(), totalBudgetMs = TOTAL_BUDGET_MS) {
   const ceiling = Number(requested) > 0 ? Number(requested) : DEFAULT_CHAT_TIMEOUT_MS;
-  const left = TOTAL_BUDGET_MS - (now - startedAt) - BUDGET_RESERVE_MS;
+  const left = totalBudgetMs - (now - startedAt) - BUDGET_RESERVE_MS;
   return Math.min(ceiling, left);
 }
 // 正文太长会把耗时推到 60 秒上限之外，而通知类页面的关键信息通常集中在前段。
@@ -282,7 +285,7 @@ function looksLikeContestPage(text, contestName) {
 // text 可由调用方传入：前后端分离的站点需要走各自的接口取正文，
 // 那件事在服务器侧的爬虫里做（不受 60 秒限制），这里只负责抽取。
 // 引文仍然只对传入的这段文本回查，所以「证据可复核」这一性质不受影响。
-async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens, startedAt = Date.now() } = {}) {
+async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens, startedAt = Date.now(), totalBudgetMs = TOTAL_BUDGET_MS } = {}) {
   const config = readAiConfig(process.env, EXTRACT_CONFIG_PREFIX);
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
 
@@ -308,7 +311,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
 
   const send = resolveRequest(request);
   const messages = [{ role:'user', content:buildExtractPrompt(page.text, contestName) }];
-  const budget = remainingChatBudget(startedAt, chatTimeoutMs);
+  const budget = remainingChatBudget(startedAt, chatTimeoutMs, Date.now(), totalBudgetMs);
   if (budget < MIN_CHAT_TIMEOUT_MS) {
     // 抓页面已经吃掉大半预算，这时候发请求必定被平台掐死，还拿不到失败原因。
     return {
@@ -329,7 +332,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
     const next = adjustRequestOptions(attempt.status, attempt.raw, options);
     if (!next) throw new Error(`ai_extract_failed_${attempt.status}:${String(attempt.raw).slice(0, 200)}`);
     // 降级重试同样受总预算约束，不能因为重试就突破 60 秒。
-    const retryBudget = remainingChatBudget(startedAt, chatTimeoutMs);
+    const retryBudget = remainingChatBudget(startedAt, chatTimeoutMs, Date.now(), totalBudgetMs);
     if (retryBudget < MIN_CHAT_TIMEOUT_MS) {
       return {
         ok:false, status:'budget_exhausted', url, promptVersion:PROMPT_VERSION,
