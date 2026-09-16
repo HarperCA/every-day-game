@@ -1,0 +1,1251 @@
+{
+  "generatedAt": "2026-09-16T13:53:24.460Z",
+  "model": "deepseek-flash",
+  "baseUrl": "https://api.deepseek.com",
+  "policy": "抽取只产出建议，不写库。每条建议都带回原文定位得到的引文。",
+  "total": 14,
+  "succeeded": 14,
+  "medianElapsedMs": 1705,
+  "totalDropped": 2,
+  "results": [
+    {
+      "name": "蚂蚁灵波具身大模型挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532514",
+      "elapsedMs": 1822,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 4768,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "蚂蚁灵波科技、魔搭社区、阿里云天池",
+          "anchor": "蚂蚁灵波科技、魔搭社区、阿里云天池",
+          "quote": "大赛概况介绍 蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起，是一场面向具身智能开发者的算法挑战赛。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "现金 ¥80,000",
+            "quote": "奖金设置 - **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书 + 由魔搭社区赞助的 5,000 魔粒值& 500 小时 Notebook GPU - **二等奖（2 名）**：现金 ¥50,000 + 官方荣誉证书 + 由"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "官方荣誉证书",
+            "quote": "奖金设置 - **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书 + 由魔搭社区赞助的 5,000 魔粒值& 500 小时 Notebook GPU - **二等奖（2 名）**：现金 ¥50,000 + 官方荣誉证书 + 由"
+          },
+          {
+            "value": "实物奖品",
+            "anchor": "AMD Radeon RX 9000 系列显卡实物奖励",
+            "quote": "常规奖项外，AMD 还为使用 AMD 专项算力的参赛团队和开发者提供额外奖励及社区支持： - **硬件奖励**：使用 AMD 专项算力完成赛事作品，并在决赛中获得前三名的团队，将额外获得 AMD Radeon RX 9000 系列显卡实物奖"
+          },
+          {
+            "value": "创业扶持",
+            "anchor": "AMD 官方开发者社区专题报道",
+            "quote": "入选项目将有机会获得 AMD 官方开发者社区专题报道、技术直播分享及 ROCm 社区曝光等支持。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起",
+            "anchor": "蚂蚁灵波科技、魔搭社区、阿里云天池共同发起",
+            "quote": "大赛概况介绍 蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起，是一场面向具身智能开发者的算法挑战赛。"
+          },
+          {
+            "signal": "战略合作伙伴包括 AMD、松灵",
+            "anchor": "战略合作伙伴 AMD、松灵",
+            "quote": "### 主办方 蚂蚁灵波科技、魔搭社区、阿里云天池 ### 独家内容合作伙伴 小红书科技 ### 战略合作伙伴 AMD、松灵 > 特别感谢 AMD 作为本次大赛算力支持伙伴，为赛事提供云端 GPU 算力支持及基于 ROCm 开源软件栈的完整"
+          },
+          {
+            "signal": "独家内容合作伙伴为小红书科技",
+            "anchor": "独家内容合作伙伴 小红书科技",
+            "quote": "### 主办方 蚂蚁灵波科技、魔搭社区、阿里云天池 ### 独家内容合作伙伴 小红书科技 ### 战略合作伙伴 AMD、松灵 > 特别感谢 AMD 作为本次大赛算力支持伙伴，为赛事提供云端 GPU 算力支持及基于 ROCm 开源软件栈的完整"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "通过天池平台注册报名",
+          "quote": "报名规则 - 参赛选手需在赛事周期内通过天池平台注册报名，并按要求填报队伍信息。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "实习或直通面试机会",
+          "就业绿色通道",
+          "出国留学相关认可",
+          "创业融资支持",
+          "获奖在高校或企业中的认可度说明"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "蚂蚁灵波科技、魔搭社区、阿里云天池",
+          "quote": "大赛概况介绍 蚂蚁灵波具身大模型挑战赛由蚂蚁灵波科技、魔搭社区、阿里云天池共同发起，是一场面向具身智能开发者的算法挑战赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "报名规则 - 参赛选手需在赛事周期内通过天池平台注册报名，并按要求填报队伍信息。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "奖金设置 - **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书 + 由魔搭社区赞助的 5,000 魔粒值& 500 小时 Notebook GPU - **二等奖（2 名）**：现金 ¥50,000 + 官方荣誉证书 + 由",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "奖金设置 - **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书 + 由魔搭社区赞助的 5,000 魔粒值& 500 小时 Notebook GPU - **二等奖（2 名）**：现金 ¥50,000 + 官方荣誉证书 + 由",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实物奖品",
+          "quote": "常规奖项外，AMD 还为使用 AMD 专项算力的参赛团队和开发者提供额外奖励及社区支持： - **硬件奖励**：使用 AMD 专项算力完成赛事作品，并在决赛中获得前三名的团队，将额外获得 AMD Radeon RX 9000 系列显卡实物奖",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "创业扶持",
+          "quote": "入选项目将有机会获得 AMD 官方开发者社区专题报道、技术直播分享及 ROCm 社区曝光等支持。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532514"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "CHIP2026-医学NLP代码自动生成测评 ——识别符合临床试验入组标准的患者",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532480",
+      "elapsedMs": 1529,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 3576,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": null,
+        "reward_highlights": [],
+        "authority_signals": [
+          {
+            "signal": "评测任务组织者来自北京大学肿瘤医院等机构",
+            "anchor": "米岚 北京大学肿瘤医院",
+            "quote": "果提交截止时间：10 月 12 日 * C 榜测试结果将在会议期间公布 * 评测论文提交截止时间：10 月 20 日 * 会议日期（评测报告及颁奖）：10 月 30 日-11 月 1 日 --- # 评测任务组织者 * 米岚 北京大学肿瘤医"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "本次评测任务依托阿里云天池平台展开",
+          "quote": "--- # 报名方式 本次评测任务依托阿里云天池平台展开。"
+        },
+        "missing": [
+          "主办/承办单位全称",
+          "获奖待遇（保研加分、实习直通、就业绿色通道、创业扶持、国际交流、证书荣誉、实物奖品、现金奖金）",
+          "获奖对保研考研、求职就业、出国留学、创业融资的具体认可路径与等级",
+          "报名是否需校内选拔或学校统一组织"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "--- # 报名方式 本次评测任务依托阿里云天池平台展开。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532480"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "2026 SMP第十四届全国社会媒体处理大会-大模型图网络决策挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532511",
+      "elapsedMs": 1350,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 1606,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国中文信息学会社会媒体处理专委会",
+          "anchor": "由中国中文信息学会社会媒体处理专委会主办",
+          "quote": "SMP 2026挑战赛由中国中文信息学会社会媒体处理专委会主办，天池平台为指定赛事平台。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "总奖金为55,000元人民币",
+            "quote": "**03 奖项设置** 总奖金为55,000元人民币，各奖项分配如下：（以下奖金均为税前）： 一等奖(1名)：20,000元 二等奖(2名)：10,000元 三等奖(3名)：5,000元"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由中国中文信息学会社会媒体处理专委会主办",
+            "anchor": "由中国中文信息学会社会媒体处理专委会主办",
+            "quote": "SMP 2026挑战赛由中国中文信息学会社会媒体处理专委会主办，天池平台为指定赛事平台。"
+          },
+          {
+            "signal": "天池平台为指定赛事平台",
+            "anchor": "天池平台为指定赛事平台",
+            "quote": "SMP 2026挑战赛由中国中文信息学会社会媒体处理专委会主办，天池平台为指定赛事平台。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "在天池平台完成个人信息注册，即可报名参赛",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛；"
+        },
+        "missing": [
+          "获奖后的保研考研加分政策",
+          "实习或直通面试机会",
+          "就业绿色通道",
+          "创业扶持政策",
+          "国际交流机会",
+          "证书荣誉设置"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国中文信息学会社会媒体处理专委会",
+          "quote": "SMP 2026挑战赛由中国中文信息学会社会媒体处理专委会主办，天池平台为指定赛事平台。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532511"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532511"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "**03 奖项设置** 总奖金为55,000元人民币，各奖项分配如下：（以下奖金均为税前）： 一等奖(1名)：20,000元 二等奖(2名)：10,000元 三等奖(3名)：5,000元",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532511"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "CHIP2026-面向生物医学全文的特定患者表型概念识别任务",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532512",
+      "elapsedMs": 1734,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 3823,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "大连理工大学",
+          "anchor": "大连理工大学 罗凌、王健、孙媛媛、林鸿飞",
+          "quote": "评测截止|9月27日| |B榜评测开始|9月28日| |B榜评测截止|10月1日| |评测论文提交截止|10月15日| |会议日期|10月30日\\-11月1日| # 评测任务组织者 **组织单位**\\ 大连理工大学 罗凌、王健、孙媛媛、林鸿"
+        },
+        "reward_highlights": [
+          {
+            "value": "证书荣誉",
+            "anchor": "获奖队伍将会获得获奖证书",
+            "quote": "] } ``` 字段说明： - entities：全文所有表型实体预测结果 - association：特定患者的表型实体预测结果 # 奖励设置 本任务为学术评测任务，获奖队伍将会获得获奖证书，进行大会汇报、发表英文评测论文（EI收录）。"
+          },
+          {
+            "value": "国际交流",
+            "anchor": "进行大会汇报、发表英文评测论文",
+            "quote": "] } ``` 字段说明： - entities：全文所有表型实体预测结果 - association：特定患者的表型实体预测结果 # 奖励设置 本任务为学术评测任务，获奖队伍将会获得获奖证书，进行大会汇报、发表英文评测论文（EI收录）。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由大连理工大学组织",
+            "anchor": "组织单位",
+            "quote": "月27日| |A榜评测开始|8月20日| |A榜评测截止|9月27日| |B榜评测开始|9月28日| |B榜评测截止|10月1日| |评测论文提交截止|10月15日| |会议日期|10月30日\\-11月1日| # 评测任务组织者 **组织单"
+          },
+          {
+            "signal": "论文被EI收录",
+            "anchor": "发表英文评测论文（EI收录）",
+            "quote": "] } ``` 字段说明： - entities：全文所有表型实体预测结果 - association：特定患者的表型实体预测结果 # 奖励设置 本任务为学术评测任务，获奖队伍将会获得获奖证书，进行大会汇报、发表英文评测论文（EI收录）。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "参赛队伍在成功报名后，可通过天池平台下载训练数据",
+          "quote": "# 结果提交 ## 1 提交方式 比赛设立A榜阶段与B榜阶段两个环节，具体安排如下： - **A榜阶段（开发阶段）**：参赛队伍在成功报名后，可通过天池平台下载训练数据和A榜测试数据集（开发集）文件，在本地进行模型调试与训练，并在线提交评测"
+        },
+        "missing": [
+          "奖项等级及奖金金额",
+          "保研考研加分政策",
+          "实习或就业绿色通道",
+          "创业扶持政策",
+          "出国留学相关认可",
+          "具体奖项名额设置"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "大连理工大学",
+          "quote": "评测截止|9月27日| |B榜评测开始|9月28日| |B榜评测截止|10月1日| |评测论文提交截止|10月15日| |会议日期|10月30日\\-11月1日| # 评测任务组织者 **组织单位**\\ 大连理工大学 罗凌、王健、孙媛媛、林鸿",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532512"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "# 结果提交 ## 1 提交方式 比赛设立A榜阶段与B榜阶段两个环节，具体安排如下： - **A榜阶段（开发阶段）**：参赛队伍在成功报名后，可通过天池平台下载训练数据和A榜测试数据集（开发集）文件，在本地进行模型调试与训练，并在线提交评测",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532512"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "] } ``` 字段说明： - entities：全文所有表型实体预测结果 - association：特定患者的表型实体预测结果 # 奖励设置 本任务为学术评测任务，获奖队伍将会获得获奖证书，进行大会汇报、发表英文评测论文（EI收录）。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532512"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "国际交流",
+          "quote": "] } ``` 字段说明： - entities：全文所有表型实体预测结果 - association：特定患者的表型实体预测结果 # 奖励设置 本任务为学术评测任务，获奖队伍将会获得获奖证书，进行大会汇报、发表英文评测论文（EI收录）。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532512"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532510",
+      "elapsedMs": 1492,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 1421,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": null,
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "一等奖1个，6000元/个",
+            "quote": "# 奖金设置（Prizes and Awards） 奖金金额： 一个季度： 一等奖1个，6000元/个；"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "赛事由第三方主办，本平台仅提供技术支持",
+            "anchor": "本次赛事由第三方主办，本平台仅提供技术支持",
+            "quote": "com ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "报名成功后，可以直接下载题目和测试集",
+          "quote": "知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解 # 赛制介绍 本次赛事为长期赛 报名成功后，可以直接下载题目和测试集，即可参赛。"
+        },
+        "missing": [
+          "主办单位全称",
+          "承办单位",
+          "获奖可保研加分",
+          "获奖可实习或直通面试",
+          "获奖可就业绿色通道",
+          "获奖可创业扶持"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解 # 赛制介绍 本次赛事为长期赛 报名成功后，可以直接下载题目和测试集，即可参赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532510"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "# 奖金设置（Prizes and Awards） 奖金金额： 一个季度： 一等奖1个，6000元/个；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532510"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "2026-具身仿真合成挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532506",
+      "elapsedMs": 1454,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 3772,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国中检",
+          "anchor": "**主办单位**：中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "本赛道奖金池为10万元人民币",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "颁发获奖证书",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "主办单位为中国中检",
+            "anchor": "**主办单位**：中国中检",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "承办单位中检智测科技",
+            "anchor": "**承办单位**：中检智测科技",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "支持单位含学习强国学习平台、中国互联网协会人工智能工作委员会等",
+            "anchor": "**支持单位**：学习强国学习平台",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "技术平台为阿里云天池",
+            "anchor": "**技术平台**：阿里云天池",
+            "quote": "互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集团有限责任公司、哈尔滨工业大学青岛研究院、中国人民公安大学、广州仁合时创信息技术有限公司、范式智能技术集团股份有限公司、RoboChallenge **技术平台**：阿里云天"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "在天池平台完成个人信息注册，即可报名参赛",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。"
+        },
+        "missing": [
+          "获奖可保研考研加分的说明",
+          "获奖可实习或直通面试的说明",
+          "就业绿色通道相关说明",
+          "创业扶持相关说明",
+          "国际交流相关说明",
+          "获奖在出国留学方面的认可说明"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532506"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532506"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532506"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532506"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "2026-具身安全应用挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532507",
+      "elapsedMs": 1698,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 3791,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国中检",
+          "anchor": "**主办单位**：中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "本赛道奖金池为10万元人民币",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "颁发获奖证书",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "主办单位为中国中检",
+            "anchor": "**主办单位**：中国中检",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "承办单位为中检智测科技",
+            "anchor": "**承办单位**：中检智测科技",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "技术平台为阿里云天池",
+            "anchor": "**技术平台**：阿里云天池",
+            "quote": "互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集团有限责任公司、哈尔滨工业大学青岛研究院、中国人民公安大学、广州仁合时创信息技术有限公司、范式智能技术集团股份有限公司、RoboChallenge **技术平台**：阿里云天"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "在天池平台完成个人信息注册，即可报名参赛",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "实习或直通面试机会",
+          "就业绿色通道",
+          "创业扶持政策",
+          "国际交流机会",
+          "获奖后的具体认可路径"
+        ],
+        "dropped": [
+          {
+            "field": "authority_signals",
+            "value": "支持单位含学习强国学习平台、中国互联网协会人工智能工作委员会等",
+            "quote": "**支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会"
+          }
+        ]
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532507"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532507"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532507"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532507"
+        }
+      ],
+      "droppedCount": 1,
+      "applied": false
+    },
+    {
+      "name": "2026-跨本体具身认知极限联合挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532508",
+      "elapsedMs": 1521,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 3793,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国中检",
+          "anchor": "**主办单位**：中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "本赛道奖金池为10万元人民币",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "颁发获奖证书",
+            "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "主办单位为中国中检",
+            "anchor": "**主办单位**：中国中检",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "承办单位为中检智测科技",
+            "anchor": "**承办单位**：中检智测科技",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "支持单位含中国互联网协会人工智能工作委员会",
+            "anchor": "中国互联网协会人工智能工作委员会",
+            "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集"
+          },
+          {
+            "signal": "技术平台为阿里云天池",
+            "anchor": "**技术平台**：阿里云天池",
+            "quote": "互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集团有限责任公司、哈尔滨工业大学青岛研究院、中国人民公安大学、广州仁合时创信息技术有限公司、范式智能技术集团股份有限公司、RoboChallenge **技术平台**：阿里云天"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "在天池平台完成个人信息注册，即可报名参赛",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。"
+        },
+        "missing": [
+          "获奖可保研考研加分的说明",
+          "实习或直通面试机会的说明",
+          "就业绿色通道的说明",
+          "创业扶持政策的说明",
+          "国际交流机会的说明",
+          "获奖名单是否列入某目录或用于其他认可"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国中检",
+          "quote": "\\*以上奖金金额均为税前金额 ## 组织单位 **主办单位**：中国中检 **承办单位**：中检智测科技 **协办单位**：首钢基金 **支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会、北京具身智能科技有限公司、北京北奥集",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532508"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "报名方式：在天池平台完成个人信息注册，即可报名参赛，大赛不收取报名费用。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532508"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532508"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "## 赛事奖励 本赛道奖金池为10万元人民币，具体如下： * 冠军：1支队伍，奖金3万元人民币，颁发获奖证书；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532508"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "欧莱雅美妆科技黑客松 - 赛题1 数据共情者 - 消费者的AI管家",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532503",
+      "elapsedMs": 1847,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 5766,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "欧莱雅中国",
+          "anchor": "主办单位：欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "20 万总奖金池",
+            "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元"
+          },
+          {
+            "value": "实习或直通面试",
+            "anchor": "欧莱雅暑期实习直通面试机会",
+            "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "官方荣誉证书",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          },
+          {
+            "value": "实物奖品",
+            "anchor": "欧莱雅产品大礼包",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "支持单位包括美创静界、阿里云、机器之心",
+            "anchor": "支持单位：美创静界、阿里云、机器之心",
+            "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          },
+          {
+            "signal": "由欧莱雅中国主办",
+            "anchor": "主办单位：欧莱雅中国",
+            "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          }
+        ],
+        "recognition_hints": [
+          {
+            "path": "求职就业",
+            "level": "中",
+            "anchor": "欧莱雅暑期实习直通面试机会",
+            "scope": [],
+            "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；"
+          }
+        ],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "登录天池比赛平台官网，点击报名并填写信息即可报名参赛",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "就业绿色通道",
+          "创业扶持政策",
+          "国际交流机会",
+          "出国留学认可度",
+          "奖金发放时间"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实习或直通面试",
+          "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实物奖品",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503"
+        },
+        {
+          "field": "recognition",
+          "value": {
+            "path": "求职就业",
+            "level": "中",
+            "evidence": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；",
+            "scope": []
+          },
+          "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532503",
+          "needsHumanConfirmation": true
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "欧莱雅美妆科技黑客松 - 赛题2 信任守护师 - 创造者的AI卫士",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532496",
+      "elapsedMs": 1795,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 5702,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "欧莱雅中国",
+          "anchor": "主办单位：欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "20 万总奖金池",
+            "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元"
+          },
+          {
+            "value": "实习或直通面试",
+            "anchor": "欧莱雅暑期实习直通面试机会",
+            "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "官方荣誉证书",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          },
+          {
+            "value": "实物奖品",
+            "anchor": "欧莱雅产品大礼包",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "主办方为欧莱雅中国有限公司",
+            "anchor": "欧莱雅中国有限公司（“主办方”）",
+            "quote": "本参赛规则（“规则”）仅适用于欧莱雅中国有限公司（“主办方”）在7月19日-11月中下旬天池平台举办的【欧莱雅第二届美妆科技黑客松】（“大赛”）。"
+          },
+          {
+            "signal": "支持单位包括美创静界、阿里云、机器之心",
+            "anchor": "支持单位：美创静界、阿里云、机器之心",
+            "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          },
+          {
+            "signal": "赛事由第三方主办，平台仅提供技术支持",
+            "anchor": "本次赛事由第三方主办，本平台仅提供技术支持",
+            "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "登录天池比赛平台官网，点击报名并填写信息即可报名参赛",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "就业绿色通道",
+          "创业扶持政策",
+          "国际交流机会",
+          "校内选拔或学校统一报名方式",
+          "获奖在出国留学方面的认可"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实习或直通面试",
+          "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实物奖品",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532496"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "欧莱雅美妆科技黑客松 - 赛题3 无界体验家 - 用爱(AI)让美触手可及",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532497",
+      "elapsedMs": 1932,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 5750,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "欧莱雅中国",
+          "anchor": "主办单位：欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "20 万总奖金池",
+            "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元"
+          },
+          {
+            "value": "实习或直通面试",
+            "anchor": "欧莱雅暑期实习直通面试机会",
+            "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "官方荣誉证书",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          },
+          {
+            "value": "实物奖品",
+            "anchor": "欧莱雅产品大礼包",
+            "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "主办方为欧莱雅中国有限公司",
+            "anchor": "欧莱雅中国有限公司（“主办方”）",
+            "quote": "本参赛规则（“规则”）仅适用于欧莱雅中国有限公司（“主办方”）在7月19日-11月中下旬天池平台举办的【欧莱雅第二届美妆科技黑客松】（“大赛”）。"
+          },
+          {
+            "signal": "支持单位包括阿里云、机器之心等",
+            "anchor": "支持单位：美创静界、阿里云、机器之心",
+            "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。"
+          },
+          {
+            "signal": "赛事在阿里云天池平台举办",
+            "anchor": "天池平台举办的",
+            "quote": "本参赛规则（“规则”）仅适用于欧莱雅中国有限公司（“主办方”）在7月19日-11月中下旬天池平台举办的【欧莱雅第二届美妆科技黑客松】（“大赛”）。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "登录天池比赛平台官网，点击报名并填写信息即可报名参赛",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "就业绿色通道",
+          "创业扶持措施",
+          "国际交流机会",
+          "校内选拔或学校统一报名方式",
+          "获奖对出国留学的具体帮助"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "欧莱雅中国",
+          "quote": "# 组织机构 主办单位：欧莱雅中国 支持单位：美创静界、阿里云、机器之心 ---- 本次赛事由第三方主办，本平台仅提供技术支持。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "24143b74stkXig&utm_content=g_1000404840)* **报名方式：** 登录天池比赛平台官网，点击报名并填写信息即可报名参赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "24143b74stkXig&utm_content=g_1000404840) # 参赛福利 **20 万总奖金池，激励创新成果落地** 本届赛事（共计三个赛题）共设 20 万元人民币总奖金池，设立以下奖项奖励： 一等奖：80，000 元",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实习或直通面试",
+          "quote": "**欧莱雅实习直通机会，助力职业发展** 表现优异的参赛团队将有机会获得 **欧莱雅暑期实习直通面试机会**；",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "实物奖品",
+          "quote": "获奖团队将获得官方荣誉证书及欧莱雅产品大礼包，为职业发展积累实践成果与行业认可。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532497"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "CSIG图像图形技术挑战赛-赛道一：生成式图像增强可控性挑战",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532499",
+      "elapsedMs": 1499,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 2528,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国图像图形学会、华为终端有限公司",
+          "anchor": "中国图像图形学会、华为终端有限公司携手举办",
+          "quote": "为推动国内高等院校、科研院所在Camera及其相关领域在读学生的培养，选拔优秀人才，中国图像图形学会、华为终端有限公司携手举办第三届\"Camera学术之星\"影像算法技术竞赛与研讨会。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "每个团队3万元",
+            "quote": "**信息要求**：参赛者须确保报名信息准确有效，否则会被取消参赛资格及奖励 ## 奖项设置 | 奖项 | 名额（每个赛题） | 奖金 | | --- | --- | --- | | 一等奖 | 1个团队 | 每个团队3万元 | | 二等奖"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由中国图像图形学会主办",
+            "anchor": "中国图像图形学会（CSIG）主办的系列赛事",
+            "quote": "像图形技术挑战赛-赛道一：生成式图像增强可控性挑战 # 2026\"Camera学术之星\"影像算法技术竞赛 **让影像更精彩，发掘Camera学术之星** ## 赛事介绍 CSIG图像图形技术挑战赛是由中国图像图形学会（CSIG）主办的系列赛"
+          },
+          {
+            "signal": "华为终端有限公司独家赞助",
+            "anchor": "独家赞助",
+            "quote": "## 组织单位 - **主办单位**：中国图像图形学会 - **独家赞助**：华为终端有限公司 官方联络邮箱info@csig."
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "点击页面右上方\"立即报名\"按钮即可报名大赛",
+          "quote": "- **个人参赛**：参赛者点击页面右上方\"立即报名\"按钮即可报名大赛。"
+        },
+        "missing": [
+          "获奖是否可保研考研加分",
+          "是否提供实习或直通面试机会",
+          "是否提供就业绿色通道",
+          "是否提供创业扶持",
+          "是否提供国际交流机会",
+          "获奖是否颁发证书荣誉"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国图像图形学会、华为终端有限公司",
+          "quote": "为推动国内高等院校、科研院所在Camera及其相关领域在读学生的培养，选拔优秀人才，中国图像图形学会、华为终端有限公司携手举办第三届\"Camera学术之星\"影像算法技术竞赛与研讨会。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532499"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "- **个人参赛**：参赛者点击页面右上方\"立即报名\"按钮即可报名大赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532499"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "**信息要求**：参赛者须确保报名信息准确有效，否则会被取消参赛资格及奖励 ## 奖项设置 | 奖项 | 名额（每个赛题） | 奖金 | | --- | --- | --- | | 一等奖 | 1个团队 | 每个团队3万元 | | 二等奖",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532499"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "CSIG图像图形技术挑战赛-赛道二：生成式图像增强轻量模型设计挑战",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532500",
+      "elapsedMs": 1705,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 2531,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国图像图形学会",
+          "anchor": "主办单位**：中国图像图形学会",
+          "quote": "## 组织单位 - **主办单位**：中国图像图形学会 - **独家赞助**：华为终端有限公司 官方联络邮箱info@csig."
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "每个团队3万元",
+            "quote": "**信息要求**：参赛者须确保报名信息准确有效，否则会被取消参赛资格及奖励 ## 奖项设置 | 奖项 | 名额（每个赛题） | 奖金 | | --- | --- | --- | | 一等奖 | 1个团队 | 每个团队3万元 | | 二等奖"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由中国图像图形学会（CSIG）主办的系列赛事",
+            "anchor": "由中国图像图形学会（CSIG）主办的系列赛事",
+            "quote": "技术挑战赛-赛道二：生成式图像增强轻量模型设计挑战 # 2026\"Camera学术之星\"影像算法技术竞赛 **让影像更精彩，发掘Camera学术之星** ## 赛事介绍 CSIG图像图形技术挑战赛是由中国图像图形学会（CSIG）主办的系列赛"
+          },
+          {
+            "signal": "中国图像图形学会、华为终端有限公司携手举办",
+            "anchor": "中国图像图形学会、华为终端有限公司携手举办",
+            "quote": "为推动国内高等院校、科研院所在Camera及其相关领域在读学生的培养，选拔优秀人才，中国图像图形学会、华为终端有限公司携手举办第三届\"Camera学术之星\"影像算法技术竞赛与研讨会。"
+          },
+          {
+            "signal": "独家赞助为华为终端有限公司",
+            "anchor": "独家赞助**：华为终端有限公司",
+            "quote": "## 组织单位 - **主办单位**：中国图像图形学会 - **独家赞助**：华为终端有限公司 官方联络邮箱info@csig."
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "点击页面右上方\"立即报名\"按钮即可报名大赛",
+          "quote": "- **个人参赛**：参赛者点击页面右上方\"立即报名\"按钮即可报名大赛。"
+        },
+        "missing": [
+          "保研考研加分政策",
+          "实习或直通面试机会",
+          "就业绿色通道",
+          "创业扶持措施",
+          "国际交流机会",
+          "证书荣誉设置"
+        ],
+        "dropped": []
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国图像图形学会",
+          "quote": "## 组织单位 - **主办单位**：中国图像图形学会 - **独家赞助**：华为终端有限公司 官方联络邮箱info@csig.",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532500"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "- **个人参赛**：参赛者点击页面右上方\"立即报名\"按钮即可报名大赛。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532500"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "**信息要求**：参赛者须确保报名信息准确有效，否则会被取消参赛资格及奖励 ## 奖项设置 | 奖项 | 名额（每个赛题） | 奖金 | | --- | --- | --- | | 一等奖 | 1个团队 | 每个团队3万元 | | 二等奖",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532500"
+        }
+      ],
+      "droppedCount": 0,
+      "applied": false
+    },
+    {
+      "name": "第七届CSIG图像图形技术挑战赛—复杂工业场景异常检测算法挑战赛",
+      "url": "https://tianchi.aliyun.com/competition/entrance/532482",
+      "elapsedMs": 2125,
+      "ok": true,
+      "promptVersion": "competition-extract-v2-anchor",
+      "sourceChars": 4189,
+      "model": "deepseek-flash",
+      "extracted": {
+        "organizer": {
+          "value": "中国图像图形学会（CSIG）",
+          "anchor": "主办单位： 中国图像图形学会（CSIG）",
+          "quote": "# **二、组织机构** 主办单位： 中国图像图形学会（CSIG） 承办单位： 荣旗科技，CSIG视觉检测专业委员会 # **三、参赛要求** 面向全国企事业单位、高校的正式注册教师、在读研究生、博士生及研究团体、个人开放。"
+        },
+        "reward_highlights": [
+          {
+            "value": "现金奖金",
+            "anchor": "本赛道总奖金池为 40,000 元人民币",
+            "quote": "# **七、 奖项设置和奖励方法** 本赛道总奖金池为 40,000 元人民币，具体设置如下： 一等奖（1名）：奖金 14,000 元人民币 + 获奖证书 二等奖（2名）：奖金各 7,000 元人民币 + 获奖证书 三等奖（4名）：奖金各"
+          },
+          {
+            "value": "证书荣誉",
+            "anchor": "奖金 14,000 元人民币 + 获奖证书",
+            "quote": "# **七、 奖项设置和奖励方法** 本赛道总奖金池为 40,000 元人民币，具体设置如下： 一等奖（1名）：奖金 14,000 元人民币 + 获奖证书 二等奖（2名）：奖金各 7,000 元人民币 + 获奖证书 三等奖（4名）：奖金各"
+          },
+          {
+            "value": "国际交流",
+            "anchor": "获邀参加线下总决赛答辩",
+            "quote": "线下答辩与最终总成绩核算本赛道设立线下评审与答辩环节** 晋级机制： B榜综合得分S排名前 10 名的队伍，在按要求提交源代码、模型权重，并通过承办方技术专家组的“防作弊代码复现与时延核准”后，获邀参加线下总决赛答辩。"
+          }
+        ],
+        "authority_signals": [
+          {
+            "signal": "由中国图像图形学会（CSIG）主办",
+            "anchor": "主办单位： 中国图像图形学会（CSIG）",
+            "quote": "# **二、组织机构** 主办单位： 中国图像图形学会（CSIG） 承办单位： 荣旗科技，CSIG视觉检测专业委员会 # **三、参赛要求** 面向全国企事业单位、高校的正式注册教师、在读研究生、博士生及研究团体、个人开放。"
+          },
+          {
+            "signal": "由荣旗科技与CSIG视觉检测专业委员会承办",
+            "anchor": "承办单位： 荣旗科技，CSIG视觉检测专业委员会",
+            "quote": "# **二、组织机构** 主办单位： 中国图像图形学会（CSIG） 承办单位： 荣旗科技，CSIG视觉检测专业委员会 # **三、参赛要求** 面向全国企事业单位、高校的正式注册教师、在读研究生、博士生及研究团体、个人开放。"
+          }
+        ],
+        "recognition_hints": [],
+        "registration_organization": {
+          "value": "自行报名",
+          "anchor": "赛道发布与报名启动",
+          "quote": "# **四、 主要时间节点** 赛道发布与报名启动： 2026年5月下旬 数据集开放与A榜测试： 2026年5月中旬——2026年8月31日 B榜测试与结果提交： 2026年9月1日——2026年9月15日 线上评审与入围公布： 2026年"
+        },
+        "missing": [
+          "报名具体方式与入口",
+          "参赛是否需学校推荐或校内选拔",
+          "获奖对保研考研的具体加分政策",
+          "获奖对求职就业的具体认可政策",
+          "获奖对出国留学的具体认可政策",
+          "获奖对创业融资的具体扶持政策"
+        ],
+        "dropped": [
+          {
+            "field": "authority_signals",
+            "value": "冠军可参加CSIG挑战赛总决赛",
+            "quote": "赛道冠军队伍将获得参加2026年11-12月举行的第七届CSIG图像图形技术挑战赛总决赛的资格"
+          }
+        ]
+      },
+      "suggestions": [
+        {
+          "field": "organizer",
+          "value": "中国图像图形学会（CSIG）",
+          "quote": "# **二、组织机构** 主办单位： 中国图像图形学会（CSIG） 承办单位： 荣旗科技，CSIG视觉检测专业委员会 # **三、参赛要求** 面向全国企事业单位、高校的正式注册教师、在读研究生、博士生及研究团体、个人开放。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532482"
+        },
+        {
+          "field": "registration_organization",
+          "value": "自行报名",
+          "quote": "# **四、 主要时间节点** 赛道发布与报名启动： 2026年5月下旬 数据集开放与A榜测试： 2026年5月中旬——2026年8月31日 B榜测试与结果提交： 2026年9月1日——2026年9月15日 线上评审与入围公布： 2026年",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532482"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "现金奖金",
+          "quote": "# **七、 奖项设置和奖励方法** 本赛道总奖金池为 40,000 元人民币，具体设置如下： 一等奖（1名）：奖金 14,000 元人民币 + 获奖证书 二等奖（2名）：奖金各 7,000 元人民币 + 获奖证书 三等奖（4名）：奖金各",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532482"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "证书荣誉",
+          "quote": "# **七、 奖项设置和奖励方法** 本赛道总奖金池为 40,000 元人民币，具体设置如下： 一等奖（1名）：奖金 14,000 元人民币 + 获奖证书 二等奖（2名）：奖金各 7,000 元人民币 + 获奖证书 三等奖（4名）：奖金各",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532482"
+        },
+        {
+          "field": "reward_highlights",
+          "value": "国际交流",
+          "quote": "线下答辩与最终总成绩核算本赛道设立线下评审与答辩环节** 晋级机制： B榜综合得分S排名前 10 名的队伍，在按要求提交源代码、模型权重，并通过承办方技术专家组的“防作弊代码复现与时延核准”后，获邀参加线下总决赛答辩。",
+          "source": "https://tianchi.aliyun.com/competition/entrance/532482"
+        }
+      ],
+      "droppedCount": 1,
+      "applied": false
+    }
+  ]
+}

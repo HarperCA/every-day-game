@@ -85,13 +85,19 @@ function admissionSignals(record = {}) {
     score += 4;
   }
 
-  // 实质性的非现金回报说明主办方真的投入了资源。
+  // 实质性的非现金回报 —— 保研加分、直通面试、就业绿色通道 ——
+  // 正是这个产品要找的东西（冷门但高回报），而且它们是抽取时逐字引证过的原文事实，
+  // 比关键词扫出来的「主办方名字里有学会」更硬。所以权重不低于权威主办。
+  //
+  // 实测中这一点很要紧：欧莱雅黑客松三个赛题的正文对实习直通面试写法完全相同，
+  // 但模型只在其中一条给出了 recognition_hints，另两条没给。若把认可度当成唯一
+  // 决定因素，同一个赛事家族会因为模型抖动被拆成 admit 和 review 两种结果。
   const highlights = Array.isArray(record.rewardHighlights) ? record.rewardHighlights
     : (Array.isArray(record.reward_highlights) ? record.reward_highlights : []);
   const substantive = highlights.filter(item => item !== '现金奖金' && item !== '实物奖品' && item !== '证书荣誉');
   if (substantive.length) {
     positives.push(`实质回报：${substantive.join('、')}`);
-    score += 2;
+    score += 3;
   }
 
   return { positives, redFlags:redFlags.hits, score, redFlagScore:redFlags.score };

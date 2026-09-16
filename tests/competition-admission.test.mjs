@@ -147,3 +147,30 @@ describe('the real crawled candidates', () => {
     expect(verdicts).toContain('review');
   });
 });
+
+describe('a verified non-cash reward is enough on its own', () => {
+  it('admits a contest whose only evidence is a quote-backed interview fast track', () => {
+    // 实习直通面试、保研加分正是这个产品要找的东西，而且它们是抽取时
+    // 逐字引证过的原文事实，比关键词扫出来的「名字里有学会」更硬。
+    const result = assessAdmission({ reward_highlights:['现金奖金', '实习或直通面试', '证书荣誉'] });
+    expect(result.verdict).toBe('admit');
+    expect(result.positives.join()).toContain('实习或直通面试');
+  });
+
+  it('does not admit on cash, certificates or merchandise alone', () => {
+    // 这三样几乎每个赛事都有，不构成价值证据。
+    expect(assessAdmission({ reward_highlights:['现金奖金', '证书荣誉', '实物奖品'] }).verdict).toBe('review');
+  });
+
+  it('keeps sibling tracks of one contest on the same verdict', () => {
+    // 实测：欧莱雅黑客松三个赛题正文对实习直通面试写法完全相同，
+    // 但模型只在其中一条给出了 recognition_hints。若认可度是唯一决定因素，
+    // 同一个赛事家族会因为模型抖动被拆成 admit 和 review 两种结果。
+    const withHint = assessAdmission({
+      reward_highlights:['实习或直通面试'],
+      recognition:[{ path:'求职就业', level:'中', evidence:'表现优异的参赛团队将有机会获得欧莱雅暑期实习直通面试机会' }],
+    }).verdict;
+    const withoutHint = assessAdmission({ reward_highlights:['实习或直通面试'] }).verdict;
+    expect(withoutHint).toBe(withHint);
+  });
+});

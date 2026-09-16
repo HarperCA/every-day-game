@@ -196,6 +196,36 @@ function validateResult(value) {
 }
 
 // 模型常把 JSON 包在 ```json 围栏里，直接 JSON.parse 会抛错。
+// 扫出第一个大括号配平的 JSON 对象。
+//
+// 不能用 lastIndexOf('}')：模型在 JSON 之后再跟一段说明、或者一口气返回
+// 两个对象时，末尾那个大括号属于后面的内容，切出来的片段必定解析失败。
+// 实测 deepseek-flash 就这样返回过，报 "Unexpected non-whitespace character
+// after JSON at position 24"。计数时要跳过字符串内部的大括号和转义。
+function extractFirstJsonObject(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return '';
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i += 1) {
+    const character = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === '\\') escaped = true;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') inString = true;
+    else if (character === '{') depth += 1;
+    else if (character === '}') {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return '';
+}
+
 function parseModelJson(text) {
   const raw = String(text || '').trim();
   if (!raw) throw new Error('ai_review_empty_response');
@@ -203,10 +233,9 @@ function parseModelJson(text) {
   try {
     return JSON.parse(unfenced);
   } catch (error) {
-    const start = unfenced.indexOf('{');
-    const end = unfenced.lastIndexOf('}');
-    if (start === -1 || end <= start) throw new Error(`ai_review_unparsable_response:${unfenced.slice(0, 200)}`);
-    return JSON.parse(unfenced.slice(start, end + 1));
+    const candidate = extractFirstJsonObject(unfenced);
+    if (!candidate) throw new Error(`ai_review_unparsable_response:${unfenced.slice(0, 200)}`);
+    return JSON.parse(candidate);
   }
 }
 
@@ -218,12 +247,23 @@ function buildResponseFormat(useJsonSchema) {
 
 const DEFAULT_REQUEST_OPTIONS = { useJsonSchema:true, includeTemperature:true };
 
+// DeepSeek 的思考模式默认打开且 effort 默认 high。抽取和审核都是机械任务，
+// 思维链不提高准确性，却会先吃掉 max_tokens —— 实测 5 条里有 2 条因此
+// 返回空 content（ai_extract_empty_response）。所以对该供应商显式关掉。
+// 这个参数其他供应商不认识，只在识别出 DeepSeek 时才带上。
+function supportsThinkingToggle(baseUrl) {
+  return /deepseek/i.test(String(baseUrl || ''));
+}
+
 function buildRequestBody(config, messages, options) {
   const body = { model:config.model, messages, response_format:buildResponseFormat(options.useJsonSchema) };
   // kimi-for-coding 只接受 temperature=1，省略该字段等同于用模型默认值。
   if (options.includeTemperature) body.temperature = 0.1;
   // 生成长度是这套流程里最主要的耗时来源，云函数只有 60 秒，必须封顶。
   if (Number(options.maxTokens) > 0) body.max_tokens = Number(options.maxTokens);
+  if (options.disableThinking !== false && supportsThinkingToggle(config.baseUrl)) {
+    body.thinking = { type:'disabled' };
+  }
   return body;
 }
 
@@ -231,6 +271,7 @@ function buildRequestBody(config, messages, options) {
 function adjustRequestOptions(status, raw, options) {
   if (status !== 400 && status !== 404 && status !== 422) return null;
   const message = String(raw || '');
+  if (options.disableThinking !== false && /thinking|reasoning/i.test(message)) return { ...options, disableThinking:false };
   if (options.includeTemperature && /temperature/i.test(message)) return { ...options, includeTemperature:false };
   if (options.useJsonSchema && /response_format|json_schema|schema|not support|unsupported/i.test(message)) return { ...options, useJsonSchema:false };
   return null;
@@ -360,6 +401,8 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
 
 module.exports = {
   USER_AGENT,
+  supportsThinkingToggle,
+  extractFirstJsonObject,
   adjustRequestOptions,
   callChatCompletion,
   loadRobots,

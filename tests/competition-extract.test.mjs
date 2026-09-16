@@ -481,3 +481,76 @@ describe('batch extraction can point at a different provider', () => {
     }
   });
 });
+
+describe('surviving what a second provider actually returns', () => {
+  const {
+    MAX_ANCHOR_OCCURRENCES, expandAnchor,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+  const {
+    extractFirstJsonObject, parseModelJson,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+
+  it('reads the first json object even when prose follows it', () => {
+    // deepseek-flash 实测这样返回过，报 Unexpected non-whitespace character after JSON。
+    expect(parseModelJson('{"a":1} 以上是我的分析。')).toEqual({ a:1 });
+    expect(parseModelJson('{"a":1}\n{"b":2}')).toEqual({ a:1 });
+  });
+
+  it('does not miscount braces inside strings', () => {
+    // 用 lastIndexOf 找结尾时，值里的大括号会把范围切错。
+    expect(parseModelJson('{"note":"含{大括号}的值"} 说明')).toEqual({ note:'含{大括号}的值' });
+    expect(extractFirstJsonObject('前言 {"a":{"b":1}} 后记')).toBe('{"a":{"b":1}}');
+  });
+
+  it('still fails loudly when there is no object at all', () => {
+    expect(() => parseModelJson('我无法完成这个任务')).toThrow('ai_review_unparsable_response');
+    expect(() => parseModelJson('')).toThrow('ai_review_empty_response');
+  });
+
+  it('keeps an anchor that repeats once per prize tier', () => {
+    // 「官方荣誉证书」会在一等奖、二等奖、三等奖各出现一次，
+    // 那是合理重复而不是措辞空泛。阈值定成 3 时实测把它误杀了。
+    const tiers = '一等奖：现金80000元 + 官方荣誉证书。二等奖：现金30000元 + 官方荣誉证书。'
+      + '三等奖：现金10000元 + 官方荣誉证书。优胜奖：官方荣誉证书。';
+    expect(expandAnchor('官方荣誉证书', tiers)).not.toBeNull();
+    expect(MAX_ANCHOR_OCCURRENCES).toBeGreaterThan(4);
+  });
+
+  it('keeps only one entry per reward value', () => {
+    // 模型会为不同奖项档位重复列出同一个 value，实测返回过两条「实物奖品」。
+    const tiers = '一等奖：现金80000元。二等奖：现金30000元。三等奖：官方荣誉证书。';
+    const verified = verifyAgainstSource({
+      reward_highlights:[
+        { value:'实物奖品', anchor:'现金80000元' },
+        { value:'实物奖品', anchor:'现金30000元' },
+        { value:'证书荣誉', anchor:'官方荣誉证书' },
+      ],
+    }, tiers);
+    expect(verified.reward_highlights.map(item => item.value)).toEqual(['实物奖品', '证书荣誉']);
+  });
+});
+
+describe('deepseek thinking mode', () => {
+  const {
+    adjustRequestOptions, buildRequestBody, supportsThinkingToggle,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+
+  it('turns thinking off for deepseek, and only for deepseek', () => {
+    // 思考模式默认打开、effort 默认 high，思维链会先吃掉 max_tokens ——
+    // 实测 5 条里有 2 条因此返回空 content。抽取是机械任务，思考不提高准确性。
+    const deepseek = buildRequestBody({ model:'deepseek-flash', baseUrl:'https://api.deepseek.com' }, [], {});
+    expect(deepseek.thinking).toEqual({ type:'disabled' });
+
+    // 这个参数别家不认识，带上去可能直接 400。
+    const kimi = buildRequestBody({ model:'kimi-for-coding', baseUrl:'https://api.kimi.com/coding/v1' }, [], {});
+    expect(kimi.thinking).toBeUndefined();
+    expect(supportsThinkingToggle('https://api.deepseek.com')).toBe(true);
+    expect(supportsThinkingToggle('https://api.kimi.com/coding/v1')).toBe(false);
+  });
+
+  it('drops the parameter if the provider rejects it', () => {
+    const next = adjustRequestOptions(400, 'unknown field: thinking', { disableThinking:true, useJsonSchema:true, includeTemperature:true });
+    expect(next.disableThinking).toBe(false);
+    expect(buildRequestBody({ model:'m', baseUrl:'https://api.deepseek.com' }, [], next).thinking).toBeUndefined();
+  });
+});

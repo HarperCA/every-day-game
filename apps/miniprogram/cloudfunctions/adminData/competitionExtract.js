@@ -99,7 +99,9 @@ const ANCHOR_MIN_LENGTH = 4;
 const ANCHOR_MAX_LENGTH = 30;
 const SENTENCE_BOUNDARY = /[。！？；\n.!?;]/;
 // 锚点在全文出现太多次说明它过于普通，当证据不可靠。
-const MAX_ANCHOR_OCCURRENCES = 3;
+// 但阈值不能太紧：奖项分档时「官方荣誉证书」会在一等奖、二等奖、三等奖
+// 各出现一次，那是合理重复而不是措辞空泛。实测 3 会把它误杀。
+const MAX_ANCHOR_OCCURRENCES = 8;
 
 function countOccurrences(haystack, needle) {
   let count = 0;
@@ -216,8 +218,15 @@ function verifyAgainstSource(parsed, sourceText) {
     ? keepWithQuote(parsed.registration_organization, 'registration_organization')
     : null;
 
+  // 同一种回报只保留一条：模型会为不同奖项档位重复列出同一个 value。
+  const seenHighlights = new Set();
   const rewardHighlights = (Array.isArray(parsed.reward_highlights) ? parsed.reward_highlights : [])
     .filter(item => REWARD_HIGHLIGHTS.includes(item?.value))
+    .filter(item => {
+      if (seenHighlights.has(item.value)) return false;
+      seenHighlights.add(item.value);
+      return true;
+    })
     .map(item => keepWithQuote(item, 'reward_highlights'))
     .filter(Boolean);
 
