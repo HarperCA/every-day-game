@@ -174,3 +174,49 @@ describe('a verified non-cash reward is enough on its own', () => {
     expect(withoutHint).toBe(withHint);
   });
 });
+
+describe('extracted authority signals must reach the gate', () => {
+  it('scores signals the extraction read off the page', () => {
+    // 实测「具身」系列三条抽到了「主办单位为中国中检」和
+    // 「支持单位含中国互联网协会人工智能工作委员会」，但门槛只扫 organizer 字段，
+    // 一条都没看见，结果全部停在 review —— 抽取等于白做。
+    const withoutSignals = admissionSignals({ organizer:'' }).score;
+    const withSignals = admissionSignals({
+      organizer:'',
+      authority_signals:[
+        { signal:'支持单位含中国互联网协会人工智能工作委员会', quote:'**支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会' },
+      ],
+    }).score;
+    expect(withSignals).toBeGreaterThan(withoutSignals);
+  });
+
+  it('accepts plain strings as well as extraction objects', () => {
+    expect(admissionSignals({ authority_signals:['由教育部指导'] }).score).toBeGreaterThan(0);
+  });
+
+  it('ignores a malformed signals field instead of throwing', () => {
+    expect(() => admissionSignals({ authority_signals:'不是数组' })).not.toThrow();
+    expect(() => admissionSignals({ authority_signals:[null, 42] })).not.toThrow();
+  });
+});
+
+describe('the same evidence must give the same verdict', () => {
+  const siblingSignals = [
+    { signal:'主办单位为中国中检', quote:'**主办单位**：中国中检' },
+    { signal:'支持单位含中国互联网协会人工智能工作委员会', quote:'**支持单位**：中国互联网协会人工智能工作委员会' },
+  ];
+
+  it('does not let a loose keyword split identical sibling tracks', () => {
+    // 实测「具身」系列三条赛道主办方证据完全相同，却因为其中一条正文偶然
+    // 出现「评测」二字命中了权重 1 的「依托学术会议」，被拆成 2 admit / 1 review。
+    const plain = assessAdmission({ authority_signals:siblingSignals, introduction:'本赛道聚焦跨本体迁移。' });
+    const withLooseWord = assessAdmission({ authority_signals:siblingSignals, introduction:'本赛道设置统一评测体系。' });
+    expect(withLooseWord.verdict).toBe(plain.verdict);
+  });
+
+  it('still recognizes a contest genuinely attached to an academic conference', () => {
+    // CHIP、SMP 这类是真正的会议评测，这个信号对它们应当继续成立。
+    const conference = admissionSignals({ introduction:'第十四届全国社会媒体处理大会（SMP 2026）挑战赛。' });
+    expect(conference.positives.join()).toContain('学术会议');
+  });
+});

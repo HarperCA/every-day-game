@@ -56,6 +56,16 @@ function parseArgs(argv) {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+// 「什么都没抽到」：没有主办方、没有权威信号、也没有任何回报。
+// 这要么是正文真的没写，要么是模型这一次抖了 —— 重试一次就能分辨。
+function yieldedNothing(outcome) {
+  const extracted = outcome?.extracted;
+  if (!extracted) return true;
+  return !extracted.organizer
+    && !(extracted.authority_signals || []).length
+    && !(extracted.reward_highlights || []).length;
+}
+
 // 天池详情页是前后端分离的，静态抓取只有导航骨架（实测两个不同赛事抓出来
 // 一字不差）。正文要走它自己的接口取，再经 text 传给抽取模块。
 async function tianchiText(raceId) {
@@ -97,21 +107,36 @@ async function main() {
     const name = String(candidate.name || candidate.candidate || '');
     const started = Date.now();
     let outcome;
-    try {
-      const text = await sourceTextFor(candidate);
-      outcome = await extractFromDetailPage(url, undefined, {
-        contestName:name, text, totalBudgetMs:SERVER_BUDGET_MS, chatTimeoutMs:SERVER_BUDGET_MS,
-      });
-    } catch (error) {
-      // 单条失败不能中断整批 —— 其余候选仍然值得跑完。
-      outcome = { ok:false, status:'threw', url, error:String(error?.message || error).slice(0, 300) };
+    let retried = false;
+    const runOnce = async text => {
+      try {
+        return await extractFromDetailPage(url, undefined, {
+          contestName:name, text, totalBudgetMs:SERVER_BUDGET_MS, chatTimeoutMs:SERVER_BUDGET_MS,
+        });
+      } catch (error) {
+        // 单条失败不能中断整批 —— 其余候选仍然值得跑完。
+        return { ok:false, status:'threw', url, error:String(error?.message || error).slice(0, 300) };
+      }
+    };
+    const text = await sourceTextFor(candidate);
+    outcome = await runOnce(text);
+    // 抽取结果不稳定：实测「跨本体具身」这条批量跑时什么都没抽到，
+    // 单独连跑两次却都正确抽出了主办单位和四条权威信号。同样的输入、不同的输出。
+    // 一次调用只要一秒多、约一分钱，抽空了就重试一次远比让一个好赛事
+    // 因为一次掷硬币停在待审要划算。
+    if (outcome.ok && yieldedNothing(outcome)) {
+      retried = true;
+      await sleep(PER_CALL_DELAY_MS);
+      const second = await runOnce(text);
+      if (second.ok && !yieldedNothing(second)) outcome = second;
     }
     const elapsed = Date.now() - started;
-    results.push({ name, url, elapsedMs:elapsed, ...outcome });
+    results.push({ name, url, elapsedMs:elapsed, retried, ...outcome });
     const suffix = outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`
       : `失败 ${outcome.status}`;
-    console.log(`[${index + 1}/${candidates.length}] ${String(elapsed).padStart(6)}ms  ${suffix}  ${name.slice(0, 30)}`);
+    const retryMark = retried ? ' (重试)' : '';
+    console.log(`[${index + 1}/${candidates.length}] ${String(elapsed).padStart(6)}ms  ${suffix}${retryMark}  ${name.slice(0, 30)}`);
     if (index < candidates.length - 1) await sleep(PER_CALL_DELAY_MS);
   }
 
@@ -127,6 +152,7 @@ async function main() {
       ? ok.map(item => item.elapsedMs).sort((a, b) => a - b)[Math.floor(ok.length / 2)]
       : null,
     totalDropped:ok.reduce((sum, item) => sum + (item.droppedCount || 0), 0),
+    retriedCount:results.filter(item => item.retried).length,
     results,
   };
   const outPath = path.resolve(HERE, args.out);

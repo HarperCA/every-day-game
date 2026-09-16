@@ -23,7 +23,11 @@ const AUTHORITY_PATTERNS = [
   { pattern:/一级学会|中国[一-龥]{2,8}学会|全国[一-龥]{2,8}学会/, signal:'全国性学会主办', weight:3 },
   { pattern:/学会|协会|研究会|专业委员会|专委会|学术委员会/, signal:'学术组织参与', weight:2 },
   { pattern:/全国组委会|组织委员会|指导委员会|教学指导委员会/, signal:'设有组委会', weight:1 },
-  { pattern:/大会|学术会议|评测|挑战赛技术报告|论文/, signal:'依托学术会议', weight:1 },
+  // 只认真正指向学术会议的措辞。原先把「评测」「论文」也算进来太松：
+  // 任何评测任务都会命中，而这是个权重 1 的模糊信号，却足以翻转 admit/review。
+  // 实测「具身」系列三条赛道主办方证据完全相同，却因为其中一条正文偶然出现
+  // 这类词而被拆成 2 admit / 1 review —— 一个模糊模式能决定判定，说明它标定错了。
+  { pattern:/学术会议|全国[一-龥]{2,10}大会|届[一-龥]{0,10}大会|论文集/, signal:'依托学术会议', weight:1 },
 ];
 
 // 水赛红旗。命中任一条都需要抵消证据才能收录。
@@ -53,10 +57,18 @@ function scanPatterns(text, rules) {
 // record 可以是库中记录，也可以是抓取产出的候选。
 // 只读取文本和已核实的数值，不做任何推断。
 function collectText(record = {}) {
+  // authority_signals 是抽取模块从详情页正文里读出来、且逐字引证过的权威性表述。
+  // 不把它们纳进来的话，抽取白做：实测「具身」系列三条抽到了
+  // 「主办单位为中国中检」「支持单位含中国互联网协会人工智能工作委员会」，
+  // 门槛却因为只扫 organizer 字段而一条都没看见，结果全部停在 review。
+  const signals = Array.isArray(record.authority_signals)
+    ? record.authority_signals.map(item => (typeof item === 'string' ? item : `${item?.signal || ''} ${item?.quote || ''}`))
+    : [];
   return [
     record.organizer, record.introduction, record.description,
     record.rewards, record.formatAndRules, record.format_and_rules,
     record.registrationMethod, record.registration_method, record.fees,
+    ...signals,
   ].filter(value => typeof value === 'string').join('\n');
 }
 
