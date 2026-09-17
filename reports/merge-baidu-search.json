@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-09-17T14:24:57.057Z",
+  "candidateSource": "百度AI搜索",
+  "candidateCount": 10,
+  "masterCount": 44,
+  "policy": "只做规则能确定的判断。uncertain 一律交人工或 AI，不硬猜。产出不写库。",
+  "counts": {
+    "duplicate": 2,
+    "same_event_other_tier": 0,
+    "likely_duplicate": 0,
+    "uncertain": 0,
+    "new": 8,
+    "invalid": 0
+  },
+  "duplicate": [
+    {
+      "candidate": "关于组织开展2026年“挑战杯”中国大学生创业计划竞赛的通知",
+      "externalId": "search-aa69f77048557b04",
+      "detailUrl": "http://tw.wuit.cn/info/1018/6205.htm",
+      "matchedMaster": "“挑战杯”中国大学生创业计划竞赛",
+      "matchedId": "event-cmp003",
+      "confidence": 1,
+      "reason": "标题中完整包含「“挑战杯”中国大学生创业计划竞赛」"
+    },
+    {
+      "candidate": "关于开展2026“外研社·国才杯”“理解当代中国” 全国大学生外语能力大赛“四新”专项赛校赛的通知",
+      "externalId": "search-ee1dfd0ed57db2d7",
+      "detailUrl": "https://www.hbfs.edu.cn/wyx/b7/49/c6864a374601/page.htm",
+      "matchedMaster": "“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛",
+      "matchedId": "event-cmp028",
+      "confidence": 1,
+      "reason": "标题中完整包含「“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛」"
+    }
+  ],
+  "likely_duplicate": [],
+  "uncertain": [],
+  "new": [
+    {
+      "candidate": "以青春创金融 以赛事赴新途 | 2026年“工行杯”全国大学生金融科技创新大赛校赛报名火热开启!",
+      "externalId": "search-9c26f443d69d05af",
+      "detailUrl": "https://www.humc.edu.cn/2026/06-24/460007.html",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.745,
+      "reason": "最接近的是与「全国大学生医学创新大赛暨“一带一路”国际竞赛」相似度 0.25，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于四川农业大学第五届大学生英语挑战赛(一)暨“21世纪杯”全国英语演讲比赛校赛通知",
+      "externalId": "search-c430d55a395f5278",
+      "detailUrl": "https://rwy.sicau.edu.cn/info/1173/21778.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.792,
+      "reason": "最接近的是与「“挑战杯”全国大学生课外学术科技作品竞赛」相似度 0.21，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办第十六届三创赛美妆新零售实战赛的通知",
+      "externalId": "search-a4a2035c3ad1d739",
+      "detailUrl": "https://cxxy.gpnu.edu.cn/info/1029/3724.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.789,
+      "reason": "最接近的是与「三创赛」相似度 0.21，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "桂林理工大学关于组织第十三届大学生新一代信息通信科技大赛报名通知",
+      "externalId": "search-a18af89ff7e02daf",
+      "detailUrl": "https://wdxy.glut.edu.cn/info/1067/2017.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.81,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.19，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "活动通知|关于举办2026年大学生“AI+信息素养”大赛(本科生、研究生赛道)江西赛区比赛的通知",
+      "externalId": "search-a7d607b0dad0a652",
+      "detailUrl": "https://baijiahao.baidu.com/s?id=1876033330640753692&wfr=spider&for=pc",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.818,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.18，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于组织参加2026年度中国青年科技创新“揭榜挂帅”擂台赛(”挑战杯“专项赛)第二批的通知",
+      "externalId": "search-be7b88362f83b9b9",
+      "detailUrl": "https://tuanwei.hfut.edu.cn/2026/0520/c736a319241/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.889,
+      "reason": "最接近的是与「中国国际大学生创新大赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "第四届浙江农林大学新材料创新设计大赛",
+      "externalId": "search-510be9ac49ad262b",
+      "detailUrl": "https://jwc.zafu.edu.cn/info/1031/9784.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.524,
+      "reason": "最接近的是与「机械创新设计大赛」相似度 0.48，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于组织大学生新一代信息通信科技大赛校内选拔赛的通知",
+      "externalId": "search-f9389bb88a1c6fbc",
+      "detailUrl": "https://scb.xauat.edu.cn/info/1010/9743.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.805,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.20，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    }
+  ],
+  "invalid": []
+}

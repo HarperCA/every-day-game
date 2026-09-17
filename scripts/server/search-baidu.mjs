@@ -186,6 +186,12 @@ async function main() {
     candidates: allCandidates,
   };
 
+  // 默认值 '../../reports/…' 是按仓库里 scripts/server/ 的嵌套深度写的，
+  // 部署到服务器后脚本是平铺放在 /opt/daily-contest/ 下面，同一个默认值
+  // 会多跳一层——实测真的落到了文件系统根目录的 /reports/ 下面。和
+  // crawl-tianchi.mjs/crawl-datafountain.mjs 同一个坑：两边路径深度不一样，
+  // 没有一个相对默认值能同时对——所以服务器上调用务必显式传 --out
+  // （run-crawl-pipeline.mjs 编排时已经是这么做的，这里手动跑也一样）。
   const outPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), args.out);
   await fsp.mkdir(path.dirname(outPath), { recursive: true });
   await fsp.writeFile(outPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
