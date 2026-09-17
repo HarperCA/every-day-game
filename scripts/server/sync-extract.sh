@@ -13,7 +13,7 @@ SERVER="${DEPLOY_SERVER:-root@107.175.111.18}"
 REMOTE="/opt/daily-contest"
 LOCAL_FN="apps/miniprogram/cloudfunctions/adminData"
 
-MODULES=(competitionExtract.js competitionAiReview.js competitionValue.js httpClient.js robots.js)
+MODULES=(competitionExtract.js competitionAiReview.js competitionValue.js competitionAdmission.js candidateToRecord.js httpClient.js robots.js)
 
 echo "--- 同步抽取模块到 $REMOTE/cjs ---"
 ssh "$SERVER" "mkdir -p $REMOTE/cjs && printf '%s' '{\"type\":\"commonjs\"}' > $REMOTE/cjs/package.json"
@@ -24,6 +24,7 @@ done
 
 echo "--- 同步批量抽取脚本 ---"
 scp -q scripts/server/run-extract.mjs "$SERVER:$REMOTE/run-extract.mjs"
+scp -q scripts/server/ingest-candidates.mjs "$SERVER:$REMOTE/ingest-candidates.mjs"
 
 for candidates in "$@"; do
   echo "--- 同步候选文件 $(basename "$candidates") ---"
