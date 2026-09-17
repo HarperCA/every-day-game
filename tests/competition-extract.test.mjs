@@ -574,12 +574,11 @@ describe('evidence is taken by block, never cut mid-line', () => {
     '**承办单位**：中检智测科技',
   ].join('\n');
 
-  it('returns the whole prize block, not one truncated line', () => {
+  it('returns a whole line, never a fragment cut at a character count', () => {
     // 之前按句号扩展再 slice(0,120)，实测 33 条引文结尾是「+ 由」「北京北奥集」这种半个词。
     const quote = expandBlock('80,000', MARKDOWN);
-    expect(quote).toContain('一等奖');
-    expect(quote).toContain('二等奖');
-    expect(quote).toContain('三等奖');
+    expect(quote).toBe('- **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书');
+    expect(MARKDOWN).toContain(quote); // 逐字来自原文
   });
 
   it('stops at the block boundary instead of bleeding into the next section', () => {
@@ -588,10 +587,9 @@ describe('evidence is taken by block, never cut mid-line', () => {
     expect(quote).not.toContain('奖金设置'); // 标题是块边界
   });
 
-  it('keeps organizer lines together', () => {
-    const quote = expandBlock('中国中检', MARKDOWN);
-    expect(quote).toContain('主办单位');
-    expect(quote).toContain('承办单位');
+  it('gives the organizer line on its own', () => {
+    // 整块取会让五条信号共用同一段证据，看某一条时核对不了是哪句支持的。
+    expect(expandBlock('主办单位**：中国中检', MARKDOWN)).toBe('**主办单位**：中国中检');
   });
 
   it('never ends mid-word when a block is too long', () => {
@@ -629,11 +627,14 @@ describe('prose gets a sentence, lists get the block', () => {
     expect(expandBlock('创业扶持', prose)).toBe('获奖团队可获得创业扶持。');
   });
 
-  it('takes the whole block when the lines only make sense together', () => {
-    const list = '## 奖金设置\n- 一等奖：8万元\n- 二等奖：5万元\n- 三等奖：2万元';
-    const quote = expandBlock('一等奖：8万元', list);
-    expect(quote).toContain('二等奖');
-    expect(quote).toContain('三等奖');
+  it('takes neighbouring lines only when one line cannot stand alone', () => {
+    // 有冒号的行自己就说清了一件事，不必拉上邻居；
+    // 「- 8万」这种才需要补到够长。
+    const selfContained = '## 奖金设置\n- 一等奖：8万元\n- 二等奖：5万元';
+    expect(expandBlock('一等奖：8万元', selfContained)).toBe('- 一等奖：8万元');
+
+    const fragments = '## 奖金\n- 8万\n- 5万\n- 2万';
+    expect(expandBlock('- 8万', fragments)).toContain('5万');
   });
 });
 
@@ -659,5 +660,43 @@ describe('markdown markers are formatting, not content', () => {
     const withMarks = '**一等奖**：8万元 **二等奖**：5万元';
     expect(expandBlock('一等奖：8万元', withMarks)).toContain('一等奖');
     expect(expandBlock('二等奖：5万元', withMarks)).toContain('二等奖');
+  });
+});
+
+describe('one signal, one line of evidence', () => {
+  const {
+    expandAnchor: expandBlock, isSelfContained,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  const ORG_BLOCK = '## 组织单位\n**主办单位**：中国中检\n**承办单位**：中检智测科技\n'
+    + '**协办单位**：首钢基金\n**支持单位**：学习强国学习平台、中国互联网协会人工智能工作委员会\n**技术平台**：阿里云天池';
+
+  it('gives each fact its own line instead of one shared blob', () => {
+    // 实测整块取的结果是五条不同的信号共用同一段 295 字证据 ——
+    // 看「技术平台为阿里云天池」时拿到的是一大段单位罗列，根本核对不了是哪句。
+    expect(expandBlock('主办单位**：中国中检', ORG_BLOCK)).toBe('**主办单位**：中国中检');
+    expect(expandBlock('技术平台**：阿里云天池', ORG_BLOCK)).toBe('**技术平台**：阿里云天池');
+    expect(expandBlock('承办单位**：中检智测科技', ORG_BLOCK)).toBe('**承办单位**：中检智测科技');
+  });
+
+  it('judges a line by whether it stands alone, not by how long it is', () => {
+    // 「**主办单位**：中国中检」只有十四个字却已经说完整了；
+    // 「- 8万」再怎么数也不成证据。
+    expect(isSelfContained('**主办单位**：中国中检')).toBe(true);
+    expect(isSelfContained('- **一等奖（1 名）**：现金 ¥80,000')).toBe(true);
+    expect(isSelfContained('- 8万')).toBe(false);
+    expect(isSelfContained('支持单位：')).toBe(false); // 冒号后没内容
+    expect(isSelfContained('**技术平台**： 阿里云天池')).toBe(true); // 冒号后有空格
+  });
+
+  it('grows to neighbours only when a line cannot stand alone', () => {
+    const tiny = '## 奖金\n- 8万\n- 5万\n- 2万';
+    const quote = expandBlock('- 8万', tiny);
+    expect(quote).toContain('5万');
+  });
+
+  it('keeps a prize line whole rather than merging every tier', () => {
+    const prize = '## 奖金设置\n- **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书\n- **二等奖（2 名）**：现金 ¥50,000';
+    expect(expandBlock('一等奖（1 名）**：现金', prize)).toBe('- **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书');
   });
 });

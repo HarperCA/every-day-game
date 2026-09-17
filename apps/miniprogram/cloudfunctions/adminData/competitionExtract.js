@@ -75,6 +75,8 @@ const PAGE_TEXT_LIMIT = 6000;
 // 提到 300，与 event_edition schema 里 recognition[].evidence 的 maxLength 一致。
 const MIN_QUOTE_LENGTH = 6;
 const MAX_QUOTE_LENGTH = 300;
+// 一行短于这个长度就不足以单独当证据（「- 8万」这种），需要向两侧补整行。
+const MIN_EVIDENCE_CHARS = 16;
 
 const PUNCTUATION_MAP = {
   '，': ',', '。': '.', '；': ';', '：': ':', '！': '!', '？': '?',
@@ -153,6 +155,13 @@ function isBlockBoundary(line) {
   return !value || /^#{1,6}\s/.test(value) || /^([-*_]\s*){3,}$/.test(value);
 }
 
+// 一行自不自足：有冒号、且冒号后还有实际内容，就是一个完整的键值对，
+// 单独拿出来就能当证据。这比按字数判断准得多。
+function isSelfContained(line) {
+  const match = /[：:]\s*(.+)$/.exec(String(line || '').trim());
+  return Boolean(match && match[1].replace(MARKDOWN_MARKS, '').trim().length >= 2);
+}
+
 // 把原文按行切开并记下每行的起止位置，用于「取整行、不切半行」。
 function toLines(source) {
   const lines = [];
@@ -215,14 +224,20 @@ function expandAnchor(anchor, sourceText, { maxChars = MAX_QUOTE_LENGTH } = {}) 
     return line.trim().slice(0, maxChars) || null;
   }
 
-  const wholeBlock = join(blockStart, blockEnd);
-  if (wholeBlock.length <= maxChars) return wholeBlock || null;
-
-  // 块超长：以锚点那一行为中心补整行。证据的重点通常在锚点之后，所以先向后补。
+  // 多行块里先只取锚点那一行。
+  //
+  // 整块取对「三档奖项」这类并列项是合适的，对「每行一个单位」的定义列表
+  // 就过头了：实测「组织单位」块里主办、承办、协办、支持、场景共建各占一行，
+  // 整块取的结果是五条不同的信号共用同一段 295 字证据 ——
+  // 看「技术平台为阿里云天池」时拿到的是一大段单位罗列，根本核对不了是哪句。
+  // 一行本身就说清一件事时，它就是最精确的证据。
   let from = anchorLine;
   let to = anchorLine;
   let current = join(from, to);
-  while (true) {
+  // 判断一行够不够当证据，靠的是它自不自足，不是够不够长。
+  // 「**主办单位**：中国中检」只有十四个字，却已经把一件事说完整了；
+  // 「- 8万」再怎么数也不成证据。有冒号且冒号后有内容，就是一个完整的键值。
+  while (!isSelfContained(current) && current.length < MIN_EVIDENCE_CHARS) {
     const grownDown = to < blockEnd ? join(from, to + 1) : null;
     if (grownDown && grownDown.length <= maxChars) { to += 1; current = grownDown; continue; }
     const grownUp = from > blockStart ? join(from - 1, to) : null;
@@ -483,8 +498,8 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
 
 module.exports = {
   PROMPT_VERSION, PAGE_TEXT_LIMIT, MIN_QUOTE_LENGTH, MAX_QUOTE_LENGTH,
-  ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, BOILERPLATE_MIN_CHARS, MAX_ANCHOR_OCCURRENCES,
+  ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, BOILERPLATE_MIN_CHARS, MAX_ANCHOR_OCCURRENCES, MIN_EVIDENCE_CHARS,
   TOTAL_BUDGET_MS, MIN_CHAT_TIMEOUT_MS, DEFAULT_MAX_TOKENS, EXTRACT_CONFIG_PREFIX, remainingChatBudget,
-  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, looksLikeContestPage, toStructuredText,
+  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, isSelfContained, looksLikeContestPage, toStructuredText,
   normalizeForQuoteMatch, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 };
