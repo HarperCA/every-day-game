@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T13:19:24.196Z",
+  "generatedAt": "2026-09-17T01:58:53.088Z",
   "source": "阿里云天池",
   "listApi": "https://tianchi.aliyun.com/v3/proxy/competition/api/race/page",
   "policy": "仅填充接口可事实读出的字段。认可度、非现金回报、地域、生命周期留空，待 AI 抽取与人工确认。候选不直接入库。",
@@ -28,10 +28,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 280000 元（天池列表接口 bonus 字段）",
-      "participant_count": 169,
+      "participant_count": 246,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 169 支队伍（抓取时点）",
+      "participant_scale": "已报名 246 支队伍（抓取时点）",
       "registration_start": "2026-09-10T16:00:00.000Z",
       "registration_end": "2026-10-26T15:59:59.000Z",
       "competition_start": "2026-09-10T16:00:00.000Z",
@@ -49,7 +49,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -72,10 +72,10 @@
       "reward_tier": "无现金奖励",
       "reward_highlights": [],
       "rewards": "",
-      "participant_count": 108,
+      "participant_count": 116,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 108 支队伍（抓取时点）",
+      "participant_scale": "已报名 116 支队伍（抓取时点）",
       "registration_start": "2026-08-30T16:00:00.000Z",
       "registration_end": "2026-10-07T15:59:59.000Z",
       "competition_start": "2026-08-30T16:00:00.000Z",
@@ -93,7 +93,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -120,10 +120,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 55000 元（天池列表接口 bonus 字段）",
-      "participant_count": 348,
+      "participant_count": 367,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 348 支队伍（抓取时点）",
+      "participant_scale": "已报名 367 支队伍（抓取时点）",
       "registration_start": "2026-08-29T16:00:00.000Z",
       "registration_end": "2026-09-30T01:59:59.000Z",
       "competition_start": "2026-08-29T16:00:00.000Z",
@@ -141,7 +141,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -166,10 +166,10 @@
       "reward_tier": "无现金奖励",
       "reward_highlights": [],
       "rewards": "",
-      "participant_count": 304,
+      "participant_count": 328,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 304 支队伍（抓取时点）",
+      "participant_scale": "已报名 328 支队伍（抓取时点）",
       "registration_start": "2026-08-19T16:00:00.000Z",
       "registration_end": "2026-09-27T15:59:59.000Z",
       "competition_start": "2026-08-19T16:00:00.000Z",
@@ -187,7 +187,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -213,10 +213,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 20000 元（天池列表接口 bonus 字段）",
-      "participant_count": 742,
+      "participant_count": 774,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 742 支队伍（抓取时点）",
+      "participant_scale": "已报名 774 支队伍（抓取时点）",
       "registration_start": "2026-08-06T16:00:00.000Z",
       "registration_end": "2026-09-30T03:59:59.000Z",
       "competition_start": "2026-08-06T16:00:00.000Z",
@@ -234,7 +234,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -257,10 +257,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
-      "participant_count": 234,
+      "participant_count": 241,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 234 支队伍（抓取时点）",
+      "participant_scale": "已报名 241 支队伍（抓取时点）",
       "registration_start": "2026-07-29T16:00:00.000Z",
       "registration_end": "2026-09-21T05:59:59.000Z",
       "competition_start": "2026-07-29T16:00:00.000Z",
@@ -278,7 +278,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -301,10 +301,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
-      "participant_count": 186,
+      "participant_count": 192,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 186 支队伍（抓取时点）",
+      "participant_scale": "已报名 192 支队伍（抓取时点）",
       "registration_start": "2026-07-29T16:00:00.000Z",
       "registration_end": "2026-09-21T05:59:59.000Z",
       "competition_start": "2026-07-29T16:00:00.000Z",
@@ -322,7 +322,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -347,10 +347,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 100000 元（天池列表接口 bonus 字段）",
-      "participant_count": 184,
+      "participant_count": 191,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 184 支队伍（抓取时点）",
+      "participant_scale": "已报名 191 支队伍（抓取时点）",
       "registration_start": "2026-07-29T16:00:00.000Z",
       "registration_end": "2026-09-21T05:59:59.000Z",
       "competition_start": "2026-07-29T16:00:00.000Z",
@@ -368,7 +368,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -394,10 +394,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
-      "participant_count": 451,
+      "participant_count": 461,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 451 支队伍（抓取时点）",
+      "participant_scale": "已报名 461 支队伍（抓取时点）",
       "registration_start": "2026-07-16T16:00:00.000Z",
       "registration_end": "2026-10-20T15:59:59.000Z",
       "competition_start": "2026-07-16T16:00:00.000Z",
@@ -415,7 +415,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -441,10 +441,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
-      "participant_count": 233,
+      "participant_count": 238,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 233 支队伍（抓取时点）",
+      "participant_scale": "已报名 238 支队伍（抓取时点）",
       "registration_start": "2026-07-16T16:00:00.000Z",
       "registration_end": "2026-10-20T15:59:59.000Z",
       "competition_start": "2026-07-16T16:00:00.000Z",
@@ -462,7 +462,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -488,10 +488,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
-      "participant_count": 256,
+      "participant_count": 259,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 256 支队伍（抓取时点）",
+      "participant_scale": "已报名 259 支队伍（抓取时点）",
       "registration_start": "2026-07-16T16:00:00.000Z",
       "registration_end": "2026-10-20T15:59:59.000Z",
       "competition_start": "2026-07-16T16:00:00.000Z",
@@ -509,7 +509,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -534,10 +534,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
-      "participant_count": 502,
+      "participant_count": 505,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 502 支队伍（抓取时点）",
+      "participant_scale": "已报名 505 支队伍（抓取时点）",
       "registration_start": "2026-07-02T16:00:00.000Z",
       "registration_end": "2026-09-20T09:59:59.000Z",
       "competition_start": "2026-07-02T16:00:00.000Z",
@@ -555,7 +555,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -580,10 +580,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 200000 元（天池列表接口 bonus 字段）",
-      "participant_count": 394,
+      "participant_count": 398,
       "participant_unit": "队",
       "scale_tier": "千人以下",
-      "participant_scale": "已报名 394 支队伍（抓取时点）",
+      "participant_scale": "已报名 398 支队伍（抓取时点）",
       "registration_start": "2026-06-30T16:00:00.000Z",
       "registration_end": "2026-09-20T15:59:59.000Z",
       "competition_start": "2026-06-30T16:00:00.000Z",
@@ -601,7 +601,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",
@@ -627,10 +627,10 @@
         "现金奖金"
       ],
       "rewards": "奖金池 40000 元（天池列表接口 bonus 字段）",
-      "participant_count": 1080,
+      "participant_count": 1084,
       "participant_unit": "队",
       "scale_tier": "千人-1万",
-      "participant_scale": "已报名 1080 支队伍（抓取时点）",
+      "participant_scale": "已报名 1084 支队伍（抓取时点）",
       "registration_start": "2026-05-12T16:00:00.000Z",
       "registration_end": "2026-09-30T15:59:59.000Z",
       "competition_start": "2026-05-12T16:00:00.000Z",
@@ -648,7 +648,7 @@
           "registration_start",
           "registration_end"
         ],
-        "fetchedAt": "2026-09-15T13:19:24.196Z"
+        "fetchedAt": "2026-09-17T01:58:53.088Z"
       },
       "needsReview": [
         "recognition",

@@ -27,8 +27,11 @@ class ProjectFileTests(unittest.TestCase):
         self.assertNotIn("我的收藏<text>开发中", page)
         self.assertIn("getFavoriteRecords", logic)
         self.assertIn("/pages/favorites/favorites", logic)
-        self.assertIn('bindtap="openFeedbackHelp"', page)
-        self.assertIn("/pages/index/index", logic)
+        # 纠错入口从「弹窗提示去找比赛」改成了直接进纠错页：
+        # 用户在那一页选赛事并填写理由，不必先绕回列表页。
+        self.assertIn('bindtap="openFeedback"', page)
+        self.assertIn("/pages/feedback/feedback", logic)
+        self.assertTrue((MINI / "pages/feedback/feedback.wxml").exists())
 
     def test_reminder_feature_matches_prd_entry_points(self):
         detail_page = (MINI / "pages/detail/detail.wxml").read_text(encoding="utf-8")

@@ -1,11 +1,12 @@
 {
-  "generatedAt": "2026-09-15T13:57:07.396Z",
+  "generatedAt": "2026-09-17T01:58:53.236Z",
   "candidateSource": "阿里云天池",
   "candidateCount": 14,
   "masterCount": 30,
   "policy": "只做规则能确定的判断。uncertain 一律交人工或 AI，不硬猜。产出不写库。",
   "counts": {
     "duplicate": 0,
+    "same_event_other_tier": 0,
     "likely_duplicate": 0,
     "uncertain": 0,
     "new": 14,
@@ -26,7 +27,7 @@
       "values": {
         "reward_amount": 280000,
         "reward_tier": "10万-50万",
-        "participant_count": 169,
+        "participant_count": 246,
         "scale_tier": "千人以下"
       }
     },
@@ -41,7 +42,7 @@
       "values": {
         "reward_amount": 0,
         "reward_tier": "无现金奖励",
-        "participant_count": 108,
+        "participant_count": 116,
         "scale_tier": "千人以下"
       }
     },
@@ -56,7 +57,7 @@
       "values": {
         "reward_amount": 55000,
         "reward_tier": "1万-10万",
-        "participant_count": 348,
+        "participant_count": 367,
         "scale_tier": "千人以下"
       }
     },
@@ -71,7 +72,7 @@
       "values": {
         "reward_amount": 0,
         "reward_tier": "无现金奖励",
-        "participant_count": 304,
+        "participant_count": 328,
         "scale_tier": "千人以下"
       }
     },
@@ -86,7 +87,7 @@
       "values": {
         "reward_amount": 20000,
         "reward_tier": "1万-10万",
-        "participant_count": 742,
+        "participant_count": 774,
         "scale_tier": "千人以下"
       }
     },
@@ -101,7 +102,7 @@
       "values": {
         "reward_amount": 100000,
         "reward_tier": "10万-50万",
-        "participant_count": 234,
+        "participant_count": 241,
         "scale_tier": "千人以下"
       }
     },
@@ -116,7 +117,7 @@
       "values": {
         "reward_amount": 100000,
         "reward_tier": "10万-50万",
-        "participant_count": 186,
+        "participant_count": 192,
         "scale_tier": "千人以下"
       }
     },
@@ -131,7 +132,7 @@
       "values": {
         "reward_amount": 100000,
         "reward_tier": "10万-50万",
-        "participant_count": 184,
+        "participant_count": 191,
         "scale_tier": "千人以下"
       }
     },
@@ -146,7 +147,7 @@
       "values": {
         "reward_amount": 200000,
         "reward_tier": "10万-50万",
-        "participant_count": 451,
+        "participant_count": 461,
         "scale_tier": "千人以下"
       }
     },
@@ -161,7 +162,7 @@
       "values": {
         "reward_amount": 200000,
         "reward_tier": "10万-50万",
-        "participant_count": 233,
+        "participant_count": 238,
         "scale_tier": "千人以下"
       }
     },
@@ -176,7 +177,7 @@
       "values": {
         "reward_amount": 200000,
         "reward_tier": "10万-50万",
-        "participant_count": 256,
+        "participant_count": 259,
         "scale_tier": "千人以下"
       }
     },
@@ -191,7 +192,7 @@
       "values": {
         "reward_amount": 200000,
         "reward_tier": "10万-50万",
-        "participant_count": 502,
+        "participant_count": 505,
         "scale_tier": "千人以下"
       }
     },
@@ -206,7 +207,7 @@
       "values": {
         "reward_amount": 200000,
         "reward_tier": "10万-50万",
-        "participant_count": 394,
+        "participant_count": 398,
         "scale_tier": "千人以下"
       }
     },
@@ -221,7 +222,7 @@
       "values": {
         "reward_amount": 40000,
         "reward_tier": "1万-10万",
-        "participant_count": 1080,
+        "participant_count": 1084,
         "scale_tier": "千人-1万"
       }
     }
