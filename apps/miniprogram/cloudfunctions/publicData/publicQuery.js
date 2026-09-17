@@ -54,4 +54,16 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
   return { items:ranked.slice(0, visible), total:ranked.length, hasMore:visible < ranked.length, preview:false };
 }
 
-module.exports = { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, MAX_PUBLIC_RECORDS, normalizePublicRecordId };
+
+// 「集合还不存在」和「查询失败」是两回事。
+// 公开缓存集合要到第一条记录发布时才会被建出来，在那之前 list 该返回空列表 ——
+// 把 DATABASE_COLLECTION_NOT_EXIST 当成错误抛出去，用户看到的就是一串内部错误码。
+const MISSING_COLLECTION_CODES = new Set([-502005, 'DATABASE_COLLECTION_NOT_EXIST', 'ResourceNotFound.CollectionNotExists']);
+
+function isMissingCollection(error) {
+  if (!error) return false;
+  if (MISSING_COLLECTION_CODES.has(error.errCode) || MISSING_COLLECTION_CODES.has(error.code)) return true;
+  return /collection[\s_]*(not[\s_]*exist|does[\s_]*not[\s_]*exist)|not[\s_]*exist.*collection/i.test(String(error.message || ''));
+}
+
+module.exports = { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId };
