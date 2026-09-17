@@ -23,12 +23,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { Fetcher } from './lib/fetcher.mjs';
-
-const require = createRequire(import.meta.url);
-const { deriveRewardTier, deriveScaleTier } = require('../../apps/miniprogram/cloudfunctions/adminData/competitionValue.js');
+// valueSource.mjs 会自动在仓库路径和服务器部署路径之间选，见该文件头注释。
+import { deriveRewardTier, deriveScaleTier } from './lib/valueSource.mjs';
 
 const LIST_URL = page => `https://www.datafountain.cn/competitions?page=${page}`;
 const DETAIL_URL = id => `https://www.datafountain.cn/competitions/${id}`;

@@ -13,13 +13,12 @@
 // 用法：node crawl-tianchi.mjs [--pages 3] [--out ../../reports/tianchi-candidates.json]
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { Fetcher } from './lib/fetcher.mjs';
-
-const require = createRequire(import.meta.url);
 // 档位阈值与云函数共用同一份实现，避免抓取时和发布后落在不同档位。
-const { deriveRewardTier, deriveScaleTier } = require('../../apps/miniprogram/cloudfunctions/adminData/competitionValue.js');
+// valueSource.mjs 会自动在仓库路径和服务器部署路径之间选，抓取脚本
+// 部署到服务器单独运行时不用改这一行。
+import { deriveRewardTier, deriveScaleTier } from './lib/valueSource.mjs';
 
 const LIST_API = 'https://tianchi.aliyun.com/v3/proxy/competition/api/race/page';
 const DETAIL_URL = raceId => `https://tianchi.aliyun.com/competition/entrance/${raceId}`;
