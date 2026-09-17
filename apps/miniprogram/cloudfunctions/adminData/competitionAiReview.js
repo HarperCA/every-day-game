@@ -399,6 +399,138 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
   };
 }
 
+// —— 让模型自己决定要不要再看别的链接（Kimi 官方 fetch 工具，Formula API）——
+//
+// 上面 runCompetitionAiReview 是"一问一答"：我们把证据一次性喂给模型，
+// 它给一个结论，结束。这里是"多轮工具调用"：模型看完我们给的证据后，
+// 如果觉得不够，可以自己决定调用 fetch 工具再看一个链接，看完继续推理，
+// 可能再调用几次，才给出最终结论。
+//
+// 初始证据仍然走 collectEvidence——那条链路已经验证过 robots.txt 合规、
+// 而且不要钱，没理由为了"能力更强"就绕过去。fetch 工具只在模型主动觉得
+// 资料不够时才会被触发，且每次调用都要计费，所以设了轮数上限
+// （MAX_AGENTIC_TOOL_TURNS），到上限后不再提供工具，逼它基于已有信息收尾，
+// 不能无限调用下去。
+//
+// 这条路径用的是 Moonshot 平台账号（api.moonshot.ai），和现有 readAiConfig()
+// 读到的供应商（可能是 Kimi 编程订阅，也可能是 DeepSeek）是两个不同的账号
+// 体系——fetch 工具只有 Moonshot 平台的 Formula API 才有，所以密钥必须显式
+// 传入，不走 readAiConfig()。
+const MOONSHOT_TOOLS_BASE_URL = 'https://api.moonshot.ai/v1';
+const FETCH_FORMULA_URI = 'moonshot/fetch:latest';
+const AGENTIC_PROMPT_VERSION = 'competition-review-agentic-v1';
+const MAX_AGENTIC_TOOL_TURNS = 4;
+
+async function fetchFormulaToolDeclaration(request, apiKey, formulaUri) {
+  const response = await request(`${MOONSHOT_TOOLS_BASE_URL}/formulas/${formulaUri}/tools`, {
+    headers:{ Authorization:`Bearer ${apiKey}` },
+    signal:timeoutSignal(15000), timeoutMs:15000,
+  });
+  if (!response.ok) throw new Error(`moonshot_formula_tools_error:${response.status}`);
+  const payload = await response.json();
+  if (!Array.isArray(payload?.tools) || !payload.tools.length) throw new Error('moonshot_formula_tools_empty');
+  return payload.tools;
+}
+
+async function callFormulaFiber(request, apiKey, formulaUri, name, args) {
+  const response = await request(`${MOONSHOT_TOOLS_BASE_URL}/formulas/${formulaUri}/fibers`, {
+    method:'POST',
+    headers:{ Authorization:`Bearer ${apiKey}`, 'Content-Type':'application/json' },
+    body:JSON.stringify({ name, arguments:args }),
+    signal:timeoutSignal(30000), timeoutMs:30000,
+  });
+  if (!response.ok) throw new Error(`moonshot_fiber_http_error:${response.status}`);
+  const payload = await response.json();
+  // Fiber 是一次执行的快照，status 不是 succeeded 就是各类失败——不当成
+  // 「结果为空」悄悄放过，工具调用失败必须让模型（或调用方）知道。
+  if (payload?.status !== 'succeeded') throw new Error(`moonshot_fiber_failed:${payload?.status || 'unknown'}`);
+  const context = payload.context || {};
+  if (typeof context.output === 'string') return context.output;
+  if (typeof context.encrypted_output === 'string') return context.encrypted_output;
+  return JSON.stringify(context.output ?? '');
+}
+
+async function runCompetitionAiReviewAgentic(record, request, {
+  chatTimeoutMs = 60000, maxTokens, model = 'kimi-k3', apiKey, maxToolTurns = MAX_AGENTIC_TOOL_TURNS,
+} = {}) {
+  if (!apiKey) throw new Error('moonshot_tools_api_key_not_configured:请配置 MOONSHOT_TOOLS_API_KEY（Moonshot 平台密钥，和 Kimi 编程订阅不是同一把）');
+  const send = resolveRequest(request);
+
+  const evidence = await collectEvidence(record, send);
+  const tools = await fetchFormulaToolDeclaration(send, apiKey, FETCH_FORMULA_URI);
+
+  const messages = [
+    { role:'system', content:'你是严谨的大学生竞赛数据审核助手。不得将推测写成事实，不得代替管理员批准或发布。除了工具调用之外，只输出 JSON，不要加解释文字或 Markdown 围栏。' },
+    {
+      role:'user',
+      content:buildPrompt(record, evidence, false)
+        + `\n\n如果以上资料不足以判断，可以调用 fetch 工具查看记录中提到、但未直接提供正文的相关链接。`
+        + `每次调用都会计费，只在必要时用，最多还能调用 ${maxToolTurns} 次；用完仍不够就直接选 insufficient_evidence，不要编造。`,
+    },
+  ];
+
+  const toolCallLog = [];
+  // 多一轮：前 maxToolTurns 轮允许调用工具，最后强制一轮不给工具、
+  // 逼它基于已有信息收尾——不能无限循环调用下去。
+  for (let turn = 0; turn <= maxToolTurns; turn += 1) {
+    const allowTools = turn < maxToolTurns;
+    const body = {
+      model, messages,
+      ...(allowTools ? { tools } : {}),
+      // 工具调用轮不强制 JSON 格式（两者同时要求很多供应商不支持）；
+      // 确定是最后一轮（没有工具可调）才要求严格 JSON。
+      ...(allowTools ? {} : { response_format:buildResponseFormat(true) }),
+      ...(Number(maxTokens) > 0 ? { max_tokens:Number(maxTokens) } : {}),
+    };
+    const response = await send(`${MOONSHOT_TOOLS_BASE_URL}/chat/completions`, {
+      method:'POST',
+      headers:{ Authorization:`Bearer ${apiKey}`, 'Content-Type':'application/json' },
+      body:JSON.stringify(body),
+      signal:timeoutSignal(chatTimeoutMs), timeoutMs:chatTimeoutMs,
+    });
+    const raw = await response.text();
+    if (!response.ok) throw new Error(`moonshot_chat_error:${response.status}:${raw.slice(0, 300)}`);
+    let payload;
+    try { payload = JSON.parse(raw); } catch (error) { throw new Error(`moonshot_chat_unparsable_response:${raw.slice(0, 200)}`); }
+    const message = payload?.choices?.[0]?.message;
+    const toolCalls = Array.isArray(message?.tool_calls) ? message.tool_calls : [];
+
+    if (!toolCalls.length) {
+      if (!String(message?.content || '').trim()) throw new Error('ai_review_empty_response');
+      const result = validateResult(parseModelJson(message.content));
+      return {
+        ...result,
+        provider:'moonshot-agentic', model, prompt_version:AGENTIC_PROMPT_VERSION,
+        evidence_status:evidence.map(item => ({
+          url:item.url, status:item.status, chars:(item.text || '').length,
+          ...(item.error ? { error:item.error.slice(0, 120) } : {}),
+        })),
+        // 每次工具调用都留痕——事后要能核对模型到底多看了哪些链接、看没看成功。
+        tool_calls:toolCallLog,
+        reviewed_at:new Date().toISOString(),
+      };
+    }
+
+    messages.push({ role:'assistant', content:message.content ?? '', tool_calls:message.tool_calls });
+    for (const call of toolCalls) {
+      const fn = call.function || {};
+      let output;
+      try {
+        output = await callFormulaFiber(send, apiKey, FETCH_FORMULA_URI, fn.name, fn.arguments);
+        toolCallLog.push({ name:fn.name, arguments:fn.arguments, ok:true });
+      } catch (error) {
+        const message_ = error instanceof Error ? error.message : String(error);
+        output = `工具调用失败：${message_}`;
+        toolCallLog.push({ name:fn.name, arguments:fn.arguments, ok:false, error:message_ });
+      }
+      messages.push({ role:'tool', tool_call_id:call.id, content:output });
+    }
+  }
+  // 理论上到不了这里——最后一轮已经不提供工具，模型没有别的选择只能回复内容；
+  // 留这行是防御性的，万一某个供应商在没有 tools 字段时仍然尝试 tool_calls。
+  throw new Error('ai_review_agentic_max_turns_exceeded');
+}
+
 module.exports = {
   USER_AGENT,
   supportsThinkingToggle,
@@ -417,5 +549,8 @@ module.exports = {
   readAiConfig,
   resolveRequest,
   runCompetitionAiReview,
+  runCompetitionAiReviewAgentic,
+  fetchFormulaToolDeclaration,
+  callFormulaFiber,
   validateResult,
 };
