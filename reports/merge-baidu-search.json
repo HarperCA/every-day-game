@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-09-17T14:24:57.057Z",
+  "generatedAt": "2026-09-17T14:33:49.059Z",
   "candidateSource": "百度AI搜索",
-  "candidateCount": 10,
+  "candidateCount": 60,
   "masterCount": 44,
   "policy": "只做规则能确定的判断。uncertain 一律交人工或 AI，不硬猜。产出不写库。",
   "counts": {
-    "duplicate": 2,
+    "duplicate": 13,
     "same_event_other_tier": 0,
     "likely_duplicate": 0,
-    "uncertain": 0,
-    "new": 8,
+    "uncertain": 3,
+    "new": 44,
     "invalid": 0
   },
   "duplicate": [
@@ -30,10 +30,137 @@
       "matchedId": "event-cmp028",
       "confidence": 1,
       "reason": "标题中完整包含「“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛」"
+    },
+    {
+      "candidate": "关于报名参加中国国际大学生创新大赛(2026)的通知",
+      "externalId": "search-aba158e2043a8b5f",
+      "detailUrl": "https://www.ustc.edu.cn/info/1364/25697.htm",
+      "matchedMaster": "中国国际大学生创新大赛",
+      "matchedId": "event-cmp001",
+      "confidence": 1,
+      "reason": "标题中完整包含「中国国际大学生创新大赛」"
+    },
+    {
+      "candidate": "关于举办2026年中国大学生工程实践与创新能力大赛校赛的通知",
+      "externalId": "search-ad51fa05cb917231",
+      "detailUrl": "https://jxgcxy.suse.edu.cn/2026/0916/c4268a216543/page.htm",
+      "matchedMaster": "中国大学生工程实践与创新能力大赛",
+      "matchedId": "event-cmp019",
+      "confidence": 1,
+      "reason": "标题中完整包含「中国大学生工程实践与创新能力大赛」"
+    },
+    {
+      "candidate": "中国农业大学“强理兴农”-2026年全国大学生物理实验竞赛校内选拔赛获奖通知",
+      "externalId": "search-08fc3f3cdecd30e9",
+      "detailUrl": "https://sci.cau.edu.cn/art/2026/7/13/art_40525_1122184.html",
+      "matchedMaster": "全国大学生物理实验竞赛",
+      "matchedId": "event-cmp006",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生物理实验竞赛」"
+    },
+    {
+      "candidate": "暨2026中国国际大学生创新大赛研究生赛道校内选拔赛的通知",
+      "externalId": "search-48ea7bdef9726508",
+      "detailUrl": "https://cxcy.sus.edu.cn/info/1062/1937.htm",
+      "matchedMaster": "中国国际大学生创新大赛",
+      "matchedId": "event-cmp001",
+      "confidence": 1,
+      "reason": "标题中完整包含「中国国际大学生创新大赛」"
+    },
+    {
+      "candidate": "关于组织参加2026年第21届全国大学生智能汽车竞赛的通知",
+      "externalId": "search-d6f305905f2b7141",
+      "detailUrl": "https://www.jwc.ynu.edu.cn/info/1009/4315.htm",
+      "matchedMaster": "全国大学生智能汽车竞赛",
+      "matchedId": "event-cmp013",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生智能汽车竞赛」"
+    },
+    {
+      "candidate": "关于组织我校学生参加2026年第二十一届全国大学生智能汽车竞赛的通知",
+      "externalId": "search-fc387fabdc8f8470",
+      "detailUrl": "https://zhxy.nwsuaf.edu.cn/bksjy/jxdt/5c97237474824d79943850c772ead3e2.htm",
+      "matchedMaster": "全国大学生智能汽车竞赛",
+      "matchedId": "event-cmp013",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生智能汽车竞赛」"
+    },
+    {
+      "candidate": "关于组织参加2026年第十九届全国大学生节能减排社会实践与科技竞赛的通知",
+      "externalId": "search-11449abebaa9b899",
+      "detailUrl": "https://cxcyxy.chnu.edu.cn/scdt/tzgg/content_144846",
+      "matchedMaster": "全国大学生节能减排社会实践与科技竞赛",
+      "matchedId": "event-cmp022",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生节能减排社会实践与科技竞赛」"
+    },
+    {
+      "candidate": "关于举办2026年“外研社·国才杯”“理解当代中国” 全国大学生外语能力大赛英语演讲比赛的通知",
+      "externalId": "search-279528c67b4e7109",
+      "detailUrl": "https://www.hbfs.edu.cn/wyx/b7/47/c6864a374599/page.htm",
+      "matchedMaster": "“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛",
+      "matchedId": "event-cmp028",
+      "confidence": 1,
+      "reason": "标题中完整包含「“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛」"
+    },
+    {
+      "candidate": "关于2026年全国大学生电子设计竞赛福建赛区报名通知",
+      "externalId": "search-c4525e4324642b49",
+      "detailUrl": "https://cyxx.jmu.edu.cn/info/1091/1968.htm",
+      "matchedMaster": "全国大学生电子设计竞赛",
+      "matchedId": "event-cmp012",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生电子设计竞赛」"
+    },
+    {
+      "candidate": "关于2026年全国大学生电子设计竞赛福建赛区报名通知",
+      "externalId": "search-536a57a25bbffad8",
+      "detailUrl": "https://cyxx.jmu.edu.cn/info/1055/1963.htm",
+      "matchedMaster": "全国大学生电子设计竞赛",
+      "matchedId": "event-cmp012",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生电子设计竞赛」"
+    },
+    {
+      "candidate": "榜单赛事 | 关于举办第三届山东财经大学大学生广告创意设计大赛暨2026年(第18届)全国大学生广告艺术大赛校赛的通知",
+      "externalId": "search-8eee4c59bb303056",
+      "detailUrl": "https://mp.weixin.qq.com/s?__biz=MzUxMDQyNDYwOA==&mid=2247504246&idx=1&sn=a28241d2ca3d78a3f9ee1c98320e8ec9&chksm=f876409aa69ef7214f0f24b16c15b8fd423f01e9f91da11e59645dd277bf92b4b1ea555ae7da&scene=27",
+      "matchedMaster": "全国大学生广告艺术大赛",
+      "matchedId": "event-cmp026",
+      "confidence": 1,
+      "reason": "标题中完整包含「全国大学生广告艺术大赛」"
     }
   ],
   "likely_duplicate": [],
-  "uncertain": [],
+  "uncertain": [
+    {
+      "candidate": "关于举办“中国矿业大学2026年大学生工程实践与创新能力大赛”的通知",
+      "externalId": "search-7b7190ba17cae5e8",
+      "detailUrl": "https://itc.cumt.edu.cn/info/1045/2072.htm",
+      "matchedMaster": "中国大学生工程实践与创新能力大赛",
+      "matchedId": "event-cmp019",
+      "confidence": 0.7,
+      "reason": "与「中国大学生工程实践与创新能力大赛」相似度 0.70"
+    },
+    {
+      "candidate": "关于举办 2026“外研社・国才杯”“理解当代中国” 全国大学生外语能力大赛英语组“国际传播综合能力”赛项 岭南师范学院校园选拔赛的通知",
+      "externalId": "search-3fea77b9c2352591",
+      "detailUrl": "https://d.lingnan.edu.cn/cxcyxy/info/1188/5415.htm",
+      "matchedMaster": "“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛",
+      "matchedId": "event-cmp028",
+      "confidence": 0.553,
+      "reason": "与「“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛」相似度 0.55"
+    },
+    {
+      "candidate": "教育部关于举办中国国际大学生",
+      "externalId": "search-5f51fa9d42427c26",
+      "detailUrl": "http://www.moe.gov.cn/srcsite/A08/s5672/202607/t20260731_1445670.html",
+      "matchedMaster": "中国国际大学生创新大赛",
+      "matchedId": "event-cmp001",
+      "confidence": 0.522,
+      "reason": "同域名 moe.gov.cn，但名称不匹配（与「中国国际大学生创新大赛」相似度 0.52）"
+    }
+  ],
   "new": [
     {
       "candidate": "以青春创金融 以赛事赴新途 | 2026年“工行杯”全国大学生金融科技创新大赛校赛报名火热开启!",
@@ -148,6 +275,546 @@
       "matchedId": null,
       "confidence": 0.805,
       "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.20，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于荣成学院举办“2026年全国高校商业精英挑战赛跨境电商赛道”的通知",
+      "externalId": "search-f9921722de4b683d",
+      "detailUrl": "https://kjc.hrbust.edu.cn/jw/2026/0617/c3032a105145/page.psp",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.86,
+      "reason": "最接近的是与「未来设计师·全国高校数字艺术设计大赛」相似度 0.14，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年全国高校商业精英挑战赛创新创业竞赛—创业计划赛道报名通知",
+      "externalId": "search-53ad32bdc3e0cb82",
+      "detailUrl": "https://www.guit.edu.cn/cxcy/info/1051/1669.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.706,
+      "reason": "最接近的是与「挑战杯创业计划竞赛」相似度 0.29，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年全国高校商业精英挑战赛国际贸易竞赛跨境电商赛道比赛报名通知",
+      "externalId": "search-0b8baa48740a7d1e",
+      "detailUrl": "https://glxy.swjtu.edu.cn/info/1337/58855.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.864,
+      "reason": "最接近的是与「未来设计师·全国高校数字艺术设计大赛」相似度 0.14，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年iCAN大学生创新创业大赛“鼎堂杯”AI智能体赋能数字化企业经营模拟挑战赛校内启动通知",
+      "externalId": "search-0ba1e8bff13a9853",
+      "detailUrl": "https://jgy.xupt.edu.cn/info/1136/1961.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.719,
+      "reason": "最接近的是与「原中国国际“互联网+”大学生创新创业大赛」相似度 0.28，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "智能体赋能数字化企业经营模拟挑战赛南京财经大学校赛的通知",
+      "externalId": "search-3e4170c879a8f961",
+      "detailUrl": "https://jwc.nufe.edu.cn/info/1031/18218.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.846,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.15，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年iCAN大学生创新创业大赛AI智能体赋能数字化企业经营模拟挑战赛院赛的通知",
+      "externalId": "search-8b87a764ca475ae8",
+      "detailUrl": "http://hdc.cczu.edu.cn/hdjwc/2026/0512/c21317a415416/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.719,
+      "reason": "最接近的是与「原中国国际“互联网+”大学生创新创业大赛」相似度 0.28，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年iCAN大学生创新创业大赛挑战赛系列赛校赛通知",
+      "externalId": "search-7e9cd65c1966fb61",
+      "detailUrl": "https://sxy.yctu.edu.cn/2026/0512/c2688a149611/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.628,
+      "reason": "最接近的是与「原中国国际“互联网+”大学生创新创业大赛」相似度 0.37，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年全国高校商业精英挑战赛创新创业竞赛 创业研究专题赛道武汉工程大学校赛报名通知",
+      "externalId": "search-b583cd278a53c11c",
+      "detailUrl": "http://ll.wit.edu.cn/info/1006/13080.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.774,
+      "reason": "最接近的是与「全国大学生电子商务“创新、创意及创业”挑战赛」相似度 0.23，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年全国高校商业精英挑战赛国际贸易竞赛(涉外商事法律服务赛道) 武汉工程大学选拔赛的通知",
+      "externalId": "search-8b0f4a26a3a2ebe5",
+      "detailUrl": "http://ll.wit.edu.cn/info/1006/13010.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.837,
+      "reason": "最接近的是与「“挑战杯”全国大学生课外学术科技作品竞赛」相似度 0.16，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办我校2026年第十四届全国高校商业精英挑战赛创新创业计划赛道校内选拔赛的通知",
+      "externalId": "search-84b3b4225c817272",
+      "detailUrl": "https://scb.xauat.edu.cn/info/1024/14093.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.8,
+      "reason": "最接近的是与「挑战杯创业计划竞赛」相似度 0.20，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于开展2026年温州医科大学首届女大学生创新大赛的通知",
+      "externalId": "search-584481ee73b4a7c7",
+      "detailUrl": "https://gh.wmu.edu.cn/info/1079/14337.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.613,
+      "reason": "最接近的是与「中国国际大学生创新大赛」相似度 0.39，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "速看!2026年大学生“AI+信息素养”大赛报名即将关闭!",
+      "externalId": "search-39ed6e85db22ab6f",
+      "detailUrl": "https://news.sohu.com/a/1073869301_121106994",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.784,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.22，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "火热报名丨成都中医药大学第一届大学生“AI+信息素养”大赛暨2026年大学生“AI+信息素养”大赛校级选拔赛",
+      "externalId": "search-b4420d4a8f7f2eb3",
+      "detailUrl": "https://mp.weixin.qq.com/s?__biz=MzAxNDQxMjM1OA==&mid=2652189697&idx=1&sn=2a5bee7a2ce24fe144f935744fa2d413&chksm=81c5b51ec496306ce62a5c73900af1168da374b50e01f58ed607ea0396c4151f28c0c279215a&scene=27",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.822,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.18，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "芜湖市神山音乐节大学生歌手大赛",
+      "externalId": "search-387f0683b277b907",
+      "detailUrl": "https://baike.baidu.com/item/芜湖市神山音乐节大学生歌手大赛/68903246",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.739,
+      "reason": "最接近的是与「全国大学生机器人大赛（RoboMaster/ROBOCON）」相似度 0.26，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年大学生“AI+信息素养” 大赛报名正式启动!",
+      "externalId": "search-ffeec9ff6cd17de9",
+      "detailUrl": "https://tsg.glnc.edu.cn/info/1044/1797.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.765,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.24，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年大学生“AI+信息素养”大赛报名正式启动",
+      "externalId": "search-b19d8ca140b8398a",
+      "detailUrl": "https://lib.zjsu.edu.cn/2026/0703/c4994a224884/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.758,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.24，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "2026年四川省大学生“AI+信息素养”大赛校赛报名通知",
+      "externalId": "search-daec7d9c3c9f8440",
+      "detailUrl": "https://www.cuit.edu.cn/info/1006/16743.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.778,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.22，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "赛事通知 | 2026年大学生“AI+信息素养”大赛学生报名正式开启!",
+      "externalId": "search-9694445f2edea55c",
+      "detailUrl": "https://mp.weixin.qq.com/s?__biz=MzA3NjY2MDkwMQ==&mid=2649230618&idx=1&sn=76d22f43a7b533611b1de98ec331ecff&chksm=86e5092aecb326a4550ad4d8d5efa41ef5f3b6dd42e0572be696c7e0ef04c3076d6b62404960&scene=27",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.8,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.20，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于组织2026年辽宁省大学生食品与健康创新大赛的校内选拔赛的通知-沈阳科技学院-创新创业学院",
+      "externalId": "search-c399717a91427c1a",
+      "detailUrl": "https://cxcy.syist.edu.cn/article/details/id/1480.html",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.769,
+      "reason": "最接近的是与「全国大学生集成电路创新创业大赛」相似度 0.23，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "“2026年全国高等院校大学生乡村规划方案竞赛”校内选拔赛的通知",
+      "externalId": "search-265989d116725ecd",
+      "detailUrl": "https://xagdjg.xatu.edu.cn/info/1061/5905.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.765,
+      "reason": "最接近的是与「全国大学生数学建模竞赛」相似度 0.24，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年全国大学生物联网设计竞赛校内选拔赛的通知",
+      "externalId": "search-af3ff9cf85382f35",
+      "detailUrl": "https://www.xiyou.edu.cn/info/2104/86401.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.576,
+      "reason": "最接近的是与「全国大学生电子设计竞赛」相似度 0.42，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年中国高校计算机大赛―人工智能创意赛鸿蒙赛道竞赛校内选拔赛的通知",
+      "externalId": "search-0d40bd7781801567",
+      "detailUrl": "https://cxcy.dlu.edu.cn/info/1101/3774.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.822,
+      "reason": "最接近的是与「中国大学生计算机设计大赛」相似度 0.18，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于2026年第四届辽宁省大学生化学实验创新设计竞赛校内选拔赛的通知",
+      "externalId": "search-a6530a6b4518b0c1",
+      "detailUrl": "https://cxcy.dlu.edu.cn/info/1101/3747.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.657,
+      "reason": "最接近的是与「全国大学生化工设计竞赛」相似度 0.34，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于2026年“学创杯”全国大学生创业综合模拟大赛校内选拔赛通知",
+      "externalId": "search-0fe2cf98597e9df6",
+      "detailUrl": "https://cxcy.dlu.edu.cn/info/1101/3743.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.684,
+      "reason": "最接近的是与「全国大学生集成电路创新创业大赛」相似度 0.32，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办湖州学院2026年浙江省大学生物理实验与科技创新竞赛校内选拔赛的通知",
+      "externalId": "search-29745db0e0cfff9d",
+      "detailUrl": "https://jwc.zjhzu.edu.cn/_t18/2026/0501/c661a41720/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.667,
+      "reason": "最接近的是与「全国大学生物理实验竞赛」相似度 0.33，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于2026年东三省数学建模竞赛校内选拔赛的通知",
+      "externalId": "search-ab2a33b5938093c7",
+      "detailUrl": "https://cxcy.dlu.edu.cn/info/1101/3722.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.643,
+      "reason": "最接近的是与「全国大学生数学建模竞赛」相似度 0.36，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年第十九届全国大学生先进成图技术与产品信息建模创新大赛云南大学选拔赛的通知",
+      "externalId": "search-46e4155b98121eb3",
+      "detailUrl": "http://jwc.ynu.edu.cn/info/1009/4277.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.72,
+      "reason": "最接近的是与「蓝桥杯全国大学生软件和信息技术大赛」相似度 0.28，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于组织2026年四川省大学生孙训方力学竞赛参赛报名的通知",
+      "externalId": "search-358257db24a49d77",
+      "detailUrl": "http://jwc.scu.edu.cn/info/1069/10832.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.758,
+      "reason": "最接近的是与「全国大学生生命科学竞赛（CULSC）」相似度 0.24，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于组织参加2026年四川省大学生工程实践与创新能力大赛实验室安全应急技能竞赛的校内遴选通知",
+      "externalId": "search-7c27e4e827c1555b",
+      "detailUrl": "https://sys.cdu.edu.cn/info/1032/2356.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.527,
+      "reason": "最接近的是与「中国大学生工程实践与创新能力大赛」相似度 0.47，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "兰州城市学院创新创业学院",
+      "externalId": "search-6fec8522e5f3c04c",
+      "detailUrl": "https://cxcyxy.lzcu.edu.cn/",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.75,
+      "reason": "最接近的是与「全国大学生集成电路创新创业大赛」相似度 0.25，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于选拔优秀团队参加“2026年四川省大学生社工项目创新设计大赛”的通知",
+      "externalId": "search-51355736cd33ac3a",
+      "detailUrl": "https://fxy.sicau.edu.cn/info/1045/10532.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.65,
+      "reason": "最接近的是与「全国大学生机械创新设计大赛」相似度 0.35，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "福建省教育厅关于公布2026年省级大学生学科专业竞赛项目的通知_ 重要文件_ 福建省教育厅",
+      "externalId": "search-1c4043d62c57cd4d",
+      "detailUrl": "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.857,
+      "reason": "最接近的是与「全国大学生数学建模竞赛」相似度 0.14，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办成都信息工程大学2026年材料设计大赛的通知",
+      "externalId": "search-c314ed77266eac88",
+      "detailUrl": "https://www.cuit.edu.cn/info/1006/16984.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.733,
+      "reason": "最接近的是与「全国大学生物流设计大赛」相似度 0.27，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办2026年广西大学生食品学科创新创业大赛的通知",
+      "externalId": "search-9d5700b6fc15b6b4",
+      "detailUrl": "http://bkjy.gxeduyun.edu.cn/699/1811/37827.html",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.6,
+      "reason": "最接近的是与「全国大学生集成电路创新创业大赛」相似度 0.40，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "倒计时2天|2026年福建省大学生信息素养大赛",
+      "externalId": "search-8bd30796a463924e",
+      "detailUrl": "https://lib.wuyiu.edu.cn/2026/0917/c3801a140922/page.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.704,
+      "reason": "最接近的是与「全国大学生信息安全竞赛」相似度 0.30，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": null,
+        "scale_tier": "暂未公布"
+      }
+    },
+    {
+      "candidate": "关于举办成都信息工程大学2026年材料设计大赛的通知",
+      "externalId": "search-129ec1e493a8de14",
+      "detailUrl": "https://gdgcxy.cuit.edu.cn/info/1951/6795.htm",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.733,
+      "reason": "最接近的是与「全国大学生物流设计大赛」相似度 0.27，低于判重阈值",
       "values": {
         "reward_amount": null,
         "reward_tier": "暂未公布",
