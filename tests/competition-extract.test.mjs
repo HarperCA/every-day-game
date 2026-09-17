@@ -554,3 +554,110 @@ describe('deepseek thinking mode', () => {
     expect(buildRequestBody({ model:'m', baseUrl:'https://api.deepseek.com' }, [], next).thinking).toBeUndefined();
   });
 });
+
+describe('evidence is taken by block, never cut mid-line', () => {
+  const {
+    MAX_QUOTE_LENGTH: QUOTE_CAP, expandAnchor: expandBlock, toStructuredText,
+  } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  // 赛事页的关键信息是 Markdown 列表和表格，整块里一个句号都没有。
+  const MARKDOWN = [
+    '# 蚂蚁灵波具身大模型挑战赛',
+    '',
+    '## 5. 奖金设置',
+    '- **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书',
+    '- **二等奖（2 名）**：现金 ¥50,000 + 官方荣誉证书',
+    '- **三等奖（3 名）**：现金 ¥20,000 + 官方荣誉证书',
+    '',
+    '## 6. 组织单位',
+    '**主办单位**：中国中检',
+    '**承办单位**：中检智测科技',
+  ].join('\n');
+
+  it('returns the whole prize block, not one truncated line', () => {
+    // 之前按句号扩展再 slice(0,120)，实测 33 条引文结尾是「+ 由」「北京北奥集」这种半个词。
+    const quote = expandBlock('80,000', MARKDOWN);
+    expect(quote).toContain('一等奖');
+    expect(quote).toContain('二等奖');
+    expect(quote).toContain('三等奖');
+  });
+
+  it('stops at the block boundary instead of bleeding into the next section', () => {
+    const quote = expandBlock('80,000', MARKDOWN);
+    expect(quote).not.toContain('主办单位');
+    expect(quote).not.toContain('奖金设置'); // 标题是块边界
+  });
+
+  it('keeps organizer lines together', () => {
+    const quote = expandBlock('中国中检', MARKDOWN);
+    expect(quote).toContain('主办单位');
+    expect(quote).toContain('承办单位');
+  });
+
+  it('never ends mid-word when a block is too long', () => {
+    const long = ['## 支持单位', ...Array.from({ length: 12 }, (_, i) => `- 第${i}家支持单位名称写得很长很长很长很长很长很长`)].join('\n');
+    const quote = expandBlock('第3家支持单位', long);
+    expect(quote.length).toBeLessThanOrEqual(QUOTE_CAP);
+    // 取到的每一段都必须是原文里完整的一行
+    for (const piece of quote.split(' ').filter(Boolean)) {
+      expect(long).toContain(piece);
+    }
+  });
+
+  it('preserves line structure when normalizing html', () => {
+    // htmlToText 把 \s+ 压成空格，块边界全丢 —— 这才是引文被硬切的根因。
+    const html = '<h2>奖金设置</h2><ul><li>一等奖：8万</li><li>二等奖：5万</li></ul>';
+    const text = toStructuredText(html, 1000);
+    expect(text.split('\n').length).toBeGreaterThan(1);
+    expect(text).toContain('一等奖');
+    expect(text).toContain('二等奖');
+  });
+
+  it('fits a prize block within the schema evidence limit', () => {
+    // recognition[].evidence 在 event_edition schema 里是 maxLength 300。
+    expect(QUOTE_CAP).toBeLessThanOrEqual(300);
+  });
+});
+
+describe('prose gets a sentence, lists get the block', () => {
+  const { expandAnchor: expandBlock } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+
+  it('takes only the sentence around the anchor in a prose paragraph', () => {
+    // 单行块是一段散文，整段取太糙 —— 证据应当是那一句。
+    const prose = '大赛由教育部和共青团中央联合主办，南京大学承办。参赛团队通过官网报名。获奖团队可获得创业扶持。';
+    expect(expandBlock('共青团中央', prose)).toBe('大赛由教育部和共青团中央联合主办，南京大学承办。');
+    expect(expandBlock('创业扶持', prose)).toBe('获奖团队可获得创业扶持。');
+  });
+
+  it('takes the whole block when the lines only make sense together', () => {
+    const list = '## 奖金设置\n- 一等奖：8万元\n- 二等奖：5万元\n- 三等奖：2万元';
+    const quote = expandBlock('一等奖：8万元', list);
+    expect(quote).toContain('二等奖');
+    expect(quote).toContain('三等奖');
+  });
+});
+
+describe('markdown markers are formatting, not content', () => {
+  const { expandAnchor: expandBlock } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+  const MD = '## 组织单位\n**主办单位**：中国中检\n**承办单位**：中检智测科技';
+
+  it('matches an anchor the model reproduced without the asterisks', () => {
+    // 模型复现「**主办单位**：中国中检」时会写成「主办单位：中国中检」。
+    // 实测保留换行后，十条被丢弃的锚点里有七条是这个原因。
+    expect(expandBlock('主办单位：中国中检', MD)).toContain('中国中检');
+    expect(expandBlock('承办单位：中检智测科技', MD)).toContain('中检智测科技');
+  });
+
+  it('still refuses text that is genuinely absent', () => {
+    // 抹掉的只是标记符号，文字本身仍须一字不差。
+    expect(expandBlock('主办单位：某个不存在的机构', MD)).toBeNull();
+  });
+
+  it('keeps the two normalizers in step so offsets stay aligned', () => {
+    // 归一化串和位置映射必须跳过完全相同的字符，
+    // 实测两边不一致时所有锚点都会失配。
+    const withMarks = '**一等奖**：8万元 **二等奖**：5万元';
+    expect(expandBlock('一等奖：8万元', withMarks)).toContain('一等奖');
+    expect(expandBlock('二等奖：5万元', withMarks)).toContain('二等奖');
+  });
+});

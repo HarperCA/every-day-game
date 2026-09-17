@@ -24,6 +24,26 @@ const PROMPT_VERSION = 'competition-extract-v2-anchor';
 // 抽取是突发型负载：几百场集中跑会撞上会员制的窗口配额，
 // 而审核是低频的，留在原供应商上不受影响。
 const EXTRACT_CONFIG_PREFIX = 'EXTRACT_';
+// 抽取必须保留换行。htmlToText 会把 \s+ 压成空格，赛事页最关键的信息
+// （「## 奖金设置」下面的列表、评审表格）压完就成了一整行，块边界全没了，
+// 引文只能按字数硬切。这里改成只合并空格和制表符，换行原样保留。
+function toStructuredText(input, limit) {
+  return String(input || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    // 块级标签的收尾转成换行，否则去标签后段落会黏成一片
+    .replace(/<\/(p|div|li|tr|h[1-6]|section|article)\s*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '\n- ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&#39;/g, "'").replace(/&quot;/gi, '"')
+    .replace(/[ \t　]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, limit);
+}
+
 const PAGE_TIMEOUT_MS = 8000;
 // 云函数硬上限是 60 秒，被平台掐死时什么都拿不到，连失败原因都没有。
 // 所以自己先收口：总预算 52 秒，留 8 秒给平台调度和返回序列化。
@@ -50,19 +70,28 @@ function remainingChatBudget(startedAt, requested, now = Date.now(), totalBudget
 }
 // 正文太长会把耗时推到 60 秒上限之外，而通知类页面的关键信息通常集中在前段。
 const PAGE_TEXT_LIMIT = 6000;
-// 引文太短会误匹配（「大赛」几乎出现在任何页面上），太长则模型难以逐字复现。
+// 引文太短会误匹配（「大赛」几乎出现在任何页面上）。
+// 上限 120 太小：一个「奖金设置」块有四档奖项，装不下就会被拦腰截断。
+// 提到 300，与 event_edition schema 里 recognition[].evidence 的 maxLength 一致。
 const MIN_QUOTE_LENGTH = 6;
-const MAX_QUOTE_LENGTH = 120;
+const MAX_QUOTE_LENGTH = 300;
 
 const PUNCTUATION_MAP = {
   '，': ',', '。': '.', '；': ';', '：': ':', '！': '!', '？': '?',
   '、': ',', '（': '(', '）': ')', '“': '"', '”': '"', '‘': "'", '’': "'",
 };
 
-// 比对前抹平空白和全半角差异：模型复现原文时常常改动这些，
+// Markdown 的强调、标题、代码和续行标记是格式不是内容。
+// 模型复现「**主办单位**：中国中检」时会写成「主办单位：中国中检」，
+// 两边都抹掉才对得上 —— 实测保留换行后，十条锚点里有七条因此被误丢。
+// 抹掉的只是标记符号，文字本身仍须一字不差，防编造的性质不受影响。
+const MARKDOWN_MARKS = /[*#`~\\]/g;
+
+// 比对前抹平空白、全半角和 Markdown 标记差异：模型复现原文时常常改动这些，
 // 但它们不影响「这句话是否真的在页面上」。
 function normalizeForQuoteMatch(text) {
   return String(text || '')
+    .replace(MARKDOWN_MARKS, '')
     .replace(/[\s　]+/g, '')
     .replace(/[，。；：！？、（）“”‘’]/g, match => PUNCTUATION_MAP[match])
     .toLowerCase();
@@ -76,7 +105,11 @@ function buildNormalizedIndex(text) {
   const positions = [];
   for (let i = 0; i < source.length; i += 1) {
     const character = source[i];
+    // 必须与 normalizeForQuoteMatch 跳过完全相同的字符，否则定位出来的下标
+    // 会和原文错位 —— 实测两边不一致时，所有锚点都会失配。
     if (/[\s　]/.test(character)) continue;
+    if (MARKDOWN_MARKS.test(character)) { MARKDOWN_MARKS.lastIndex = 0; continue; }
+    MARKDOWN_MARKS.lastIndex = 0;
     normalized += (PUNCTUATION_MAP[character] || character).toLowerCase();
     positions.push(i);
   }
@@ -113,9 +146,34 @@ function countOccurrences(haystack, needle) {
   return count;
 }
 
-// 在原文里定位锚点，向两侧扩展到句子边界，返回原文里的那一整句。
-// 定位不到、或锚点太普通，返回 null —— 对应的抽取项会被丢弃。
-function expandAnchor(anchor, sourceText) {
+// 块边界：空行、Markdown 标题、水平分割线。
+// 块内部的行（列表项、表格行）属于同一段意思，必须整体取出。
+function isBlockBoundary(line) {
+  const value = String(line || '').trim();
+  return !value || /^#{1,6}\s/.test(value) || /^([-*_]\s*){3,}$/.test(value);
+}
+
+// 把原文按行切开并记下每行的起止位置，用于「取整行、不切半行」。
+function toLines(source) {
+  const lines = [];
+  let offset = 0;
+  for (const text of String(source).split('\n')) {
+    lines.push({ text, start:offset, end:offset + text.length });
+    offset += text.length + 1;
+  }
+  return lines;
+}
+
+// 在原文里定位锚点，取出它所在的**整块**内容。
+//
+// 之前按句号扩展再 slice(0,120)，在这些页面上是错的：赛事页的关键信息是
+// Markdown 列表和表格（「## 奖金设置」下面四行奖项），整块里一个句号都没有，
+// 于是一路扩到字数上限被拦腰斩断 —— 实测 33 条引文结尾是「+ 由」
+// 「北京北奥集」这种半个词。
+//
+// 现在改成：先取锚点所在的整块；块太长就以锚点那一行为中心补整行，
+// 绝不切半行。定位不到、或锚点太普通，返回 null。
+function expandAnchor(anchor, sourceText, { maxChars = MAX_QUOTE_LENGTH } = {}) {
   const value = String(anchor || '').trim();
   if (value.length < ANCHOR_MIN_LENGTH || value.length > ANCHOR_MAX_LENGTH) return null;
   const { normalized, positions } = buildNormalizedIndex(sourceText);
@@ -126,12 +184,62 @@ function expandAnchor(anchor, sourceText) {
   if (countOccurrences(normalized, needle) > MAX_ANCHOR_OCCURRENCES) return null;
 
   const source = String(sourceText);
-  let start = positions[at];
-  let end = positions[Math.min(at + needle.length - 1, positions.length - 1)];
-  // 向左退到上一个句号之后，向右推到下一个句号为止
-  while (start > 0 && !SENTENCE_BOUNDARY.test(source[start - 1]) && end - start < MAX_QUOTE_LENGTH) start -= 1;
-  while (end < source.length - 1 && !SENTENCE_BOUNDARY.test(source[end]) && end - start < MAX_QUOTE_LENGTH) end += 1;
-  return source.slice(start, end + 1).replace(/[\s　]+/g, ' ').trim().slice(0, MAX_QUOTE_LENGTH);
+  const anchorStart = positions[at];
+  const lines = toLines(source);
+  const anchorLine = lines.findIndex(line => anchorStart >= line.start && anchorStart <= line.end);
+  if (anchorLine === -1) return null;
+
+  // 锚点所在块的范围
+  let blockStart = anchorLine;
+  let blockEnd = anchorLine;
+  while (blockStart > 0 && !isBlockBoundary(lines[blockStart - 1].text)) blockStart -= 1;
+  while (blockEnd < lines.length - 1 && !isBlockBoundary(lines[blockEnd + 1].text)) blockEnd += 1;
+
+  const join = (from, to) => lines.slice(from, to + 1).map(line => line.text.trim()).filter(Boolean).join(' ');
+
+  // 单行块就是一段散文：整段取太糙，应当只取锚点所在的那一句。
+  // 多行块（列表、表格）才需要整块取 —— 那些行合起来才是一件完整的事。
+  if (blockStart === blockEnd) {
+    const line = lines[anchorLine].text;
+    const offsetInLine = anchorStart - lines[anchorLine].start;
+    const sentences = line.split(new RegExp(`(?<=${SENTENCE_BOUNDARY.source})`)).filter(Boolean);
+    let cursor = 0;
+    for (const sentence of sentences) {
+      const next = cursor + sentence.length;
+      if (offsetInLine < next) {
+        const trimmed = sentence.trim();
+        return (trimmed.length <= maxChars ? trimmed : trimmed.slice(0, maxChars)) || null;
+      }
+      cursor = next;
+    }
+    return line.trim().slice(0, maxChars) || null;
+  }
+
+  const wholeBlock = join(blockStart, blockEnd);
+  if (wholeBlock.length <= maxChars) return wholeBlock || null;
+
+  // 块超长：以锚点那一行为中心补整行。证据的重点通常在锚点之后，所以先向后补。
+  let from = anchorLine;
+  let to = anchorLine;
+  let current = join(from, to);
+  while (true) {
+    const grownDown = to < blockEnd ? join(from, to + 1) : null;
+    if (grownDown && grownDown.length <= maxChars) { to += 1; current = grownDown; continue; }
+    const grownUp = from > blockStart ? join(from - 1, to) : null;
+    if (grownUp && grownUp.length <= maxChars) { from -= 1; current = grownUp; continue; }
+    break;
+  }
+  // 锚点那一行本身就超长时才退回按标点断句，但仍然断在标点上而不是数到第 N 个字。
+  if (current.length > maxChars) {
+    const pieces = current.split(new RegExp(`(?<=${SENTENCE_BOUNDARY.source})`));
+    let kept = '';
+    for (const piece of pieces) {
+      if ((kept + piece).length > maxChars) break;
+      kept += piece;
+    }
+    return (kept || current.slice(0, maxChars)).trim() || null;
+  }
+  return current || null;
 }
 
 async function fetchDetailPage(url, request) {
@@ -156,7 +264,7 @@ async function fetchDetailPage(url, request) {
     if (!response.ok) return { url, status:`http_${response.status}`, text:'' };
     const contentType = response.headers.get('content-type') || '';
     if (!/html|text|xml/i.test(contentType)) return { url, status:'unsupported_content_type', contentType, text:'' };
-    return { url, status:'ok', contentType, text:htmlToText(await response.text()).slice(0, PAGE_TEXT_LIMIT) };
+    return { url, status:'ok', contentType, text:toStructuredText(await response.text(), PAGE_TEXT_LIMIT) };
   } catch (error) {
     return { url, status:'fetch_failed', text:'', error:String(error?.message || error).slice(0, 200) };
   }
@@ -301,7 +409,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
   // 传进来的正文也要去标签：接口返回的富文本里常夹着 <img> <p>，
   // 留着既浪费 token，又会让引文回查因为标签而对不上。
   const page = text
-    ? { url, status:'ok', text:htmlToText(text).slice(0, PAGE_TEXT_LIMIT), providedByCaller:true }
+    ? { url, status:'ok', text:toStructuredText(text, PAGE_TEXT_LIMIT), providedByCaller:true }
     : await fetchDetailPage(url, request);
   if (page.status !== 'ok' || !page.text) {
     // 抓不到页面时不调模型：没有正文，任何抽取都只能是编造。
@@ -377,6 +485,6 @@ module.exports = {
   PROMPT_VERSION, PAGE_TEXT_LIMIT, MIN_QUOTE_LENGTH, MAX_QUOTE_LENGTH,
   ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, BOILERPLATE_MIN_CHARS, MAX_ANCHOR_OCCURRENCES,
   TOTAL_BUDGET_MS, MIN_CHAT_TIMEOUT_MS, DEFAULT_MAX_TOKENS, EXTRACT_CONFIG_PREFIX, remainingChatBudget,
-  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, looksLikeContestPage,
+  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, looksLikeContestPage, toStructuredText,
   normalizeForQuoteMatch, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 };
