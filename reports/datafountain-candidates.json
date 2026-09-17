@@ -1,0 +1,1306 @@
+{
+  "generatedAt": "2026-09-17T11:40:23.579Z",
+  "source": "DataFountain",
+  "listUrl": "https://www.datafountain.cn/competitions?page=1",
+  "policy": "仅填充列表数据可事实读出的字段。报名时间、认可度、非现金回报、地域、生命周期留空，待 AI 抽取详情页正文与人工确认。只保留报名未关闭的候选。候选不直接入库。",
+  "fetchStats": {
+    "requests": 3,
+    "cacheHits": 0,
+    "blocked": 0,
+    "errors": 0
+  },
+  "failures": [],
+  "totalOnSite": 370,
+  "fetchedCount": 90,
+  "openSignupCount": 27,
+  "candidateCount": 27,
+  "candidates": [
+    {
+      "externalId": "datafountain-1169",
+      "name": "AI新睿人才“星探计划”",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1169",
+      "introduction": "",
+      "tags": [
+        "图像分割"
+      ],
+      "organizer": "烟台睿创微纳技术股份有限公司",
+      "reward_amount": 90000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 90000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 139,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 139 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1169",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.577Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1166",
+      "name": "“猎鹰·微波智探”—雷达多目标智能探测与识别挑战",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1166",
+      "introduction": "",
+      "tags": [
+        "人工智能"
+      ],
+      "organizer": "中国电子学会&睿创微纳",
+      "reward_amount": 145000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 145000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 583,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 583 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1166",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1165",
+      "name": "具有多模态能力的客服智能体设计",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1165",
+      "introduction": "",
+      "tags": [
+        "多模态"
+      ],
+      "organizer": "中国电子学会&睿创微纳",
+      "reward_amount": 145000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 145000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 874,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 874 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1165",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1164",
+      "name": "红外智感—红外开放世界全模态分割挑战",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1164",
+      "introduction": "",
+      "tags": [
+        "图像分割"
+      ],
+      "organizer": "中国电子学会&睿创微纳",
+      "reward_amount": 145000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 145000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 212,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 212 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1164",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1163",
+      "name": "多模态感知融合增强的具身自主抓取任务挑战",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1163",
+      "introduction": "",
+      "tags": [
+        "多模态"
+      ],
+      "organizer": "中国电子学会&睿创微纳",
+      "reward_amount": 145000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 145000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 89,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 89 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1163",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1104",
+      "name": "多模态BadCase极限挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1104",
+      "introduction": "",
+      "tags": [
+        "自然语言处理",
+        "大语言模型"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 160000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 160000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1104",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1102",
+      "name": "基于人工智能的闽江流域水情预报",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1102",
+      "introduction": "",
+      "tags": [
+        "回归预测"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 170000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 170000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1102",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1103",
+      "name": "电算协同促进能效提升探索与实践",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1103",
+      "introduction": "",
+      "tags": [
+        "数据挖掘",
+        "聚类问题"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 170000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 170000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1103",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1097",
+      "name": "盲区突围：模型BadCase极限挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1097",
+      "introduction": "",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 160000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 160000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1097",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1098",
+      "name": "中文开源数据集驱动中文大模型智能跃迁挑战赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1098",
+      "introduction": "",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 160000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 160000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 0,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 0 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1098",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1099",
+      "name": "提升大模型推理与微调效率：vLLM与LlaMa-Factory性能优化挑战",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1099",
+      "introduction": "",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 160000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 160000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 0,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 0 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1099",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1100",
+      "name": "AI赋能数据分析与应用赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1100",
+      "introduction": "",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "数字中国建设峰会组委会",
+      "reward_amount": 160000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 160000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 0,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 0 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1100",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1089",
+      "name": "领域事件多因果关联挖掘",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1089",
+      "introduction": "",
+      "tags": [],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 95,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 95 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1089",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1088",
+      "name": "多文档事件摘要信息生成",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1088",
+      "introduction": "",
+      "tags": [
+        "自然语言处理"
+      ],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 158,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 158 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1088",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1087",
+      "name": "基于多源异构融合数据的空间物体识别",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1087",
+      "introduction": "",
+      "tags": [],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 29,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 29 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1087",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1086",
+      "name": "面向大语言模型的领域知识注入与推理",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1086",
+      "introduction": "",
+      "tags": [],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 78,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 78 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1086",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1085",
+      "name": "基于对抗场景下重要目标人脸深度伪造视频检测",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1085",
+      "introduction": "",
+      "tags": [],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 54,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 54 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1085",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1084",
+      "name": "基于海量数据的雷达辐射源识别",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1084",
+      "introduction": "",
+      "tags": [],
+      "organizer": "大数据与决策国家级重点实验室",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 145,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 145 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1084",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1042",
+      "name": "“灵境 · 石景山杯”——技术创新引领赛道",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1042",
+      "introduction": "强调前沿技术创新突破，参赛选手在赛道中需要应用前沿科技，结合石景山区文旅资源痛点，提出具有技术开拓性的解决方案。",
+      "tags": [],
+      "organizer": "北京市石景山区人民政府",
+      "reward_amount": 60000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 60000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 470,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 470 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1042",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1043",
+      "name": "“灵境 · 石景山杯”——示范应用推广赛道",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1043",
+      "introduction": "强调运营模式创新和商业化推广，参赛选手在赛道中需要应用数字化技术，为石景山区文旅资源创新运用、推广模式，形成具有可持续性的方案。",
+      "tags": [],
+      "organizer": "北京市石景山区人民政府",
+      "reward_amount": 60000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 60000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 280,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 280 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1043",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1031",
+      "name": "大型语言模型的非结构化知识编辑",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1031",
+      "introduction": "/",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "中国中文信息学会、中科院计算技术研究所",
+      "reward_amount": 20000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 20000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 77,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 77 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1031",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1032",
+      "name": "基于大模型的文本内容智能评判",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1032",
+      "introduction": "/",
+      "tags": [
+        "大语言模型"
+      ],
+      "organizer": "中国中文信息学会、中国移动研究院、中国移动技术能力评测中心",
+      "reward_amount": 20000,
+      "reward_tier": "1万-10万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 20000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 131,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 131 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1032",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1063",
+      "name": "第五届中国人工智能大赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1063",
+      "introduction": "为贯彻落实党中央、国务院关于推动人工智能发展的决策部署，推动人工智能技术创新发展，推进人工智能场景创新落地，促进人工智能与实体经济深度融合，全面提升人工智能发展质量和水平，在国家互联网信息办公室、公安",
+      "tags": [
+        "人工智能"
+      ],
+      "organizer": "厦门市人民政府",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1063",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-1030",
+      "name": "2024年“数据要素×”大赛青海分赛",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/1030",
+      "introduction": "青海分赛围绕“数据要素×”三年行动计划，聚焦实际问题，突出数据要素价值，充分发挥青海特色区位优势、产业资源优势，选定设置“工业制造”“现代农业”“科技创新”“文化旅游”“气象服务”“城市治理”“绿色低",
+      "tags": [],
+      "organizer": "青海省数据局",
+      "reward_amount": 322000,
+      "reward_tier": "10万-50万",
+      "reward_highlights": [
+        "现金奖金"
+      ],
+      "rewards": "奖金池 322000 元（DataFountain 列表数据 reward 字段）",
+      "participant_count": 1,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 1 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/1030",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-983",
+      "name": "多模态多方对话场景下的发言人识别",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/983",
+      "introduction": "本赛题收集了一个多模态多方对话说话人识别数据集。 \n数据集中每条数据包含多轮连续的对话内容，每轮对应一个视频帧，并标注了每帧中出现的人脸的位置、姓名。要求参赛者对于每轮对话从所有帧中出现的人脸的姓名中",
+      "tags": [],
+      "organizer": "中国计算机学会",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 100,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 100 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/983",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-982",
+      "name": "基于书籍文本属性与链接关系的类别预测信息收集",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/982",
+      "introduction": "在数字化时代，图书行业正迅速转向在线销售和数字阅读平台。为了提供个性化推荐、改善用户体验以及促进销售，准确预测和分类书籍的类别变得至关重要。基于这一背景，我们呈现了基于书籍文本属性与链接关系的类别预测",
+      "tags": [
+        "分类问题"
+      ],
+      "organizer": "中国计算机学会",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 343,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 343 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/982",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    },
+    {
+      "externalId": "datafountain-981",
+      "name": "多模态会话情感分析",
+      "seriesName": null,
+      "detailUrl": "https://www.datafountain.cn/competitions/981",
+      "introduction": "随着自然语言处理技术的快速发展，多模态情感识别的研究在人机交互、人工智能等领域有着重要的研究意义,备受研究者关注。本次赛题旨在通过多模态数据（音频、文本、视频等）对会话情绪进行识别。",
+      "tags": [
+        "情感分析"
+      ],
+      "organizer": "中国计算机学会",
+      "reward_amount": null,
+      "reward_tier": "暂未公布",
+      "reward_highlights": [],
+      "rewards": "",
+      "participant_count": 160,
+      "participant_unit": "队",
+      "scale_tier": "千人以下",
+      "participant_scale": "已报名 160 支队伍（抓取时点）",
+      "registration_start": null,
+      "registration_end": null,
+      "competition_start": null,
+      "competition_end": null,
+      "recognition": [],
+      "region": "",
+      "lifecycle": "暂未明确",
+      "isOpenSignup": true,
+      "evidence": {
+        "source": "DataFountain",
+        "url": "https://www.datafountain.cn/competitions/981",
+        "api": "https://www.datafountain.cn/competitions?page=1",
+        "fields": [
+          "organizer",
+          "reward_amount",
+          "participant_count"
+        ],
+        "fetchedAt": "2026-09-17T11:40:23.579Z"
+      },
+      "needsReview": [
+        "registration_start",
+        "registration_end",
+        "recognition",
+        "reward_highlights（非现金部分）",
+        "region",
+        "lifecycle",
+        "professions"
+      ]
+    }
+  ]
+}

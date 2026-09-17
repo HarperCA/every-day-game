@@ -1,0 +1,426 @@
+{
+  "generatedAt": "2026-09-17T11:42:12.648Z",
+  "candidateSource": "DataFountain",
+  "candidateCount": 27,
+  "masterCount": 44,
+  "policy": "只做规则能确定的判断。uncertain 一律交人工或 AI，不硬猜。产出不写库。",
+  "counts": {
+    "duplicate": 0,
+    "same_event_other_tier": 0,
+    "likely_duplicate": 0,
+    "uncertain": 0,
+    "new": 27,
+    "invalid": 0
+  },
+  "duplicate": [],
+  "likely_duplicate": [],
+  "uncertain": [],
+  "new": [
+    {
+      "candidate": "AI新睿人才“星探计划”",
+      "externalId": "datafountain-1169",
+      "detailUrl": "https://www.datafountain.cn/competitions/1169",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.882,
+      "reason": "最接近的是与「挑战杯创业计划竞赛」相似度 0.12，低于判重阈值",
+      "values": {
+        "reward_amount": 90000,
+        "reward_tier": "1万-10万",
+        "participant_count": 139,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "“猎鹰·微波智探”—雷达多目标智能探测与识别挑战",
+      "externalId": "datafountain-1166",
+      "detailUrl": "https://www.datafountain.cn/competitions/1166",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.879,
+      "reason": "最接近的是与「“西门子杯”中国智能制造挑战赛」相似度 0.12，低于判重阈值",
+      "values": {
+        "reward_amount": 145000,
+        "reward_tier": "10万-50万",
+        "participant_count": 583,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "具有多模态能力的客服智能体设计",
+      "externalId": "datafountain-1165",
+      "detailUrl": "https://www.datafountain.cn/competitions/1165",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.889,
+      "reason": "最接近的是与「智能车竞赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 145000,
+        "reward_tier": "10万-50万",
+        "participant_count": 874,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "红外智感—红外开放世界全模态分割挑战",
+      "externalId": "datafountain-1164",
+      "detailUrl": "https://www.datafountain.cn/competitions/1164",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.917,
+      "reason": "最接近的是与「挑战杯创业计划竞赛」相似度 0.08，低于判重阈值",
+      "values": {
+        "reward_amount": 145000,
+        "reward_tier": "10万-50万",
+        "participant_count": 212,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "多模态感知融合增强的具身自主抓取任务挑战",
+      "externalId": "datafountain-1163",
+      "detailUrl": "https://www.datafountain.cn/competitions/1163",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.857,
+      "reason": "最接近的是与「2026-具身仿真合成挑战赛」相似度 0.14，低于判重阈值",
+      "values": {
+        "reward_amount": 145000,
+        "reward_tier": "10万-50万",
+        "participant_count": 89,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "多模态BadCase极限挑战赛",
+      "externalId": "datafountain-1104",
+      "detailUrl": "https://www.datafountain.cn/competitions/1104",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.786,
+      "reason": "最接近的是与「2026-跨本体具身认知极限联合挑战赛」相似度 0.21，低于判重阈值",
+      "values": {
+        "reward_amount": 160000,
+        "reward_tier": "10万-50万",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于人工智能的闽江流域水情预报",
+      "externalId": "datafountain-1102",
+      "detailUrl": "https://www.datafountain.cn/competitions/1102",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.889,
+      "reason": "最接近的是与「智能车竞赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 170000,
+        "reward_tier": "10万-50万",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "电算协同促进能效提升探索与实践",
+      "externalId": "datafountain-1103",
+      "detailUrl": "https://www.datafountain.cn/competitions/1103",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.931,
+      "reason": "最接近的是与「中国大学生工程实践与创新能力大赛」相似度 0.07，低于判重阈值",
+      "values": {
+        "reward_amount": 170000,
+        "reward_tier": "10万-50万",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "盲区突围：模型BadCase极限挑战赛",
+      "externalId": "datafountain-1097",
+      "detailUrl": "https://www.datafountain.cn/competitions/1097",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.793,
+      "reason": "最接近的是与「蚂蚁灵波具身大模型挑战赛」相似度 0.21，低于判重阈值",
+      "values": {
+        "reward_amount": 160000,
+        "reward_tier": "10万-50万",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "中文开源数据集驱动中文大模型智能跃迁挑战赛",
+      "externalId": "datafountain-1098",
+      "detailUrl": "https://www.datafountain.cn/competitions/1098",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.733,
+      "reason": "最接近的是与「蚂蚁灵波具身大模型挑战赛」相似度 0.27，低于判重阈值",
+      "values": {
+        "reward_amount": 160000,
+        "reward_tier": "10万-50万",
+        "participant_count": 0,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "提升大模型推理与微调效率：vLLM与LlaMa-Factory性能优化挑战",
+      "externalId": "datafountain-1099",
+      "detailUrl": "https://www.datafountain.cn/competitions/1099",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.87,
+      "reason": "最接近的是与「蚂蚁灵波具身大模型挑战赛」相似度 0.13，低于判重阈值",
+      "values": {
+        "reward_amount": 160000,
+        "reward_tier": "10万-50万",
+        "participant_count": 0,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "AI赋能数据分析与应用赛",
+      "externalId": "datafountain-1100",
+      "detailUrl": "https://www.datafountain.cn/competitions/1100",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.895,
+      "reason": "最接近的是与「欧莱雅美妆科技黑客松 - 赛题1 数据共情者 - 消费者的AI管家」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 160000,
+        "reward_tier": "10万-50万",
+        "participant_count": 0,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "领域事件多因果关联挖掘",
+      "externalId": "datafountain-1089",
+      "detailUrl": "https://www.datafountain.cn/competitions/1089",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 1,
+      "reason": "库中没有相近名称",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 95,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "多文档事件摘要信息生成",
+      "externalId": "datafountain-1088",
+      "detailUrl": "https://www.datafountain.cn/competitions/1088",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.9,
+      "reason": "最接近的是与「全国大学生信息安全竞赛」相似度 0.10，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 158,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于多源异构融合数据的空间物体识别",
+      "externalId": "datafountain-1087",
+      "detailUrl": "https://www.datafountain.cn/competitions/1087",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.949,
+      "reason": "最接近的是与「知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解」相似度 0.05，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 29,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "面向大语言模型的领域知识注入与推理",
+      "externalId": "datafountain-1086",
+      "detailUrl": "https://www.datafountain.cn/competitions/1086",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.926,
+      "reason": "最接近的是与「蚂蚁灵波具身大模型挑战赛」相似度 0.07，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 78,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于对抗场景下重要目标人脸深度伪造视频检测",
+      "externalId": "datafountain-1085",
+      "detailUrl": "https://www.datafountain.cn/competitions/1085",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.913,
+      "reason": "最接近的是与「第七届CSIG图像图形技术挑战赛—复杂工业场景异常检测算法挑战赛」相似度 0.09，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 54,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于海量数据的雷达辐射源识别",
+      "externalId": "datafountain-1084",
+      "detailUrl": "https://www.datafountain.cn/competitions/1084",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.944,
+      "reason": "最接近的是与「知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解」相似度 0.06，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 145,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "“灵境 · 石景山杯”——技术创新引领赛道",
+      "externalId": "datafountain-1042",
+      "detailUrl": "https://www.datafountain.cn/competitions/1042",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.907,
+      "reason": "最接近的是与「CSIG图像图形技术挑战赛-赛道一：生成式图像增强可控性挑战」相似度 0.09，低于判重阈值",
+      "values": {
+        "reward_amount": 60000,
+        "reward_tier": "1万-10万",
+        "participant_count": 470,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "“灵境 · 石景山杯”——示范应用推广赛道",
+      "externalId": "datafountain-1043",
+      "detailUrl": "https://www.datafountain.cn/competitions/1043",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.889,
+      "reason": "最接近的是与「大广赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 60000,
+        "reward_tier": "1万-10万",
+        "participant_count": 280,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "大型语言模型的非结构化知识编辑",
+      "externalId": "datafountain-1031",
+      "detailUrl": "https://www.datafountain.cn/competitions/1031",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.895,
+      "reason": "最接近的是与「结构设计竞赛」相似度 0.11，低于判重阈值",
+      "values": {
+        "reward_amount": 20000,
+        "reward_tier": "1万-10万",
+        "participant_count": 77,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于大模型的文本内容智能评判",
+      "externalId": "datafountain-1032",
+      "detailUrl": "https://www.datafountain.cn/competitions/1032",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.833,
+      "reason": "最接近的是与「蚂蚁灵波具身大模型挑战赛」相似度 0.17，低于判重阈值",
+      "values": {
+        "reward_amount": 20000,
+        "reward_tier": "1万-10万",
+        "participant_count": 131,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "第五届中国人工智能大赛",
+      "externalId": "datafountain-1063",
+      "detailUrl": "https://www.datafountain.cn/competitions/1063",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.714,
+      "reason": "最接近的是与「理解当代中国大赛」相似度 0.29，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "2024年“数据要素×”大赛青海分赛",
+      "externalId": "datafountain-1030",
+      "detailUrl": "https://www.datafountain.cn/competitions/1030",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.846,
+      "reason": "最接近的是与「工创大赛」相似度 0.15，低于判重阈值",
+      "values": {
+        "reward_amount": 322000,
+        "reward_tier": "10万-50万",
+        "participant_count": 1,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "多模态多方对话场景下的发言人识别",
+      "externalId": "datafountain-983",
+      "detailUrl": "https://www.datafountain.cn/competitions/983",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.947,
+      "reason": "最接近的是与「知乎知学堂大模型挑战赛：大模型复杂表格识别与内容理解」相似度 0.05，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 100,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "基于书籍文本属性与链接关系的类别预测信息收集",
+      "externalId": "datafountain-982",
+      "detailUrl": "https://www.datafountain.cn/competitions/982",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.935,
+      "reason": "最接近的是与「全国大学生信息安全竞赛」相似度 0.06，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 343,
+        "scale_tier": "千人以下"
+      }
+    },
+    {
+      "candidate": "多模态会话情感分析",
+      "externalId": "datafountain-981",
+      "detailUrl": "https://www.datafountain.cn/competitions/981",
+      "matchedMaster": null,
+      "matchedId": null,
+      "confidence": 0.905,
+      "reason": "最接近的是与「全国大学生市场调查与分析大赛」相似度 0.10，低于判重阈值",
+      "values": {
+        "reward_amount": null,
+        "reward_tier": "暂未公布",
+        "participant_count": 160,
+        "scale_tier": "千人以下"
+      }
+    }
+  ],
+  "invalid": []
+}
