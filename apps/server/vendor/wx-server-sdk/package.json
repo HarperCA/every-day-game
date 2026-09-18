@@ -1,0 +1,7 @@
+{
+  "name": "wx-server-sdk",
+  "version": "0.0.0-self-hosted",
+  "private": true,
+  "main": "index.cjs",
+  "description": "本地替身：让云函数里的 require('wx-server-sdk') 解析到 SQLite 外壳，业务代码一行不改"
+}

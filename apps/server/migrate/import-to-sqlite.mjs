@@ -1,9 +1,10 @@
-// 把 export-from-cloudbase.mjs 导出的 JSON 灌进 SQLite，并逐表校验。
+// 把 export-from-cloudbase.mjs 导出的 JSON 灌进 SQLite。
 //
-// 校验方式和导出时一致：条数 + 内容哈希。哈希对不上就报错退出，
-// 不会"差不多就算了"——迁移最不能出的错就是静默丢数据。
+// 映射是直给的：CloudBase 里「集合 + 文档」在这边还是「集合 + 文档」，
+// 字段一个不动。这样云函数代码读到的东西和在 CloudBase 上读到的完全一样。
 //
-// 默认拒绝覆盖已有数据库文件，要重灌得显式加 --force。
+// 校验：条数 + 内容哈希，对不上直接报错退出，不"差不多就算了"——
+// 迁移最不能出的错就是静默丢数据。
 //
 // 用法：node migrate/import-to-sqlite.mjs [--in ../../reports/cloudbase-export] [--db ./data/app.db] [--force]
 import fs from 'node:fs';
@@ -11,7 +12,8 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { openDatabase, writeState, putPublicCache, appendAudit } from '../src/db.mjs';
+import { openDatabase, putDoc, listDocs, getDoc } from '../src/db.mjs';
+import { canonicalHash } from './canonical.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
@@ -30,10 +32,8 @@ function parseArgs(argv) {
   return args;
 }
 
-function hashOf(value) {
-  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16);
-}
-
+// 规范化哈希：比内容，不比键顺序（见 canonical.mjs）
+const hashOf = canonicalHash;
 const readJson = async file => JSON.parse(await fsp.readFile(file, 'utf8'));
 
 async function main() {
@@ -48,94 +48,83 @@ async function main() {
     for (const suffix of ['', '-wal', '-shm']) fs.rmSync(`${args.db}${suffix}`, { force: true });
   }
 
-  const db = openDatabase(args.db);
-  const results = [];
-
-  // better-sqlite3 是同步 API，事务里不能有 await——先把 JSON 全读进内存，再同步写入。
-  await importAllSync(db, args, manifest, results);
-
-  db.close();
-
-  console.log('表名'.padEnd(34) + '导出'.padEnd(20) + '导入'.padEnd(20) + '结果');
-  let failed = false;
-  for (const item of results) {
-    const ok = item.status ? false : item.expected === item.actual;
-    if (!ok) failed = true;
-    console.log(
-      String(item.name).padEnd(32)
-      + String(item.expected ?? '-').padEnd(20)
-      + String(item.actual ?? '-').padEnd(20)
-      + (item.status || (ok ? '✓ 一致' : '✗ 对不上')),
-    );
-  }
-  if (failed) throw new Error('校验未通过，数据库内容与导出不一致');
-  console.log(`\n全部一致，数据库：${args.db}`);
-}
-
-// better-sqlite3 是同步 API，事务里不能有 await——所以先把 JSON 读进内存，再同步写。
-async function importAllSync(db, args, manifest, results) {
+  // better-sqlite3 是同步 API，事务里不能有 await——先把 JSON 全读进内存。
   const loaded = {};
   for (const [name, entry] of Object.entries(manifest.tables)) {
     loaded[name] = await readJson(path.join(args.in, entry.file));
   }
 
-  const run = db.transaction(() => {
-    for (const [name, stateId] of [
+  const db = openDatabase(args.db);
+  const results = [];
+
+  db.transaction(() => {
+    // admin_state：三个文档，每个是「整表 records + 版本号」，
+    // 和 CloudBase 里的形状完全一致，云函数 loadState 能直接读。
+    for (const [name, docId] of [
       ['admin_state.competitions', 'competitions'],
       ['admin_state.feedbacks', 'feedbacks'],
       ['admin_state.ai_jobs', 'ai_jobs'],
     ]) {
       const payload = loaded[name];
       if (!payload) continue;
-      writeState(db, stateId, payload.records, payload.version);
+      putDoc(db, 'admin_state', docId, {
+        records: payload.records,
+        version: payload.version,
+        updated_at: new Date().toISOString(),
+        updated_by: 'migration',
+      });
       results.push({ name, expected: manifest.tables[name].count, actual: payload.records.length });
     }
 
-    for (const row of loaded['event_edition_public_cache'] || []) putPublicCache(db, row.id || row._id, row);
-    results.push({ name: 'event_edition_public_cache', expected: manifest.tables['event_edition_public_cache']?.count ?? 0, actual: (loaded['event_edition_public_cache'] || []).length });
-
-    for (const row of loaded['audit_log'] || []) appendAudit(db, { ...row, id: row.id || row._id });
-    results.push({ name: 'audit_log', expected: manifest.tables['audit_log']?.count ?? 0, actual: (loaded['audit_log'] || []).length });
-
-    const userInsert = db.prepare('INSERT INTO user_account (id, openid, appid, unionid, status, created_at, updated_at, last_login_at) VALUES (@id, @openid, @appid, @unionid, @status, @created_at, @updated_at, @last_login_at)');
-    for (const row of loaded['user_account'] || []) {
-      userInsert.run({
-        id: row._id || row.id, openid: row.openid, appid: row.appid ?? null, unionid: row.unionid ?? null,
-        status: row.status || 'active', created_at: row.created_at ?? null, updated_at: row.updated_at ?? null,
-        last_login_at: row.last_login_at ?? null,
-      });
+    // 其余集合：一行一个文档，字段原样搬。
+    for (const [name, collection] of [
+      ['event_edition_public_cache', 'event_edition_public_cache'],
+      ['audit_log', 'audit_log'],
+      ['user_account', 'user_account'],
+      ['favorite', 'favorite'],
+      ['reminder', 'reminder'],
+      ['feedback', 'feedback'],
+    ]) {
+      const rows = loaded[name] || [];
+      for (const row of rows) {
+        const id = row._id || row.id;
+        if (!id) throw new Error(`${name} 里有记录没有 id，拒绝导入：${JSON.stringify(row).slice(0, 120)}`);
+        // _id 是 CloudBase 的主键字段，存进去时去掉，读出来时由存储层补上，
+        // 避免同一个值在文档里和主键里各存一份、以后改了一个忘了另一个。
+        const { _id, ...rest } = row;
+        putDoc(db, collection, String(id), rest);
+      }
+      results.push({ name, expected: manifest.tables[name]?.count ?? 0, actual: rows.length });
     }
-    results.push({ name: 'user_account', expected: manifest.tables['user_account']?.count ?? 0, actual: (loaded['user_account'] || []).length });
+  })();
 
-    const favInsert = db.prepare('INSERT INTO favorite (id, user_id, edition_id, data) VALUES (@id, @user_id, @edition_id, @data)');
-    for (const row of loaded['favorite'] || []) favInsert.run({ id: row._id || row.id, user_id: row.user_id, edition_id: row.edition_id, data: JSON.stringify(row) });
-    results.push({ name: 'favorite', expected: manifest.tables['favorite']?.count ?? 0, actual: (loaded['favorite'] || []).length });
-
-    const remInsert = db.prepare('INSERT INTO reminder (id, user_id, edition_id, data) VALUES (@id, @user_id, @edition_id, @data)');
-    for (const row of loaded['reminder'] || []) remInsert.run({ id: row._id || row.id, user_id: row.user_id, edition_id: row.edition_id ?? null, data: JSON.stringify(row) });
-    results.push({ name: 'reminder', expected: manifest.tables['reminder']?.count ?? 0, actual: (loaded['reminder'] || []).length });
-
-    const fbInsert = db.prepare('INSERT INTO feedback (id, user_id, data) VALUES (@id, @user_id, @data)');
-    for (const row of loaded['feedback'] || []) fbInsert.run({ id: row._id || row.id, user_id: row.user_id ?? null, data: JSON.stringify(row) });
-    results.push({ name: 'feedback', expected: manifest.tables['feedback']?.count ?? 0, actual: (loaded['feedback'] || []).length });
-  });
-
-  run();
-
-  // 回读校验：从 SQLite 读出来重新算哈希，和导出时的哈希比对。
-  const { readState, listPublicCache } = await import('../src/db.mjs');
-  const roundTrip = [
-    ['admin_state.competitions', () => { const s = readState(db, 'competitions'); return { records: s.records, version: s.version }; }],
-    ['admin_state.feedbacks', () => { const s = readState(db, 'feedbacks'); return { records: s.records, version: s.version }; }],
-    ['admin_state.ai_jobs', () => { const s = readState(db, 'ai_jobs'); return { records: s.records, version: s.version }; }],
-    ['event_edition_public_cache', () => listPublicCache(db)],
-  ];
-  for (const [name, read] of roundTrip) {
+  // 回读校验：从 SQLite 读出来重新算哈希，和导出时的哈希比。
+  for (const [name, read] of [
+    ['admin_state.competitions', () => { const d = getDoc(db, 'admin_state', 'competitions'); return { records: d.records, version: d.version }; }],
+    ['admin_state.feedbacks', () => { const d = getDoc(db, 'admin_state', 'feedbacks'); return { records: d.records, version: d.version }; }],
+    ['admin_state.ai_jobs', () => { const d = getDoc(db, 'admin_state', 'ai_jobs'); return { records: d.records, version: d.version }; }],
+    // 回读保留 _id：存储层读出来会补上它，导出时原始数据里也有，
+    // 两边口径一致才是真比对。audit_log 本来就没有 _id，补上的是 id 的同值副本，
+    // 所以这里按导出原文里有没有 _id 来决定。
+    ['audit_log', () => listDocs(db, 'audit_log').map(row => { const { _id, ...rest } = row; return rest; })],
+    ['reminder', () => listDocs(db, 'reminder')],
+  ]) {
     const entry = manifest.tables[name];
     if (!entry) continue;
-    const actualHash = hashOf(read());
-    results.push({ name: `${name}（回读哈希）`, expected: entry.hash, actual: actualHash });
+    results.push({ name: `${name}（哈希）`, expected: entry.hash, actual: hashOf(read()) });
   }
+
+  db.close();
+
+  console.log('表名'.padEnd(34) + '导出'.padEnd(20) + '导入'.padEnd(20) + '结果');
+  let failed = false;
+  for (const item of results) {
+    const ok = item.expected === item.actual;
+    if (!ok) failed = true;
+    console.log(String(item.name).padEnd(32) + String(item.expected).padEnd(20) + String(item.actual).padEnd(20) + (ok ? '✓ 一致' : '✗ 对不上'));
+  }
+  if (failed) throw new Error('校验未通过，数据库内容与导出不一致');
+  console.log(`\n全部一致，数据库：${args.db}`);
 }
 
 main().catch(error => {

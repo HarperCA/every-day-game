@@ -16,6 +16,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import cloudbase from '@cloudbase/js-sdk';
+import { canonicalHash } from './canonical.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
@@ -38,9 +39,8 @@ function readAdminToken() {
   return token;
 }
 
-function hashOf(value) {
-  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16);
-}
+// 规范化哈希：比内容，不比键顺序（见 canonical.mjs）
+const hashOf = canonicalHash;
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
