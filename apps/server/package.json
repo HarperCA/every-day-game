@@ -1,0 +1,19 @@
+{
+  "name": "competition-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "自有服务器上的后端：替代 CloudBase 云函数，见 docs/migration-to-self-hosted.md",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "export:cloudbase": "node migrate/export-from-cloudbase.mjs",
+    "import:sqlite": "node migrate/import-to-sqlite.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@cloudbase/js-sdk": "^3.8.0"
+  }
+}

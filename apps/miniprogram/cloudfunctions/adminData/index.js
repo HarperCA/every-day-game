@@ -175,6 +175,36 @@ function auditToAdmin(item) {
   };
 }
 
+// 只读全量导出，迁移专用。分页取完整表——CloudBase 单次 get 默认只给 100 条，
+// 不分页会静默截断，那正是迁移最不能出的错。
+const EXPORTABLE = new Set(['admin_state.feedbacks', 'event_edition_public_cache', 'user_account', 'favorite', 'reminder', 'feedback']);
+
+async function exportCollection(name) {
+  if (!EXPORTABLE.has(name)) throw new Error(`collection_not_exportable:${name}`);
+  if (name.startsWith('admin_state.')) {
+    const stateId = name.slice('admin_state.'.length);
+    const state = await loadState(stateId);
+    return { records: state.records, version: state.version };
+  }
+  const collection = db.collection(name);
+  const all = [];
+  const PAGE = 100;
+  for (let skip = 0; ; skip += PAGE) {
+    let page;
+    try {
+      page = await collection.skip(skip).limit(PAGE).get();
+    } catch (error) {
+      // 集合不存在时当成空表：没建过的集合和空集合对迁移来说是一回事。
+      if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) break;
+      throw error;
+    }
+    const rows = page.data || [];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
+}
+
 async function bootstrap() {
   const [competitionState, feedbackState, submittedFeedbacks, aiJobState, auditResult, lastAiReviewRun] = await Promise.all([
     loadState('competitions'),
@@ -311,6 +341,10 @@ async function loadLastAiReviewRun() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  // 只读全量导出，专门给迁移到自有服务器用（见 docs/migration-to-self-hosted.md）。
+  // userData 刻意只让用户读自己的数据，所以按用户存的那几张表没有全量接口——
+  // 这个口子只有 ADMIN_TOKEN 能调，且只读不写。迁完可以删掉。
+  if (event.action === 'exportCollection') return exportCollection(String(event.collection || ''));
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
   // 一次性探测：当前模型是否真的接受图片输入。
   if (event.action === 'aiImageProbe') {

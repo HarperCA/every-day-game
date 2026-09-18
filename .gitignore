@@ -10,3 +10,7 @@ __pycache__/
 apps/miniprogram/project.private.config.json
 apps/admin/vite.config.js
 apps/admin/vite.config.d.ts
+
+# 自有服务器的本地数据库与迁移导出（含用户数据，不进仓库）
+apps/server/data/
+reports/cloudbase-export/
