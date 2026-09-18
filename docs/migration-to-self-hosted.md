@@ -62,31 +62,39 @@
 
 每一步都要能独立验证、能回退，不能一次性切换。
 
-### 阶段 1：服务端 API + SQLite（并行运行，不切换任何流量）
-- [ ] `apps/server/` Express 应用
-- [ ] SQLite schema（7 张表）
-- [ ] 移植 adminData / publicData / userData / login 的逻辑
-- [ ] 数据导出脚本：CloudBase → SQLite
-- [ ] 验证：同样的请求，新旧两边返回一致
+### 阶段 1：服务端 API + SQLite ✅ 已完成
+- [x] `apps/server/` Express 应用
+- [x] SQLite 通用文档存储（不是 7 张带字段的表——字段映射就有丢字段的机会）
+- [x] **不重写业务逻辑**：写 CloudBase 兼容外壳，5 个云函数原样加载
+- [x] 数据导出 + 导入 + 逐表哈希校验（93 条记录全部一致）
+- [x] 验证：bootstrap 返回 58 条记录、乐观锁冲突被正确拒绝、写入事务正常
 
-### 阶段 2：后台前端切过来
-- [ ] admin 前端改调自有 API
-- [ ] **副产品：今天卡住的「安全来源」CORS 问题自动消失**（浏览器不再直连 CloudBase）
+### 阶段 2：后台前端切过来 ✅ 已完成
+- [x] admin 前端改调自有 API（只动了 adminCloud.ts 里四处）
+- [x] **「安全来源」CORS 问题随之消失**——浏览器实测拿到正常业务响应而不是 Failed to fetch
+- [x] 附带：前端产物少了 753KB（CloudBase SDK 整个移除）
 
-### 阶段 3：域名 + HTTPS
-- [ ] 买域名、DNS 指向 107.175.111.18
-- [ ] certbot 签发证书，nginx 上 HTTPS
+### 阶段 3：域名 + HTTPS ✅ 已完成（没花钱）
+- [x] 用 sslip.io 免费域名 `107-175-111-18.sslip.io`，不用买
+- [x] Let's Encrypt 证书已签发并安装，HTTP 自动跳 HTTPS
+- [x] 证书自动续期（certbot 已配置定时任务）
+- 将来买正式域名的话，改 `apps/miniprogram/config/cloud.ts` 的 `API_BASE_URL` 再签一次证书即可
 
-### 阶段 4：微信集成
-- [ ] `jscode2session` 换 openid
-- [ ] 自己管 access_token（缓存 + 刷新）
-- [ ] 订阅消息发送
-- [ ] 微信公众平台配 IP 白名单
+### 阶段 4：微信集成 ⚠️ 代码完成，等配置
+- [x] `jscode2session` 换 openid（`src/wechat.mjs`）
+- [x] access_token 缓存 + 提前 5 分钟续期 + 并发只换一次
+- [x] 订阅消息发送，字段形状和 `cloud.openapi.subscribeMessage.send` 一致，sendReminders 不用改
+- [x] 11 个测试覆盖（含 40164 IP 白名单错误的可读提示）
+- [ ] **需要你做**：微信公众平台「开发设置 → IP 白名单」加上 `107.175.111.18`
+- [ ] **需要你做**：AppSecret 写进服务器 `/opt/daily-contest/.wechat-appsecret`（和其它密钥同一套约定，不经过聊天）
 
-### 阶段 5：小程序切过来
-- [ ] `wx.cloud.callFunction` → `wx.request`（3 处调用点）
-- [ ] 微信公众平台配服务器域名白名单
-- [ ] 真机验证
+### 阶段 5：小程序切过来 ⚠️ 代码完成，等配置
+- [x] `wx.cloud.callFunction` → `wx.request`（3 处调用点都改好了）
+- [x] 用开关 `USE_SELF_HOSTED_BACKEND` 控制走哪条路，**默认仍为 false**，
+      配置没做完之前不会切过去，小程序保持现状可用
+- [ ] **需要你做**：微信公众平台「开发管理 → 开发设置 → 服务器域名」把
+      `https://107-175-111-18.sslip.io` 加进 request 合法域名（每月修改次数有限）
+- [ ] 配好后把开关改成 true，真机验证
 
 ### 阶段 6：下线 CloudBase
 - [ ] 观察期（双写/双跑一段时间）

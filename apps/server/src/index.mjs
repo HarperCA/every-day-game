@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { openDatabase, listCollections } from './db.mjs';
 import { createCloudShim } from './cloudbase-shim.mjs';
 import { runWithContext, currentWXContext } from './context.mjs';
+import { WeChatClient, readWeChatConfig, createOpenApi } from './wechat.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(HERE, '..');
@@ -49,6 +50,17 @@ const shim = createCloudShim(db);
 // 身份改成按请求取：云函数内部调 cloud.getWXContext() 时，
 // 拿到的是当前这一个请求的用户，不会串号（见 src/context.mjs）。
 shim.getWXContext = () => currentWXContext();
+
+// 订阅消息直接对接微信接口（原来由 CloudBase 代劳）。没配 AppSecret 时
+// 保持抛错而不是静默成功——消息没发出去这件事必须让人看见。
+const wechat = new WeChatClient(readWeChatConfig());
+const openapi = createOpenApi(wechat);
+Object.defineProperty(shim, 'openapi', {
+  get() {
+    if (!wechat.configured) throw new Error('wx_openapi_not_available:未配置 WECHAT_APPID / WECHAT_APPSECRET');
+    return openapi;
+  },
+});
 
 require('wx-server-sdk').install(shim);
 
@@ -121,8 +133,25 @@ const deriveUserContext = (req, event) => ({
   appid: String(event.__appid || ''),
 });
 mount('userData', handlers.userData, { deriveContext: deriveUserContext });
-mount('login', handlers.login, { deriveContext: deriveUserContext });
 mount('sendReminders', handlers.sendReminders, { deriveContext: deriveUserContext });
+
+// 小程序登录：客户端 wx.login() 拿到 code 传过来，这里换成 openid，
+// 再交给原来的 login 处理逻辑建账号/更新登录时间——那段逻辑一行不用改。
+app.post('/api/login', async (req, res) => {
+  const code = String(req.body?.code || '');
+  try {
+    const { openid, unionid } = await wechat.exchangeCode(code);
+    const result = await runWithContext(
+      { openid, unionid, appid: readWeChatConfig().appId },
+      () => handlers.login({}, {}),
+    );
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[login] 失败', message);
+    res.status(message.startsWith('wechat_') ? 400 : 500).json({ ok: false, message });
+  }
+});
 
 // 生产上只监听本机，对外由 nginx 反代——Node 服务本身不暴露端口，
 // 少一个可以被直接打的入口。本地开发不设 HOST 时监听全部网卡，方便真机调试。
