@@ -124,9 +124,13 @@ mount('userData', handlers.userData, { deriveContext: deriveUserContext });
 mount('login', handlers.login, { deriveContext: deriveUserContext });
 mount('sendReminders', handlers.sendReminders, { deriveContext: deriveUserContext });
 
-app.listen(PORT, () => {
+// 生产上只监听本机，对外由 nginx 反代——Node 服务本身不暴露端口，
+// 少一个可以被直接打的入口。本地开发不设 HOST 时监听全部网卡，方便真机调试。
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
   const counts = listCollections(db).map(row => `${row.collection}:${row.n}`).join(' ');
-  console.log(`后端已启动 http://0.0.0.0:${PORT}`);
+  console.log(`后端已启动 http://${HOST}:${PORT}`);
   console.log(`数据库 ${DB_FILE}`);
   console.log(`集合 ${counts || '（空）'}`);
 });

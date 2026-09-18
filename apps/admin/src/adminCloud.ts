@@ -1,24 +1,33 @@
 import type { AuditEntry } from './dataStore';
 import type { AiJobRecord, FeedbackRecord } from './operationsStore';
 
-const CLOUD_ENV_ID = ((import.meta as any).env?.VITE_CLOUDBASE_ENV_ID || 'daily-contest-dev-d8dbbhc653e221').trim();
-let appPromise: Promise<any> | null = null;
+// 后端已迁到自有服务器（见 docs/migration-to-self-hosted.md）。
+// 默认走同源相对路径 /api——nginx 把它转给本机的 Node 服务，
+// 浏览器眼里只有一个域名，没有跨域，也不再受 CloudBase「安全来源」白名单管。
+const API_BASE = ((import.meta as any).env?.VITE_API_BASE || '').trim().replace(/\/+$/, '');
 let sessionToken = '';
 let writeQueue: Promise<unknown> = Promise.resolve();
 type StateKey = 'records' | 'feedbacks' | 'aiJobs';
 let stateVersions: Record<StateKey, number> = { records:0, feedbacks:0, aiJobs:0 };
 let writeBlockedMessage = '';
 
-function getCloudApp(): Promise<any> {
-  if (!appPromise) {
-    appPromise = import('@cloudbase/js-sdk').then(({ default: cloudbase }) => cloudbase.init({ env: CLOUD_ENV_ID }));
+async function postJson(path: string, body: Record<string, unknown>): Promise<any> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    // 非 2xx 时后端也可能带 JSON 说明原因，能读就读，读不到再退回状态码。
+    const detail = await response.json().catch(() => null);
+    throw new Error(detail?.message || `后端返回 ${response.status}`);
   }
-  return appPromise;
+  return response.json();
 }
 
 export function describeCloudError(error: unknown): string {
   if (error instanceof Error && error.message) {
-    if (error.message.includes('state_version_conflict:')) return '云端数据已被其他页面修改，请刷新管理后台后再继续操作';
+    if (error.message.includes('state_version_conflict:')) return '数据已被其他页面修改，请刷新管理后台后再继续操作';
     return error.message;
   }
   if (error && typeof error === 'object') {
@@ -27,7 +36,7 @@ export function describeCloudError(error: unknown): string {
     if (message) return String(message);
     try { return JSON.stringify(value); } catch (_ignored) { /* fall through */ }
   }
-  return String(error || 'CloudBase 管理后台连接失败');
+  return String(error || '管理后台连接失败');
 }
 
 export interface AiReviewRun {
@@ -67,11 +76,9 @@ function emit(state: 'syncing' | 'synced' | 'error', message = '') {
 }
 
 async function callAdmin<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  if (!sessionToken) throw new Error('管理员云端会话尚未建立');
-  const app = await getCloudApp();
-  const response: any = await app.callFunction({ name: 'adminData', data: { action, sessionToken, ...payload }, parse: true });
-  const result = typeof response?.result === 'string' ? JSON.parse(response.result) : response?.result;
-  if (!result?.ok) throw new Error(result?.message || '管理云函数返回异常');
+  if (!sessionToken) throw new Error('管理员会话尚未建立');
+  const result = await postJson('/api/adminData', { action, sessionToken, ...payload });
+  if (!result?.ok) throw new Error(result?.message || '后端返回异常');
   return result.data as T;
 }
 
@@ -79,16 +86,10 @@ export async function connectAdminCloud(token: string): Promise<AdminCloudBootst
   sessionToken = '';
   writeBlockedMessage = '';
   const adminToken = token.trim();
-  if (!adminToken) throw new Error('请输入云端管理员口令');
-  const app = await getCloudApp();
-  const auth = app.auth();
-  const state = await auth.getLoginState();
-  if (!state) {
-    const response: any = await auth.signInAnonymously();
-    if (response?.error) throw new Error(response.error.message || 'CloudBase 匿名身份建立失败');
-  }
-  const loginResponse: any = await app.callFunction({ name:'adminData', data:{ action:'login', adminToken }, parse:true });
-  const loginResult = typeof loginResponse?.result === 'string' ? JSON.parse(loginResponse.result) : loginResponse?.result;
+  if (!adminToken) throw new Error('请输入管理员口令');
+  // 不再需要匿名身份：自有服务器不管「请求从哪个网页来的」，
+  // 鉴权就是这一把 ADMIN_TOKEN 本身。
+  const loginResult = await postJson('/api/adminData', { action: 'login', adminToken });
   if (!loginResult?.ok || !loginResult.data?.sessionToken) throw new Error(loginResult?.message || '管理员会话建立失败');
   sessionToken = loginResult.data.sessionToken;
   const bootstrap = await callAdmin<AdminCloudBootstrap>('bootstrap');
@@ -121,7 +122,7 @@ function enqueue(action: string, payload: Record<string, unknown>) {
     })
     .then(() => emit('synced'))
     .catch(error => {
-      console.error('CloudBase admin sync failed', error);
+      console.error('后台同步失败', error);
       emit('error', describeCloudError(error));
     });
 }
@@ -144,7 +145,7 @@ function enqueueState(
     })
     .then(() => emit('synced'))
     .catch(error => {
-      console.error('CloudBase admin state sync failed', error);
+      console.error('后台状态同步失败', error);
       if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
       emit('error', describeCloudError(error));
     });
@@ -214,5 +215,5 @@ export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
 }
 
 export function cloudEnvironmentId() {
-  return CLOUD_ENV_ID;
+  return API_BASE || '本机 /api';
 }
