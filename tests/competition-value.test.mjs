@@ -99,6 +99,9 @@ describe('per-path recognition scoring', () => {
 
 const publishable = {
   id:'edition-1', eventId:'event-1', name:'测试竞赛', editionName:'测试竞赛（2026）', aliases:[], organizer:'测试组委会',
+  // 范围闸要求参赛对象有据可查（见 competitionScope.js）。夹具早先没有这两个字段，
+  // 闸接进 publicCache 之后整个文件连加载都过不去，里面的测试全成了死代码。
+  participants:'全国高校在校本科生与研究生', eligibility:'全国高校在校本科生与研究生',
   eventLevel:'国家级', professions:['计算机与AI'], objectiveTags:[], participationFormat:'团队赛', teamSizeCategory:'2～3人',
   feeType:'免费', registrationOrganization:'自行报名', registrationUrl:'https://example.com/register',
   schedule:{ registration_start:'2026-08-01T00:00:00.000Z', registration_end:'2026-09-30T00:00:00.000Z', status_override:null },
@@ -127,8 +130,8 @@ describe('value fields in the public cache', () => {
 
 describe('query-time ranking by the user goal', () => {
   const cached = record => toPublicCache(record, at);
-  const academic = cached({ ...publishable, id:'academic', name:'学术型赛事', recognition:[recognized('保研考研', '高', '竞赛目录收录')] });
-  const career = cached({ ...publishable, id:'career', name:'求职型赛事', recognition:[recognized('求职就业', '高', '龙头企业主办', ['算法工程师'])] });
+  const academic = cached({ ...publishable, id:'academic', name:'学术型专业竞赛', recognition:[recognized('保研考研', '高', '竞赛目录收录')] });
+  const career = cached({ ...publishable, id:'career', name:'求职型专业竞赛', recognition:[recognized('求职就业', '高', '龙头企业主办', ['算法工程师'])] });
   const records = [career, academic];
 
   it('puts the contest matching the chosen path first', () => {
@@ -145,13 +148,13 @@ describe('query-time ranking by the user goal', () => {
   });
 
   it('hides defunct contests by default but returns them when asked for', () => {
-    const closed = cached({ ...publishable, id:'closed', name:'已停办赛事', lifecycle:'已停办' });
+    const closed = cached({ ...publishable, id:'closed', name:'已停办专业竞赛', lifecycle:'已停办' });
     expect(filterPublicRecords([closed], {}, at).items).toHaveLength(0);
     expect(filterPublicRecords([closed], { lifecycle:'已停办' }, at).items).toHaveLength(1);
   });
 
   it('filters local contests by region', () => {
-    const local = cached({ ...publishable, id:'local', name:'四川省赛', region:'四川省' });
+    const local = cached({ ...publishable, id:'local', name:'四川省专业竞赛', region:'四川省' });
     expect(filterPublicRecords([local, academic], { region:'四川省' }, at).items.map(item => item.id)).toEqual(['local']);
   });
 });

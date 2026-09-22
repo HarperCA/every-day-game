@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hostOf, isRelevant, toCandidate } from '../scripts/server/search-baidu.mjs';
+import { hostOf, isOutOfScopeReference, isRelevant, toCandidate } from '../scripts/server/search-baidu.mjs';
 
 describe('filtering search noise before it costs an extraction call', () => {
   it('keeps results whose title or snippet actually mentions a competition', () => {
@@ -59,5 +59,30 @@ describe('mapping a search reference into a candidate', () => {
     expect(bare.name).toBe('');
     expect(bare.detailUrl).toBe('');
     expect(bare.externalId).toMatch(/^search-[0-9a-f]{16}$/);
+  });
+});
+
+describe('keeping discovery and the admission gate on the same scope rules', () => {
+  // 这几条正是历史上真被误收、后来不得不写 delete-out-of-scope-*.mjs 删掉的样本。
+  // 它们全都含"大赛/巡回赛"，相关性关键词拦不住，只有收录范围判断能拦。
+  it.each([
+    '芜湖市神山音乐节大学生歌手大赛',
+    '2026年中国魔方运动巡回赛暨段级位积分赛（湖北随州站）',
+    '2026年中国男子飞盘公开赛',
+    '2026年"智力猎狐"全国无线电测向教育竞赛（山西忻州站）',
+    '"奔跑吧,少年" 2026年黑龙江省篮球锦标赛(男子甲组) 竞赛规程',
+  ])('drops out-of-scope result before it costs an extraction call: %s', title => {
+    expect(isOutOfScopeReference({ title })).toBe(true);
+  });
+
+  it('still lets ordinary college competitions through', () => {
+    expect(isOutOfScopeReference({ title: '2026年辽宁省大学生智慧电力运行控制创新竞赛' })).toBe(false);
+    expect(isOutOfScopeReference({ title: '第五届福建省大学生化工设计竞赛' })).toBe(false);
+  });
+
+  it('does not drop notice pages at the source', () => {
+    // 通知页是合法线索：SLA 允许通知作为证据，resolve-notice-leads.mjs 负责从中
+    // 追溯真实赛事。在源头砍掉通知等于砍掉整条线索通道，属于误杀。
+    expect(isOutOfScopeReference({ title: '关于举办2026年山东省大学生结构设计竞赛的通知' })).toBe(false);
   });
 });

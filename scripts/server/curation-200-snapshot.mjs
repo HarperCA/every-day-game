@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const token = fs.readFileSync('/opt/daily-contest/.admin-token', 'utf8').trim();
+const response = await fetch('http://127.0.0.1:8787/api/adminData', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({adminToken:token, action:'bootstrap'}) });
+const result = await response.json();
+if (!result.ok) throw new Error(result.message);
+const out = { capturedAt:new Date().toISOString(), version:result.data.stateVersions.records, records:result.data.records };
+const file = '/opt/daily-contest/backups/curation-200-baseline-20260921.json';
+if (fs.existsSync(file)) throw new Error('Baseline already exists; refusing overwrite');
+fs.writeFileSync(file, JSON.stringify(out, null, 2), { mode:0o600 });
+console.log(JSON.stringify({count:out.records.length, version:out.version, file}));
