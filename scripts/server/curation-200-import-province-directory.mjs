@@ -36,6 +36,25 @@ const PROVINCES = {
     releaseNote: '按目录通知要求，承办单位须在赛事开始前30日将竞赛通知、奖项设置与证书模板报福建省教育厅审核同意后公布',
     skip: ['6', '13', '14', '28', '59'],
   },
+  jiangsu: {
+    label: '江苏省',
+    authority: '江苏省高等教育学会（受江苏省教育厅委托）',
+    docTitle: '苏高教会〔2026〕21号《关于公布2026年全省普通高校本专科生学科竞赛省级赛事目录的通知》附件1《2026年全省普通高校本专科生学科竞赛省级赛事目录》',
+    url: 'http://www.jsgjxh.cn/newsview/31221',
+    publishedAt: '2026-06-12',
+    ruleVersion: 'jiangsu-directory-v1',
+    releaseNote: '按通知，该目录经各赛事申报单位、主办单位及承办单位审核，专家评议审定并社会公示后形成；赛事举办期间学会接受社会监督',
+    // 江苏目录列的是「主办单位」而非「承办单位」，措辞需区分
+    orgRole: '主办',
+    // 目录条目自带层级（上级部门组织赛事／省级赛事认可／省级赛事培育），写进赛制说明
+    useTier: true,
+    // S10/S14/S15 经范围闸判定不是单场比赛，闸拦对了，不强行放行：
+    //   S10「江苏省大学生知识产权赛事」是赛事集合的统称，不是一场具体比赛
+    //   S14「江苏省大学生艺术展演」是展演活动
+    //   S15「江苏省高校设计作品展」是作品展览
+    //   78「优秀短视频作品征集活动」是征集活动，同样不是比赛
+    skip: ['S2', 'S3', 'S10', 'S14', 'S15', '12', '22', '23', '26', '30', '37', '41', '46', '47', '54', '64', '65', '66', '78'],
+  },
   guangdong: {
     label: '广东省',
     authority: '广东省教育厅',
@@ -84,13 +103,15 @@ function toRecord(item) {
   const key = `${args.province}-${item.code ? item.code.toLowerCase() : `no${item.no}`}`;
   const record = candidateToRecord({ externalId: key, name: item.name, detailUrl: cfg.url, tags: [] }, null, { now: new Date(now) });
   const codeNote = item.code ? `（竞赛编号${item.code}）` : '';
-  const eligibility = `${cfg.label}普通高等学校在校学生。依据${cfg.authority}${cfg.docTitle}，本赛事为2026年${cfg.label}省级大学生学科竞赛项目${codeNote}，承办单位${item.org}。`;
-  record.organizer = `${cfg.authority}（立项）／${item.org}（承办）`;
+  const orgRole = cfg.orgRole || '承办';
+  const tierNote = cfg.useTier && item.tier ? `，目录分类为“${item.tier}”` : '';
+  const eligibility = `${cfg.label}普通高等学校在校学生。依据${cfg.authority}${cfg.docTitle}，本赛事为2026年${cfg.label}省级大学生学科竞赛项目${codeNote}${tierNote}，${orgRole}单位${item.org}。`;
+  record.organizer = `${cfg.authority}（立项）／${item.org}（${orgRole}）`;
   record.eventLevel = '省级';
   record.professions = professions[item.no] || [];
   record.participants = eligibility;
   record.eligibility = eligibility;
-  record.formatAndRules = `2026年${cfg.label}省级大学生学科竞赛项目${codeNote}，由${item.org}承办。${cfg.releaseNote}，具体赛制、评审办法与奖项设置以承办单位届时发布的竞赛通知为准。`;
+  record.formatAndRules = `2026年${cfg.label}省级大学生学科竞赛项目${codeNote}${tierNote}，由${item.org}${orgRole}。${cfg.releaseNote}，具体赛制、评审办法与奖项设置以${orgRole}单位届时发布的竞赛通知为准。`;
   record.teamSize = '暂未公布';
   record.teamSizeCategory = '暂未明确';
   record.participationFormat = '暂未明确';
@@ -111,7 +132,7 @@ function toRecord(item) {
     '报名起止时间未公布：目录为立项文件，赛事时间由承办单位另行发布',
     '报名入口待补：目录文件不能充当报名入口',
     '赛制、奖项与费用待承办单位发布竞赛通知后补齐',
-    `需向承办单位（${item.org}）核实当届竞赛通知`,
+    `需向${orgRole}单位（${item.org}）核实当届竞赛通知`,
   ];
   record.track.name = item.name;
   record.recommendation.recommendation = '信息不足';
