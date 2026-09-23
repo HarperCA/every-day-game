@@ -1,0 +1,721 @@
+[
+ {
+  "key": "liaoning-xiqu-culture-2026",
+  "id": "69dfc59e7d55dcbf7083bcbbed7fc9fb",
+  "name": "第五届辽宁省大学生“瑰宝传承”戏曲文化创新创意大赛",
+  "undertake": "沈阳师范大学",
+  "start": "2026-09-08T00:00:00+08:00",
+  "end": "2026-09-15T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "人文与法学"
+  ],
+  "eligibility": "全省普通高校在读的大学生、研究生；以学校为单位，各学校的相关部门组织本校报名、审核、选拔工作。",
+  "formatAndRules": "分四个组别：戏曲文化优秀创新案例、戏曲文化学术论文竞赛、戏曲艺术表演、戏曲文化创意设计，各组别按实施方案规定的内容与要求评审。",
+  "teamSize": "按组别规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "第五届辽宁省大学生“瑰宝传承”戏曲文化创新创意大赛"
+ },
+ {
+  "key": "liaoning-specimen-making-2026",
+  "id": "a7392e21d97d747994f7c4f5d3180510",
+  "name": "辽宁省大学生动植物标本制作大赛",
+  "undertake": "沈阳农业大学",
+  "start": "2026-08-25T00:00:00+08:00",
+  "end": "2026-09-19T23:59:00+08:00",
+  "professions": [
+   "生物与医药"
+  ],
+  "eligibility": "辽宁省内普通高等院校全日制在校本科大学生均可参加。",
+  "formatAndRules": "参赛作品类别为小型动物标本、植物标本、昆虫标本、医学标本，按实施方案评审。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生动植物标本制作大赛"
+ },
+ {
+  "key": "liaoning-innovation-method-2026",
+  "id": "10bb8a3eb141a9ae99b963097153f396",
+  "name": "辽宁省创新方法大赛",
+  "undertake": "东北大学",
+  "start": "2026-07-15T00:00:00+08:00",
+  "end": "2026-09-15T23:59:00+08:00",
+  "professions": [
+   "综合/不限专业",
+   "机械与自动化"
+  ],
+  "eligibility": "大学生专项赛学生组：全日制普通高校在读大专生、本科生、研究生及毕业5年内的大学生创业者。",
+  "formatAndRules": "创新方法应用类竞赛，设大学生专项赛等赛道，按实施方案评审。",
+  "teamSize": "按赛道规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省创新方法大赛"
+ },
+ {
+  "key": "liaoning-digital-image-2026",
+  "id": "5fd87f29c763191a9c2160346047837c",
+  "name": "辽宁省大学生数字影像大赛",
+  "undertake": "大连外国语大学",
+  "start": "2026-07-15T00:00:00+08:00",
+  "end": "2026-07-21T23:59:00+08:00",
+  "professions": [
+   "设计与艺术"
+  ],
+  "eligibility": "全省普通高校本科在读学生、全省普通高校就读的外国本科留学生、港澳台等地区在读省内普通高校大学生；可个人或团队参赛，团队成员不超过5人。",
+  "formatAndRules": "共设三个组别，按实施方案规定的作品形式提交并评审。",
+  "teamSize": "团队不超过5人",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生数字影像大赛"
+ },
+ {
+  "key": "liaoning-chem-experiment-design-2026",
+  "id": "be8ad94ccf9d8509d97e364c91939c3d",
+  "name": "辽宁省大学生化学实验创新设计竞赛",
+  "undertake": "东北大学",
+  "start": "2026-07-10T00:00:00+08:00",
+  "end": "2026-09-18T23:59:00+08:00",
+  "professions": [
+   "材料与化工"
+  ],
+  "eligibility": "普通高等院校全日制在校本科生，为团体赛，各参赛高校以队为单位组织选手参赛。",
+  "formatAndRules": "参赛项目应符合本科实验教学或科普宣传需要，且未在参赛当年1月1日前公开发表或在同级竞赛获奖。",
+  "teamSize": "以队为单位",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生化学实验创新设计竞赛"
+ },
+ {
+  "key": "liaoning-sports-plus-innovation-2026",
+  "id": "ffdc7a52b9bce4b0a3ed57def371851b",
+  "name": "辽宁省大学生“体育+”创新创业大赛",
+  "undertake": "沈阳体育学院",
+  "start": "2026-07-10T00:00:00+08:00",
+  "end": "2026-09-15T23:59:00+08:00",
+  "professions": [
+   "经管与商科",
+   "综合/不限专业"
+  ],
+  "eligibility": "辽宁省高校在籍在校本科生、研究生。",
+  "formatAndRules": "围绕体育产业创新创业设赛道，按实施方案评审；本次大赛不收取参赛队和学生任何费用，参赛队伍交通、食宿费用自理。",
+  "teamSize": "按赛道规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：本次大赛不收取参赛队和学生任何费用，参赛队伍交通、食宿费用自理。",
+  "issues": [],
+  "_officialName": "辽宁省大学生“体育+”创新创业大赛"
+ },
+ {
+  "key": "liaoning-normal-teaching-innovation-2026",
+  "id": "b6c2489711124dd841a410b239b3556c",
+  "name": "辽宁省高校师范生教学创新大赛",
+  "undertake": "沈阳师范大学",
+  "start": "2026-07-01T00:00:00+08:00",
+  "end": "2026-07-23T23:59:00+08:00",
+  "professions": [
+   "外语与教育"
+  ],
+  "eligibility": "全省普通高等学校全日制师范类本科二年级及以上在校生，以个人形式参赛。",
+  "formatAndRules": "面向师范生的教学创新能力竞赛，按实施方案设置环节与评审标准。",
+  "teamSize": "个人参赛",
+  "teamSizeCategory": "固定人数",
+  "participationFormat": "个人赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省高校师范生教学创新大赛"
+ },
+ {
+  "key": "liaoning-bim-skill-2026",
+  "id": "021f243a5292d2bdd9cef31f2ba915a3",
+  "name": "辽宁省大学生BIM应用技能大赛",
+  "undertake": "沈阳城市学院",
+  "start": "2026-06-18T00:00:00+08:00",
+  "end": "2026-08-31T23:59:00+08:00",
+  "professions": [
+   "建筑与土木",
+   "计算机与AI"
+  ],
+  "eligibility": "辽宁省内全日制在校大学生（含研究生、本科生、专科生）均可报名参赛，所学专业须为土木工程类或相关专业。",
+  "formatAndRules": "设两个参赛类别，其一为交通基础设施（公路、铁路、桥梁、隧道、轨道交通、港口与航道、机场、综合交通枢纽及配套设施等）。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生BIM应用技能大赛"
+ },
+ {
+  "key": "liaoning-transport-sci-tech-2026",
+  "id": "9a55372f6d378be6f7c12ff8597caa11",
+  "name": "辽宁省大学生交通科技大赛",
+  "undertake": "大连交通大学",
+  "start": "2026-06-15T00:00:00+08:00",
+  "end": "2026-08-09T23:59:00+08:00",
+  "professions": [
+   "建筑与土木",
+   "机械与自动化"
+  ],
+  "eligibility": "面向辽宁省高校在校本科生、研究生参赛。专业范围包括交通工程与综合交通、航海技术、道路运输与工程、水路运输与工程、铁路运输与工程、航空运输与工程及其他交通领域相关专业。",
+  "formatAndRules": "按交通领域专业范围提交科技作品，经评审产生名次；无报名费和参赛费，参加决赛的参赛队伍交通、食宿费用自理。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：无报名费和参赛费，参加决赛的参赛队伍交通、食宿费用自理。",
+  "issues": [],
+  "_officialName": "辽宁省大学生交通科技大赛"
+ },
+ {
+  "key": "liaoning-industrial-design-2026",
+  "id": "2a6d2bd271b49b87165a587bdc2c53b0",
+  "name": "辽宁省大学生工业设计竞赛",
+  "undertake": "沈阳航空航天大学",
+  "start": "2026-06-05T00:00:00+08:00",
+  "end": "2026-07-05T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "机械与自动化"
+  ],
+  "eligibility": "参赛对象为省内普通高等学校全日制在校大学生，包括研究生、本科生及高职高专学生等；参赛者须以所在院校为单位集体报名。学科专业范围主要是工业设计、产品设计等设计类相关学科专业，鼓励跨学科、跨专业报名。",
+  "formatAndRules": "竞赛分校赛、省赛（初评、终评）两个阶段。设五大主题：A智慧与体验、B服务与系统、C文化与社会、D时尚与生活、E健康与环保，按类别提交原创设计作品。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生工业设计竞赛"
+ },
+ {
+  "key": "liaoning-host-competition-2026",
+  "id": "ad8edd0080308d2d311b154dce56faf0",
+  "name": "第九届辽宁省大学生主持人大赛",
+  "undertake": "辽宁师范大学",
+  "start": "2026-06-05T00:00:00+08:00",
+  "end": "2026-09-08T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "外语与教育"
+  ],
+  "eligibility": "辽宁省高等院校拥有正式学籍的在读本科生及研究生，参赛形式为个人参赛。",
+  "formatAndRules": "设甲组等组别，初赛由协办高校参照复赛、决赛环节自行设置并完成选拔推荐，后进入复赛、决赛。",
+  "teamSize": "个人参赛",
+  "teamSizeCategory": "固定人数",
+  "participationFormat": "个人赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "第九届辽宁省大学生主持人大赛"
+ },
+ {
+  "key": "liaoning-management-decision-sim-2026",
+  "id": "6c7e7677d6c19007ef0b79de1c989745",
+  "name": "辽宁省大学生管理决策模拟大赛",
+  "undertake": "大连大学",
+  "start": "2026-06-01T00:00:00+08:00",
+  "end": "2026-08-20T23:59:00+08:00",
+  "professions": [
+   "经管与商科"
+  ],
+  "eligibility": "参赛学生必须是省内高校在籍学生，且只能代表学籍所在学校参赛，每所学校最多25支队伍报名（其中研究生及以上学历报名队伍不超过5支）。",
+  "formatAndRules": "以派金新商道虚拟仿真实验教学平台作为官方竞赛平台，按实施方案进行管理决策模拟对抗。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生管理决策模拟大赛"
+ },
+ {
+  "key": "liaoning-physics-experiment-2026",
+  "id": "f6e4667a8e39ce037f41a91a5d3af8d3",
+  "name": "辽宁省大学生物理实验竞赛",
+  "undertake": "东北大学",
+  "start": "2026-06-01T00:00:00+08:00",
+  "end": "2026-06-23T23:59:00+08:00",
+  "professions": [
+   "数学与统计"
+  ],
+  "eligibility": "辽宁省各类普通高等学校2026年秋季学期在校本（专）科大学生。",
+  "formatAndRules": "面向本专科生的物理实验竞赛，按实施方案设置竞赛内容与评审标准。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生物理实验竞赛"
+ },
+ {
+  "key": "liaoning-guochao-design-2026",
+  "id": "2d4419f7ae779a6616030ef1a9ed1e68",
+  "name": "辽宁省大学生国潮文化设计应用比赛",
+  "undertake": "辽东学院",
+  "start": "2026-05-26T00:00:00+08:00",
+  "end": "2026-09-13T23:59:00+08:00",
+  "professions": [
+   "设计与艺术"
+  ],
+  "eligibility": "辽宁省高等院校在校全日制本科大学生均可参加。",
+  "formatAndRules": "参赛作品以“传承、智绘、融合”为主题，围绕辽风、辽景、辽韵、辽味等内容，从鸭绿江流域历史文化、乡村振兴、非遗文化、民族民俗、风景名胜、冰雪运动开展设计。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生国潮文化设计应用比赛"
+ },
+ {
+  "key": "liaoning-cloud-service-dev-2026",
+  "id": "46aefabedb24b2b03f9832d7d56bbf9b",
+  "name": "第五届辽宁省大学生企业云服务开发者大赛",
+  "undertake": "辽宁师范大学",
+  "start": "2026-05-26T00:00:00+08:00",
+  "end": "2026-09-11T23:59:00+08:00",
+  "professions": [
+   "计算机与AI",
+   "电子信息"
+  ],
+  "eligibility": "辽宁省高等院校及科研院所的在校学生（含本科、专科、硕士研究生），以团队形式参赛，每个院校报名团队不超过30支，每支队伍不超过5名队员，指导老师不超过2人。",
+  "formatAndRules": "竞赛紧扣新一代信息技术前沿，考核工业以太网、电子技术基础、电气控制与PLC、工业设备数据采集、数据清洗、数据分析与处理、工业互联网安全管理等内容。",
+  "teamSize": "每队不超过5人",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "第五届辽宁省大学生企业云服务开发者大赛"
+ },
+ {
+  "key": "liaoning-enterprise-value-2026",
+  "id": "42a2979c38f1b4633cfd52ec3014c419",
+  "name": "辽宁省大学生企业价值创造大赛",
+  "undertake": "东北财经大学",
+  "start": "2026-05-21T00:00:00+08:00",
+  "end": "2026-06-01T23:59:00+08:00",
+  "professions": [
+   "经管与商科",
+   "计算机与AI"
+  ],
+  "eligibility": "参赛选手须为辽宁省普通高等学校2026-2027学年全日制在校本科学生，品行端正、无学术不端记录；每支队伍可配备1-2名指导教师。",
+  "formatAndRules": "以“练智能体硬实力，破企业级真问题”为主题，参赛队伍依托大赛指定平台完成企业级应用智能体的全流程开发与落地实践。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生企业价值创造大赛"
+ },
+ {
+  "key": "liaoning-math-modeling-2026",
+  "id": "0bef9ca354a462152a9b4f3cfda23c60",
+  "name": "辽宁省大学生数学建模竞赛",
+  "undertake": "大连理工大学",
+  "start": "2026-05-20T00:00:00+08:00",
+  "end": "2026-06-18T23:59:00+08:00",
+  "professions": [
+   "数学与统计"
+  ],
+  "eligibility": "辽宁省普通高等学校在校学生，以参赛单位为单位组织报名参赛。",
+  "formatAndRules": "全省统一竞赛题目，按组委会规定时间在辽宁省大学生创新创业管理共享平台下载赛题，按期提交论文并评审。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：本竞赛不收取报名费及评审费，参赛者的资料打印、通讯、交通等费用自理。",
+  "issues": [],
+  "_officialName": "辽宁省大学生数学建模竞赛"
+ },
+ {
+  "key": "liaoning-traditional-culture-design-2026",
+  "id": "d983b95e65ff5943c7ff6f442a741a49",
+  "name": "“枫叶优体”杯辽宁省大学生中华优秀传统文化创新设计大赛",
+  "undertake": "沈阳师范大学",
+  "start": "2026-05-14T00:00:00+08:00",
+  "end": "2026-06-21T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "人文与法学"
+  ],
+  "eligibility": "儿童组参赛对象为辽宁省普通高等学校在读全日制本科学生，鼓励不同专业的本科生跨专业报名参赛。",
+  "formatAndRules": "围绕儿童、生活、环境核心领域，以中华优秀传统文化为内容基础，以数智技术为赋能手段，构建“儿童应用为核心、设计与技术为支撑”的赛道体系。",
+  "teamSize": "按赛道规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "“枫叶优体”杯辽宁省大学生中华优秀传统文化创新设计大赛"
+ },
+ {
+  "key": "liaoning-iteach-digital-edu-2026",
+  "id": "f83cd98de87201185e7a15e966f5b00e",
+  "name": "辽宁省大学生“iTeach”数字化教育应用创新大赛",
+  "undertake": "渤海大学",
+  "start": "2026-05-14T00:00:00+08:00",
+  "end": "2026-09-22T23:59:00+08:00",
+  "professions": [
+   "外语与教育",
+   "计算机与AI"
+  ],
+  "eligibility": "辽宁省普通高等学校的全日制在籍在读学生，不限专业和年级均可报名参赛（包括本科、硕士研究生）。",
+  "formatAndRules": "大赛分为初赛和决赛两个部分，围绕数字化教育应用创新提交作品并评审。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生“iTeach”数字化教育应用创新大赛"
+ },
+ {
+  "key": "liaoning-smart-agriculture-2026",
+  "id": "7f65da558fbc3b133a74e274a9d641ae",
+  "name": "辽宁省大学生智慧农业创新创业大赛",
+  "undertake": "沈阳农业大学",
+  "start": "2026-05-11T00:00:00+08:00",
+  "end": "2026-05-26T23:59:00+08:00",
+  "professions": [
+   "生物与医药",
+   "计算机与AI"
+  ],
+  "eligibility": "辽宁省内普通高等院校全日制在校本科大学生均可参加。",
+  "formatAndRules": "围绕科技农业、绿色农业、质量农业、品牌农业发展理念，深化新农科建设与创新创业教育改革，按实施方案提交作品并评审。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生智慧农业创新创业大赛"
+ },
+ {
+  "key": "liaoning-eco-environment-2026",
+  "id": "96a3edd133deb802b9df019a6c901b0a",
+  "name": "“德泰·氢水杯”辽宁省大学生生态环保技术创新创业竞赛暨东北三省一区大学生生态环保作品竞赛",
+  "undertake": "大连民族大学",
+  "start": "2026-05-10T00:00:00+08:00",
+  "end": "2026-06-10T23:59:00+08:00",
+  "professions": [
+   "能源与环境"
+  ],
+  "eligibility": "辽宁省、吉林省、黑龙江省、内蒙古自治区内各普通高等学校在校生，以校为单位报名；毕业论文/毕业设计竞赛限应届本科毕业生以个人形式参赛，每校每个环境类专业限报5项。",
+  "formatAndRules": "包括毕业论文/设计竞赛、调研报告竞赛、创业计划竞赛、节能环保技术创新竞赛、生态环保技术创新竞赛五个大项。",
+  "teamSize": "按赛项规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "“德泰·氢水杯”辽宁省大学生生态环保技术创新创业竞赛暨东北三省一区大学生生态环保作品竞赛"
+ },
+ {
+  "key": "liaoning-3d-digital-design-2026",
+  "id": "74ccba29834594af95511fbb685d512b",
+  "name": "辽宁省大学生三维数字化创新设计大赛",
+  "undertake": "沈阳航空航天大学",
+  "start": "2026-05-08T00:00:00+08:00",
+  "end": "2026-07-20T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "机械与自动化"
+  ],
+  "eligibility": "辽宁省内各高校全日制专科生、本科生、研究生等在校生；每所高校须指定教师领队1名，每支参赛队由2-5名学生和1-2名指导教师组成。",
+  "formatAndRules": "设四大竞赛方向及评审赛项，其一为数字工业设计大赛，涵盖工业产品/外观设计、人机工程设计、机电工程设计、工程分析计算、工业过程仿真、模具/工装设计、数控编程/3D打印/智能制造等。",
+  "teamSize": "每队2-5人",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生三维数字化创新设计大赛"
+ },
+ {
+  "key": "liaoning-industry-education-2026",
+  "id": "35cdecd2ecb92ad26f967d74984a646f",
+  "name": "第七届辽宁省大学生产教融合创新创意项目大赛",
+  "undertake": "大连艺术学院",
+  "start": "2026-04-30T00:00:00+08:00",
+  "end": "2026-06-26T23:59:00+08:00",
+  "professions": [
+   "设计与艺术",
+   "综合/不限专业"
+  ],
+  "eligibility": "面向全省本科在校大学生，已在省级或省级以上创新创业竞赛中获得金奖的项目不能参加；每个项目学生团队成员不超过5人。",
+  "formatAndRules": "设航天文创等赛道，由高校根据校赛成绩推荐参赛项目，每校每赛道不超过20项、总数不超过40项。",
+  "teamSize": "每队不超过5人",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "第七届辽宁省大学生产教融合创新创意项目大赛"
+ },
+ {
+  "key": "liaoning-digital-marketing-2026",
+  "id": "e555f8f8e053e28819bc53f031f08b64",
+  "name": "辽宁省大学生数字营销创新大赛",
+  "undertake": "渤海大学",
+  "start": "2026-04-28T00:00:00+08:00",
+  "end": "2026-06-14T23:59:00+08:00",
+  "professions": [
+   "经管与商科"
+  ],
+  "eligibility": "辽宁省普通高等学校全日制在籍学生。",
+  "formatAndRules": "设三个赛项：营销大数据赛项、国际贸易竞赛赛项、文旅与会展创新创业实践竞赛赛项。",
+  "teamSize": "按赛项规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生数字营销创新大赛"
+ },
+ {
+  "key": "liaoning-ai-challenge-2026",
+  "id": "fc995642fa15ec42aaf7dc839b8820a4",
+  "name": "辽宁省“中软国际-卓越杯”AI挑战赛",
+  "undertake": "渤海大学",
+  "start": "2026-04-27T00:00:00+08:00",
+  "end": "2026-05-22T23:59:00+08:00",
+  "professions": [
+   "计算机与AI"
+  ],
+  "eligibility": "辽宁省普通高等学校全日制在校本科生，不能跨校组队；由所在学校统一报名，不接受学生个人单独报名；每支队伍3-5名学生，配备1-2名指导教师。",
+  "formatAndRules": "采用开放命题、学生自主立项，参赛作品围绕人工智能、大数据技术在各行业的具体应用，分为智慧生活与服务类、智慧教育类、智慧工业与制造、交叉创新与其他等类别。",
+  "teamSize": "每队3-5人",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省“中软国际-卓越杯”AI挑战赛"
+ },
+ {
+  "key": "liaoning-mobile-app-dev-2026",
+  "id": "79a079fd1a0eece3de333abe837a5a71",
+  "name": "辽宁省大学生移动应用开发大赛",
+  "undertake": "大连交通大学",
+  "start": "2026-04-25T00:00:00+08:00",
+  "end": "2026-05-30T23:59:00+08:00",
+  "professions": [
+   "计算机与AI"
+  ],
+  "eligibility": "辽宁省内各普通高等学校全日制在校本科生。",
+  "formatAndRules": "设APP开发大赛与微信小程序开发大赛两个赛道，按各赛道评审标准评定。",
+  "teamSize": "按赛道规则",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：本次大赛不收取任何报名费用。",
+  "issues": [],
+  "_officialName": "辽宁省大学生移动应用开发大赛"
+ },
+ {
+  "key": "liaoning-intl-trade-sandbox-2026",
+  "id": "f84828d0d8a6b5f9dd81551c502e8cb8",
+  "name": "第五届辽宁省大学生国际贸易经营实战沙盘竞赛",
+  "undertake": "辽宁大学",
+  "start": "2026-04-24T00:00:00+08:00",
+  "end": "2026-05-25T23:59:00+08:00",
+  "professions": [
+   "经管与商科"
+  ],
+  "eligibility": "面向辽宁省普通高校全日制在校本科国际经济与贸易、国际商务、数字经济、经济统计、贸易经济、跨境电商、电子商务、市场营销、物流管理、经济学、金融学、投资学、保险学等专业学生。",
+  "formatAndRules": "团队赛，按实施方案在沙盘平台上完成国际贸易经营实战对抗并评审。",
+  "teamSize": "团队赛",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：本次大赛不收取报名费，比赛期间食宿自理。",
+  "issues": [],
+  "_officialName": "第五届辽宁省大学生国际贸易经营实战沙盘竞赛"
+ },
+ {
+  "key": "liaoning-future-aircraft-2026",
+  "id": "11d3363d6305f4e8689fc8a4810609c3",
+  "name": "辽宁省大学生“创新杯”未来飞行器设计大赛",
+  "undertake": "沈阳航空航天大学",
+  "start": "2026-04-23T00:00:00+08:00",
+  "end": "2026-06-10T23:59:00+08:00",
+  "professions": [
+   "机械与自动化",
+   "设计与艺术"
+  ],
+  "eligibility": "辽宁省高校在校学生，具体参赛资格按实施方案规定执行。",
+  "formatAndRules": "面向未来飞行器设计的省级学科竞赛，按实施方案提交设计作品并评审。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "免费",
+  "fees": "实施方案明确：参赛不收取任何费用。",
+  "issues": [
+   "参赛资格细则需查阅实施方案附件"
+  ],
+  "_officialName": "辽宁省大学生“创新杯”未来飞行器设计大赛"
+ },
+ {
+  "key": "liaoning-computer-design-2026",
+  "id": "a1ede456da1517785dcbe737e749f61d",
+  "name": "辽宁省大学生计算机设计竞赛",
+  "undertake": "沈阳师范大学",
+  "start": "2026-04-19T00:00:00+08:00",
+  "end": "2026-07-13T23:59:00+08:00",
+  "professions": [
+   "计算机与AI",
+   "设计与艺术"
+  ],
+  "eligibility": "辽宁省普通高等学校在读的全日制本科学生均可以组队参加。",
+  "formatAndRules": "竞赛作品共分12大类，包括软件应用与开发、微课与AI辅助教学、物联网应用与创新转化、大数据应用、人工智能应用、信息可视化设计、数媒静态设计等。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "报名费信息未在实施方案正文中说明"
+  ],
+  "_officialName": "辽宁省大学生计算机设计竞赛"
+ },
+ {
+  "key": "liaoning-advanced-graphics-2026",
+  "id": "5f8545eaba97e96bf5044758cc9948d1",
+  "name": "辽宁省大学生先进成图技术与产品信息建模创新大赛",
+  "undertake": "营口理工学院",
+  "start": "2026-04-03T00:00:00+08:00",
+  "end": "2026-05-29T23:59:00+08:00",
+  "professions": [
+   "机械与自动化",
+   "建筑与土木"
+  ],
+  "eligibility": "参赛选手必须是辽宁省内高等院校在册大学生；参赛队伍须由本校预赛选拔排名前列的选手组成，校级选拔赛各类别参加人数应不少于参加省赛或国赛人数的10倍。",
+  "formatAndRules": "大学生赛道竞赛内容包括机械、建筑、水利、道桥、电子、环艺共六个专业类别。",
+  "teamSize": "按赛事规程组队",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "收费",
+  "fees": "实施方案明确：先进成图技术赛道80元/人，机械类开放赛道不收费，缴费时间和缴费方式另行通知。",
+  "issues": [],
+  "_officialName": "辽宁省大学生先进成图技术与产品信息建模创新大赛"
+ },
+ {
+  "key": "liaoning-metallography-2026",
+  "id": "0c9dec2f08a2800e7bb50d5d7221af0b",
+  "name": "辽宁省大学生金相技能大赛",
+  "undertake": "辽宁科技大学",
+  "start": "2026-03-23T00:00:00+08:00",
+  "end": "2026-07-03T23:59:00+08:00",
+  "professions": [
+   "材料与化工"
+  ],
+  "eligibility": "辽宁省高校材料类相关专业在校学生，具体参赛资格按实施方案规定执行。",
+  "formatAndRules": "金相试样制备与显微组织分析技能竞赛，按实施方案设置竞赛环节与评分标准。",
+  "teamSize": "按赛事规程",
+  "teamSizeCategory": "人数范围不固定",
+  "participationFormat": "团队赛",
+  "registrationOrganization": "学校统一报名",
+  "feeType": "暂未公布",
+  "fees": "未说明收费",
+  "issues": [
+   "正文较短，参赛资格与赛制细则需查阅实施方案附件",
+   "报名费信息未在正文中说明"
+  ],
+  "_officialName": "辽宁省大学生金相技能大赛"
+ }
+]
