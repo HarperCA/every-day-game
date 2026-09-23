@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { buildReviewNotes, candidateToRecord, toSafeId } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
 const { toPublicCache } = require('../apps/miniprogram/cloudfunctions/adminData/publicCache.js');
+const { isNonEventTitle } = require('../apps/miniprogram/cloudfunctions/adminData/noticeResolution.js');
 
 const candidate = {
   externalId:'tianchi-532503',
@@ -33,6 +34,23 @@ const extraction = {
 };
 
 describe('a crawled candidate always lands as a draft', () => {
+  it('recognizes list pages and a post-final report as non-events', () => {
+    expect(['大赛动态','国赛公告','通知公告','竞赛分类:','前沿之声|5月学术资讯速递','2026年河南工程学院A、B、C类学科竞赛目录清单','2026年AI赋能千行百业超级联赛人工智能+广电视听创新应用大赛决赛在京举行'].every(isNonEventTitle)).toBe(true);
+    expect(isNonEventTitle('2026年全国大学生数学建模竞赛')).toBe(false);
+  });
+  it('never converts a notice title into a competition record', () => {
+    expect(() => candidateToRecord({ ...candidate, name:'关于某学院举办2026年全国大学生创新赛的通知', detailUrl:'https://school.example.edu/notice' }, { ok:false })).toThrow('blocked_competition_title');
+  });
+  it('recognizes a government notice even when the search title appends a website section', () => {
+    expect(() => candidateToRecord({ ...candidate, name:'福建省教育厅关于公布竞赛项目的通知_ 重要文件_ 福建省教育厅' }, { ok:false })).toThrow('blocked_competition_title');
+  });
+  it('rejects a notice series label even when the candidate name is clean', () => {
+    expect(() => candidateToRecord({ ...candidate, seriesName:'赛事通知｜大学生竞赛' }, { ok:false })).toThrow('blocked_competition_title');
+  });
+  it('rejects promotional exclamation and launch headlines before conversion', () => {
+    expect(() => candidateToRecord({ ...candidate, name:'大学生创新大赛正式启动！' }, { ok:false })).toThrow('blocked_competition_title');
+    expect(() => candidateToRecord({ ...candidate, name:'大学生创新大赛正式开启' }, { ok:false })).toThrow('blocked_competition_title');
+  });
   it('never arrives already published', () => {
     const record = candidateToRecord(candidate, extraction);
     expect(record.dataStatus).toBe('draft');
@@ -96,6 +114,41 @@ describe('professions are a judgement, not a fact', () => {
     const notes = buildReviewNotes(candidate, extraction.extracted);
     expect(notes.join()).toContain('专业分类待人工判定');
     expect(notes.join()).toContain('多模态');
+  });
+});
+
+describe('registration dates from extraction win over the raw crawl fields', () => {
+  // search-baidu.mjs 明确声明"报名时间一律留空待抽取"，所以 candidate 本身通常没有
+  // 日期；这里用 tianchi 风格的 candidate（自带日期）来验证"抽取给了就优先用抽取的"。
+  const withDates = {
+    ok:true,
+    extracted:{ ...extraction.extracted, registration_start:{ value:'2026-08-01', quote:'报名开始' }, registration_end:{ value:'2026-09-01', quote:'报名截止' } },
+  };
+
+  it('prefers the quote-verified extraction date over the raw crawl date', () => {
+    const record = candidateToRecord(candidate, withDates);
+    expect(record.schedule.registration_start).toBe('2026-08-01');
+    expect(record.schedule.registration_end).toBe('2026-09-01');
+  });
+
+  it('falls back to the raw crawl date when extraction found none', () => {
+    const record = candidateToRecord(candidate, extraction); // extraction 里没有日期
+    expect(record.schedule.registration_start).toBe(candidate.registration_start);
+    expect(record.schedule.registration_end).toBe(candidate.registration_end);
+  });
+
+  it('has no date at all when neither extraction nor the raw crawl provides one', () => {
+    const noDates = { ...candidate, registration_start:undefined, registration_end:undefined };
+    const record = candidateToRecord(noDates, { ok:false });
+    expect(record.schedule.registration_start).toBeNull();
+    expect(record.schedule.registration_end).toBeNull();
+    expect(record.schedule.pending_announcement).toBe(false);
+  });
+
+  it('surfaces the extracted date to the reviewer with its quote', () => {
+    const notes = buildReviewNotes(candidate, withDates.extracted);
+    expect(notes.join()).toContain('报名开始时间待确认：2026-08-01');
+    expect(notes.join()).toContain('报名截止时间待确认：2026-09-01');
   });
 });
 
