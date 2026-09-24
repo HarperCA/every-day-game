@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达追溯到期检查（traceDue 已过、仍是草稿的条目转入隔离，可恢复）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/node /opt/daily-contest/draft-triage-expire-trace.mjs --apply
+StandardOutput=append:/var/log/daily-contest-expire-trace.log
+StandardError=append:/var/log/daily-contest-expire-trace.log

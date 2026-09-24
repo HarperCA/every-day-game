@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次追溯到期检查（没有到期条目时不写库）
+
+[Timer]
+# UTC 18:40 = 北京时间 02:40；排在归档扫描之后、过期草稿检查之前。
+OnCalendar=*-*-* 18:40:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
