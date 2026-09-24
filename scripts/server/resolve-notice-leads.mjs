@@ -61,6 +61,10 @@ export function followupCandidatesFromReport(report = {}) {
         discoveryNoticeUrl:String(result.noticeUrl || ''),
         tags:[],
         source:'通知追溯',
+        discovery:{
+          route:'追溯线索与主办方监测', query:result.followupQuery || null, source:'通知追溯',
+          via:{ noticeUrl:String(result.noticeUrl || ''), noticeTitle:String(result.noticeTitle || ''), ...(result.noticeDiscovery ? { discovery:result.noticeDiscovery } : {}) },
+        },
       });
     }
   }
@@ -93,7 +97,7 @@ async function main() {
       if (!response.ok) throw new Error(`http_${response.status}`);
       const payload = await response.json();
       const proposedName = competitionNameFromNotice(candidate.name);
-      results.push({ noticeUrl:candidate.detailUrl, noticeTitle:candidate.name, proposedName, leads:selectLeads(payload.references, candidate.detailUrl, proposedName) });
+      results.push({ noticeUrl:candidate.detailUrl, noticeTitle:candidate.name, noticeDiscovery:candidate.discovery || null, followupQuery:followupQuery(candidate.name), proposedName, leads:selectLeads(payload.references, candidate.detailUrl, proposedName) });
     } catch (error) {
       results.push({ noticeUrl:candidate.detailUrl, noticeTitle:candidate.name, proposedName:competitionNameFromNotice(candidate.name), leads:[], error:String(error?.message || error) });
     }

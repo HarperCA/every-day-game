@@ -100,6 +100,8 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
     qualityIssues:buildReviewNotes(candidate, extracted),
     discoveryNoticeUrl:String(candidate.discoveryNoticeUrl || ''),
     noticeResolution:null,
+    // 来源链：哪条路线、哪个查询词、哪个网址带来了这条记录。只抄候选上已有的，没有就是 null。
+    discovery:candidate.discovery ? { ...candidate.discovery, url:String(candidate.detailUrl || ''), noticeUrl:String(candidate.discoveryNoticeUrl || '') || null } : null,
 
     schedule:{
       id:`schedule-${editionId}`,

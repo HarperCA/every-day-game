@@ -297,6 +297,8 @@ async function main() {
     // 要么这是它第一次真正入库——3天超时判断就靠这个字段撑住，绝不能
     // 每次重跑都被重置，否则一条老草稿会永远显示"刚发现"。
     record.firstSeenAt = byId.get(record.id)?.firstSeenAt || now.toISOString();
+    // 来源链同理：记的是第一次把它带进来的路线和查询词。
+    record.discovery = byId.get(record.id)?.discovery || record.discovery || null;
     // 存下当时的门槛判定，rescore-review-drafts.mjs 靠这个字段找出"当初判成
     // review、后来数据补全了却从没重新算过分"的草稿，不用去猜哪些该重新算。
     record.admissionVerdict = verdict;

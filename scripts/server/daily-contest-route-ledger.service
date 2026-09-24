@@ -1,0 +1,10 @@
+[Unit]
+Description=竞赛雷达路线台账（按路线和查询词统计搜索投入与合格新增，给次日搜索计划用）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/route-ledger.mjs
+StandardOutput=append:/var/log/daily-contest-route-ledger.log
+StandardError=append:/var/log/daily-contest-route-ledger.log

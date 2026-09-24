@@ -1,0 +1,10 @@
+[Unit]
+Description=每天生成一次路线台账（只读，不写库）
+
+[Timer]
+# UTC 19:20 = 北京时间 03:20；排在抓取、归档、复评、追溯到期和过期草稿检查之后。
+OnCalendar=*-*-* 19:20:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

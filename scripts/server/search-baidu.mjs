@@ -26,6 +26,7 @@ import { createHash } from 'node:crypto';
 import { setDefaultResultOrder } from 'node:dns';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { ROUTES } from './discovery.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // 部署服务器到百度的 IPv6 路由不可用，Node fetch 默认选择后会 ETIMEDOUT；
@@ -146,7 +147,10 @@ function stableIdFor(url) {
   return createHash('sha256').update(String(url)).digest('hex').slice(0, 16);
 }
 
-export function toCandidate(reference, query) {
+// 当前固定的按专业查询属于“覆盖空白”路线；以后由次日计划给每条查询指定路线。
+export const DEFAULT_ROUTE = ROUTES.gap;
+
+export function toCandidate(reference, query, route = DEFAULT_ROUTE) {
   const url = String(reference?.url || '');
   return {
     externalId: `search-${stableIdFor(url)}`,
@@ -167,6 +171,7 @@ export function toCandidate(reference, query) {
     lifecycle: '暂未明确',
 
     matchedQuery: query,
+    discovery: { route, query, source: SOURCE_NAME },
     evidence: { source: SOURCE_NAME, url, api: SEARCH_URL, fields: [], fetchedAt: new Date().toISOString() },
     needsReview: ['organizer', 'reward_amount', 'participant_count', 'registration_start', 'registration_end', 'recognition', 'region', 'lifecycle', 'professions'],
   };
@@ -216,7 +221,7 @@ async function main() {
 
   for (const query of queries) {
     console.log(`--- ${query} ---`);
-    const tally = { references: 0, outOfScope: 0, irrelevant: 0, duplicate: 0, candidates: 0 };
+    const tally = { route: DEFAULT_ROUTE, references: 0, outOfScope: 0, irrelevant: 0, duplicate: 0, candidates: 0 };
     perQuery.set(query, tally);
     let references;
     try {

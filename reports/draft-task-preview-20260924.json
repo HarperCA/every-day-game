@@ -1,0 +1,5818 @@
+{
+  "generatedAt": "2026-09-24T13:01:58.894Z",
+  "summary": {
+    "total": 75,
+    "byStatus": {
+      "草稿": 38,
+      "待系统验证": 5,
+      "待人工审核": 32
+    },
+    "byResult": {
+      "来源打不开，字段未经比对": 9,
+      "缺当届官方原文": 17,
+      "只有目录线索，当届赛事待追到": 22,
+      "赛事范围初步可用，尚不能发布": 26,
+      "字段与原文有出入": 1
+    },
+    "byNextAction": {
+      "重新打开来源或另找主办方原文，逐项比对后再审": 9,
+      "按分诊要求追溯：疑为某赛事的赛题：需查明所属赛事名称及是否面向大学生（范围闸：缺少大学生参赛资格依据）": 1,
+      "按分诊要求追溯：AI审核指出参赛范围与主办方需以北京市教委原文核实": 1,
+      "按分诊要求追溯：AI审核（高风险）指出报名日期无原文依据、名称与主办方不符；来源为中南林科大转发": 1,
+      "按分诊要求追溯：来源为内蒙古师范大学转发通知，需取自治区主办单位原始通知": 1,
+      "按分诊要求追溯：应按赛事本身（欧莱雅第二届美妆科技黑客松）收录；AI审核指出主办方、参赛资格、赛制与原文不符，需重读原文改写": 1,
+      "按分诊要求追溯：AI审核指出主办方（北京林业大学）、参赛资格（风景园林相关专业、3-7人）与记录不符，需重读原文改写": 1,
+      "按分诊要求追溯：来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知": 1,
+      "按分诊要求追溯：AI审核指出主办/承办颠倒、比赛时间缺失，需按原文改写": 1,
+      "按分诊要求追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文": 1,
+      "按分诊要求追溯：来源为泛研网转载页，非一手通知；报名开始“3月1日”是由“3月启动”推断，需取组委会原文": 1,
+      "按分诊要求追溯：来源只是竞赛官网首页，未取得当届通知正文；主办方、参赛对象、赛制均为空": 1,
+      "按分诊要求追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生": 1,
+      "按分诊要求追溯：AI审核给出具体补正（资格CSP≥200分、会员/非会员缴费、机考赛制、10月21日比赛），需重读原文照录": 1,
+      "按目录中的赛事全名和主办方，寻找当届正式赛事通知": 22,
+      "读取已有来源并寻找主办方当届正式赛事页": 4,
+      "核对当届章程中的大学生参赛资格": 1,
+      "检查已有通知的报名说明、赛事官网报名栏目或章程": 19,
+      "在当届官方原文中找报名时间": 4,
+      "重新执行系统验证并由管理员完成发布审核": 2,
+      "按官方原文改正：报名时间": 1
+    },
+    "checks": {
+      "独立赛事身份": {
+        "已证实": 46,
+        "官方未公布": 0,
+        "待核验": 29,
+        "有冲突": 0
+      },
+      "主办方": {
+        "已证实": 44,
+        "官方未公布": 0,
+        "待核验": 31,
+        "有冲突": 0
+      },
+      "大学生参赛资格": {
+        "已证实": 45,
+        "官方未公布": 0,
+        "待核验": 29,
+        "有冲突": 1
+      },
+      "专业任务与分类": {
+        "已证实": 26,
+        "官方未公布": 0,
+        "待核验": 49,
+        "有冲突": 0
+      },
+      "当届官方依据": {
+        "已证实": 25,
+        "官方未公布": 0,
+        "待核验": 50,
+        "有冲突": 0
+      },
+      "报名时间": {
+        "已证实": 20,
+        "官方未公布": 0,
+        "待核验": 53,
+        "有冲突": 2
+      },
+      "报名方式与入口": {
+        "已证实": 8,
+        "官方未公布": 0,
+        "待核验": 67,
+        "有冲突": 0
+      }
+    },
+    "stuckDaysAverage": 2.1,
+    "withTargetUrl": 75
+  },
+  "preview": [
+    {
+      "eventId": "event-guangdong-engineering-lab-skills-2026",
+      "editionId": "edition-guangdong-engineering-lab-skills-2026",
+      "editionName": "2026年广东省工科大学生实验综合技能竞赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "广东省教育厅、广东工业大学（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "广东省本科高校相关专业在校大学生。 广东省本科高校相关专业在校大学生。（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "机械与自动化、电子信息、化学与材料（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-11-08T23:59:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://jnds.gdut.edu.cn/info/1023/1283.htm",
+      "lastCheckedAt": "2026-09-20T15:55:22.800Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jnds.gdut.edu.cn/info/1023/1283.htm"
+      ],
+      "terminal": false,
+      "name": "广东省工科大学生实验综合技能竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核时来源不可达，字段未经复核",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-north-china-five-province-robot-2026",
+      "editionId": "edition-north-china-five-province-robot-2026",
+      "editionName": "2026年华北五省（市、自治区）大学生机器人大赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "北京市教育委员会等华北五省（市、自治区）教育主管部门、北京信息科技大学（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "华北五省（市、自治区）高校参赛团队，按赛区承办高校审核报名。 华北五省（市、自治区）高校参赛团队，按赛区承办高校审核报名（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "机械与自动化、计算机与AI（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-26T17:00:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（AI 核验时来源打不开，字段未经比对）"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://robot.bistu.edu.cn/tzgg/ce6d4ae0373c4e5cb7aa84372e4d96e2.html",
+      "lastCheckedAt": "2026-09-20T09:25:27.071Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://robot.bistu.edu.cn/tzgg/ce6d4ae0373c4e5cb7aa84372e4d96e2.html"
+      ],
+      "terminal": false,
+      "name": "华北五省（市、自治区）大学生机器人大赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核判定证据不足，字段未经复核",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-qust-chemical-process-2026",
+      "editionId": "edition-qust-chemical-process-2026",
+      "editionName": "第十五届山东省大学生化工过程创新设计竞赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "青岛科技大学（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "山东省本科高校化工、化学、高分子等相关专业全日制在校本科生。 山东省本科高校化工、化学、高分子等相关专业全日制在校本科生（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "材料与化工（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-22T23:59:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://hgsy.qust.edu.cn/info/1102/2829.htm",
+      "lastCheckedAt": "2026-09-20T04:55:14.315Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://hgsy.qust.edu.cn/info/1102/2829.htm"
+      ],
+      "terminal": false,
+      "name": "山东省大学生化工过程创新设计竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核时来源不可达，字段未经复核",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-sichuan-supply-chain-2026",
+      "editionId": "edition-sichuan-supply-chain-2026",
+      "editionName": "2026（第四届）四川省大学生供应链优化管理大赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "四川省教育厅（主办）、成都信息工程大学（承办）（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "四川省高校参赛团队；各高校组织校内选拔并推荐省赛队伍。 四川省高校参赛团队；各高校组织校内选拔并推荐省赛队伍。（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "经管与商科、计算机与AI（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-09-30T23:59:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（AI 核验时来源打不开，字段未经比对）"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://www.cuit.edu.cn/info/1006/16974.htm",
+      "lastCheckedAt": "2026-09-20T04:30:13.319Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.cuit.edu.cn/info/1006/16974.htm"
+      ],
+      "terminal": false,
+      "name": "四川省大学生供应链优化管理大赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源为成都信息工程大学页面，未确认是否为承办方原始通知；AI审核时来源不可达",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-zhejiang-mobile-ai-2026",
+      "editionId": "edition-zhejiang-mobile-ai-2026",
+      "editionName": "第二届中国移动杯浙江省大学生人工智能竞赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "浙江省教育厅及相关高校（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "浙江省高校在校学生及符合竞赛规程的团队。 浙江省高校在校学生及符合竞赛规程的团队。（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、电子信息（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-17T23:59:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://www.zafu.edu.cn/info/1018/122484.htm",
+      "lastCheckedAt": "2026-09-20T16:00:21.144Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.zafu.edu.cn/info/1018/122484.htm"
+      ],
+      "terminal": false,
+      "name": "中国移动杯浙江省大学生人工智能竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核时来源不可达，字段未经复核",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-datafountain-1166",
+      "editionId": "edition-datafountain-1166",
+      "editionName": "“猎鹰·微波智探”—雷达多目标智能探测与识别挑战",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源未标注赛事届次或年份信息"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：页面显示中国电子学会&睿创微纳，但未标明承办或联合单位"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：来源未写明参赛对象、资格要求及报名费用"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：来源未说明赛制规则、评审标准及团队人数限制"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：疑为某赛事的赛题：需查明所属赛事名称及是否面向大学生（范围闸：缺少大学生参赛资格依据）"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：仅有阶段日程03.23~06.20、07.07~08.31，未明确报名起止"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：疑为某赛事的赛题：需查明所属赛事名称及是否面向大学生（范围闸：缺少大学生参赛资格依据）",
+      "targetUrl": "https://www.datafountain.cn/competitions/1166",
+      "lastCheckedAt": "2026-09-18T13:45:10.107Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.datafountain.cn/competitions/1166"
+      ],
+      "terminal": false,
+      "name": "“猎鹰·微波智探”—雷达多目标智能探测与识别挑战",
+      "dataStatus": "draft",
+      "stuckDays": null,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "疑为某赛事的赛题：需查明所属赛事名称及是否面向大学生（范围闸：缺少大学生参赛资格依据）",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-beijing-finance-ai-2026",
+      "editionId": "edition-beijing-finance-ai-2026",
+      "editionName": "2026年北京市大学生金融人工智能竞赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录主办方为中央财经大学等，可访问通知称北京市教育委员会拟举办，官方市教委通知无法访问"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：可访问通知仅面向北化工本校本科生，记录称北京地区高校本科生，依据的市教委通知不可达"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、经管与商科、数学与统计（分诊待追溯：AI审核指出参赛范围与主办方需以北京市教委原文核实）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核指出参赛范围与主办方需以北京市教委原文核实"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：记录competition_start/end为空，来源含作品提交截止10月18日及决赛11月底安排"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：记录为自行报名，来源仅说明以团队为单位线上报名，未见明确表述"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核指出参赛范围与主办方需以北京市教委原文核实",
+      "targetUrl": "https://jw.beijing.gov.cn/gjc/tzgg_15688/202608/t20260827_4839055.html",
+      "lastCheckedAt": "2026-09-20T04:20:34.094Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jw.beijing.gov.cn/gjc/tzgg_15688/202608/t20260827_4839055.html",
+        "https://sem.buct.edu.cn/2026/0909/c10347a222654/page.htm"
+      ],
+      "terminal": false,
+      "name": "北京市大学生金融人工智能竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核指出参赛范围与主办方需以北京市教委原文核实",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-grad-mba-case-2026",
+      "editionId": "edition-hunan-grad-mba-case-2026",
+      "editionName": "第九届湖南省高校MBA企业案例大赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：记录名称为第九届湖南省高校MBA企业案例大赛，来源为第九届湖南省MBA企业案例大赛，多高校二字。"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录主办方为湖南省高校MBA教育指导委员会，来源未提及；来源仅载湘潭大学为承办单位。"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：来源仅述系列赛事面向在校研究生，未提MBA在读研究生限制。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "工商管理、经济管理、市场营销（分诊待追溯：AI审核（高风险）指出报名日期无原文依据、名称与主办方不符；来源为中南林科大转发）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核（高风险）指出报名日期无原文依据、名称与主办方不符；来源为中南林科大转发"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：来源明确省赛报名时间以正式通知为准，记录却给出2026-09-01至10-15具体日期，无依据。"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核（高风险）指出报名日期无原文依据、名称与主办方不符；来源为中南林科大转发",
+      "targetUrl": "https://yjsy.csuft.edu.cn/info/1111/29121.htm",
+      "lastCheckedAt": "2026-09-20T23:15:42.139Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://yjsy.csuft.edu.cn/info/1111/29121.htm"
+      ],
+      "terminal": false,
+      "name": "湖南省高校MBA企业案例大赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核（高风险）指出报名日期无原文依据、名称与主办方不符；来源为中南林科大转发",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-inner-mongolia-triz-2026",
+      "editionId": "edition-inner-mongolia-triz-2026",
+      "editionName": "2026年内蒙古自治区创新方法大赛大学生创新方法专项赛暨第十五届中国TRIZ杯大学生创新方法大赛内蒙古区赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（分诊待追溯：来源为内蒙古师范大学转发通知，需取自治区主办单位原始通知）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：主办方名称使用简称，原文为自治区教育厅、工业和信息化厅、国资委、总工会、工商联全称。"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：记录遗漏教师组参赛条件及团队至少1人须参加过创新方法培训的要求。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：记录未体现决赛8分钟路演加5分钟答辩的具体赛制及不得重复获奖作品参赛等规则。"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：来源为内蒙古师范大学科技处转发通知，非自治区主办单位发布的原始通知。"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-04T17:00:00+08:00（分诊待追溯：来源为内蒙古师范大学转发通知，需取自治区主办单位原始通知）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：记录称纸质版交内蒙古师范大学科技处，原文要求10月4日17:00前送至赛罕校区勤政楼401。"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：来源为内蒙古师范大学转发通知，需取自治区主办单位原始通知",
+      "targetUrl": "https://kjc.imnu.edu.cn/info/1035/5952.htm",
+      "lastCheckedAt": "2026-09-20T04:25:40.166Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://kjc.imnu.edu.cn/info/1035/5952.htm"
+      ],
+      "terminal": false,
+      "name": "内蒙古自治区创新方法大赛大学生创新方法专项赛暨中国TRIZ杯大学生创新方法大赛内蒙古区赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源为内蒙古师范大学转发通知，需取自治区主办单位原始通知",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-tianchi-loreal-1-2026",
+      "editionId": "edition-tianchi-loreal-1-2026",
+      "editionName": "欧莱雅美妆科技黑客松：赛题1 数据共情者——消费者的AI管家",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：记录未体现届次，来源页面标题为欧莱雅第二届美妆科技黑客松"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录主办方为阿里云天池及对应主办方，来源明确主办单位为欧莱雅中国，天池仅技术支持"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：记录称面向高校、科研机构或社会开发者，来源限定为海内外高校全日制在校本硕博（含2026届毕业生）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：记录描述为在线算法或模型挑战赛，实际为黑客松作品提交制，设早鸟与常规双通道评审"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：应按赛事本身（欧莱雅第二届美妆科技黑客松）收录；AI审核指出主办方、参赛资格、赛制与原文不符，需重读原文改写"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：registration_start为null且competition_start/end缺失，来源显示报名7月19日起、常规提交至10月20日"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：应按赛事本身（欧莱雅第二届美妆科技黑客松）收录；AI审核指出主办方、参赛资格、赛制与原文不符，需重读原文改写",
+      "targetUrl": "https://tianchi.aliyun.com/competition/entrance/532503",
+      "lastCheckedAt": "2026-09-20T06:05:38.984Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://tianchi.aliyun.com/competition/entrance/532503"
+      ],
+      "terminal": false,
+      "name": "欧莱雅美妆科技黑客松：赛题1 数据共情者——消费者的AI管家",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "应按赛事本身（欧莱雅第二届美妆科技黑客松）收录；AI审核指出主办方、参赛资格、赛制与原文不符，需重读原文改写",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-national-community-garden-2026",
+      "editionId": "edition-national-community-garden-2026",
+      "editionName": "2026全国大学生花园设计建造竞赛（社区花园赛道）",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录为\"相关高校与组委会\"，来源明确主办单位为北京林业大学，指导单位为中国风景园林学会。"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：记录称\"全国高校学生\"，来源限定为国内外风景园林及相关专业在校本科生及研究生。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "建筑与设计、环境与资源（分诊待追溯：AI审核指出主办方（北京林业大学）、参赛资格（风景园林相关专业、3-7人）与记录不符，需重读原文改写）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核指出主办方（北京林业大学）、参赛资格（风景园林相关专业、3-7人）与记录不符，需重读原文改写"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：缺少成果提交截止（2026-10-28 23:59）、评审（11月上旬）、公布（11月下旬）；报名开始可确认为通知日2026-06-25起。"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：所填链接为同济景观学系通知页，报名实际通过公众号或《风景园林》官网扫码，无公开可复制报名链接。"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核指出主办方（北京林业大学）、参赛资格（风景园林相关专业、3-7人）与记录不符，需重读原文改写",
+      "targetUrl": "https://landscape-caup.tongji.edu.cn/c8/f4/c10586a379124/page.htm",
+      "lastCheckedAt": "2026-09-21T01:05:36.467Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://landscape-caup.tongji.edu.cn/c8/f4/c10586a379124/page.htm"
+      ],
+      "terminal": false,
+      "name": "全国大学生花园设计建造竞赛（社区花园赛道）",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核指出主办方（北京林业大学）、参赛资格（风景园林相关专业、3-7人）与记录不符，需重读原文改写",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-beijing-college-math-2026",
+      "editionId": "edition-beijing-college-math-2026",
+      "editionName": "第十八届全国大学生数学竞赛北京赛区初赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：“北京市大学生数学竞赛组委会”有来源支持，“中国数学会”未在来源中出现"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "有冲突",
+          "detail": "AI 核验：来源仅称“本校（中国地质大学北京）全日制在校大学生均可报名”，记录泛化为北京地区高校"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "数学与统计（分诊待追溯：来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：来源仅给出截止日期2026-09-30，记录补充的23:59为推测；来源未提供报名开始时间，记录为null"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（分诊待追溯：来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知）"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知",
+      "targetUrl": "https://jwc.cugb.edu.cn/c/2026-09-14/857328.shtml",
+      "lastCheckedAt": "2026-09-20T07:01:00.485Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jwc.cugb.edu.cn/c/2026-09-14/857328.shtml"
+      ],
+      "terminal": false,
+      "name": "全国大学生数学竞赛北京赛区初赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源为中国地质大学（北京）校内通知，仅面向本校；需取北京赛区组委会通知",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hebei-college-math-2026",
+      "editionId": "edition-hebei-college-math-2026",
+      "editionName": "第十八届全国大学生数学竞赛河北赛区初赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：来源显示河北省数学会为承办单位，记录却将其列为主办方"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "全日制在校大学生，含数学类、非数学类和高职高专类。 全日制在校大学生，含数学类、非数学类和高职高专类。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：记录仅写11月14日，缺年份与2.5小时时长等细节"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核指出主办/承办颠倒、比赛时间缺失，需按原文改写"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-09T23:59:00+08:00（分诊待追溯：AI审核指出主办/承办颠倒、比赛时间缺失，需按原文改写）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核指出主办/承办颠倒、比赛时间缺失，需按原文改写",
+      "targetUrl": "https://hebms.hebtu.edu.cn/a/dxssxjs/",
+      "lastCheckedAt": "2026-09-20T07:05:28.819Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://hebms.hebtu.edu.cn/a/dxssxjs/"
+      ],
+      "terminal": false,
+      "name": "全国大学生数学竞赛河北赛区初赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核指出主办/承办颠倒、比赛时间缺失，需按原文改写",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-iscc-intelligent-security-2026",
+      "editionId": "edition-iscc-intelligent-security-2026",
+      "editionName": "第二十三届全国大学生信息安全与对抗技术竞赛·智能安全赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（分诊待追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "北京理工大学、中国兵工学会、教育部信息对抗技术专业虚拟教研室（分诊待追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "全国高校全日制本专科生和研究生；本专科与研究生不得混合组队。 全国高校全日制本专科生和研究生；本专科与研究生不得混合组队（分诊待追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、电子信息、机械与自动化（分诊待追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：来源为高校校赛通知且claimed_official=false，非组委会原始通知"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：来源仅称报名为2026年8—10月，未给8月1日精确起始日；报名截止日未明确，赛事节点仅到月份，空值需持续核验"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：通知要求学校组织校赛、队伍官网填报，未明确学校统一报名"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文",
+      "targetUrl": "https://jky.yangtzeu.edu.cn/info/1395/6847.htm",
+      "lastCheckedAt": "2026-09-20T04:35:41.134Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jky.yangtzeu.edu.cn/info/1395/6847.htm"
+      ],
+      "terminal": false,
+      "name": "全国大学生信息安全与对抗技术竞赛·智能安全赛",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源为长江大学校赛通知，需取组委会（isclab.org.cn）原文",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cnbizsim-enterprise-competition-2026",
+      "editionId": "edition-cnbizsim-enterprise-competition-2026",
+      "editionName": "2026年全国企业竞争模拟大赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "指导单位：中国管理现代化研究会、高等学校国家级实验教学示范中心联席会经管学科组；主办单位：中国管理现代化研究会决策模拟专业委员会；承办单位：全国企业竞争模拟大赛组委会、华北理工大学（总决赛承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "具有正式学籍的全国高校在读研究生、本科生和专科生均可报名。企业决策赛道分研究生组和本科组；企业运营赛道、供应链决策赛道、"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "经管与商科（分诊待追溯：来源为泛研网转载页，非一手通知；报名开始“3月1日”是由“3月启动”推断，需取组委会原文）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：来源为泛研网转载页，官方原文链接需登录后查看，非一手官方通知页"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：可见正文仅显示发布日期2026-03-19至03-23，未见报名开始日期2026-03-01的原文依据；规程说明校内初赛报名截止由各高校自定，无全国统一截止日"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（分诊待追溯：来源为泛研网转载页，非一手通知；报名开始“3月1日”是由“3月启动”推断，需取组委会原文）"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：来源为泛研网转载页，非一手通知；报名开始“3月1日”是由“3月启动”推断，需取组委会原文",
+      "targetUrl": "https://www.funresearch.cn/contest/MjE1MTUwNDEtYWYwMC00NTdiLWFmNjUtMmUwZjVhYTNiNGU0",
+      "lastCheckedAt": "2026-09-23T11:26:02.716Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.funresearch.cn/contest/MjE1MTUwNDEtYWYwMC00NTdiLWFmNjUtMmUwZjVhYTNiNGU0"
+      ],
+      "terminal": false,
+      "name": "全国企业竞争模拟大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源为泛研网转载页，非一手通知；报名开始“3月1日”是由“3月启动”推断，需取组委会原文",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-search-dffac48e2c7392b2",
+      "editionId": "edition-search-dffac48e2c7392b2",
+      "editionName": "英特尔杯大学生电子设计竞赛嵌入式AI专题赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：页面指向2026信息，但记录届次字段未写明"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：正文仅有主办/承办/协办标签，无单位全称"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：未提供参赛对象、专业或年级限制"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：费用、赛制、团队规模正文均缺失"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：来源只是竞赛官网首页，未取得当届通知正文；主办方、参赛对象、赛制均为空"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：重要日期/报名入口正文未列具体起止时间"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：来源只是竞赛官网首页，未取得当届通知正文；主办方、参赛对象、赛制均为空",
+      "targetUrl": "https://nuedc.sjtu.edu.cn/CN/Default.aspx",
+      "lastCheckedAt": "2026-09-19T11:10:26.651Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://nuedc.sjtu.edu.cn/CN/Default.aspx"
+      ],
+      "terminal": false,
+      "name": "英特尔杯大学生电子设计竞赛嵌入式AI专题赛",
+      "dataStatus": "draft",
+      "stuckDays": 5,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是竞赛官网首页，未取得当届通知正文；主办方、参赛对象、赛制均为空",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-xiongan-disruptive-tech-2026",
+      "editionId": "edition-xiongan-disruptive-tech-2026",
+      "editionName": "第十五届中国创新创业大赛颠覆性技术创新大赛（未来空间领域赛）",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（分诊待追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录主办方为“中国创新创业大赛组委会”，来源明确主办单位为四部门"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：缺少独立法人资格、不接受个人或团体参赛、同单位限报1项等要求"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、电子信息、航空航天（分诊待追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-10T23:59:00+08:00（分诊待追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：记录为“学校统一报名”，来源要求参赛单位统一注册报名"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生",
+      "targetUrl": "https://www.xiongan.gov.cn/20260915/7c97cda56d9742dd80f3ca14389c9dad/c.html",
+      "lastCheckedAt": "2026-09-20T23:35:32.449Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.xiongan.gov.cn/20260915/7c97cda56d9742dd80f3ca14389c9dad/c.html"
+      ],
+      "terminal": false,
+      "name": "中国创新创业大赛颠覆性技术创新大赛（未来空间领域赛）",
+      "dataStatus": "draft",
+      "stuckDays": 4,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核指出主办方、参赛单位资格与原文不符（原文要求独立法人单位参赛），需重读原文并核实是否面向大学生",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-search-fbd665754b167e5c",
+      "editionId": "edition-search-fbd665754b167e5c",
+      "editionName": "2026 CCF CCSP竞赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "中国计算机学会（承办：西华大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：记录为空；原文要求全国高校在校生，以第37~43次CSP任一次最好成绩≥200分，按分数与报名顺序择优。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：赛制为空；原文为成都现场机考，全国赛5题共500分，语言C/C++、Java或Python。"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "分诊待追溯：AI审核给出具体补正（资格CSP≥200分、会员/非会员缴费、机考赛制、10月21日比赛），需重读原文照录"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：比赛开始/结束为空；原文比赛为2026-10-21 9:00-21:00，颁奖为10月22日14:00-16:00。"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：报名入口为空，participation_format标未明确；原文要求登录CCF报名系统选2026 CCSP及西华大学考点，分团报/个人。"
+        }
+      ],
+      "blockers": [
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按分诊要求追溯：AI审核给出具体补正（资格CSP≥200分、会员/非会员缴费、机考赛制、10月21日比赛），需重读原文照录",
+      "targetUrl": "https://ccsp.ccf.org.cn/ccsp/tzgg/2026-09-09/931080.shtml",
+      "lastCheckedAt": "2026-09-19T17:40:49.212Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://ccsp.ccf.org.cn/ccsp/tzgg/2026-09-09/931080.shtml"
+      ],
+      "terminal": false,
+      "name": "CCF CCSP竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 5,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "AI审核给出具体补正（资格CSP≥200分、会员/非会员缴费、机考赛制、10月21日比赛），需重读原文照录",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-jiangsu-no62",
+      "editionId": "edition-jiangsu-no62",
+      "editionName": "东方创意之星创新设计大赛（学生赛）",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源为赛事目录清单通知，正文未出现本赛事名，身份未证实"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：主办方与‘受教育厅委托’表述仅见通知套话，未指向本赛事"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：参赛资格照抄目录通知套话，未见本赛事具体资格条款"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "设计与艺术（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：全部时间为空且pending_announcement=true无原文依据"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：报名入口、方式、费用均空，目录文件不能充当报名依据"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "http://www.jsgjxh.cn/newsview/31221",
+      "lastCheckedAt": "2026-09-23T05:00:42.702Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "http://www.jsgjxh.cn/newsview/31221"
+      ],
+      "terminal": false,
+      "name": "东方创意之星创新设计大赛（学生赛）",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-fujian-gjs202646",
+      "editionId": "edition-fujian-gjs202646",
+      "editionName": "2026年福建省大学生中药标本制作大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "福建省教育厅（立项）／福建中医药大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "福建省普通高等学校在校学生。依据福建省教育厅闽教高〔2026〕7号《福建省2026年大学生学科专业竞赛项目目录》，本赛事"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "生物与医药（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm",
+      "lastCheckedAt": "2026-09-22T17:45:43.205Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm"
+      ],
+      "terminal": false,
+      "name": "福建省大学生中药标本制作大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-fujian-gjs202632",
+      "editionId": "edition-fujian-gjs202632",
+      "editionName": "2026年福建省高校企业竞争模拟大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：正文仅证明省级竞赛项目目录发布，附件不可读，未能核实该赛事条目"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：承办单位福建师范大学仅见于记录自述，正文与可读来源均未载明"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "福建省普通高等学校在校学生。依据福建省教育厅闽教高〔2026〕7号《福建省2026年大学生学科专业竞赛项目目录》，本赛事"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：赛制、评审办法、费用均未公布，记录中相关说明与通知要求一致"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：正文无当届赛事时间，仅要求承办高校赛前30日报审公布通知"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：来源无可读报名入口信息"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm",
+      "lastCheckedAt": "2026-09-22T16:35:41.076Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm"
+      ],
+      "terminal": false,
+      "name": "福建省高校企业竞争模拟大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-guangdong-no8",
+      "editionId": "edition-guangdong-no8",
+      "editionName": "广东省大学生电子设计大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "广东省教育厅（立项）／中山大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "广东省普通高等学校在校学生。依据广东省教育厅《关于做好2025年广东省本科高校大学生学科竞赛工作的通知》附件《2025年"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "电子信息（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf",
+      "lastCheckedAt": "2026-09-23T04:25:19.483Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf"
+      ],
+      "terminal": false,
+      "name": "广东省大学生电子设计大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-guangdong-no7",
+      "editionId": "edition-guangdong-no7",
+      "editionName": "广东省大学生工程实践与创新能力大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "广东省教育厅（立项）／广东工业大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "广东省普通高等学校在校学生。依据广东省教育厅《关于做好2025年广东省本科高校大学生学科竞赛工作的通知》附件《2025年"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "机械与自动化（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf",
+      "lastCheckedAt": "2026-09-23T04:20:30.665Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf"
+      ],
+      "terminal": false,
+      "name": "广东省大学生工程实践与创新能力大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-guangdong-no6",
+      "editionId": "edition-guangdong-no6",
+      "editionName": "广东省大学生广告艺术大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "广东省教育厅（立项）／深圳大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "广东省普通高等学校在校学生。依据广东省教育厅《关于做好2025年广东省本科高校大学生学科竞赛工作的通知》附件《2025年"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "设计与艺术（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf",
+      "lastCheckedAt": "2026-09-22T22:11:03.167Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf"
+      ],
+      "terminal": false,
+      "name": "广东省大学生广告艺术大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no31",
+      "editionId": "edition-hunan-no31",
+      "editionName": "湖南省大学生材料创新设计暨现代金相技能大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源为省级竞赛立项通知，仅能佐证赛事立项，非当届竞赛通知"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南工学院、长沙理工大学联合（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：赛制、评审与奖项以承办单位后续通知为准，现有来源无法确认"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：PDF正文不可读，报名与竞赛时间均无法核实"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：报名入口与报名方式缺失，立项文件不能充当报名依据"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-23T03:30:55.360Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生材料创新设计暨现代金相技能大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no22",
+      "editionId": "edition-hunan-no22",
+      "editionName": "湖南省大学生工业设计竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南工业大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "设计与艺术、机械与自动化（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-23T14:45:22.576Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生工业设计竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no9",
+      "editionId": "edition-hunan-no9",
+      "editionName": "湖南省大学生广告艺术大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／邵阳学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "设计与艺术（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-24T07:50:53.279Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生广告艺术大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no27",
+      "editionId": "edition-hunan-no27",
+      "editionName": "湖南省大学生节能减排社会实践与科技竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／中南大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "能源与环境（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T21:05:36.968Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生节能减排社会实践与科技竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no23",
+      "editionId": "edition-hunan-no23",
+      "editionName": "湖南省大学生结构设计竞赛（与省住房和城乡建设厅联合主办）",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南科技学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "建筑与土木（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T20:40:37.653Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生结构设计竞赛（与省住房和城乡建设厅联合主办）",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no28",
+      "editionId": "edition-hunan-no28",
+      "editionName": "湖南省大学生模拟法庭竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南警察学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "人文与法学（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T21:10:31.771Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生模拟法庭竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no17",
+      "editionId": "edition-hunan-no17",
+      "editionName": "湖南省大学生数字媒体创意设计大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源为省级竞赛立项通知，属目录性文件，不能充当比赛记录"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南科技学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：赛制、评审办法、奖项设置与费用均未见原文依据"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：来源PDF仅返回二进制流，正文不可读，无法核对通知任何内容"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名与比赛起止时间无任何原文依据，不能推定为待公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：报名入口缺失，立项目录文件不能作为报名入口"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-23T02:15:49.481Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生数字媒体创意设计大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no34",
+      "editionId": "edition-hunan-no34",
+      "editionName": "湖南省大学生统计建模大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湖南师范大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "数学与统计（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T14:12:43.906Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生统计建模大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no18",
+      "editionId": "edition-hunan-no18",
+      "editionName": "湖南省大学生现代物流设计竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湘南学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "经管与商科（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T20:15:43.060Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生现代物流设计竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no30",
+      "editionId": "edition-hunan-no30",
+      "editionName": "湖南省大学生新文科实践创新大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源正文不可读，无法确认条目代表具体比赛。"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／湘潭大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "人文与法学（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T21:20:38.507Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生新文科实践创新大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no13",
+      "editionId": "edition-hunan-no13",
+      "editionName": "湖南省大学生医学综合技能竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：唯一来源PDF正文不可读，无法确认是否独立赛事"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：教育厅立项与南华大学承办无法从原文核验"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：赛制、奖项、费用与队伍规模均未见原文依据"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名与比赛起止时间均为空"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：缺少官方报名入口"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-24T08:11:01.349Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生医学综合技能竞赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no19",
+      "editionId": "edition-hunan-no19",
+      "editionName": "湖南省高等院校数智化企业经营沙盘大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "湖南省教育厅（立项）／张家界学院（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "湖南省普通高等学校在校学生。依据湖南省教育厅湘教通〔2026〕10号《湖南省教育厅关于组织举办2026年全省普通高校大学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "经管与商科（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-22T20:20:30.975Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf"
+      ],
+      "terminal": false,
+      "name": "湖南省高等院校数智化企业经营沙盘大赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-jiangsu-no48",
+      "editionId": "edition-jiangsu-no48",
+      "editionName": "中国机器人及人工智能大赛江苏省赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源为目录通知，非当届竞赛通知，附件未读取"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：江苏省人工智能学会主办仅见记录自述，正文未列该赛"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：正文未含该赛学生资格与专业任务依据"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、机械与自动化（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名与竞赛时间均空缺，目录未给当届日期"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：来源无报名入口，目录不能充当报名链接"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "http://www.jsgjxh.cn/newsview/31221",
+      "lastCheckedAt": "2026-09-23T03:25:37.584Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "http://www.jsgjxh.cn/newsview/31221"
+      ],
+      "terminal": false,
+      "name": "中国机器人及人工智能大赛江苏省赛",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-fujian-gjs202649",
+      "editionId": "edition-fujian-gjs202649",
+      "editionName": "2026年iCAN大学生创新创业大赛\"亿学杯\"跨境数字营销挑战赛（福建赛区选拔赛）",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "福建省教育厅（立项）／闽南师范大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "福建省普通高等学校在校学生。依据福建省教育厅闽教高〔2026〕7号《福建省2026年大学生学科专业竞赛项目目录》，本赛事"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "经管与商科（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "现有记录提示入口或报名方式待核对"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm",
+      "lastCheckedAt": "2026-09-22T18:00:24.725Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://jyt.fujian.gov.cn/xxgk/zywj/202605/t20260511_7146643.htm"
+      ],
+      "terminal": false,
+      "name": "iCAN大学生创新创业大赛\"亿学杯\"跨境数字营销挑战赛（福建赛区选拔赛）",
+      "dataStatus": "draft",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "需要追溯",
+        "traceTodo": "来源只是省级立项目录，赛事当届通知、报名入口、赛制与时间须由承办单位另行发布后补齐",
+        "traceDue": "2026-10-08T23:59:59+08:00"
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp016",
+      "editionId": "edition-cmp016-2027",
+      "editionName": "2026—2027赛季",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "华为技术有限公司（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "全球高校学生与教师，按国家/地区赛制 全球高校学生与教师，按国家/地区赛制（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、电子信息（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "时间待公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://www.huawei.com/minisite/ict-competition-2025-2026-global/cn/",
+      "lastCheckedAt": "2026-09-22T10:20:16.563Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.huawei.com/minisite/ict-competition-2025-2026-global/cn/"
+      ],
+      "terminal": false,
+      "name": "华为ICT大赛",
+      "dataStatus": "pending_system_validation",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp020",
+      "editionId": "edition-cmp020-2026",
+      "editionName": "第十九届（2026）",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "全国大学生结构设计竞赛委员会（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "普通高校在校本专科生，通常2—3人组队 普通高校在校本专科生，通常2—3人组队（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "建筑与土木、机械与自动化、数学与统计（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "已截止"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://www.cusdc.org.cn/",
+      "lastCheckedAt": "2026-09-22T10:45:20.242Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.cusdc.org.cn/"
+      ],
+      "terminal": false,
+      "name": "全国大学生结构设计竞赛",
+      "dataStatus": "pending_system_validation",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp019",
+      "editionId": "edition-cmp019-2027",
+      "editionName": "2027年第十届",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "教育部工程训练教学指导委员会、中国大学生工程实践与创新能力大赛组委会（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "普通本科院校全日制在校本科生，部分赛项另有说明 普通本科院校全日制在校本科生，部分赛项另有说明（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "机械与自动化、电子信息、计算机与AI、经管与商科（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-08-12T00:00:00+00:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://gcxl.edu.cn/",
+      "lastCheckedAt": "2026-09-22T10:40:50.688Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://gcxl.edu.cn/"
+      ],
+      "terminal": false,
+      "name": "中国大学生工程实践与创新能力大赛",
+      "dataStatus": "pending_system_validation",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp018",
+      "editionId": "edition-cmp018-2026",
+      "editionName": "第十二届（2026）",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "全国大学生机械创新设计大赛组委会（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：正文未列本专科生、个人或小组及学校推荐要求"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：仅见决赛评审、公示与结果，未见主题实物赛制全文"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "没有标记为有效的当届官方来源"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：来源未载报名起止，记录为空且标已截止；记录决赛7月17—20与来源7月公示、结果大体相合，但阶段节点不全"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "读取已有来源并寻找主办方当届正式赛事页",
+      "targetUrl": "https://12umic.hit.edu.cn/",
+      "lastCheckedAt": "2026-09-17T21:50:35.941Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://12umic.hit.edu.cn/"
+      ],
+      "terminal": false,
+      "name": "全国大学生机械创新设计大赛",
+      "dataStatus": "pending_system_validation",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp027",
+      "editionId": "edition-cmp027-2026",
+      "editionName": "第十四届（2026）",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "未来设计师·全国高校数字艺术设计大赛组委会（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "普通高校在读研究生、本科生、专科生及教师组 普通高校在读研究生、本科生、专科生及教师组（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "AI 核验：参赛形式未明确，仅有院系报名与作品上传方式"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "没有标记为有效的当届官方来源"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名开始时间缺失，官网仅见各赛道截稿日期；主赛道评审中与专项赛道征稿中状态并存，需区分赛道进度"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（没有标记为有效的当届官方来源）"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "读取已有来源并寻找主办方当届正式赛事页",
+      "targetUrl": "https://www.ncda.org.cn/",
+      "lastCheckedAt": "2026-09-23T12:30:35.571Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.ncda.org.cn/",
+        "https://www.fd.show/"
+      ],
+      "terminal": false,
+      "name": "未来设计师·全国高校数字艺术设计大赛",
+      "dataStatus": "pending_system_validation",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-integrated-circuit-innovation-2026",
+      "editionId": "edition-liaoning-integrated-circuit-innovation-2026",
+      "editionName": "第八届辽宁省大学生集成电路创新创业大赛",
+      "result": "来源打不开，字段未经比对",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "标题未命中已知非赛事或下级选拔特征（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "辽宁省教育厅（承办：沈阳工业大学）（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "辽宁省高校集成电路及相关专业在校学生。 辽宁省高校集成电路及相关专业在校学生。（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "电子信息、计算机与AI（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验时来源打不开，字段未经比对"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-09-30T23:59:00+08:00（AI 核验时来源打不开，字段未经比对）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新打开来源或另找主办方原文，逐项比对后再审",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=2d83f46f170731c9c376a5e833abdbfe",
+      "lastCheckedAt": "2026-09-22T08:55:22.235Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=2d83f46f170731c9c376a5e833abdbfe"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生集成电路创新创业大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp002",
+      "editionId": "edition-cmp002-2025",
+      "editionName": "第十九届（2025，最近一届）",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：官网已发第二十届联合发起高校名单，称“下一届通知尚未发布”存疑"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：新华网明确主办方含江苏省政府，记录主办方列表漏列"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：“按章程及推报名额参赛”无原文条款支撑，缺少可核验依据"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "综合/不限专业、计算机与AI、电子信息、机械与自动化、生物与医药（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "没有标记为有效的当届官方来源"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "有冲突",
+          "detail": "AI 核验：pending_announcement=true与status_override=已截止自相矛盾，报名起止为空"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（没有标记为有效的当届官方来源）"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION"
+      ],
+      "nextAction": "读取已有来源并寻找主办方当届正式赛事页",
+      "targetUrl": "https://2025.tiaozhanbei.net/",
+      "lastCheckedAt": "2026-09-24T00:20:35.500Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://2025.tiaozhanbei.net/",
+        "https://www.xinhuanet.com/20251104/843a1f024bfc420fa8a58c474abb9e80/c.html"
+      ],
+      "terminal": false,
+      "name": "“挑战杯”全国大学生课外学术科技作品竞赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp009",
+      "editionId": "edition-cmp009-2026",
+      "editionName": "2026年大赛",
+      "result": "缺当届官方原文",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：北航通知明确为2026年第19届，记录未体现届次"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：来源仅见大赛名称，未载组织委员会全称"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：北航通知限定为该校在籍本科生，记录写普通高校本科生范围更宽"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "计算机与AI、设计与艺术、人文与法学、电子信息、外语与教育（没有标记为有效的当届官方来源）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "没有标记为有效的当届官方来源"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：校级报名截止4月30日为北航节点，非统一报名期"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（没有标记为有效的当届官方来源）"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "SYSTEM_VALIDATION"
+      ],
+      "nextAction": "读取已有来源并寻找主办方当届正式赛事页",
+      "targetUrl": "https://www.jsjds.com.cn/",
+      "lastCheckedAt": "2026-09-22T10:11:04.574Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.jsjds.com.cn/",
+        "https://2026.jsjds.com.cn/account/Register",
+        "https://jiaowu.buaa.edu.cn/info/1016/8840.htm"
+      ],
+      "terminal": false,
+      "name": "中国大学生计算机设计大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-sflep-ict-competition-9",
+      "editionId": "edition-sflep-ict-competition-9",
+      "editionName": "2026年第九届“外教社杯”全国高校学生跨文化能力大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：主办方等信息仅存于记录字段，无原文佐证"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：参赛资格细则无法从来源正文验证"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "外语与教育、综合/不限专业"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：来源PDF正文为乱码，无法读取核验章程内容"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名起止日期为空，仅记录校赛、省赛时段"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "核对当届章程中的大学生参赛资格",
+      "targetUrl": "https://ictvd.oss-cn-beijing.aliyuncs.com/uploadfile/2026/0401/20260401041236519.pdf",
+      "lastCheckedAt": "2026-09-23T11:40:37.253Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://ictvd.oss-cn-beijing.aliyuncs.com/uploadfile/2026/0401/20260401041236519.pdf"
+      ],
+      "terminal": false,
+      "name": "“外教社杯”全国高校学生跨文化能力大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-intercultural-competence-2026",
+      "editionId": "edition-liaoning-intercultural-competence-2026",
+      "editionName": "第九届“外教社杯”全国高校学生跨文化能力大赛（辽宁赛区）",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连海事大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校大学生，中国学生组比赛，分团队现场赛与短视频赛项。 辽宁省高校在校大学生，中国学生组比赛，分团队现场赛与短"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "外语与教育、人文与法学"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-25T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=55592a234672f35bd251b530ea90e5c4",
+      "lastCheckedAt": "2026-09-22T09:15:45.736Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=55592a234672f35bd251b530ea90e5c4"
+      ],
+      "terminal": false,
+      "name": "“外教社杯”全国高校学生跨文化能力大赛（辽宁赛区）",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cmp028",
+      "editionId": "edition-cmp028-2026",
+      "editionName": "2026年大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "北京外国语大学 主办；外语教学与研究出版社 承办"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "高校在校学生，分英语组、多语种组、国际中文组 高校在校学生，分英语组、多语种组、国际中文组"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "外语与教育、人文与法学、经管与商科、综合/不限专业"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 4 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：来源正文未见“2026年6月2日起开放报名”的表述；校赛、省赛、国赛时间由各校及赛区自行发布，无统一截止日"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "在当届官方原文中找报名时间",
+      "targetUrl": "https://ucc.fltrp.com/",
+      "lastCheckedAt": "2026-09-23T14:50:28.005Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://ucc.fltrp.com/",
+        "https://ucc.fltrp.com/c/2026-03-21/541241.shtml",
+        "https://ucc.fltrp.com/c/2026-04-15/517928.shtml"
+      ],
+      "terminal": false,
+      "name": "“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    },
+    {
+      "eventId": "event-glodon-bim-graduation-12",
+      "editionId": "edition-glodon-bim-graduation-12",
+      "editionName": "第十二届国际高校BIM毕业设计大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源仅显示第十三届，未确认第十二届记录成立"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "中国土木工程学会、广联达科技股份有限公司"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：本专科、团队人数与赛项限制缺少原文依据"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "建筑与土木、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名与比赛起止时间均无正文证据"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "AI 核验：仅见官网入口，未见院校申请流程原文"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "COLLEGE_ELIGIBILITY",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://gxbsxs.glodonedu.com/",
+      "lastCheckedAt": "2026-09-23T11:20:26.078Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://gxbsxs.glodonedu.com/"
+      ],
+      "terminal": false,
+      "name": "国际高校BIM毕业设计大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-business-elite-challenge-2026",
+      "editionId": "edition-liaoning-business-elite-challenge-2026",
+      "editionName": "辽宁高校商业精英挑战赛（品牌策划竞赛、文旅与会展创新创业实践竞赛、国际贸易竞赛等）",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：东北财经大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校大学生，依托国际会计专业团体举办，面向经管类专业学生。 辽宁省高校在校大学生，依托国际会计专业团体举办，面"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-15T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=129f1c0119cf592554efc8cb7b7386d5",
+      "lastCheckedAt": "2026-09-22T08:25:17.379Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=129f1c0119cf592554efc8cb7b7386d5"
+      ],
+      "terminal": false,
+      "name": "辽宁高校商业精英挑战赛（品牌策划竞赛、文旅与会展创新创业实践竞赛、国际贸易竞赛等）",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-welding-casting-design-2026",
+      "editionId": "edition-liaoning-welding-casting-design-2026",
+      "editionName": "第一届辽宁省大学生材料焊接与铸造工艺设计大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连交通大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校材料、焊接、铸造相关专业在校学生。 辽宁省高校材料、焊接、铸造相关专业在校学生。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "材料与化工、机械与自动化"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-20T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=1c464bc76540517541a4cf7fa923cbe2",
+      "lastCheckedAt": "2026-09-22T08:40:25.750Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=1c464bc76540517541a4cf7fa923cbe2"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生材料焊接与铸造工艺设计大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-engineering-practice-innovation-2026",
+      "editionId": "edition-liaoning-engineering-practice-innovation-2026",
+      "editionName": "辽宁省大学生工程实践与创新能力大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁石油化工大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校学生，经校级初赛选拔后进入省级选拔赛。 辽宁省高校在校学生，经校级初赛选拔后进入省级选拔赛。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "机械与自动化"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-13T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=a4e9b87af8a49d5b6866ddc7f214ecdd",
+      "lastCheckedAt": "2026-09-22T09:40:49.647Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=a4e9b87af8a49d5b6866ddc7f214ecdd"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生工程实践与创新能力大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-architecture-innovation-design-2026",
+      "editionId": "edition-liaoning-architecture-innovation-design-2026",
+      "editionName": "辽宁省大学生建筑创新设计竞赛暨东北三省适老化建筑设计竞赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：沈阳建筑大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校建筑学、城乡规划等相关专业在校学生。 辽宁省高校建筑学、城乡规划等相关专业在校学生。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "建筑与土木"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-11-30T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=2346a8d357d82df70f675325717b0648",
+      "lastCheckedAt": "2026-09-22T08:50:26.945Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=2346a8d357d82df70f675325717b0648"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生建筑创新设计竞赛暨东北三省适老化建筑设计竞赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-jindie-cloud-innovation-2026",
+      "editionId": "edition-liaoning-jindie-cloud-innovation-2026",
+      "editionName": "2026年辽宁省大学生金蝶云管理创新杯大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：沈阳城市学院）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校经管类专业学生，采取团队比赛方式，具体组队规则以实施方案附件为准。 辽宁省高校经管类专业学生，采取团队比赛方式"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-22T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=113e0d9718edb5fa68a63ed226f41407",
+      "lastCheckedAt": "2026-09-22T08:20:45.259Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=113e0d9718edb5fa68a63ed226f41407"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生金蝶云管理创新杯大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-agricultural-economic-modeling-2026",
+      "editionId": "edition-liaoning-agricultural-economic-modeling-2026",
+      "editionName": "第七届辽宁省大学生农业经济建模大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连海洋大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校本科生和研究生，面向农业经济相关专业。 辽宁省高校本科生和研究生，面向农业经济相关专业。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科、数学与统计"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-15T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=4912c9285ef4974c337cb34fe9069d21",
+      "lastCheckedAt": "2026-09-22T09:05:40.944Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=4912c9285ef4974c337cb34fe9069d21"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生农业经济建模大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-business-comprehensive-ability-2026",
+      "editionId": "edition-liaoning-business-comprehensive-ability-2026",
+      "editionName": "2026年第五届辽宁省大学生商科综合能力大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连民族大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校经管类专业在校学生，具体规则详见官方通知附件。 辽宁省高校经管类专业在校学生，具体规则详见官方通知附件。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-31T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=8b4d898c72e6dfcc1d2c056e547f5e0c",
+      "lastCheckedAt": "2026-09-22T09:25:31.983Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=8b4d898c72e6dfcc1d2c056e547f5e0c"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生商科综合能力大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-social-work-practice-2026",
+      "editionId": "edition-liaoning-social-work-practice-2026",
+      "editionName": "辽宁省大学生社会工作实务技能大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：鞍山师范学院）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省全日制在校硕士研究生、本科生，需通过校赛推选，团队4人跨年级或跨专业组队但不能跨校，配1名本校专任指导教师。 辽宁"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "人文与法学"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-15T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=06bae1e11308fdfff2c2b30e92d23131",
+      "lastCheckedAt": "2026-09-22T08:10:45.475Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=06bae1e11308fdfff2c2b30e92d23131"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生社会工作实务技能大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-digital-finance-bigdata-2026",
+      "editionId": "edition-liaoning-digital-finance-bigdata-2026",
+      "editionName": "2026年第一届辽宁省大学生数智财经大数据分析与应用大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁工程技术大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "参赛院校在籍全日制本科或高职学生，不得跨校组队，高职学生不能与本科学生混合组队，以院校为单位组队，每队4名参赛选手。 参"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-09-30T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=e60cce6f84d2d8df1a415e9e91c06163",
+      "lastCheckedAt": "2026-09-23T04:00:40.549Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=e60cce6f84d2d8df1a415e9e91c06163"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生数智财经大数据分析与应用大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-digital-trade-innovation-2026",
+      "editionId": "edition-liaoning-digital-trade-innovation-2026",
+      "editionName": "辽宁省大学生数字贸易创新创业大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁对外经贸学院）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校大学生，面向经管、国际贸易、物流等相关专业。 辽宁省高校在校大学生，面向经管、国际贸易、物流等相关专业。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-09-28T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=1eccc2d790c8df9094470e7f5595e1ea",
+      "lastCheckedAt": "2026-09-22T08:45:41.871Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=1eccc2d790c8df9094470e7f5595e1ea"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生数字贸易创新创业大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-foreign-language-skill-challenge-2026",
+      "editionId": "edition-liaoning-foreign-language-skill-challenge-2026",
+      "editionName": "第一届辽宁省大学生外语综合技能创新挑战赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连外国语大学（联合辽宁大学、沈阳大学承办））"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校大学生，面向外语综合应用能力与跨文化创新素养。 辽宁省高校在校大学生，面向外语综合应用能力与跨文化创新素养"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "外语与教育"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-16T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=178860d2256a6b34d3f2b4b5b9a9b2bd",
+      "lastCheckedAt": "2026-09-22T08:35:30.490Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=178860d2256a6b34d3f2b4b5b9a9b2bd"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生外语综合技能创新挑战赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-vr-newmedia-innovation-design-2026",
+      "editionId": "edition-liaoning-vr-newmedia-innovation-design-2026",
+      "editionName": "2026年第五届辽宁省大学生虚拟现实与新媒体创新设计大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁科技大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校学生，面向数字艺术领域相关专业。 辽宁省高校在校学生，面向数字艺术领域相关专业。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "设计与艺术、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-09-25T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=90d98393ff774d768df3dc281b766d83",
+      "lastCheckedAt": "2026-09-23T03:45:31.562Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=90d98393ff774d768df3dc281b766d83"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生虚拟现实与新媒体创新设计大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-smart-power-operation-control-2026",
+      "editionId": "edition-liaoning-smart-power-operation-control-2026",
+      "editionName": "2026年辽宁省大学生智慧电力运行控制创新竞赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：沈阳工程学院）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省普通高等学校在读全日制本科学生，由所在学校组织选拔产生参赛选手，每名参赛选手指导教师不超过2人。 辽宁省普通高等学"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "能源与环境、电子信息"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-07T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=f7f1ef3ac0541adafa6e6d3a9fdaa832",
+      "lastCheckedAt": "2026-09-22T10:00:30.598Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=f7f1ef3ac0541adafa6e6d3a9fdaa832"
+      ],
+      "terminal": false,
+      "name": "辽宁省大学生智慧电力运行控制创新竞赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-economic-decision-virtual-sim-2026",
+      "editionId": "edition-liaoning-economic-decision-virtual-sim-2026",
+      "editionName": "第七届辽宁省高校经济决策虚仿实验大赛暨第十届全国高校经济决策虚仿实验大赛辽宁省选拔赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：沈阳大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "具备微观经济学、宏观经济学、财政学或商业银行经营决策相关知识的本科生，每人只能参加一支团队，每队1-3人，指导教师1-2"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-17T18:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=bf828c9505b39d518917714c0c6044f2",
+      "lastCheckedAt": "2026-09-22T09:45:48.979Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=bf828c9505b39d518917714c0c6044f2"
+      ],
+      "terminal": false,
+      "name": "辽宁省高校经济决策虚仿实验大赛暨全国高校经济决策虚仿实验大赛辽宁省选拔赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-original-dance-work-2026",
+      "editionId": "edition-liaoning-original-dance-work-2026",
+      "editionName": "辽宁省第五届高校舞蹈原创作品大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁师范大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校在校生，分专业组和普通高校组两组评审。 辽宁省高校在校生，分专业组和普通高校组两组评审。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "设计与艺术"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-09-25T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=717e9922685dd4db334087ef8c9bc1d3",
+      "lastCheckedAt": "2026-09-22T09:20:27.194Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=717e9922685dd4db334087ef8c9bc1d3"
+      ],
+      "terminal": false,
+      "name": "辽宁省高校舞蹈原创作品大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-classics-recitation-writing-2026",
+      "editionId": "edition-liaoning-classics-recitation-writing-2026",
+      "editionName": "2026年辽宁省高校中外大学生中华经典诵写讲大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：辽宁师范大学（联合辽宁财贸学院承办））"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省高校中外大学生，含“诵读中国”经典诵读大赛及“诗教中国”经典讲解大赛。 辽宁省高校中外大学生，含“诵读中国”经典诵"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "人文与法学、外语与教育"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-11-01T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=3d172f1f4734fb5c06322d0c34c35eb1",
+      "lastCheckedAt": "2026-09-22T15:05:48.159Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=3d172f1f4734fb5c06322d0c34c35eb1"
+      ],
+      "terminal": false,
+      "name": "辽宁省高校中外大学生中华经典诵写讲大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-liaoning-bigdata-application-analysis-2026",
+      "editionId": "edition-liaoning-bigdata-application-analysis-2026",
+      "editionName": "辽宁省普通高等学校大学生大数据应用与分析大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "辽宁省教育厅（承办：大连工业大学）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "辽宁省内开设大数据管理与应用、数据科学与大数据技术、计算机科学与技术、信息系统与信息管理等专业方向的在校学生。 辽宁省内"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "计算机与AI、数学与统计"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-09-30T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "目前的网址可能只是通知或赛事首页，尚未确认具体报名方式"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "检查已有通知的报名说明、赛事官网报名栏目或章程",
+      "targetUrl": "https://cxcy.upln.cn/provincial/match/competition/detail?id=8f0d635117e4e0a2ea010810f7fee78d",
+      "lastCheckedAt": "2026-09-22T09:31:04.989Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcy.upln.cn/provincial/match/competition/detail?id=8f0d635117e4e0a2ea010810f7fee78d"
+      ],
+      "terminal": false,
+      "name": "辽宁省普通高等学校大学生大数据应用与分析大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 2,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-ssfkds-tax-risk-case-2026",
+      "editionId": "edition-ssfkds-tax-risk-case-2026",
+      "editionName": "2026年全国本科院校税收风险管控案例大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "待核验",
+          "detail": "AI 核验：来源正文不可读，无法确认该记录对应真实独立赛事"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "主办：全国本科院校税收风险管控案例大赛组委会；指导：全国税务专业学位研究生教育指导委员会、浙江省注册税务师协会；承办：浙江财经大学；赛事支持：中汇（浙江）税务师事务所有限公司"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "参赛选手须为全日制高等院校在校生（含本科生和研究生）。以学校为单位组队参赛，不得跨校组队，支持跨学院组队；一名学生仅能参"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "经管与商科、人文与法学"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：三个来源中两个超时，唯一可达PDF无文本层，正文不可读"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "AI 核验：报名延期至2026-10-10仅有记录自述，无原文佐证"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "EVENT_IDENTITY",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "在当届官方原文中找报名时间",
+      "targetUrl": "https://oss.moocollege.com/competition-platform/news/file/0/Wo8fyas5_1783041904645.pdf",
+      "lastCheckedAt": "2026-09-23T12:05:45.510Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://oss.moocollege.com/competition-platform/news/file/0/Wo8fyas5_1783041904645.pdf",
+        "https://oss.moocollege.com/competition-platform/news/file/0/FQovCUj0_1783041924070.pdf",
+        "https://oss.moocollege.com/competition-platform/news/file/0/DeiTyfCp_1789876102265.pdf"
+      ],
+      "terminal": false,
+      "name": "全国本科院校税收风险管控案例大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cteic-chemeng-experiment-9",
+      "editionId": "edition-cteic-chemeng-experiment-9",
+      "editionName": "第九届全国大学生化工实验大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "主办单位：中国化工教育协会；总决赛承办：郑州大学；分赛区承办：沈阳工业大学辽阳分校、山东理工大学、合肥工业大学、海南大学、延安大学、四川轻化工大学"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "参赛选手为高等学校化工与制药类及相关专业全日制在校本科生。以学校为单位组队参赛，不得跨校组队，每支参赛队由3名选手组成，"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "材料与化工、生物与医药"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "在当届官方原文中找报名时间",
+      "targetUrl": "https://hgxy.hfut.edu.cn/_upload/article/files/2a/a3/90f6475b45d3a88778a739e48679/48601720-aee0-42d4-beb5-535c3023d396.pdf",
+      "lastCheckedAt": "2026-09-23T11:10:49.387Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://hgxy.hfut.edu.cn/_upload/article/files/2a/a3/90f6475b45d3a88778a739e48679/48601720-aee0-42d4-beb5-535c3023d396.pdf"
+      ],
+      "terminal": false,
+      "name": "全国大学生化工实验大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-robotcontest-campus-robot-9",
+      "editionId": "edition-robotcontest-campus-robot-9",
+      "editionName": "2026年第九届中国高校智能机器人创意大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "中国高校智能机器人创意大赛组委会、示范性软件学院联盟、清华大学软件学院"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "面向全国高校在校学生，由各高校组织校内赛后推荐参加全国赛。 面向全国高校在校学生，由各高校组织校内赛后推荐参加全国赛。"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "机械与自动化、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "尚未找到当届报名时间；不得直接解释为官方未公布"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "在当届官方原文中找报名时间",
+      "targetUrl": "https://www.cs.sjtu.edu.cn/upload/ueditor/file/20251203/22593868/%E5%85%B3%E4%BA%8E%E4%B8%BE%E5%8A%9E2026%E5%B9%B4%E7%AC%AC%E4%B9%9D%E5%B1%8A%E4%B8%AD%E5%9B%BD%E9%AB%98%E6%A0%A1%E6%99%BA%E8%83%BD%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%88%9B%E6%84%8F%E5%A4%A7%E8%B5%9B%E4%BA%A7%E6%95%99%E8%9E%8D%E5%90%88%E8%B5%9B%E9%81%93--%E8%BD%AF%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%AE%89%E5%85%A8%E8%B5%9B%E7%9A%84%E9%80%9A%E7%9F%A5.pdf",
+      "lastCheckedAt": "2026-09-23T03:08:38.213Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www.cs.sjtu.edu.cn/upload/ueditor/file/20251203/22593868/%E5%85%B3%E4%BA%8E%E4%B8%BE%E5%8A%9E2026%E5%B9%B4%E7%AC%AC%E4%B9%9D%E5%B1%8A%E4%B8%AD%E5%9B%BD%E9%AB%98%E6%A0%A1%E6%99%BA%E8%83%BD%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%88%9B%E6%84%8F%E5%A4%A7%E8%B5%9B%E4%BA%A7%E6%95%99%E8%9E%8D%E5%90%88%E8%B5%9B%E9%81%93--%E8%BD%AF%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%AE%89%E5%85%A8%E8%B5%9B%E7%9A%84%E9%80%9A%E7%9F%A5.pdf"
+      ],
+      "terminal": false,
+      "name": "中国高校智能机器人创意大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cpipc-eda-2026",
+      "editionId": "edition-cpipc-eda-2026",
+      "editionName": "中国研究生创“芯”大赛-集成电路EDA设计精英挑战赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "教育部学位与研究生教育发展中心（中国研究生创新实践系列大赛）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "正式注册的在读研究生（含全日制及非全日制硕士生、博士生）；将于2026年秋季学期入学的研究生（以研究生所在学校为参赛单位"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "电子信息、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-16T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新执行系统验证并由管理员完成发布审核",
+      "targetUrl": "https://cpipc.acge.org.cn/cw/hp/2c9080158ee9c272018f229208b610a6",
+      "lastCheckedAt": "2026-09-23T16:00:29.563Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cpipc.acge.org.cn/cw/hp/2c9080158ee9c272018f229208b610a6"
+      ],
+      "terminal": false,
+      "name": "中国研究生创“芯”大赛-集成电路EDA设计精英挑战赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-cpipc-smart-city-2026",
+      "editionId": "edition-cpipc-smart-city-2026",
+      "editionName": "第十二届中国研究生智慧城市技术与创意设计大赛",
+      "result": "赛事范围初步可用，尚不能发布",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "教育部学位与研究生教育发展中心（中国研究生创新实践系列大赛）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "中国（含港澳台地区）高校、科研院所的在读研究生（硕士生、博士生）；将于2026年秋季学期入学的研究生（以研究生所在学校为"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "已证实",
+          "detail": "建筑与土木、计算机与AI"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "已证实",
+          "detail": "2026-10-23T23:59:00+08:00"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "重新执行系统验证并由管理员完成发布审核",
+      "targetUrl": "https://cpipc.acge.org.cn/cw/hp/1",
+      "lastCheckedAt": "2026-09-23T09:20:34.868Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cpipc.acge.org.cn/cw/hp/1"
+      ],
+      "terminal": false,
+      "name": "中国研究生智慧城市技术与创意设计大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-guangdong-no10",
+      "editionId": "edition-guangdong-no10",
+      "editionName": "广东省大学生生物化学实验技能大赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "已证实",
+          "detail": "广东省教育厅（主办）／华南农业大学（承办）"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "已证实",
+          "detail": "广东省教育厅管辖范围内高校全日制在校本、专科学生；香港、澳门高校大学生亦可参加。 各校通过校内赛择优推荐；每队学生不超过"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "生物与医药、材料与化工（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "依据是立项目录，当届正式通知尚未取得"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-10-08（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（依据是立项目录，当届正式通知尚未取得）"
+        }
+      ],
+      "blockers": [
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf",
+      "lastCheckedAt": "2026-09-23T14:29:28.501Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://www2.scut.edu.cn/_upload/article/files/eb/59/808e406040f989ef6d349c0d8e83/b8c94043-1cf0-41c5-9987-c39717320808.pdf",
+        "https://life.scau.edu.cn/2026/0709/c20173a439861/page.htm"
+      ],
+      "terminal": false,
+      "name": "广东省大学生生物化学实验技能大赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-hunan-no6",
+      "editionId": "edition-hunan-no6",
+      "editionName": "湖南省大学生数学竞赛",
+      "result": "只有目录线索，当届赛事待追到",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "立项目录列明了该赛事；当届赛事本体待追到"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "AI 核验：记录写“湖南省教育厅（立项）”，通知明确为省赛由省教育厅主办，且遗漏协办单位湖南省数学学会"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "AI 核验：来源载明报考类别限制（如数学类本科只能报数学专业类等），记录仅写“见当届通知”"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "数学与统计（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "待核验",
+          "detail": "AI 核验：PDF通知正文为乱码不可读取，关键字段仅学会官网单源佐证"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "待核验",
+          "detail": "2026-09-30（依据是立项目录，当届正式通知尚未取得）"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "待核验",
+          "detail": "已保存入口及相关报名说明（依据是立项目录，当届正式通知尚未取得）"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "OFFICIAL_EDITION_SOURCE",
+        "REGISTRATION_TIME",
+        "REGISTRATION_ENTRY",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按目录中的赛事全名和主办方，寻找当届正式赛事通知",
+      "targetUrl": "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+      "lastCheckedAt": "2026-09-23T20:35:24.552Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://cxcyxy.hnust.edu.cn/docs/2026-03/57883ee81d034aefa495c2fab9be1567.pdf",
+        "https://www.hnssxxh.org.cn/?p=778"
+      ],
+      "terminal": false,
+      "name": "湖南省大学生数学竞赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": 1,
+      "triage": {
+        "bucket": "可补齐",
+        "traceTodo": null,
+        "traceDue": null
+      },
+      "discovery": null
+    },
+    {
+      "eventId": "event-tianchi-532514",
+      "editionId": "edition-tianchi-532514",
+      "editionName": "蚂蚁灵波具身大模型挑战赛",
+      "result": "字段与原文有出入",
+      "checks": [
+        {
+          "code": "EVENT_IDENTITY",
+          "label": "独立赛事身份",
+          "state": "已证实",
+          "detail": "标题未命中已知非赛事或下级选拔特征"
+        },
+        {
+          "code": "ORGANIZER",
+          "label": "主办方",
+          "state": "待核验",
+          "detail": "蚂蚁灵波科技、魔搭社区、阿里云天池"
+        },
+        {
+          "code": "COLLEGE_ELIGIBILITY",
+          "label": "大学生参赛资格",
+          "state": "待核验",
+          "detail": "没有参赛对象及资格依据"
+        },
+        {
+          "code": "PROFESSIONAL_SCOPE",
+          "label": "专业任务与分类",
+          "state": "待核验",
+          "detail": "专业任务与赛制缺失"
+        },
+        {
+          "code": "OFFICIAL_EDITION_SOURCE",
+          "label": "当届官方依据",
+          "state": "已证实",
+          "detail": "已标记有效的官方来源 1 条"
+        },
+        {
+          "code": "REGISTRATION_TIME",
+          "label": "报名时间",
+          "state": "有冲突",
+          "detail": "现有报名日期存在争议，需逐项对照官方原文"
+        },
+        {
+          "code": "REGISTRATION_ENTRY",
+          "label": "报名方式与入口",
+          "state": "已证实",
+          "detail": "已保存入口及相关报名说明"
+        }
+      ],
+      "blockers": [
+        "ORGANIZER",
+        "COLLEGE_ELIGIBILITY",
+        "PROFESSIONAL_SCOPE",
+        "REGISTRATION_TIME",
+        "MANUAL_REVIEW"
+      ],
+      "nextAction": "按官方原文改正：报名时间",
+      "targetUrl": "https://tianchi.aliyun.com/competition/entrance/532514",
+      "lastCheckedAt": "2026-09-24T01:30:36.785Z",
+      "pageChanged": "未知",
+      "nextCheckAt": null,
+      "attempts": null,
+      "evidenceUrls": [
+        "https://tianchi.aliyun.com/competition/entrance/532514"
+      ],
+      "terminal": false,
+      "name": "蚂蚁灵波具身大模型挑战赛",
+      "dataStatus": "pending_manual_review",
+      "stuckDays": null,
+      "triage": null,
+      "discovery": null
+    }
+  ]
+}

@@ -29,13 +29,15 @@ import { classifyCandidates, hostOf } from './crawler/lib/dedupe.mjs';
 import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
 import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
 import { followupCandidatesFromReport } from './resolve-notice-leads.mjs';
+import { stampDiscovery } from './discovery.mjs';
 import { buildPipelineLedger } from './pipeline-ledger.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN_FILE = path.join(HERE, '.admin-token');
 // 后端已迁到自有服务器（见 docs/migration-to-self-hosted.md）。走本机 /api。
 const API_BASE = process.env.API_BASE || 'http://127.0.0.1:8787';
-const RUN_DIR = path.join(HERE, 'runs', new Date().toISOString().replace(/[:.]/g, '-'));
+const RUN_ID = new Date().toISOString().replace(/[:.]/g, '-');
+const RUN_DIR = path.join(HERE, 'runs', RUN_ID);
 const STARTED_AT = new Date().toISOString();
 let runOptions = { dryRun:false, filterOnly:false };
 let lastRunEntry = {};
@@ -125,7 +127,7 @@ async function main() {
     console.log(`--- 抓取 ${source} ---`);
     run('node', crawlArgs);
 
-    const candidates = JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || [];
+    const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
     const buckets = classifyCandidates(candidates, masters);
     const newCandidates = buckets.new.map(({ candidate }) => candidate);
     console.log(`${source}: 抓到 ${candidates.length} 条，new ${newCandidates.length}，`
@@ -187,7 +189,7 @@ async function main() {
     try {
       run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile]);
       console.log(`正式通知 ${formalNotices.length} 条，赛事官网追溯线索已保存：${leadsFile}`);
-      const followups = followupCandidatesFromReport(JSON.parse(fs.readFileSync(leadsFile, 'utf8')));
+      const followups = followupCandidatesFromReport(JSON.parse(fs.readFileSync(leadsFile, 'utf8'))).map(candidate => stampDiscovery(candidate, '通知追溯', RUN_ID));
       const followupReport = path.join(RUN_DIR, 'notice-followup-filter-report.json');
       const followupDecisions = await filterCandidatesWithJev(followups, { apiKey:readOpenRouterKey() });
       const followupMasters = buildMastersFromRecords(records);
