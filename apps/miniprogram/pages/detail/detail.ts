@@ -10,6 +10,7 @@ function localDateParts(value: Date) {
 Page({
   data: {
     item: null as any, isFavorite: false, reminderCount: 0, loading: true, error: '',
+    recommendationExpanded: false, rulesExpanded: false, officialInfoExpanded: false,
     reminderPanelVisible: false, reminderEventType: 'registration_end',
     reminderEvents: [] as any[], advanceOptions: [] as any[],
     customSelected: false, customDate: '', customTime: '09:00', customMinDate: '', customAvailable: false,
@@ -22,6 +23,9 @@ Page({
     const id = this.data.item?.id;
     if (id) this.setData({ isFavorite: checkFavorite(id), reminderCount: getRemindersForEdition(id).length });
   },
+  toggleRules() { this.setData({ rulesExpanded: !this.data.rulesExpanded }); },
+  toggleOfficialInfo() { this.setData({ officialInfoExpanded: !this.data.officialInfoExpanded }); },
+  toggleRecommendation() { this.setData({ recommendationExpanded: !this.data.recommendationExpanded }); },
   async load(id: string, openEventType = '') {
     try {
       const ready = getApp<any>().globalData.userDataReady;

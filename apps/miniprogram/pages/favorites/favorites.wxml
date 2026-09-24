@@ -24,7 +24,14 @@
   </view>
 
   <view wx:else>
-    <view class="favorite-card card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="favorite-card card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">
+      <view wx:if="{{item.unavailable}}">
+        <view class="competition-name">{{item.name}}</view>
+        <view class="muted">该收藏仍保留，赛事资料目前无法打开。可稍后下拉刷新，或自行取消收藏。</view>
+        <view class="favorite-date">收藏于 {{item.favoriteAt}}</view>
+        <button class="cancel-button" size="mini" data-id="{{item.id}}" catchtap="cancelFavorite">取消收藏</button>
+      </view>
+      <block wx:else>
       <view class="card-head">
         <view class="status-row">
           <text class="status {{item.statusClass}}">{{item.registrationStatus}}</text>
@@ -51,6 +58,7 @@
         </view>
         <button class="cancel-button" size="mini" data-id="{{item.id}}" catchtap="cancelFavorite">取消收藏</button>
       </view>
+      </block>
     </view>
   </view>
 </view>

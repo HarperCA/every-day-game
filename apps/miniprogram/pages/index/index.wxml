@@ -1,8 +1,10 @@
 <view class="page">
   <view wx:if="{{preview}}" class="preview-banner">开发预览：30场底稿尚未完成人工核验，不代表正式发布</view>
   <view class="hero">
-    <text class="eyebrow">可信来源 · 状态清晰 · 推荐可解释</text>
-    <view class="hero-title">找到现在值得认真了解的比赛</view>
+    <view class="hero-brand">
+      <image class="brand-logo" src="/assets/competition-radar-logo.svg" mode="aspectFit" aria-hidden="true" />
+      <text>竞赛雷达</text>
+    </view>
     <view class="search-row">
       <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事、别名、主办单位或关键词" />
       <button bindtap="onSearch" size="mini">搜索</button>
@@ -40,11 +42,14 @@
         </view>
       </view>
       <view class="competition-name">{{item.name}}</view>
-      <view class="edition">{{item.editionName}}</view>
       <view class="tags"><text class="tag">{{item.eventLevel}}</text><text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text></view>
       <view class="recommendation"><text>{{item.recommendationLevel}}</text><text class="reference">仅供参考</text></view>
       <view class="reason">{{item.recommendationReasons[0]}}</view>
-      <view class="deadline" wx:if="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}</view>
+      <view class="deadline archived-hint" wx:if="{{item.dataStatus === 'archived'}}">
+        <text wx:if="{{item.nextEditionEstimateDate}}">已归档 · 按上届节奏推算，下一届约 {{item.nextEditionEstimateDate}} 起报名（仅供参考）</text>
+        <text wx:else>已归档 · 下一届时间暂无法推算</text>
+      </view>
+      <view class="deadline" wx:elif="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}</view>
       <view class="deadline" wx:else>报名时间待官方公布</view>
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>
@@ -70,6 +75,16 @@
         <view class="filter-group">
           <view class="group-title">报名组织方式</view>
           <view class="option-list"><view class="option-chip {{draftRegistrationOrganization === item ? 'option-active' : ''}}" wx:for="{{registrationOrganizationOptions}}" wx:key="*this" data-kind="registrationOrganization" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+        </view>
+        <view class="filter-group">
+          <view class="group-title">距离报名时间</view>
+          <view class="option-list"><view class="option-chip {{draftRegistrationWithin === registrationWithinValues[index] ? 'option-active' : ''}}" wx:for="{{registrationWithinOptions}}" wx:key="*this" wx:for-index="index" data-kind="registrationWithin" data-value="{{registrationWithinValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
+          <view class="source-tip">"已截止"的赛事若已经归档，这里能按推算的下一届时间找到它们。</view>
+        </view>
+        <view class="filter-group">
+          <view class="group-title">排序方式</view>
+          <view class="option-list"><view class="option-chip {{draftSortBy === sortByValues[index] ? 'option-active' : ''}}" wx:for="{{sortByOptions}}" wx:key="*this" wx:for-index="index" data-kind="sortBy" data-value="{{sortByValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
+          <view class="option-list"><view class="option-chip {{draftSortOrder === sortOrderValues[index] ? 'option-active' : ''}}" wx:for="{{sortOrderOptions}}" wx:key="*this" wx:for-index="index" data-kind="sortOrder" data-value="{{sortOrderValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
         </view>
         <view class="source-tip">只展示资料明确内容；未明确的信息不会由 AI 推断。</view>
       </scroll-view>

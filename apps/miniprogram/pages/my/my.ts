@@ -27,7 +27,7 @@ Page({
       dataSyncState:app.globalData.dataSyncState || 'idle',
       dataSyncError:app.globalData.dataSyncError || '',
       favoriteCount:getFavoriteRecords().length,
-      reminderCount:getReminderRecords().filter(item=>item.deliveryStatus==='pending').length,
+      reminderCount:getReminderRecords().length,
     });
   },
   async requestWechatLogin() {

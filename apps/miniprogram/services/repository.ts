@@ -16,6 +16,11 @@ export interface Query {
   teamSizeCategory?: string;
   feeType?: string;
   registrationOrganization?: string;
+  // 距离下一次能报名还有多久：报名中记 0，即将报名用官方开始时间，
+  // 已归档用推算的下一届时间（见服务端 competitionRanking.js 的同名逻辑）。
+  registrationWithin?: '1m' | '3m' | '6m' | '';
+  sortBy?: 'time' | '';
+  sortOrder?: 'asc' | 'desc' | '';
   page?: number;
   pageSize?: number;
 }
@@ -31,8 +36,15 @@ function computeStatus(schedule: any, now = new Date()) {
 
 function hydrate(item: any) {
   const registrationStatus = computeStatus(item.schedule);
+  const title = String(item.name || '').replace(/(?<!\d)(?:19|20)\d{2}(?:\s*[-—–~～至]\s*(?:19|20)\d{2})?(?:年(?:度)?|赛季)?(?!\d)/g, '').replace(/第[零〇一二三四五六七八九十百千万两\d]+届/g, '').replace(/\(\s*\)|（\s*）/g, '').trim();
+  const editionText = `${item.name || ''} ${item.editionName || ''}`;
+  const yearMatch = editionText.match(/(?<!\d)((?:19|20)\d{2}(?:\s*[-—–~～至]\s*(?:19|20)\d{2})?)(?!\d)/);
+  const ordinalMatch = editionText.match(/第[零〇一二三四五六七八九十百千万两\d]+届/);
   return {
     ...item,
+    name:title || item.name,
+    editionYear:item.editionYear || (yearMatch ? yearMatch[1].replace(/\s*[-–~～至]\s*/g, '—') : ''),
+    editionOrdinal:item.editionOrdinal || ordinalMatch?.[0] || '',
     registrationStatus,
     statusClass: STATUS_CLASS[registrationStatus] || 'status-closed',
     registrationStart: item.schedule.registration_start,
@@ -52,6 +64,10 @@ function hydrate(item: any) {
       const timing = schoolTimingAdvice(item.registrationOrganization || '');
       return { schoolTimingDependent: timing.dependent, schoolTimingNote: timing.note, timingReliability: timing.reliability };
     })(),
+    // 种子数据没有"归档"这个概念，字段形状跟云端数据保持一致就行。
+    dataStatus: 'published',
+    nextEditionEstimate: '',
+    nextEditionEstimateDate: '',
     preview: true,
   };
 }
@@ -60,6 +76,7 @@ function hydratePublic(item: any) {
   const registrationStatus = item.registration_status;
   return {
     id:item.id, eventId:item.event_id, name:item.name, editionName:item.edition_name,
+    editionYear:item.edition_year || '', editionOrdinal:item.edition_ordinal || '',
     aliases:item.aliases || [], organizer:item.organizer || '', eventLevel:item.event_level,
     objectiveTags:item.objective_tags || [], professions:item.professions || [], displayProfessions:(item.professions || []).slice(0, 2),
     participants:item.participants || '', eligibility:item.eligibility || '', formatAndRules:item.format_and_rules || '', teamSize:item.team_size || '',
@@ -77,6 +94,11 @@ function hydratePublic(item: any) {
     // 已发布记录由云函数算好，直接读，避免两处逻辑漂移
     schoolTimingDependent:Boolean(item.school_timing_dependent), schoolTimingNote:item.school_timing_note || '',
     timingReliability:item.timing_reliability || 'unverified',
+    // 已归档：报名已截止，但保留在库里给学生看"下一届大概什么时候"。
+    // 这个估算是按上一届节奏推算的，不是官方信息，界面上要说清楚。
+    dataStatus:item.data_status || 'published',
+    nextEditionEstimate:item.next_edition_estimate || '',
+    nextEditionEstimateDate:item.next_edition_estimate ? item.next_edition_estimate.substring(0, 10) : '',
     preview:false,
   };
 }
@@ -108,6 +130,18 @@ function searchScore(item: any, keyword: string) {
   return 30;
 }
 
+const REGISTRATION_WITHIN_DAYS: Record<string, number> = { '1m':31, '3m':92, '6m':183 };
+
+// 跟服务端 competitionRanking.js 的 daysUntilNextRegistration 同一个口径，
+// 只是种子数据没有"已归档"这个状态，缺了 next_edition_estimate 那一支。
+function daysUntilRegistration(item: any, now: Date): number | null {
+  if (item.registrationStatus === '报名中') return 0;
+  if (item.registrationStatus === '即将报名' && item.registrationStart) {
+    return (new Date(item.registrationStart).getTime() - now.getTime()) / 86400000;
+  }
+  return null;
+}
+
 export async function listCompetitions(query: Query) {
   if (USE_CLOUD_PUBLIC_DATA) {
     const result = await callPublicData<{ items:any[]; total:number; hasMore:boolean; preview:false }>('list', { query });
@@ -115,7 +149,9 @@ export async function listCompetitions(query: Query) {
   }
   await new Promise((resolve) => setTimeout(resolve, 180));
   const keyword = (query.keyword || '').trim().toLowerCase();
-  const items = seed.map(hydrate).filter((item: any) => {
+  const now = new Date();
+  const withinDays = query.registrationWithin ? REGISTRATION_WITHIN_DAYS[query.registrationWithin] : null;
+  let items = seed.map(hydrate).filter((item: any) => {
     if (keyword) {
       const searchable = [item.name, item.editionName, item.organizer, ...item.aliases, ...item.objectiveTags].join(' ').toLowerCase();
       if (!searchable.includes(keyword)) return false;
@@ -127,8 +163,22 @@ export async function listCompetitions(query: Query) {
     if (query.teamSizeCategory && item.teamSizeCategory !== query.teamSizeCategory) return false;
     if (query.feeType && item.feeType !== query.feeType) return false;
     if (query.registrationOrganization && item.registrationOrganization !== query.registrationOrganization) return false;
+    if (withinDays !== null) {
+      const days = daysUntilRegistration(item, now);
+      if (days === null || days > withinDays) return false;
+    }
     return true;
-  }).map((item: any) => ({ ...item, searchScore: searchScore(item, keyword) })).sort(compare);
+  }).map((item: any) => ({ ...item, searchScore: searchScore(item, keyword) }));
+  if (query.sortBy === 'time') {
+    const known = items.filter((item: any) => daysUntilRegistration(item, now) !== null);
+    const unknown = items.filter((item: any) => daysUntilRegistration(item, now) === null);
+    const sign = query.sortOrder === 'desc' ? -1 : 1;
+    known.sort((a: any, b: any) => sign * (daysUntilRegistration(a, now)! - daysUntilRegistration(b, now)!));
+    items = [...known, ...unknown];
+  } else {
+    items.sort(compare);
+    if (query.sortOrder === 'asc') items.reverse();
+  }
   const page = query.page || 1;
   const pageSize = query.pageSize || 8;
   return { items: items.slice(0, page * pageSize), total: items.length, hasMore: page * pageSize < items.length, preview: true };

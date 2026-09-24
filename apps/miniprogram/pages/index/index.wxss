@@ -1,7 +1,7 @@
 .preview-banner { background:#fff7df; color:#805b18; border:1rpx solid #f3dda0; padding:16rpx 20rpx; border-radius:14rpx; font-size:23rpx; margin-bottom:20rpx; }
 .hero { background:#0c6071; color:#fff; border-radius:28rpx; padding:34rpx 28rpx 28rpx; }
-.eyebrow { color:#bce9ea; font-size:23rpx; letter-spacing:2rpx; }
-.hero-title { font-size:42rpx; line-height:1.3; font-weight:750; margin:12rpx 0 26rpx; }
+.hero-brand { display:flex; align-items:center; gap:12rpx; margin-bottom:18rpx; font-size:27rpx; font-weight:700; }
+.brand-logo { width:38rpx; height:38rpx; flex-shrink:0; }
 .search-row { display:flex; background:#fff; border-radius:16rpx; padding:8rpx; }
 .search-row input { flex:1; color:#172033; padding:10rpx 14rpx; }
 .search-row button { margin:0; background:#0d8793; color:#fff; }
@@ -32,6 +32,7 @@
 .reference { color:#8a96a8; font-weight:400; font-size:22rpx; }
 .reason { color:#4c596d; font-size:24rpx; margin-top:10rpx; line-height:1.55; }
 .deadline { border-top:1rpx solid #edf0f4; margin-top:18rpx; padding-top:15rpx; color:#27364a; font-size:24rpx; }
+.archived-hint { color:#8a6d1f; }
 .state { text-align:center; padding:70rpx 30rpx; }.state-title{font-size:32rpx;font-weight:700;margin-bottom:12rpx}.state button{margin-top:24rpx}.load-more{text-align:center;padding:20rpx}.skeleton{padding:24rpx;margin-bottom:18rpx}.skeleton view{height:24rpx;background:#edf1f4;border-radius:8rpx;margin:16rpx 0}.skeleton view:first-child{width:38%}.skeleton view:last-child{width:70%}
 .filter-mask { position:fixed; z-index:1000; inset:0; background:rgba(15,23,42,.48); display:flex; align-items:flex-end; }
 .filter-sheet { width:100%; height:82vh; max-height:1120rpx; background:#fff; border-radius:30rpx 30rpx 0 0; display:flex; flex-direction:column; overflow:hidden; }

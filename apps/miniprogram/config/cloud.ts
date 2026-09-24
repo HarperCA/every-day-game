@@ -11,7 +11,10 @@
 //
 // 这两步做完、真机验证通过之后，再把这里改成 true。
 // 在开发者工具里可以先勾选「不校验合法域名」提前联调。
-export const USE_SELF_HOSTED_BACKEND = false;
+//
+// 2026-09-18：服务器域名 + IP 白名单已配置，AppSecret 已写入服务器，
+// 服务器换取 access_token 已验证成功（jscode2session 能正常联系到微信）。
+export const USE_SELF_HOSTED_BACKEND = true;
 
 // 自有后端地址。sslip.io 是免费的「把 IP 编进域名」服务，解析回服务器 IP，
 // 已配好 Let's Encrypt 证书，浏览器和微信都认这个 HTTPS。

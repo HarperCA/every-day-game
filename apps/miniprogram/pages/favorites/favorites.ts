@@ -32,10 +32,15 @@ Page({
             isEnded: item.dataStatus === 'archived' || item.registrationStatus === '已截止',
           };
         } catch (_error) {
-          return null;
+          return {
+            id: record.editionId,
+            name: '赛事暂不可读取或已下架',
+            favoriteAt: record.createdAt.substring(0, 10),
+            unavailable: true,
+          };
         }
       }));
-      this.setData({ items: results.filter(Boolean), loading: false });
+      this.setData({ items: results, loading: false });
     } catch (error) {
       this.setData({
         loading: false,
@@ -49,6 +54,7 @@ Page({
   },
 
   openDetail(event: any) {
+    if (event.currentTarget.dataset.unavailable) return;
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` });
   },
 

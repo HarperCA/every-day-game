@@ -6,10 +6,11 @@
   <view wx:else>
     <view class="reminder-card card" wx:for="{{items}}" wx:key="id">
       <view class="card-head"><text class="event-badge">{{item.eventLabel}}</text><text class="change-badge" wx:if="{{item.changeLabel}}">{{item.changeLabel}}</text><text class="expired-badge" wx:elif="{{item.isManualRequired}}">多次发送失败，请重新授权</text><text class="expired-badge" wx:elif="{{item.isExpired}}">提醒时间已到</text></view>
-      <view class="competition-name" data-edition-id="{{item.editionId}}" bindtap="openDetail">{{item.competitionName}}</view><view class="edition">{{item.editionName}}</view>
+      <view class="competition-name" data-edition-id="{{item.editionId}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">{{item.competitionName}}</view><view class="edition" wx:if="{{item.editionName}}">{{item.editionName}}</view>
+      <view class="muted" wx:if="{{item.unavailable}}">赛事资料暂不可读取或已下架；提醒记录仍保留，可稍后刷新或删除。</view>
       <view class="time-block"><view><text>目标时间</text><text>{{item.targetAtDisplay}}</text></view><view><text>提醒时间</text><text>{{item.remindAtDisplay}}</text></view><view><text>提前设置</text><text>{{item.advanceLabel}}</text></view></view>
-      <view class="authorization {{item.authorizationStatus === 'accepted' ? 'authorized' : ''}}">{{item.authorizationLabel}}</view>
-      <view class="card-actions"><button wx:if="{{item.authorizationStatus !== 'accepted' || item.isManualRequired}}" size="mini" data-id="{{item.id}}" bindtap="authorize">{{item.isManualRequired ? '重新授权' : '稍后授权'}}</button><button size="mini" data-edition-id="{{item.editionId}}" data-event-type="{{item.eventType}}" bindtap="editReminder">编辑</button><button class="delete-button" size="mini" data-id="{{item.id}}" bindtap="deleteReminder">删除</button></view>
+      <view class="authorization {{item.authorizationStatus === 'accepted' ? 'authorized' : ''}}" wx:if="{{!item.unavailable}}">{{item.authorizationLabel}}</view>
+      <view class="card-actions"><button wx:if="{{!item.unavailable && (item.authorizationStatus !== 'accepted' || item.isManualRequired)}}" size="mini" data-id="{{item.id}}" bindtap="authorize">{{item.isManualRequired ? '重新授权' : '稍后授权'}}</button><button wx:if="{{!item.unavailable}}" size="mini" data-edition-id="{{item.editionId}}" data-event-type="{{item.eventType}}" bindtap="editReminder">编辑</button><button class="delete-button" size="mini" data-id="{{item.id}}" bindtap="deleteReminder">删除</button></view>
     </view>
   </view>
 </view>

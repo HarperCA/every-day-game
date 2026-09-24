@@ -8,12 +8,22 @@ const participationFormatOptions = ['个人赛', '团队赛', '个人或团队�
 const teamSizeOptions = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];
 const feeTypeOptions = ['免费', '收费', '不同赛项费用不同', '暂未公布'];
 const registrationOrganizationOptions = ['自行报名', '学校统一报名', '两种方式均可', '需先校内选拔', '以赛区或学校通知为准', '暂未明确'];
+// 显示文案 → 传给接口的值。"不限"/"推荐排序" 对应空字符串，即不传这个筛选项。
+const registrationWithinOptions = ['不限', '半年以内', '3个月以内', '1个月以内'];
+const registrationWithinValues = ['', '6m', '3m', '1m'];
+const sortByOptions = ['推荐排序', '按报名时间'];
+const sortByValues = ['', 'time'];
+const sortOrderOptions = ['升序', '降序'];
+const sortOrderValues = ['asc', 'desc'];
 
 const moreFieldMap: Record<string, string> = {
   participationFormat: 'draftParticipationFormat',
   teamSizeCategory: 'draftTeamSizeCategory',
   feeType: 'draftFeeType',
   registrationOrganization: 'draftRegistrationOrganization',
+  registrationWithin: 'draftRegistrationWithin',
+  sortBy: 'draftSortBy',
+  sortOrder: 'draftSortOrder',
 };
 
 Page({
@@ -26,6 +36,12 @@ Page({
     teamSizeOptions,
     feeTypeOptions,
     registrationOrganizationOptions,
+    registrationWithinOptions,
+    registrationWithinValues,
+    sortByOptions,
+    sortByValues,
+    sortOrderOptions,
+    sortOrderValues,
     statusIndex: 0,
     levelIndex: 0,
     professionIndex: 0,
@@ -33,10 +49,16 @@ Page({
     teamSizeCategory: '',
     feeType: '',
     registrationOrganization: '',
+    registrationWithin: '' as string,
+    sortBy: '' as string,
+    sortOrder: '' as string,
     draftParticipationFormat: '',
     draftTeamSizeCategory: '',
     draftFeeType: '',
     draftRegistrationOrganization: '',
+    draftRegistrationWithin: '' as string,
+    draftSortBy: '' as string,
+    draftSortOrder: '' as string,
     morePanelVisible: false,
     moreFilterCount: 0,
     moreFilterLabel: '更多筛选',
@@ -78,15 +100,32 @@ Page({
     if (this.data.teamSizeCategory) selectedConditions.push({ kind: 'teamSizeCategory', label: `队伍人数：${this.data.teamSizeCategory}` });
     if (this.data.feeType) selectedConditions.push({ kind: 'feeType', label: `报名费用：${this.data.feeType}` });
     if (this.data.registrationOrganization) selectedConditions.push({ kind: 'registrationOrganization', label: `报名组织：${this.data.registrationOrganization}` });
-    const moreFilterCount = [this.data.participationFormat, this.data.teamSizeCategory, this.data.feeType, this.data.registrationOrganization].filter(Boolean).length;
+    if (this.data.registrationWithin) {
+      const label = registrationWithinOptions[registrationWithinValues.indexOf(this.data.registrationWithin)];
+      selectedConditions.push({ kind: 'registrationWithin', label: `距离报名：${label}` });
+    }
+    if (this.data.sortBy || this.data.sortOrder) {
+      const byLabel = this.data.sortBy ? sortByOptions[sortByValues.indexOf(this.data.sortBy)] : '推荐排序';
+      const orderLabel = this.data.sortOrder ? `·${sortOrderOptions[sortOrderValues.indexOf(this.data.sortOrder)]}` : '';
+      selectedConditions.push({ kind: 'sort', label: `排序：${byLabel}${orderLabel}` });
+    }
+    const moreFilterCount = [
+      this.data.participationFormat, this.data.teamSizeCategory, this.data.feeType, this.data.registrationOrganization,
+      this.data.registrationWithin, this.data.sortBy, this.data.sortOrder,
+    ].filter(Boolean).length;
     this.setData({ selectedConditions, moreFilterCount, moreFilterLabel: moreFilterCount ? `更多筛选·${moreFilterCount}` : '更多筛选' });
   },
   removeCondition(event: WechatMiniprogram.TouchEvent) {
     const kind = String(event.currentTarget.dataset.kind || '');
+    if (kind === 'sort') {
+      this.setData({ sortBy: '', sortOrder: '' }, () => { this.updateSelectedConditions(); this.load(true); });
+      return;
+    }
     const field: Record<string, string> = {
       status: 'statusIndex', level: 'levelIndex', profession: 'professionIndex',
       participationFormat: 'participationFormat', teamSizeCategory: 'teamSizeCategory',
       feeType: 'feeType', registrationOrganization: 'registrationOrganization',
+      registrationWithin: 'registrationWithin',
     };
     if (!(kind in field)) return;
     this.setData({ [field[kind]]: kind === 'status' || kind === 'level' || kind === 'profession' ? 0 : '' }, () => {
@@ -98,7 +137,9 @@ Page({
     this.setData({
       keyword: '', statusIndex: 0, levelIndex: 0, professionIndex: 0,
       participationFormat: '', teamSizeCategory: '', feeType: '', registrationOrganization: '',
+      registrationWithin: '', sortBy: '', sortOrder: '',
       draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
+      draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
       morePanelVisible: false, selectedConditions: [], moreFilterCount: 0, moreFilterLabel: '更多筛选',
     });
     this.load(true);
@@ -109,6 +150,9 @@ Page({
       draftTeamSizeCategory: this.data.teamSizeCategory,
       draftFeeType: this.data.feeType,
       draftRegistrationOrganization: this.data.registrationOrganization,
+      draftRegistrationWithin: this.data.registrationWithin,
+      draftSortBy: this.data.sortBy,
+      draftSortOrder: this.data.sortOrder,
       morePanelVisible: true,
     }, () => this.refreshMorePreview());
   },
@@ -123,7 +167,10 @@ Page({
     this.setData({ [field]: current === value ? '' : value }, () => this.refreshMorePreview());
   },
   resetMoreFilters() {
-    this.setData({ draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '' }, () => this.refreshMorePreview());
+    this.setData({
+      draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
+      draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
+    }, () => this.refreshMorePreview());
   },
   applyMoreFilters() {
     this.setData({
@@ -131,6 +178,9 @@ Page({
       teamSizeCategory: this.data.draftTeamSizeCategory,
       feeType: this.data.draftFeeType,
       registrationOrganization: this.data.draftRegistrationOrganization,
+      registrationWithin: this.data.draftRegistrationWithin,
+      sortBy: this.data.draftSortBy,
+      sortOrder: this.data.draftSortOrder,
       morePanelVisible: false,
     }, () => { this.updateSelectedConditions(); this.load(true); });
   },
@@ -145,6 +195,9 @@ Page({
         teamSizeCategory: this.data.draftTeamSizeCategory,
         feeType: this.data.draftFeeType,
         registrationOrganization: this.data.draftRegistrationOrganization,
+        registrationWithin: this.data.draftRegistrationWithin as any,
+        sortBy: this.data.draftSortBy as any,
+        sortOrder: this.data.draftSortOrder as any,
         page: 1,
         pageSize: 1000,
       });
@@ -179,6 +232,9 @@ Page({
         teamSizeCategory: this.data.teamSizeCategory,
         feeType: this.data.feeType,
         registrationOrganization: this.data.registrationOrganization,
+        registrationWithin: this.data.registrationWithin as any,
+        sortBy: this.data.sortBy as any,
+        sortOrder: this.data.sortOrder as any,
         page,
         pageSize: 8,
       });
