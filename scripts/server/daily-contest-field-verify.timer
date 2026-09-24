@@ -1,0 +1,10 @@
+[Unit]
+Description=每 5 分钟触发一次竞赛雷达三项核验（每次只处理一条，跟 AI 复核错峰不冲突）
+
+[Timer]
+OnCalendar=*:2/5
+AccuracySec=30s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

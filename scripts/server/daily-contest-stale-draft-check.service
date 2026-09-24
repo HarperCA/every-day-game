@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达草稿超时检查（超过3天没自动发布/归档的草稿标记原因，转人工优先处理）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-stale-draft-check.sh
+StandardOutput=append:/var/log/daily-contest-stale-draft-check.log
+StandardError=append:/var/log/daily-contest-stale-draft-check.log

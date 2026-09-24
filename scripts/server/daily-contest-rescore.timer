@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次竞赛雷达 review 档复检（对齐每日抓取节奏，抓取+入库完成后再跑）
+
+[Timer]
+# UTC 18:30 = 北京时间 02:30；归档后再复检 review 草稿。
+OnCalendar=*-*-* 18:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

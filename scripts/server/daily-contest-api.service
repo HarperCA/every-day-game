@@ -10,8 +10,11 @@ Environment=PORT=8787
 Environment=HOST=127.0.0.1
 Environment=DB_FILE=/opt/daily-contest/server/data/app.db
 Environment=FUNCTIONS_DIR=/opt/daily-contest/functions
-# 密钥从文件读进环境变量，不写在这个文件里（这个文件权限没那么严）
-ExecStart=/bin/bash -c 'export ADMIN_TOKEN=$(cat /opt/daily-contest/.admin-token) && export AI_API_KEY=$(cat /opt/daily-contest/.extract-key) && export AI_BASE_URL=https://api.deepseek.com && export AI_MODEL=deepseek-chat && exec /usr/bin/node src/index.mjs'
+# 密钥从文件读进环境变量，不写在这个文件里（这个文件权限没那么严）。
+# 审核（AI_*）走 .ai-key，用真正的 Kimi；批量抽取是另一条独立的路径
+# （run-extract.mjs 自己读 .extract-key），不受这里影响，继续用 DeepSeek——
+# 抽取是突发型负载，按量计费比 Kimi 会员制的 5 小时窗口配额更合适。
+ExecStart=/bin/bash -c 'export WECHAT_APPID=wxb71625ff1404e4e5 && export WECHAT_APPSECRET_FILE=/opt/daily-contest/.wechat-appsecret && export DISPATCH_SECRET=$(cat /opt/daily-contest/.dispatch-secret) && export ADMIN_TOKEN=$(cat /opt/daily-contest/.admin-token) && export AI_API_KEY=$(cat /opt/daily-contest/.ai-key) && export AI_BASE_URL=https://api.kimi.com/coding/v1 && export AI_MODEL=kimi-for-coding && exec /usr/bin/node src/index.mjs'
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/daily-contest-api.log

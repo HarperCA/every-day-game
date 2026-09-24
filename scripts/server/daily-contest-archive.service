@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达每日归档扫描（报名已截止的赛事撤下公开缓存，估算下一届时间）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-archive.sh
+StandardOutput=append:/var/log/daily-contest-archive.log
+StandardError=append:/var/log/daily-contest-archive.log

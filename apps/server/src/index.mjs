@@ -145,6 +145,10 @@ app.post('/api/login', async (req, res) => {
       { openid, unionid, appid: readWeChatConfig().appId },
       () => handlers.login({}, {}),
     );
+    // 原云函数的返回值不带 openid（CloudBase 下客户端不需要自己存这个）。
+    // 自有后端没有 CloudBase 那层内建信任通道，后续请求要客户端自己带上 openid，
+    // 所以这里补一个字段，cloudSession.ts 登录成功后会存下来。
+    if (result.ok) result.data = { ...result.data, openid };
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

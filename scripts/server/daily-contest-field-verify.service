@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达已发布赛事三项核验（名称/报名时间/链接，过期先归档、其余每周核一遍）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-field-verify.sh
+StandardOutput=append:/var/log/daily-contest-field-verify.log
+StandardError=append:/var/log/daily-contest-field-verify.log

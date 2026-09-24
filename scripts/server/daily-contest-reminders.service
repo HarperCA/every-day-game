@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达定时提醒推送（替代失效的 CloudBase 定时触发器）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-reminders.sh
+StandardOutput=append:/var/log/daily-contest-reminders.log
+StandardError=append:/var/log/daily-contest-reminders.log

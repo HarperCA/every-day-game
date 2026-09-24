@@ -1,0 +1,11 @@
+[Unit]
+Description=每天跑一次竞赛雷达新赛事抓取
+
+[Timer]
+# 服务器时区为 UTC：17:00 UTC 即次日北京时间 01:00。
+# 抓取是整条日常链路的起点，不能再随机延后。
+OnCalendar=*-*-* 17:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -80,25 +80,72 @@
 - [x] 证书自动续期（certbot 已配置定时任务）
 - 将来买正式域名的话，改 `apps/miniprogram/config/cloud.ts` 的 `API_BASE_URL` 再签一次证书即可
 
-### 阶段 4：微信集成 ⚠️ 代码完成，等配置
+### 阶段 4：微信集成 ✅ 已完成
 - [x] `jscode2session` 换 openid（`src/wechat.mjs`）
 - [x] access_token 缓存 + 提前 5 分钟续期 + 并发只换一次
 - [x] 订阅消息发送，字段形状和 `cloud.openapi.subscribeMessage.send` 一致，sendReminders 不用改
 - [x] 11 个测试覆盖（含 40164 IP 白名单错误的可读提示）
-- [ ] **需要你做**：微信公众平台「开发设置 → IP 白名单」加上 `107.175.111.18`
-- [ ] **需要你做**：AppSecret 写进服务器 `/opt/daily-contest/.wechat-appsecret`（和其它密钥同一套约定，不经过聊天）
+- [x] 微信公众平台「开发设置 → IP 白名单」已加 `107.175.111.18`
+- [x] AppSecret 已写入服务器 `/opt/daily-contest/.wechat-appsecret`
+- [x] 修了一个真实 bug：`/api/login` 换到 openid 后没有返回给客户端，
+      导致登录成功但收藏/提醒同步报 `unauthenticated`——CloudBase 下客户端
+      不需要自己存这个（腾讯云内建信任通道），迁过来之后必须显式带上，
+      在 `src/index.mjs` 的 `/api/login` 响应里补上了这个字段
 
-### 阶段 5：小程序切过来 ⚠️ 代码完成，等配置
+### 阶段 5：小程序切过来 ✅ 已完成
 - [x] `wx.cloud.callFunction` → `wx.request`（3 处调用点都改好了）
-- [x] 用开关 `USE_SELF_HOSTED_BACKEND` 控制走哪条路，**默认仍为 false**，
-      配置没做完之前不会切过去，小程序保持现状可用
-- [ ] **需要你做**：微信公众平台「开发管理 → 开发设置 → 服务器域名」把
-      `https://107-175-111-18.sslip.io` 加进 request 合法域名（每月修改次数有限）
-- [ ] 配好后把开关改成 true，真机验证
+- [x] 微信公众平台「开发管理 → 开发设置 → 服务器域名」已加
+      `https://107-175-111-18.sslip.io`（域名管理原来被"微搭低代码"第三方
+      平台接管，解除授权后才能编辑）
+- [x] `USE_SELF_HOSTED_BACKEND` 已改成 `true`，真机验证通过（登录、收藏、
+      提醒同步、后台发布→小程序可见，全部确认正常）
+
+### 阶段 5.5：定时 AI 审核迁移 ✅ 已完成 —— 2026-09-18
+CloudBase 的定时触发器（`adminData` 函数上的 `competition-ai-review-batch`，
+每 5 分钟跑一次 Kimi 审核）没有被前面几个阶段覆盖到，迁移小程序/后台之后
+它还在 CloudBase 那边空转——写的是脱节的旧数据库，白白消耗 AI API 额度。
+
+- [x] 自有服务器加了等价的 systemd timer：
+      `scripts/server/daily-contest-ai-review.{service,timer}`，
+      每 5 分钟调用一次自己的 `/api/adminData`（`action:runScheduledAiReview`），
+      对齐原来的节奏，脚本见 `scripts/server/scheduled-ai-review.sh`
+- [x] 用 `tcb fn trigger delete adminData competition-ai-review-batch` 删除了
+      CloudBase 那边的定时触发器（`adminData` 云函数本身还在，只是不再定时触发）
 
 ### 阶段 6：下线 CloudBase
 - [ ] 观察期（双写/双跑一段时间）
 - [ ] 确认无回流后停用云函数
+
+## 已知的欠账（暂时接受，以后要还）
+
+这些是明知道不理想、但当下为了方便先这样的决定，记在这里免得忘掉。
+
+### 1. 后台口令强度不够 —— 2026-09-18 起
+
+当前 `ADMIN_TOKEN` 是 `hzh623456` 这类有规律的短串（姓名缩写 + 数字），
+不是随机串。而且这个值在对话记录里出现过。
+
+**现状的实际风险：**
+- 后台是公网可达的读写接口：能读全部数据、能整表覆盖、能往学生端发布内容
+- Basic Auth 那一层已按要求移除，现在只剩这一道口令
+- nginx 限流（每 IP 每秒 2 次）挡得住无差别暴力破解
+- 但挡不住「专门针对你、按姓名规律去猜」的情况
+
+**以后怎么改：**
+1. 生成一个随机长串（`openssl rand -base64 24`），存进密码管理器
+2. 写进服务器 `/opt/daily-contest/.admin-token`（chmod 600）与本地 `.admin-token.local`
+3. `systemctl restart daily-contest-api`
+4. 视需要同步更新 CloudBase 云函数的 `ADMIN_TOKEN` 环境变量
+
+**可选的加固（不用记口令也能更安全）：**
+- nginx 里按来源 IP 限制访问（只放行你常用的网络）
+- 或者恢复 Basic Auth 作为第二道，和口令组合使用
+
+### 2. CloudBase 仍在运行，口令是旧的
+
+迁移期间刻意保留 CloudBase 作为回退通道，数据也还在那边（58 条记录）。
+它的 `ADMIN_TOKEN` 环境变量没跟着改，还是旧值——旧口令对自有服务器已失效，
+只对 CloudBase 有效。等阶段 6 下线 CloudBase 时一并处理。
 
 ## 风险与对策
 

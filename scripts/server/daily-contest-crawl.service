@@ -1,0 +1,11 @@
+[Unit]
+Description=竞赛雷达每日抓取新赛事（判重 + Jev前置筛选 + 详情抽取 + 草稿入库）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node run-crawl-pipeline.mjs
+StandardOutput=append:/var/log/daily-contest-crawl.log
+StandardError=append:/var/log/daily-contest-crawl.log
+TimeoutStartSec=1800

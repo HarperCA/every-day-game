@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次竞赛雷达归档扫描（报名截止的已发布赛事撤下公开缓存，估算下一届时间）
+
+[Timer]
+# UTC 18:00 = 北京时间 02:00；等抓取和入库预留一小时。
+OnCalendar=*-*-* 18:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -109,6 +109,20 @@ describe('查询', () => {
     const { data } = await cloud.database().collection('rec').where({ owner: 'u1' }).orderBy('score', 'desc').get();
     expect(data.map(item => item._id)).toEqual(['a', 'b']);
   });
+
+  it('where().update() 批量改匹配的文档，返回改了几条——sendReminders 的认领/恢复超时靠这个', async () => {
+    const result = await cloud.database().collection('rec').where({ owner: 'u1' }).update({ data: { owner: 'u1', tag: 'batched' } });
+    expect(result.stats.updated).toBe(2);
+    const { data } = await cloud.database().collection('rec').get();
+    expect(data.find(item => item._id === 'a').tag).toBe('batched');
+    expect(data.find(item => item._id === 'b').tag).toBe('batched');
+    expect(data.find(item => item._id === 'c').tag).toBeUndefined(); // 不匹配 where 的不该被动
+  });
+
+  it('where().update() 匹配不到任何文档时返回 updated:0，不报错——claimReminder 靠这个判断抢没抢到', async () => {
+    const result = await cloud.database().collection('rec').where({ owner: 'nobody' }).update({ data: { tag: 'x' } });
+    expect(result.stats.updated).toBe(0);
+  });
 });
 
 describe('查询操作符', () => {

@@ -131,6 +131,16 @@ class Query {
     const { data } = await new Query(this.db, this.collection, { ...this.state, limit: null, skip: 0 }).get();
     return { total: data.length };
   }
+
+  // CloudBase 的 where().update() 是"按条件批量改"，跟 orderBy/limit/skip 无关——
+  // 官方 SDK 里这几个也确实对 update 不生效，只有 where 起作用。
+  // sendReminders 用这个做"认领"（where 里带上当前状态，返回 updated 数判断
+  // 抢到没抢到）和批量恢复超时认领，之前没人真正触发过这条路径，漏了没实现。
+  async update({ data } = {}) {
+    const rows = listDocs(this.db, this.collection).filter(row => matchesWhere(row, this.state.where));
+    for (const row of rows) putDoc(this.db, this.collection, row._id, applyUpdate(row, data));
+    return { stats: { updated: rows.length } };
+  }
 }
 
 class CollectionRef extends Query {

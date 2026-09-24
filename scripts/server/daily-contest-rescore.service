@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达 review 档草稿定期复检（不重新抓取/不调抽取AI，用已有数据重新打分）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-rescore-review-drafts.sh
+StandardOutput=append:/var/log/daily-contest-rescore.log
+StandardError=append:/var/log/daily-contest-rescore.log

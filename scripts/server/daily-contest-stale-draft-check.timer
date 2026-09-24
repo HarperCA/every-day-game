@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次竞赛雷达草稿超时检查（3天粒度，不需要高频轮询）
+
+[Timer]
+# UTC 19:00 = 北京时间 03:00；在当天自动处理链路结束后检查积压草稿。
+OnCalendar=*-*-* 19:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

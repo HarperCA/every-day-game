@@ -1,0 +1,9 @@
+[Unit]
+Description=竞赛雷达定时 AI 审核（替代 CloudBase 定时触发器 competition-ai-review-batch）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/daily-contest/scheduled-ai-review.sh
+StandardOutput=append:/var/log/daily-contest-ai-review.log
+StandardError=append:/var/log/daily-contest-ai-review.log
