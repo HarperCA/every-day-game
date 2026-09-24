@@ -9,12 +9,13 @@ function registrationStatus(record, now = new Date()) {
     return override;
   }
   const startValue = record.schedule?.registration_start;
-  if (!startValue) return '时间待公布';
-  const start = new Date(startValue);
+  const start = startValue ? new Date(startValue) : null;
   const end = record.schedule?.registration_end ? new Date(record.schedule.registration_end) : null;
-  if (Number.isNaN(start.getTime()) || (end && Number.isNaN(end.getTime()))) throw new Error('invalid_public_schedule');
-  if (now < start) return '即将报名';
+  if ((start && Number.isNaN(start.getTime())) || (end && Number.isNaN(end.getTime()))) throw new Error('invalid_public_schedule');
+  // 截止先于开始判断：只有截止日期、没有开始日期的往届，截止已过就是已截止，不是“时间待公布”。
   if (end && now > end) return '已截止';
+  if (!start) return '时间待公布';
+  if (now < start) return '即将报名';
   return '报名中';
 }
 

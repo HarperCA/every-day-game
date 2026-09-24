@@ -22,11 +22,10 @@ export interface Query {
 
 function computeStatus(schedule: any, now = new Date()) {
   if (schedule.status_override) return schedule.status_override;
-  if (!schedule.registration_start) return '时间待公布';
-  const start = new Date(schedule.registration_start);
   const end = schedule.registration_end ? new Date(schedule.registration_end) : null;
-  if (now < start) return '即将报名';
   if (end && now > end) return '已截止';
+  if (!schedule.registration_start) return '时间待公布';
+  if (now < new Date(schedule.registration_start)) return '即将报名';
   return '报名中';
 }
 

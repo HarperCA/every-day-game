@@ -18,11 +18,10 @@ function normalizePublicRecordId(value) {
 
 function currentRegistrationStatus(item, now = new Date()) {
   if (item.registration_status_override) return item.registration_status_override;
-  if (!item.registration_start) return '时间待公布';
-  const start = new Date(item.registration_start);
   const end = item.registration_end ? new Date(item.registration_end) : null;
-  if (now < start) return '即将报名';
   if (end && now > end) return '已截止';
+  if (!item.registration_start) return '时间待公布';
+  if (now < new Date(item.registration_start)) return '即将报名';
   return '报名中';
 }
 

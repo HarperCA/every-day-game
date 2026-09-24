@@ -29,6 +29,13 @@ describe('public competition cache', () => {
     expect(registrationStatus({ schedule:{ status_override:'时间待公布' } })).toBe('时间待公布');
   });
 
+  it('treats a passed deadline as closed even without a registration start date', () => {
+    const now = new Date('2026-09-24T00:00:00.000Z');
+    expect(registrationStatus({ schedule:{ registration_start:null, registration_end:'2025-03-31T23:59:59+08:00' } }, now)).toBe('已截止');
+    expect(registrationStatus({ schedule:{ registration_start:null, registration_end:'2026-10-10T23:59:59+08:00' } }, now)).toBe('时间待公布');
+    expect(() => registrationStatus({ schedule:{ registration_start:null, registration_end:'not-a-date' } }, now)).toThrow('invalid_public_schedule');
+  });
+
   it('upserts published records and removes newly offline records', async () => {
     const set = vi.fn(async () => undefined);
     const remove = vi.fn(async () => undefined);

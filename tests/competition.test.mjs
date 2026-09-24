@@ -9,6 +9,7 @@ describe('competition rules', () => {
     expect(computeRegistrationStatus({ registration_start: '2026-08-21T00:00:00+08:00', registration_end: '2026-08-30T00:00:00+08:00' }, now)).toBe('即将报名');
     expect(computeRegistrationStatus({ registration_start: '2026-08-01T00:00:00+08:00', registration_end: '2026-08-30T00:00:00+08:00' }, now)).toBe('报名中');
     expect(computeRegistrationStatus({ registration_start: '2026-07-01T00:00:00+08:00', registration_end: '2026-07-30T00:00:00+08:00' }, now)).toBe('已截止');
+    expect(computeRegistrationStatus({ registration_start: null, registration_end: '2026-07-30T00:00:00+08:00' }, now)).toBe('已截止');
   });
   it('sorts status in the frozen order', () => {
     const items = ['已截止', '时间待公布', '报名中', '即将报名'].map((registrationStatus, i) => ({ registrationStatus, recommendation: '值得参加', qualityIssues: [], registrationEnd: null, id: i }));

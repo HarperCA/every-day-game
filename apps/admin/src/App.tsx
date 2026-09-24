@@ -19,10 +19,10 @@ const pageSize = 10;
 
 function registrationStatus(item: any) {
   if (item.schedule.status_override) return item.schedule.status_override;
-  if (!item.schedule.registration_start) return '时间待公布';
   const now = new Date();
-  if (now < new Date(item.schedule.registration_start)) return '即将报名';
   if (item.schedule.registration_end && now > new Date(item.schedule.registration_end)) return '已截止';
+  if (!item.schedule.registration_start) return '时间待公布';
+  if (now < new Date(item.schedule.registration_start)) return '即将报名';
   return '报名中';
 }
 

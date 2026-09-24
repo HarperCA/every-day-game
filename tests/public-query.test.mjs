@@ -30,6 +30,9 @@ describe('public competition query', () => {
   it('refreshes time-based status when records are read', () => {
     expect(currentRegistrationStatus({ registration_start:'2026-09-10T00:00:00Z' }, new Date('2026-08-31T00:00:00Z'))).toBe('即将报名');
     expect(currentRegistrationStatus({ registration_status_override:'时间待公布', registration_start:'2026-01-01T00:00:00Z' })).toBe('时间待公布');
+    // 只有截止日期的往届：截止已过是已截止，未过才是时间待公布
+    expect(currentRegistrationStatus({ registration_end:'2025-03-31T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('已截止');
+    expect(currentRegistrationStatus({ registration_end:'2026-10-10T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('时间待公布');
   });
 
   it('tells "collection not created yet" apart from a real database failure', () => {

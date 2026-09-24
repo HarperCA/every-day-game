@@ -1,0 +1,4457 @@
+[
+ {
+  "id": "edition-cmp001-2026",
+  "name": "中国国际大学生创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T13:25:43.009Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp002-2025",
+  "name": "“挑战杯”全国大学生课外学术科技作品竞赛",
+  "status": "pending_manual_review",
+  "updatedAt": "2026-09-24T00:20:35.500Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp003-2026",
+  "name": "“挑战杯”中国大学生创业计划竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp004-2026",
+  "name": "全国大学生数学建模竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp005-2026",
+  "name": "全国大学生统计建模大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp006-2026",
+  "name": "全国大学生物理实验竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp007-2026",
+  "name": "国际大学生程序设计竞赛（ICPC）",
+  "status": "archived",
+  "updatedAt": "2026-09-18T15:33:11.821Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp008-2026",
+  "name": "蓝桥杯全国大学生软件和信息技术大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp009-2026",
+  "name": "中国大学生计算机设计大赛",
+  "status": "pending_manual_review",
+  "updatedAt": "2026-09-22T10:11:04.574Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp010-2026",
+  "name": "“中国软件杯”大学生软件设计大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-18T15:33:11.821Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp011-2026",
+  "name": "全国大学生信息安全竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-18T15:33:11.821Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp012-2026",
+  "name": "全国大学生电子设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T12:20:40.960Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp013-2026",
+  "name": "全国大学生智能汽车竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp014-2026",
+  "name": "全国大学生集成电路创新创业大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp015-2026",
+  "name": "“西门子杯”中国智能制造挑战赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp016-2027",
+  "name": "华为ICT大赛",
+  "status": "pending_system_validation",
+  "updatedAt": "2026-09-22T10:20:16.563Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp017-2026",
+  "name": "全国大学生机器人大赛（RoboMaster/ROBOCON）",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp018-2026",
+  "name": "全国大学生机械创新设计大赛",
+  "status": "pending_system_validation",
+  "updatedAt": "2026-09-17T21:50:35.941Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp019-2027",
+  "name": "中国大学生工程实践与创新能力大赛",
+  "status": "pending_system_validation",
+  "updatedAt": "2026-09-22T10:40:50.688Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp020-2026",
+  "name": "全国大学生结构设计竞赛",
+  "status": "pending_system_validation",
+  "updatedAt": "2026-09-22T10:45:20.242Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp021-2026",
+  "name": "全国大学生化工设计竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp022-2026",
+  "name": "全国大学生节能减排社会实践与科技竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp023-2026",
+  "name": "全国大学生电子商务“创新、创意及创业”挑战赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp024-2026",
+  "name": "全国大学生市场调查与分析大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp025-2025",
+  "name": "全国大学生物流设计大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp026-2026",
+  "name": "全国大学生广告艺术大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp027-2026",
+  "name": "未来设计师·全国高校数字艺术设计大赛",
+  "status": "pending_system_validation",
+  "updatedAt": "2026-09-23T12:30:35.571Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp028-2026",
+  "name": "“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛",
+  "status": "pending_manual_review",
+  "updatedAt": "2026-09-23T14:50:28.005Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp029-2026",
+  "name": "全国大学生生命科学竞赛（CULSC）",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-cmp030-2026",
+  "name": "全国大学生医学创新大赛暨“一带一路”国际竞赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T04:37:56.932Z",
+  "changes": {
+   "rewardHighlights": [
+    null,
+    []
+   ]
+  }
+ },
+ {
+  "id": "edition-simulation-modeling-2026",
+  "name": "全国大学生仿真建模应用挑战赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T05:02:24.575Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "证书荣誉",
+     "实习机会"
+    ],
+    [
+     "证书荣誉",
+     "实习或直通面试"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "edition-ai-education-innovation-2026-student",
+  "name": "“AI+教育”创新应用技能大赛·大学生AI创新创业组",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "participationFormat": [
+    "个人/团队",
+    "个人或团队均可"
+   ]
+  }
+ },
+ {
+  "id": "edition-huawei-ict-lanzhou-2026",
+  "name": "华为ICT大赛兰州理工大学校赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "eventLevel": [
+    "校级",
+    "其他/未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hdu-life-science-2026",
+  "name": "杭州电子科技大学大学生生命科学竞赛（科学探究类）",
+  "status": "published",
+  "updatedAt": "2026-09-20T12:55:29.635Z",
+  "changes": {
+   "eventLevel": [
+    "校级",
+    "其他/未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-huairou-ai-science-opc-2026",
+  "name": "怀柔科学城AI for Science·OPC创新挑战赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T09:35:42.889Z",
+  "changes": {
+   "eventLevel": [
+    "市级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "奖金",
+     "创业扶持"
+    ],
+    [
+     "现金奖金",
+     "创业扶持"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "edition-beijing-college-transport-tech-2026",
+  "name": "北京市大学生交通科技竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "eventLevel": [
+    "市级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "edition-national-audit-elite-challenge-2026",
+  "name": "“福思特杯”全国大学生审计精英挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "固定人数",
+    "暂未明确"
+   ],
+   "registrationOrganization": [
+    "高校统一报名",
+    "学校统一报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-computer-systems-intelligent-design-2026",
+  "name": "全国大学生计算机系统能力大赛智能计算创新设计赛（先导杯）湖南大学校赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "eventLevel": [
+    "校级/国家级赛事校赛",
+    "其他/未明确"
+   ],
+   "rewardHighlights": [
+    [
+     "国家级竞赛校赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南大学校内报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-cumt-engineering-practice-innovation-2026",
+  "name": "中国矿业大学大学生工程实践与创新能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "eventLevel": [
+    "校级",
+    "其他/未明确"
+   ],
+   "rewardHighlights": [
+    [
+     "校级竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "校内团队报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-ynu-smart-car-2026",
+  "name": "全国大学生智能汽车竞赛云南大学校内选拔",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "eventLevel": [
+    "国家级赛事校内选拔",
+    "其他/未明确"
+   ],
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "云南大学校内报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-shuwei-math-modeling-autumn-2026",
+  "name": "数维杯全国大学生数学建模挑战赛（秋季赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T16:35:30.347Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "竞赛证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生组队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-ai-plus-innovation-2026",
+  "name": "全国大学生“人工智能+”创新创业大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T16:40:18.617Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-college-computer-capability-2026",
+  "name": "全国高校计算机能力挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-24T11:13:20.167Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-college-innovation-english-2026",
+  "name": "全国高校创新英语挑战赛（综合能力赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T16:50:39.259Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "荣誉证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "个人报名或学校统一组织",
+    "两种方式均可"
+   ]
+  }
+ },
+ {
+  "id": "edition-china-innovation-methods-2026",
+  "name": "中国创新方法大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T07:07:05.197Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级赛事证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "企业、高校、科研院所和创新创业团队报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-college-english-reading-2026",
+  "name": "全国大学生英语阅读竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T16:55:25.094Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "个人报名或学校组织报名",
+    "两种方式均可"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-college-innovation-ability-2026",
+  "name": "全国大学生创新创业能力大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:00:58.532Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-jingkai-cup-innovation-entrepreneurship-2026",
+  "name": "“经开杯”全国大学生创新创业大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:05:25.971Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新创业展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-huajiao-cup-math-competition-2026",
+  "name": "华教杯大学生数学竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:10:15.696Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ncccu-programming-challenge-2026",
+  "name": "全国高校计算机能力挑战赛（程序设计挑战赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:20:31.628Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校在校生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ncccu-big-data-challenge-2026",
+  "name": "全国高校计算机能力挑战赛（大数据挑战赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:20:42.791Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校在校生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ncccu-ai-challenge-2026",
+  "name": "全国高校计算机能力挑战赛（人工智能挑战赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:25:29.270Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "1-3人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "高校在校生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ncccu-digital-media-2026",
+  "name": "全国高校计算机能力挑战赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:30:39.885Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "奖金",
+     "电子荣誉证书"
+    ],
+    [
+     "现金奖金",
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "1-5人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "高校在校生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-university-digital-skills-internet-2026",
+  "name": "大学生数字技能应用大赛“互联网+”技能应用赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T17:35:30.466Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校在校生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-big-data-skills-2026",
+  "name": "全国大数据大学生技术技能大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T18:45:32.454Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "技能认证"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "个人或院校团体报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-life-science-student-2026",
+  "name": "全国大学生生命科学竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T18:50:31.315Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-international-smart-agri-equipment-2026",
+  "name": "国际大学生智能农业装备创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T18:55:24.243Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-ecommerce-innovation-entrepreneurship-2026",
+  "name": "全国大学生电子商务“创新、创意及创业”挑战赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:00:31.478Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新创业展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-huawei-ict-competition-2026",
+  "name": "华为ICT大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:05:23.151Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全球竞赛证书",
+     "技术实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-c4-ai-harmony-innovation-2026",
+  "name": "中国高校计算机大赛—人工智能创意赛（鸿蒙高校创新赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:10:17.276Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全国竞赛证书",
+     "技术实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "1-3人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "中国内地及港澳台高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-c4-ai-ascend-innovation-2026",
+  "name": "中国高校计算机大赛—人工智能创意赛（昇腾AI创新大赛）",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:15:44.829Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全国竞赛证书",
+     "技术实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "1-3人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "中国内地及港澳台高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-digital-media-creative-2026",
+  "name": "全国大学生数字媒体科技作品及创意竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:50:46.160Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校在校生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-good-idea-digital-art-2026",
+  "name": "好创意暨全国数字艺术设计大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T19:55:43.500Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "作品展示",
+     "版权存证"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-c4-network-challenge-2026",
+  "name": "中国高校计算机大赛—网络技术挑战赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T05:56:34.118Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "技术实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "2-6人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ],
+   "feeType": [
+    "分阶段收费",
+    "收费"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-standardization-olympiad-2026",
+  "name": "全国大学生标准化奥林匹克竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:00:38.963Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全国竞赛证书",
+     "优秀作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-chinese-character-2026",
+  "name": "全国大学生汉字大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T05:58:42.120Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "荣誉证书",
+     "奖杯"
+    ],
+    [
+     "证书荣誉",
+     "实物奖品"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-university-ai-plus-application-2026",
+  "name": "大学生AI+创新应用大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:05:21.027Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-foster-audit-elite-2026",
+  "name": "“福思特杯”全国大学生审计精英挑战赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:10:33.180Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "专业实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-digital-chain-application-2026",
+  "name": "全国大学生数智链应用大赛",
+  "status": "published",
+  "updatedAt": "2026-09-23T08:35:38.130Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-national-student-tech-innovation-entrepreneurship-2026",
+  "name": "全国大学生技术创新创业大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:20:33.555Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "创新创业展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "1-5人",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "全国高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-beijing-student-transport-tech-2026",
+  "name": "北京市大学生交通科技大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T02:30:43.322Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "科技创新展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "北京市高校组织报名",
+    "学校统一报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-global-campus-ai-algorithm-elite-2026",
+  "name": "全球校园人工智能算法精英大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:30:26.530Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "算法实践机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-chuangyan-cup-english-2026",
+  "name": "创研杯全国大学生英语竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:35:35.092Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-huacan-new-design-2026",
+  "name": "新锐设计竞赛·华灿奖",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:45:21.090Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "作品展示",
+     "路演机会"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生和青年设计师个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-university-language-literacy-2026",
+  "name": "大学生语言文字能力大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T09:52:15.065Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "省赛晋级资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名或协办院校组织报名",
+    "两种方式均可"
+   ]
+  }
+ },
+ {
+  "id": "edition-university-mandarin-2026",
+  "name": "大学生普通话大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:50:34.477Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-university-chinese-2026",
+  "name": "大学生汉语大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T20:55:37.414Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "荣誉奖杯"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或协办单位报名",
+    "两种方式均可"
+   ]
+  }
+ },
+ {
+  "id": "edition-language-literacy-standardized-character-2026",
+  "name": "大学生语言文字能力大赛规范字专项赛",
+  "status": "archived",
+  "updatedAt": "2026-09-20T16:12:11.015Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-language-literacy-writing-2026",
+  "name": "大学生语言文字能力大赛写作专项赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T21:00:43.081Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "优秀作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-language-literacy-reading-2026",
+  "name": "大学生语言文字能力大赛诵读专项赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T03:15:28.393Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "优秀作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ncda-design-special-2026",
+  "name": "未来设计师NCDA全国高校数字艺术设计大赛专项赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T03:20:37.141Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "全国高校在校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ai-education-innovation-2026",
+  "name": "“AI+教育”创新应用技能大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T21:25:51.581Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "荣誉证书",
+     "全国总决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队或教育工作者团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-anhui-landscape-creation-2026",
+  "name": "安徽省大学生景观营造大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T03:35:30.498Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-fpga-embedded-chip-2026",
+  "name": "全国大学生嵌入式芯片与系统设计竞赛FPGA创新设计赛道",
+  "status": "archived",
+  "updatedAt": "2026-09-22T00:02:15.069Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级竞赛证书",
+     "决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "3人及以下",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-computer-system-intelligent-computing-2026",
+  "name": "全国大学生计算机系统能力大赛智能计算创新设计赛（先导杯）",
+  "status": "published",
+  "updatedAt": "2026-09-20T21:45:38.903Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "校赛获奖证书",
+     "优秀作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南大学本科生和研究生报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-ai-information-literacy-2026",
+  "name": "大学生“AI+信息素养”大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-24T00:02:04.164Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "校赛资格",
+     "省赛及全国联赛资格"
+    ],
+    []
+   ],
+   "teamSizeCategory": [
+    "3人",
+    "2～3人"
+   ],
+   "registrationOrganization": [
+    "高校学生报名，省赛由学校统一组队",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-smart-insurance-innovation-2026",
+  "name": "高校“智能+保险”创新创意大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T21:55:52.810Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全国总决赛资格",
+     "竞赛证书"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-liaoning-agri-product-packaging-2026",
+  "name": "“辽宁故事”杯农特产品包装创新创意大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:05:33.851Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "辽宁省高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-qingdao-anti-smuggling-creation-2026",
+  "name": "青岛科技大学大学生反走私创作大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:10:21.704Z",
+  "changes": {
+   "eventLevel": [
+    "校级",
+    "其他/未明确"
+   ],
+   "rewardHighlights": [
+    [
+     "校级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "青岛科技大学及相关高校学生报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-sichuan-safety-emergency-2026",
+  "name": "四川省大学生安全与应急创新实践大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:15:16.199Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "四川省高校统一组织报名",
+    "学校统一报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-zhejiang-service-outsourcing-2026",
+  "name": "“数字马力杯”浙江省大学生服务外包创新应用大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:25:33.893Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "决赛答辩"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "浙江省高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-ai-fashion-innovation-2026",
+  "name": "全国大学生人工智能时尚创新设计大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:35:31.203Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "全国竞赛证书",
+     "作品展演"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "全国高校学生及设计爱好者报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-ai-innovation-2026",
+  "name": "湖南省研究生人工智能创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:40:43.468Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "研究生创新实践系列赛事资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-new-energy-2026",
+  "name": "湖南省研究生新能源创新设计大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T04:50:41.841Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "创新实践系列赛事资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-electronic-design-2026",
+  "name": "湖南省高校研究生电子设计大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T22:55:49.937Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-materials-innovation-2026",
+  "name": "湖南省研究生新材料创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:00:47.287Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-rural-revitalization-2026",
+  "name": "湖南省研究生乡村振兴科技作品创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:05:28.354Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "创新成果展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-creative-writing-2026",
+  "name": "湖南省研究生创意写作大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T17:20:30.281Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "个人",
+    "1人"
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-grad-cybersecurity-innovation-2026",
+  "name": "中国研究生网络安全创新大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:25:35.932Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级竞赛证书",
+     "决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "全国高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-urban-space-2026",
+  "name": "湖南省研究生数字城乡空间设计竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:40:37.941Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-law-case-2026",
+  "name": "湖南省研究生法律案例大赛",
+  "status": "published",
+  "updatedAt": "2026-09-23T15:52:16.405Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "案例答辩"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-grad-mpa-case-2026",
+  "name": "湖南省高校MPA（公共管理）案例大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T06:05:31.362Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "案例答辩"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "湖南省高校MPA研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-shanghai-creative-cup-2026",
+  "name": "上海市大学生“创造杯”大赛",
+  "status": "published",
+  "updatedAt": "2026-09-20T23:55:35.006Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "市级竞赛证书",
+     "现场答辩"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "teamSizeCategory": [
+    "5人及以下",
+    "人数范围不固定"
+   ],
+   "registrationOrganization": [
+    "上海市高校全日制在校生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-grad-enterprise-management-2026",
+  "name": "中国研究生企业管理创新大赛",
+  "status": "archived",
+  "updatedAt": "2026-09-22T00:02:15.069Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级竞赛证书",
+     "全国总决赛资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "全国高校研究生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-liaoning-business-design-creative-2026",
+  "name": "辽宁省大学生商业设计创意大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T00:05:36.916Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "作品展示"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "辽宁省高校学生个人或团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-keyun-finance-accounting-2026",
+  "name": "“科云杯”全国大学生财会职业能力大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T00:10:16.621Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级竞赛证书",
+     "网络选拔资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "高校学生团队报名",
+    "自行报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-anhui-creative-design-2026",
+  "name": "安徽省大学生创意设计大赛",
+  "status": "published",
+  "updatedAt": "2026-09-21T00:15:30.759Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "rewardHighlights": [
+    [
+     "省级竞赛证书",
+     "省赛推荐资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ],
+   "registrationOrganization": [
+    "安徽省高校全日制在校学生报名",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-caa-robocup-china-2026",
+  "name": "中国机器人大赛暨RoboCup机器人世界杯中国赛（RoboCup赛区）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T11:00:39.661Z",
+  "changes": {
+   "rewardHighlights": [
+    [
+     "国家级竞赛证书",
+     "学会会员资格"
+    ],
+    [
+     "证书荣誉"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202601",
+  "name": "\"嘉庚杯\"福建省高校通识课程论文竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:00:50.861Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202602",
+  "name": "福建省高校哲学专业论文写作大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:05:31.246Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202603",
+  "name": "福建省高校大学生逻辑思维能力竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:10:54.225Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202604",
+  "name": "福建省鼓浪文学大奖赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:15:54.816Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202607",
+  "name": "福建省大学生嵌入式芯片与系统设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:25:24.522Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202608",
+  "name": "福建省大学生物理学术竞赛（FJUPT）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:30:36.185Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202610",
+  "name": "福建省大学生智能汽车竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:40:36.542Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202611",
+  "name": "福建省大学生工程力学分析大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:50:33.312Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202612",
+  "name": "全国大学生先进成图技术与产品信息建模创新大赛（福建赛区选拔赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:50:31.814Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202615",
+  "name": "福建省大学生结构设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T14:55:28.401Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202616",
+  "name": "福建省大学生人居环境学科专业创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:00:37.105Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202617",
+  "name": "海峡大学生人工智能创意大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:10:32.413Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202618",
+  "name": "海峡两岸（福州）人工智能-工业机器人竞赛暨福建省便携可穿戴创新应用大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:15:36.767Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202619",
+  "name": "福建省未来设计师数字艺术设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:25:26.484Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202620",
+  "name": "\"学创杯\"全国大学生创业综合模拟大赛（福建赛区选拔赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:30:32.186Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202621",
+  "name": "全国大学生财会职业能力大赛（福建赛区选拔赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:35:33.283Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202622",
+  "name": "福建省大学生环境与资源创新创意大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T15:45:32.184Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202623",
+  "name": "福建省大学生化工设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:55:29.831Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202624",
+  "name": "福建省大学生光电设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:00:23.589Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202625",
+  "name": "福建省大学生物理实验竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:05:21.542Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202626",
+  "name": "福建省大学生计算科学与智能创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:10:48.426Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202627",
+  "name": "福建省大学生数据安全大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:15:18.983Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202629",
+  "name": "福建省应用心理专业学位研究生实践技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:20:28.593Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202630",
+  "name": "福建省\"海丝杯\"国际中文教育大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:25:25.049Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202631",
+  "name": "福建省大学生钢琴技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:30:25.280Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202633",
+  "name": "福建省高校模拟法庭辩论赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:40:35.396Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202634",
+  "name": "福建省大学生动漫游戏创意设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:45:21.353Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202635",
+  "name": "福建省大学生智能建造竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:50:31.627Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202636",
+  "name": "福建省科技小院研究生创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T16:55:18.367Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202637",
+  "name": "福建省大学生茶叶审评技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:00:49.248Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202638",
+  "name": "福建省心理应用技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:05:24.121Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202639",
+  "name": "福建省\"信息+生物医学\"交叉学科竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:10:34.171Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202640",
+  "name": "福建省高校大学生康复科普大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:15:36.249Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202641",
+  "name": "精\"医\"求精，笃行致远--福建省专业学位研究生临床综合能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:25:20.968Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202642",
+  "name": "福建省基础医学创新与实践大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:25:23.495Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202643",
+  "name": "福建省眼科视光学及视觉科学交叉学科创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:30:19.125Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202644",
+  "name": "福建省\"健康海丝\"大学生公共卫生创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:35:32.468Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202645",
+  "name": "全国高校学生跨文化能力大赛（福建赛区选拔赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:40:34.362Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202647",
+  "name": "全国大学生数字编辑创新大赛闽台赛区",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:50:36.349Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202648",
+  "name": "福建省大学生团体心理辅导创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T17:55:39.938Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202650",
+  "name": "福建省高校教育硕士教学技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:05:45.926Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202651",
+  "name": "福建省大学生材料综合竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:10:24.795Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202652",
+  "name": "福建省大学生智能海洋装备设计制作大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:15:27.259Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202653",
+  "name": "福建省制冷空调行业大学生科技竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:20:16.478Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202654",
+  "name": "福建省大学生普法短视频大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:30:18.362Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202655",
+  "name": "福建省数智制造商业综合能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:30:21.552Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202656",
+  "name": "福建省大学生社会工作案例大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:35:19.443Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202657",
+  "name": "福建省大学生海产品加工与创意大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:40:15.628Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-fujian-gjs202658",
+  "name": "福建省高校大学生经济建模创新研究竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:45:18.063Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no1",
+  "name": "湖南省大学生数学建模竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T13:00:35.211Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no2",
+  "name": "湖南省大学生力学竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T18:55:43.474Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no3",
+  "name": "湖南省大学生电子设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:10:42.168Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no4",
+  "name": "湖南省大学生物理竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T19:10:40.449Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no5",
+  "name": "湖南省大学生物联网应用创新设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T19:15:28.424Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no7",
+  "name": "湖南省大学生计算机程序设计竞赛",
+  "status": "published",
+  "updatedAt": "2026-09-23T16:05:35.842Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no8",
+  "name": "湖南省普通高等学校师范生教学技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T19:30:38.561Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no10",
+  "name": "湖南省大学生写作演讲竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T19:40:43.886Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no11",
+  "name": "湖南省大学生服装设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T19:45:37.295Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no12",
+  "name": "湖南省大学生外语能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T14:00:40.091Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no14",
+  "name": "湖南省大学生旅游管理类专业综合技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:00:49.091Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no15",
+  "name": "湖南省大学生风景园林与可持续建筑设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:05:53.220Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no20",
+  "name": "湖南省大学生城乡规划设计与测绘综合技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:25:35.006Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no21",
+  "name": "湖南省大学生化学化工学科竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:30:25.962Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no24",
+  "name": "湖南省大学生电子商务大赛（与省商务厅联合主办）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:45:36.814Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no25",
+  "name": "湖南省大学生财务大数据应用能力竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T20:55:43.430Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no26",
+  "name": "湖南省大学生智能导航科技创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T15:10:26.290Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no29",
+  "name": "湖南省高校学生跨文化能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:15:47.582Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no32",
+  "name": "湖南省大学生机械创新设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:30:29.819Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-hunan-no33",
+  "name": "湖南省大学生工程实践与创新能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:35:33.949Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no1",
+  "name": "广东省高等学校大学生工业设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:45:20.973Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no3",
+  "name": "广东省本科高校师范生教学技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T21:50:30.407Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no4",
+  "name": "广东省大学生数学建模竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:00:38.537Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no5",
+  "name": "广东省大学生外语能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T14:35:55.563Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "参赛高校统一报送省赛",
+    "学校统一报名"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no9",
+  "name": "广东省大学生计算机设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:25:19.993Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-guangdong-no11",
+  "name": "广东省大学生口腔医学临床技能创新研究竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:35:26.203Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noS1",
+  "name": "江苏大学生创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:40:15.312Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noS4",
+  "name": "江苏省大学生职业规划大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:45:23.341Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noS5",
+  "name": "全国青年科普创新实验暨作品大赛江苏赛区",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:50:16.721Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noS9",
+  "name": "江苏省大学生安全知识竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T22:55:11.743Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noS11",
+  "name": "“领航杯”江苏省大学生数字素养与技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:00:19.675Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no1",
+  "name": "全国大学生文化旅游与会展竞赛江苏省省赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:05:13.182Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no2",
+  "name": "“学创杯”全国大学生创业综合模拟大赛江苏省选拔赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:10:11.932Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no3",
+  "name": "江苏省高校企业竞争模拟大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:15:14.905Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no4",
+  "name": "江苏省大学生工程管理创新、创业与实践竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:20:26.701Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no5",
+  "name": "江苏省大学生创新体验竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:30:18.585Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no6",
+  "name": "全国本科院校税收风险管控案例大赛江苏省分区赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:35:23.851Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no7",
+  "name": "“科云杯”江苏省大学生财会职业能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:40:17.675Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no8",
+  "name": "江苏省高校经济决策虚仿实验大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:45:32.791Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no9",
+  "name": "全国高等院校财务数智化大赛（财务大数据分析赛项）江苏省赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:50:20.333Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no10",
+  "name": "全国高等院校数智化企业经营沙盘大赛江苏省选拔赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-22T23:55:23.118Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no11",
+  "name": "江苏省大学生财务决策大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:00:34.582Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no13",
+  "name": "江苏省普通高校本专科生跨境电子商务技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:05:11.289Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no14",
+  "name": "江苏省“精创教育杯”大学生人力资源管理技能挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:10:21.122Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no15",
+  "name": "江苏省高校“丝路电商”创新挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:15:15.510Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no16",
+  "name": "江苏省大学生企业数字化管理创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:20:37.865Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no17",
+  "name": "全国大学生数字贸易综合能力大赛江苏赛区选拔赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:25:27.849Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no18",
+  "name": "周培源大学生力学竞赛（江苏赛区）暨江苏省大学生力学竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:35:21.086Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no19",
+  "name": "江苏省大学生先进成图技术与产品信息建模（BIM）创新大赛暨全国大学生先进成图技术与产品信息建模创新大赛预选赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:40:24.868Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no20",
+  "name": "江苏省大学生电子设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:45:24.528Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no21",
+  "name": "全国大学生嵌入式芯片与系统设计竞赛东部赛区复赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T00:50:19.414Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no24",
+  "name": "江苏省大学生节能减排社会实践与科技竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:05:31.533Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no25",
+  "name": "全国三维数字化创新设计大赛江苏赛区",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:15:31.990Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no27",
+  "name": "全国大学生船舶能源与动力创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:20:44.743Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no28",
+  "name": "江苏省大学生测绘学科创新创业智能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:35:31.484Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no29",
+  "name": "华东区大学生CAD应用技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:45:40.498Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no31",
+  "name": "江苏省高校BIM装配式大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T01:50:37.667Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no32",
+  "name": "江苏省大学生水创意设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:05:35.694Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no33",
+  "name": "江苏省大学生化学化工实验竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:10:37.851Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no34",
+  "name": "江苏大学生交通科技大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:20:37.533Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no35",
+  "name": "江苏省高校大学生物理与实验科技作品创新竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:25:15.657Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no36",
+  "name": "五一数学建模竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:30:25.209Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no38",
+  "name": "全国大学生动物防疫职业技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:35:39.333Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no39",
+  "name": "江苏省大学生生物医学工程创新设计竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:45:28.933Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no40",
+  "name": "江苏省大学生口腔医学临床操作技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T02:50:15.628Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no42",
+  "name": "江苏省大学生知识竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:00:48.315Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no43",
+  "name": "江苏普通高校兵棋推演大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:10:33.186Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no44",
+  "name": "江苏省高等学校高等数学竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:15:17.536Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no45",
+  "name": "“美丽中国，我是行动者”江苏省大学生生态环境知识宣讲竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:20:35.437Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no49",
+  "name": "江苏省高校智能机器人创意大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:35:33.404Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no50",
+  "name": "睿抗机器人开发者大赛（RAICOM）江苏赛区",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:41:06.013Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no51",
+  "name": "江苏省智能（虚拟）仪器竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T03:55:18.758Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no52",
+  "name": "江苏省大学生机器人大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:05:21.456Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no53",
+  "name": "“埃斯顿杯”大学生机器人大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:10:19.792Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no55",
+  "name": "江苏省大学生程序设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:15:19.397Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noP5",
+  "name": "大学生品牌建设创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:30:37.516Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no56",
+  "name": "全国大学生元宇宙设计大赛暨江苏省大学生虚拟（增强）现实技术大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:35:39.844Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no57",
+  "name": "全国大学生软件测试大赛江苏省赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:40:43.938Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no58",
+  "name": "江苏省大学生网络空间安全知识技能大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T10:50:34.670Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no59",
+  "name": "江苏省大学生智能导航科技创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:50:29.886Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no61",
+  "name": "全国信息通信技术大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T04:55:20.163Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no63",
+  "name": "未来设计师·国际创新设计大赛中国江苏选拔赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:05:56.084Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no67",
+  "name": "江苏省大学生视听智能影像创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:10:29.547Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no68",
+  "name": "“艺融杯”江苏艺术设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:15:25.207Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no69",
+  "name": "诗画流体力学创作大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:20:28.658Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no70",
+  "name": "江苏省科学与艺术创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:25:14.631Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no71",
+  "name": "江苏省“星·空间杯”青年学生室内设计大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T12:10:34.616Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no72",
+  "name": "“外教社·词达人杯”江苏省大学生英语词汇大赛暨“外教社·词达人杯”全国大学生英语词汇能力大赛江苏赛区比赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:35:29.653Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no73",
+  "name": "“中国教育电视台·外研社杯”职场英语挑战赛江苏赛区比赛（演讲比赛、写作比赛、短视频比赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:40:38.359Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no74",
+  "name": "“外研社·国才杯”“理解当代中国”江苏大学生外语能力大赛暨全国大赛江苏赛区选拔赛（演讲、综合能力、笔译、口译、短视频、“四新”专项赛）",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:45:24.804Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no75",
+  "name": "“外教社杯”全国高校学生跨文化能力大赛江苏省赛区比赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:50:37.633Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no76",
+  "name": "江苏省翻译配音公益大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T05:55:31.312Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no77",
+  "name": "江苏省大学生互联网英语听说能力大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:00:29.652Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no79",
+  "name": "“外教社杯”江苏省大学生“用外语讲好家乡故事”“用中文讲好中国故事”演讲比赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:05:32.787Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no80",
+  "name": "全国大学生金融挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:10:41.837Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-no81",
+  "name": "iCAN大学生创新创业大赛江苏浙江赛区",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:15:23.009Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noP1",
+  "name": "江苏省大学生金融科技应用技能竞赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T12:25:34.182Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noP3",
+  "name": "江苏生成式人工智能创新大赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:25:24.375Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ },
+ {
+  "id": "edition-jiangsu-noP4",
+  "name": "MathorCup数学应用挑战赛",
+  "status": "quarantined",
+  "updatedAt": "2026-09-23T06:30:34.298Z",
+  "changes": {
+   "eventLevel": [
+    "省级",
+    "省级/区域级"
+   ],
+   "registrationOrganization": [
+    "暂未公布",
+    "暂未明确"
+   ]
+  }
+ }
+]

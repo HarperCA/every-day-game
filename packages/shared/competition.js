@@ -5,9 +5,9 @@ function computeRegistrationStatus(schedule, now = new Date()) {
   if (schedule.status_override) return schedule.status_override;
   const start = schedule.registration_start ? new Date(schedule.registration_start) : null;
   const end = schedule.registration_end ? new Date(schedule.registration_end) : null;
+  if (end && now > end) return '已截止';
   if (!start) return '时间待公布';
   if (now < start) return '即将报名';
-  if (end && now > end) return '已截止';
   return '报名中';
 }
 
