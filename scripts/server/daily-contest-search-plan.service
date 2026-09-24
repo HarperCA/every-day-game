@@ -1,0 +1,10 @@
+[Unit]
+Description=竞赛雷达次日搜索计划（按 60/25/15 把当天搜索额度分给三条路线，每条查询附理由）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/search-plan.mjs
+StandardOutput=append:/var/log/daily-contest-search-plan.log
+StandardError=append:/var/log/daily-contest-search-plan.log

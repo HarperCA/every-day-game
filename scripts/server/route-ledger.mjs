@@ -6,7 +6,9 @@
 // 只统计带来源链（discovery）的记录，也就是 2026-09-24 之后新抓入库的；老记录不追溯来源。
 //
 // 投入：runs/*/baidu-candidates.json 里每条查询算 1 次调用（失败的不算），
-//       runs/*/notice-resolution-leads.json 里每条追溯算 1 次调用，属于“追溯线索与主办方监测”路线。
+//       runs/*/notice-resolution-leads.json 里每条追溯算 1 次调用，属于“追溯线索与主办方监测”路线；
+//       plans/trace-drafts-*.json 里每条实际搜索的记录追溯也算 1 次，同属追溯路线。
+// 产出：被追溯过（task.firstAttemptAt 在窗口内）的老记录也计入追溯路线，看追溯能不能把草稿推到发布。
 //
 // 用法：node route-ledger.mjs [--days 28] [--out reports/route-ledger-YYYY-MM-DD.json]
 import fs from 'node:fs';
@@ -55,12 +57,17 @@ export function buildRouteLedger(records, runs, { now = new Date(), days = 28, r
       if (item.error) continue;
       add(ROUTES.trace, item.followupQuery || null, b => { b.calls += 1; });
     }
+    for (const item of run.traceDrafts?.results || []) {
+      if (item.skipped || item.error) continue;
+      add(ROUTES.trace, item.query || null, b => { b.calls += 1; });
+    }
   }
 
   for (const record of records) {
-    const d = record.discovery;
+    const traced = !record.discovery && record.task?.firstAttemptAt;
+    const d = record.discovery || (traced ? { route:ROUTES.trace, query:record.task.lastQuery } : null);
     if (!d) continue;
-    const seen = Date.parse(record.firstSeenAt || '');
+    const seen = Date.parse((traced ? record.task.firstAttemptAt : record.firstSeenAt) || '');
     if (!(seen >= since)) continue;
     const status = record.dataStatus;
     let open = false;
@@ -89,13 +96,18 @@ function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
-export function loadRuns(runsDir) {
-  if (!fs.existsSync(runsDir)) return [];
-  return fs.readdirSync(runsDir).map(name => ({
+export function loadRuns(runsDir, plansDir = null) {
+  const runs = !fs.existsSync(runsDir) ? [] : fs.readdirSync(runsDir).map(name => ({
     time:runDirTime(name),
     baidu:readJson(path.join(runsDir, name, 'baidu-candidates.json')),
     noticeLeads:readJson(path.join(runsDir, name, 'notice-resolution-leads.json')),
   })).filter(run => Number.isFinite(run.time));
+  const traces = !plansDir || !fs.existsSync(plansDir) ? [] : fs.readdirSync(plansDir)
+    .filter(name => /^trace-drafts-\d{4}-\d{2}-\d{2}\.json$/.test(name))
+    .map(name => readJson(path.join(plansDir, name)))
+    .filter(Boolean)
+    .map(report => ({ time:Date.parse(report.at), traceDrafts:report }));
+  return [...runs, ...traces];
 }
 
 async function main() {
@@ -110,7 +122,7 @@ async function main() {
   const response = await fetch('http://127.0.0.1:8787/api/adminData', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ adminToken:token, action:'bootstrap' }) });
   const result = await response.json();
   if (!result.ok) throw new Error(result.message || 'bootstrap_failed');
-  const ledger = buildRouteLedger(result.data.records, loadRuns(path.join(HERE, 'runs')), { now, days, registrationStatus });
+  const ledger = buildRouteLedger(result.data.records, loadRuns(path.join(HERE, 'runs'), path.join(HERE, 'plans')), { now, days, registrationStatus });
   fs.mkdirSync(path.dirname(out), { recursive:true });
   fs.writeFileSync(out, JSON.stringify(ledger, null, 2));
   for (const r of ledger.routes) console.log(`${r.route}：调用 ${r.calls}｜发现 ${r.discovered}｜合格 ${r.qualified}（报名中/即将 ${r.qualifiedOpen}）｜待审 ${r.pending}｜未通过 ${r.failed}｜每次调用得分 ${r.scorePerCall ?? '-'}`);

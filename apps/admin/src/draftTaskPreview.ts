@@ -6,8 +6,10 @@ export interface DraftTaskPreview {
   eventId:string; editionId:string; editionName:string;
   result:string; checks:DraftCheck[]; blockers:string[];
   nextAction:string; targetUrl:string | null;
-  lastCheckedAt:string | null; pageChanged:'未知'; nextCheckAt:null; attempts:null;
+  lastCheckedAt:string | null; pageChanged:'未知'; nextCheckAt:string | null; attempts:number | null;
   evidenceUrls:string[]; terminal:boolean;
+  // 记录追溯（trace-drafts.mjs）搜到的网址，未读原文核对前只是线索。
+  traceLeads:{ url:string; title:string; foundAt:string }[]; lastTraceResult:string | null;
 }
 
 const url = (value:unknown):value is string => typeof value === 'string' && /^https?:\/\//i.test(value);
@@ -149,6 +151,9 @@ export function previewDraftTask(record:any, now = new Date()):DraftTaskPreview 
   else result = '现有字段满足页面发布门槛，等待正式审核与缓存验收';
   return { eventId:String(record.eventId || ''), editionId:String(record.id || ''), editionName:String(record.editionName || ''),
     result, checks, blockers:Array.from(new Set(blockers)), nextAction, targetUrl,
-    lastCheckedAt:record.aiReview?.reviewed_at || record.aiFieldVerification?.reviewed_at || record.lastVerifiedAt || null,
-    pageChanged:'未知', nextCheckAt:null, attempts:null, evidenceUrls, terminal };
+    lastCheckedAt:record.task?.lastAttemptAt || record.aiReview?.reviewed_at || record.aiFieldVerification?.reviewed_at || record.lastVerifiedAt || null,
+    pageChanged:'未知', nextCheckAt:record.task?.nextCheckAt || null, attempts:Number.isInteger(record.task?.attempts) ? record.task.attempts : null, evidenceUrls, terminal,
+    traceLeads:(Array.isArray(record.task?.leads) ? record.task.leads : []).filter((lead:any) => url(lead?.url))
+      .map((lead:any) => ({ url:lead.url, title:String(lead.title || lead.url), foundAt:String(lead.foundAt || '') })),
+    lastTraceResult:record.task?.lastResult || null };
 }

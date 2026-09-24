@@ -39,7 +39,7 @@ const WEB_RESULTS_PER_QUERY = 50; // 百度网页模态允许的最大值；计�
 
 // 按用户确定的「最近可报名的大学生 + 专业 + 竞赛」逐专业搜索。
 // 搜索词只负责发现；是否仍可报名必须读取当届官方日期后核验。
-const PROFESSIONS = [
+export const PROFESSIONS = [
   '计算机', '软件工程', '人工智能', '网络安全', '数据科学',
   '电子信息', '通信工程', '自动化', '机械工程', '电气工程',
   '机器人工程', '土木工程', '建筑学', '城乡规划', '化学工程',
@@ -49,6 +49,12 @@ const PROFESSIONS = [
 ];
 export const QUERY_TEMPLATES = PROFESSIONS.map(profession =>
   `{year} 最近可报名的大学生 ${profession} 专业竞赛 官网 报名入口`);
+export const professionQuery = (profession, year) => `${year} 最近可报名的大学生 ${profession} 专业竞赛 官网 报名入口`;
+
+// 有次日计划（search-plan.mjs）时按计划搜，每条查询带自己的路线；没有计划时退回固定的按专业查询。
+export function queriesFromPlan(plan) {
+  return (plan?.search || []).filter(item => item?.query && item?.route).map(item => ({ query:String(item.query), route:String(item.route) }));
+}
 
 // 2026-09-22 删除的 7 条查询，连同删除理由一并记下来，避免以后有人"补全门类"
 // 时再加回去：
@@ -111,11 +117,12 @@ export function isOutOfScopeReference(reference) {
 const KNOWN_SOURCE_HOSTS = ['tianchi.aliyun.com', 'datafountain.cn', 'saikr.com'];
 
 function parseArgs(argv) {
-  const args = { queries: QUERY_TEMPLATES.length, offset: 0, out: '../../reports/baidu-search-candidates.json' };
+  const args = { queries: QUERY_TEMPLATES.length, offset: 0, out: '../../reports/baidu-search-candidates.json', plan: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--queries') args.queries = Math.max(1, Math.min(QUERY_TEMPLATES.length, Number(argv[i + 1]) || 1));
     if (argv[i] === '--offset') args.offset = Math.max(0, Math.min(QUERY_TEMPLATES.length - 1, Number(argv[i + 1]) || 0));
     if (argv[i] === '--out') args.out = argv[i + 1];
+    if (argv[i] === '--plan') args.plan = argv[i + 1];
   }
   return args;
 }
@@ -207,7 +214,12 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const apiKey = readKey();
   const year = new Date().getFullYear();
-  const queries = QUERY_TEMPLATES.slice(args.offset, args.offset + args.queries).map(template => template.replace('{year}', String(year)));
+  const planned = args.plan ? queriesFromPlan(JSON.parse(fs.readFileSync(args.plan, 'utf8'))) : [];
+  const entries = planned.length ? planned
+    : QUERY_TEMPLATES.slice(args.offset, args.offset + args.queries).map(template => ({ query:template.replace('{year}', String(year)), route:DEFAULT_ROUTE }));
+  const queries = entries.map(item => item.query);
+  const routeOf = new Map(entries.map(item => [item.query, item.route]));
+  if (planned.length) console.log(`按次日计划搜索：${args.plan}`);
 
   console.log(`查询 ${queries.length} 条（官方当前标注每日免费 100 次；实际余额以控制台为准）\n`);
 
@@ -221,7 +233,7 @@ async function main() {
 
   for (const query of queries) {
     console.log(`--- ${query} ---`);
-    const tally = { route: DEFAULT_ROUTE, references: 0, outOfScope: 0, irrelevant: 0, duplicate: 0, candidates: 0 };
+    const tally = { route: routeOf.get(query) || DEFAULT_ROUTE, references: 0, outOfScope: 0, irrelevant: 0, duplicate: 0, candidates: 0 };
     perQuery.set(query, tally);
     let references;
     try {
@@ -251,7 +263,7 @@ async function main() {
         tally.irrelevant += 1;
         continue;
       }
-      const candidate = toCandidate(reference, query);
+      const candidate = toCandidate(reference, query, routeOf.get(query) || DEFAULT_ROUTE);
       if (!candidate.name || !candidate.detailUrl || seen.has(candidate.externalId)) {
         stats.duplicateWithinRun += 1;
         tally.duplicate += 1;

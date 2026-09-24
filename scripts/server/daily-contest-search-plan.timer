@@ -1,0 +1,10 @@
+[Unit]
+Description=每天生成一次搜索计划（排在抓取之前）
+
+[Timer]
+# UTC 16:50 = 北京时间 00:50；搜索额度零点重置之后、01:00 抓取之前。
+OnCalendar=*-*-* 16:50:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

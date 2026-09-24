@@ -124,6 +124,9 @@ async function main() {
     const crawlArgs = [config.script, '--out', outFile];
     const volume = source === 'baidu' ? args.queries : args.pages;
     if (volume && config.volumeFlag) crawlArgs.push(config.volumeFlag, String(volume));
+    // 当天有次日搜索计划（search-plan.mjs，北京时间 00:50 生成）就按计划搜。
+    const planFile = path.join(HERE, 'plans', `search-plan-${new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)}.json`);
+    if (source === 'baidu' && fs.existsSync(planFile)) crawlArgs.push('--plan', planFile);
     console.log(`--- 抓取 ${source} ---`);
     run('node', crawlArgs);
 

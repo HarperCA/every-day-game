@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次记录追溯（排在抓取之后）
+
+[Timer]
+# UTC 18:15 = 北京时间 02:15；01:00 抓取入库之后、02:40 追溯到期检查之前。
+OnCalendar=*-*-* 18:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

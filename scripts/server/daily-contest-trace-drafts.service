@@ -1,0 +1,10 @@
+[Unit]
+Description=竞赛雷达记录追溯（按搜索计划找当届通知，只把待核验线索写入记录的处理任务）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/trace-drafts.mjs
+StandardOutput=append:/var/log/daily-contest-trace-drafts.log
+StandardError=append:/var/log/daily-contest-trace-drafts.log
