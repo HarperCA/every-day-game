@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { appendAuditEntry, downloadJson, persistAdminRecords, type AuditEntry } from './dataStore';
 import { changedOperationFields, loadAiJobs, loadFeedbacks, persistAiJobs, persistFeedbacks, validateAiJobRecord, validateFeedbackRecord, type AiJobRecord, type FeedbackRecord } from './operationsStore';
+import { displayAuditField } from './fieldLabels';
 
 type Section = 'feedback' | 'ai_jobs' | 'audit';
 interface Props {
@@ -54,7 +55,7 @@ export default function OperationModules({ section, records, setRecords, audits,
     return viewMatches && (!statusFilter || item.status === statusFilter) && (!keyword || [item.competitionName,item.content,item.submitterMasked,item.aiConclusion||''].join(' ').toLowerCase().includes(keyword.toLowerCase()));
   }), [feedbacks,statusFilter,keyword,feedbackView]);
   const aiRows = useMemo(() => aiJobs.filter(item => (!statusFilter || item.status === statusFilter) && (!keyword || [item.competitionName,item.errorCode,item.errorMessage].join(' ').toLowerCase().includes(keyword.toLowerCase()))), [aiJobs,statusFilter,keyword]);
-  const auditRows = useMemo(() => audits.filter(item => (!statusFilter || item.action === statusFilter) && (!keyword || [item.recordName,item.actor,item.action,...item.changedFields].join(' ').toLowerCase().includes(keyword.toLowerCase()))), [audits,statusFilter,keyword]);
+  const auditRows = useMemo(() => audits.map(item => ({ ...item, changedFields:item.changedFields.map(displayAuditField) })).filter(item => (!statusFilter || item.action === statusFilter) && (!keyword || [item.recordName,item.actor,item.action,...item.changedFields].join(' ').toLowerCase().includes(keyword.toLowerCase()))), [audits,statusFilter,keyword]);
   const spotCheckedCount = feedbacks.filter(item=>item.spotCheckStatus==='correct'||item.spotCheckStatus==='incorrect').length;
   const spotCheckAccuracy = spotCheckedCount ? `${Math.round(feedbacks.filter(item=>item.spotCheckStatus==='correct').length / spotCheckedCount * 100)}%` : '—';
 

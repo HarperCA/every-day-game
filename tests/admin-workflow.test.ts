@@ -23,6 +23,16 @@ const validRecord = {
 };
 
 describe('admin review and publish workflow', () => {
+  it('拦截手动新增及发布名称含“通知”的条目，但不误伤证据中的通知', () => {
+    expect(getSystemReviewIssues({...validRecord, name:'测试竞赛通知'})).toContain('名称含“通知”的条目只能作为线索，不得入赛事库');
+    expect(getPublishBlockers({...validRecord, name:'测试竞赛通知', systemValidation:'passed', manualReview:'passed'})).toContain('通知线索尚未解析为赛事');
+    expect(getSystemReviewIssues({...validRecord, formatAndRules:'以官方通知为准'})).toEqual([]);
+  });
+  it('拦截感叹号及“正式启动”类标题', () => {
+    const headline = {...validRecord, name:'测试竞赛正式启动！', systemValidation:'passed', manualReview:'passed'};
+    expect(getSystemReviewIssues(headline)).toContain('名称含感叹号或活动报道用语，不得入赛事库');
+    expect(getPublishBlockers(headline)).toContain('名称含感叹号或活动报道用语');
+  });
   it('runs deterministic system review and exposes data issues', () => {
     expect(getSystemReviewIssues(validRecord)).toEqual([]);
     expect(runSystemReview(validRecord, '2026-08-21T01:00:00.000Z')).toMatchObject({
@@ -34,15 +44,20 @@ describe('admin review and publish workflow', () => {
       .toEqual(expect.arrayContaining(['报名链接缺失或格式不正确', '来源链接尚未核验可访问性']));
   });
 
-  it('allows the highest-priority human approval to publish directly', () => {
+  it('requires system validation to actually pass, not just human approval — must match the server gate', () => {
+    // 服务器 publicCache.js 的 requirePublishGate 是严格 AND：人工审核通过不能
+    // 豁免系统验证。之前这里放行过"人工审核通过就够了"，导致后台"发布"按钮
+    // 显示可点、点了却被服务器拒绝保存——界面看着像发布成功，小程序其实什么
+    // 都没收到。两边口径必须一致，这里就是防止再退回那个状态的回归测试。
     expect(isPublishReady(validRecord)).toBe(false);
     expect(isPublishReady({ ...validRecord, systemValidation: 'failed', manualReview: 'pending' })).toBe(false);
-    const humanReviewed = { ...validRecord, systemValidation: 'not_run', manualReview: 'passed' };
-    expect(getPublishBlockers(humanReviewed)).toEqual([]);
-    expect(isPublishReady(humanReviewed)).toBe(true);
-    expect(publishRecord(humanReviewed, '2026-08-21T01:30:00.000Z')).toMatchObject({ dataStatus:'published' });
+    const humanReviewedOnly = { ...validRecord, systemValidation: 'not_run', manualReview: 'passed' };
+    expect(getPublishBlockers(humanReviewedOnly)).toEqual(['系统验证未通过']);
+    expect(isPublishReady(humanReviewedOnly)).toBe(false);
+    expect(() => publishRecord(humanReviewedOnly, '2026-08-21T01:30:00.000Z')).toThrow();
 
     const reviewed = { ...validRecord, systemValidation: 'passed', manualReview: 'passed' };
+    expect(getPublishBlockers(reviewed)).toEqual([]);
     expect(isPublishReady(reviewed)).toBe(true);
     expect(publishRecord(reviewed, '2026-08-21T02:00:00.000Z')).toMatchObject({ dataStatus: 'published', publishedAt: '2026-08-21T02:00:00.000Z' });
     expect(unpublishRecord({ ...reviewed, dataStatus: 'published' }, '2026-08-21T03:00:00.000Z')).toMatchObject({ dataStatus: 'offline', offlineAt: '2026-08-21T03:00:00.000Z' });

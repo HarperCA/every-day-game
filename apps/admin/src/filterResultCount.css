@@ -1,0 +1,13 @@
+.filter-result-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 10px 12px;
+  border: 1px solid #b8dadd;
+  border-radius: 9px;
+  background: #edf8f8;
+  color: #08727d;
+  font-weight: 800;
+  white-space: nowrap;
+}

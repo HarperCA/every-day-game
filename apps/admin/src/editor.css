@@ -39,6 +39,8 @@
 .weekly-ai-note,.ai-batch-progress { align-self:center; color:#667786; font-size:12px; }
 .ai-batch-progress { color:#08717d; font-weight:700; }
 .weekly-ai-note.ai-run-failed { color:#b3261e; font-weight:700; }
+.auto-review-queue { display:block; color:#08717d; }
+.auto-review-queue.auto-review-backoff { color:#b3261e; }
 .ai-running { color:#08717d!important; font-weight:700; }
 .table-check { display:flex; align-items:center; gap:6px; }
 .table-check input,td > input[type="checkbox"] { width:16px; height:16px; accent-color:#087e8b; }
@@ -102,6 +104,7 @@ nav button:disabled { color:#63818a; cursor:not-allowed; }
 .review-state.failed,.review-state.rejected { background:#fbeaea; color:#a13e3e; }
 .issue-cell { min-width:250px; max-width:360px; }
 .issue-cell span { display:block; color:#9a5724; line-height:1.45; margin-bottom:4px; }
+.field-verification-flag { display:block; color:#a13e3e; margin-top:4px; }
 .issue-cell em,.profession-chips em { color:#8794a1; font-style:normal; }
 .primary-button { border-color:#087e8b!important; background:#087e8b!important; color:#fff!important; }
 .danger-button { border-color:#e3bcbc!important; color:#a13d3d!important; }

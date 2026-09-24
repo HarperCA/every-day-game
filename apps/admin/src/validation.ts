@@ -7,6 +7,12 @@ export function validateAdminRecord(record: any): string[] {
   const errors: string[] = [];
   if (!record.name?.trim()) errors.push('赛事名称不能为空');
   if (!record.editionName?.trim()) errors.push('届次名称不能为空');
+  if (/(?:19|20)\d{2}|第[零〇一二三四五六七八九十百千万两\d]+届/.test(String(record.name || ''))) errors.push('赛事名称只保留正文；年份和第几届请填入独立字段');
+  if (record.editionYear && !/^(?:19|20)\d{2}(?:[—–~～至-](?:19|20)\d{2})?$/.test(String(record.editionYear).trim())) errors.push('年份请填写四位年份或年份区间');
+  if (record.editionOrdinal && !/^第[零〇一二三四五六七八九十百千万两\d]+届(?:、第[零〇一二三四五六七八九十百千万两\d]+届)*$/.test(String(record.editionOrdinal).trim())) errors.push('第几届请填写“第八届”等格式');
+  if (/通知/.test(String(record.name || '')) || /通知/.test(String(record.editionName || ''))) errors.push('名称含“通知”的条目只能作为线索，不得入赛事库');
+  if (/[!！]/.test(String(record.name || '')) || /[!！]/.test(String(record.editionName || ''))) errors.push('名称含感叹号，不得入赛事库');
+  if (/正式启动|正式开启|正式开赛|启动仪式|开幕仪式|正式拉开帷幕|火热开启|隆重开幕/.test(`${record.name || ''} ${record.editionName || ''}`)) errors.push('名称含“正式启动”等活动报道用语，不得入赛事库');
   if (!participationFormats.includes(record.participationFormat)) errors.push('参赛形式不在允许范围内');
   if (!teamSizeCategories.includes(record.teamSizeCategory)) errors.push('队伍人数不在允许范围内');
   if (!feeTypes.includes(record.feeType)) errors.push('报名费用不在允许范围内');

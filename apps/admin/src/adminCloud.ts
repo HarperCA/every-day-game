@@ -156,6 +156,20 @@ export async function initializeCloudRecords(records: any[]) {
   stateVersions.records = result.version;
 }
 
+// Manual creation must await server validation before changing the local list.
+export async function saveManualRecords(records: any[], auditEntry: AuditEntry) {
+  await writeQueue;
+  requireWritablePage();
+  emit('syncing');
+  const task = callAdmin<{ version:number }>('saveRecords', { records, auditEntry, expectedVersion:stateVersions.records });
+  writeQueue = task.then(result => { stateVersions.records = result.version; emit('synced'); }).catch(error => {
+    if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
+    emit('error', describeCloudError(error));
+    throw error;
+  });
+  await writeQueue;
+}
+
 export const queueCloudRecords = (records: any[], auditEntry?: AuditEntry) => enqueueState('saveRecords', 'records', { records, ...(auditEntry ? { auditEntry } : {}) });
 export const queueCloudAudit = (entry: AuditEntry) => enqueue('appendAudit', { entry });
 export function queueCloudFeedbacks(records: FeedbackRecord[], submittedUpdates: FeedbackRecord[] = []) {
@@ -204,6 +218,21 @@ export interface AiReviewConfigStatus {
 
 export const requestAiReviewConfig = () => callAdmin<AiReviewConfigStatus>('aiReviewConfig');
 
+export interface PipelineRun {
+  id:string; startedAt:string | null; finishedAt:string; status:string;
+  sources:Array<{source:string; fetched:number; new:number; duplicate:number; likelyDuplicate:number; uncertain:number}>;
+  searchResults:number; newLeads:number; eligibleDiscovered:number | null;
+  newRecords:number | null; qualifiedNew:number | null; publishedNew:number | null; publishedExisting:number | null; publishedTotal:number | null;
+  existingEnriched:number | null; existingUpdated:number | null; extractionAttempted:number; extractionSucceeded:number | null;
+  jev:{reviewed:number | null; fetch:number | null; leads:number | null; rejected:number | null; followupFetch:number | null};
+  costsUsd:{jev:number | null; extraction:number | null; admission:number | null; baidu:number | null};
+  failures:Array<{stage:string; reason:string; count:number}>;
+  recordIds:{added:string[]; published:string[]; updated:string[]; enriched:string[]};
+  measured:{eligibility:boolean; publishing:boolean; costComplete:boolean};
+}
+
+export const listPipelineRuns = () => callAdmin<{runs:PipelineRun[]}>('listPipelineRuns');
+
 export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
   const problems: string[] = [];
   if (!status.apiKeyConfigured) problems.push('AI_API_KEY 未配置：请在云开发控制台的 adminData 云函数环境变量中添加，保存后重新部署');
@@ -216,4 +245,66 @@ export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
 
 export function cloudEnvironmentId() {
   return API_BASE || '本机 /api';
+}
+
+// 下面这套常量抄的是 adminData/aiReviewSchedule.js + 服务器 systemd timer 的实际节奏，
+// 纯前端估算，不是后端真实排队状态——只是让人知道"大概多久轮到"，不追求精确。
+const AUTO_REVIEW_STALE_DAYS = 7;
+const AUTO_REVIEW_BACKOFF_STEP_MS = 6 * 60 * 60 * 1000;
+const AUTO_REVIEW_MAX_BACKOFF_MS = 7 * 24 * 60 * 60 * 1000;
+const AUTO_REVIEW_INTERVAL_MS = 5 * 60 * 1000; // scripts/server/daily-contest-ai-review.timer
+const AUTO_REVIEW_BATCH_LIMIT = 1; // adminData/index.js 里 SCHEDULED_BATCH_LIMIT
+
+function autoReviewReviewedAtMs(record: any): number {
+  const value = record?.aiReview?.reviewed_at;
+  const parsed = value ? Date.parse(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function autoReviewBackoffUntilMs(record: any): number {
+  const failure = record?.aiReviewFailure;
+  const count = Number(failure?.count) || 0;
+  if (count <= 0) return 0;
+  const lastAt = failure?.lastAt ? Date.parse(failure.lastAt) : NaN;
+  if (!Number.isFinite(lastAt)) return 0;
+  return lastAt + Math.min(count * AUTO_REVIEW_BACKOFF_STEP_MS, AUTO_REVIEW_MAX_BACKOFF_MS);
+}
+
+export interface AutoReviewQueueInfo {
+  position: number; // 第几个轮到，从 1 开始
+  etaMinutes: number;
+  backoff: false;
+}
+export interface AutoReviewBackoffInfo {
+  backoff: true;
+  retryAt: number;
+}
+
+// 只返回"到期该审、正在排队"或"失败退避中"的记录；已经在 7 天新鲜期内的不出现。
+export function computeAutoReviewQueue(records: any[], now = Date.now()): Map<string, AutoReviewQueueInfo | AutoReviewBackoffInfo> {
+  const cutoff = now - AUTO_REVIEW_STALE_DAYS * 24 * 60 * 60 * 1000;
+  const result = new Map<string, AutoReviewQueueInfo | AutoReviewBackoffInfo>();
+  const due: any[] = [];
+  for (const record of Array.isArray(records) ? records : []) {
+    if (!record?.id) continue;
+    const backoffUntil = autoReviewBackoffUntilMs(record);
+    if (backoffUntil > now) {
+      result.set(record.id, { backoff: true, retryAt: backoffUntil });
+      continue;
+    }
+    if (autoReviewReviewedAtMs(record) < cutoff) due.push(record);
+  }
+  due.sort((left, right) => autoReviewReviewedAtMs(left) - autoReviewReviewedAtMs(right));
+  due.forEach((record, index) => {
+    const position = index + 1;
+    const etaMinutes = Math.max(1, Math.ceil((Math.ceil(position / AUTO_REVIEW_BATCH_LIMIT) * AUTO_REVIEW_INTERVAL_MS) / 60000));
+    result.set(record.id, { position, etaMinutes, backoff: false });
+  });
+  return result;
+}
+
+export function describeAutoReviewQueue(info: AutoReviewQueueInfo | AutoReviewBackoffInfo | undefined): string {
+  if (!info) return '';
+  if (info.backoff) return `上次失败，退避中，预计 ${new Date(info.retryAt).toLocaleString('zh-CN')} 后重试`;
+  return `自动排队中：第 ${info.position} 位，预计约 ${info.etaMinutes} 分钟后审核`;
 }
