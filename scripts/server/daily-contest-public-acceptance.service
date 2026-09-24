@@ -1,0 +1,12 @@
+[Unit]
+Description=竞赛雷达发布验收（逐条核对公开接口与管理库，只读）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/verify-public-cache.mjs
+# 发现不一致时退出码为 2，只是提示，不算服务失败。
+SuccessExitStatus=2
+StandardOutput=append:/var/log/daily-contest-public-acceptance.log
+StandardError=append:/var/log/daily-contest-public-acceptance.log

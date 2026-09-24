@@ -1,0 +1,10 @@
+[Unit]
+Description=每天跑一次主办方公告栏监测
+
+[Timer]
+# UTC 19:50 = 北京时间 03:50；排在夜间各写库任务之后，抓取可能要十几分钟，避免和它们抢版本。
+OnCalendar=*-*-* 19:50:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

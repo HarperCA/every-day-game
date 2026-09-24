@@ -1,0 +1,11 @@
+[Unit]
+Description=竞赛雷达主办方公告栏监测（不花搜索额度；新通知只作为待核验线索写入处理任务）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/organizer-watch.mjs
+TimeoutStartSec=1800
+StandardOutput=append:/var/log/daily-contest-organizer-watch.log
+StandardError=append:/var/log/daily-contest-organizer-watch.log
