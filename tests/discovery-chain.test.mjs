@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { toCandidate } from '../scripts/server/search-baidu.mjs';
 import { followupCandidatesFromReport } from '../scripts/server/resolve-notice-leads.mjs';
 import { stampDiscovery } from '../scripts/server/discovery.mjs';
-import { buildRouteLedger, runDirTime } from '../scripts/server/route-ledger.mjs';
+import { buildMetrics, buildRouteLedger, runDirTime } from '../scripts/server/route-ledger.mjs';
 
 const require = createRequire(import.meta.url);
 const { candidateToRecord } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
@@ -58,5 +58,31 @@ describe('路线台账', () => {
   it('解析运行目录名', () => {
     expect(runDirTime('2026-09-24T04-24-19-472Z')).toBe(Date.parse('2026-09-24T04:24:19.472Z'));
     expect(runDirTime('probe')).toBeNaN();
+  });
+});
+
+describe('处理任务指标', () => {
+  it('转化、卡住天数、发布耗时与每条合格的搜索次数', () => {
+    const now = new Date('2026-10-20T00:00:00Z');
+    const since = now.getTime() - 28 * 86400000;
+    const records = [
+      { dataStatus:'published', firstSeenAt:'2026-10-01T00:00:00Z', publishedAt:'2026-10-05T00:00:00Z' },
+      { dataStatus:'draft', firstSeenAt:'2026-10-10T00:00:00Z' },
+      { dataStatus:'pending_manual_review', firstSeenAt:'2026-10-18T00:00:00Z' },
+      { dataStatus:'archived', firstSeenAt:'2026-08-01T00:00:00Z', task:{ firstAttemptAt:'2026-10-02T00:00:00Z' } },
+    ];
+    const runs = [{ time:Date.parse('2026-10-09T00:00:00Z'), baidu:{ perQuery:[{ query:'a' }, { query:'b' }] }, traceDrafts:{ results:[{ query:'t' }, { query:'s', skipped:'额度' }] }, jev:{ costUsd:0.01 } }];
+    records[0].discovery = { route:'覆盖空白' };
+    records[1].curationBatch = 'manual';
+    expect(buildMetrics(records, runs, { now, since })).toEqual({
+      byOrigin:{
+        自动发现:{ entered:1, qualified:1, conversion:1, publishDaysMedian:4 },
+        人工整理:{ entered:1, qualified:0, conversion:0, publishDaysMedian:null },
+        '早期记录（无来源链）':{ entered:1, qualified:0, conversion:0, publishDaysMedian:null },
+        记录追溯:{ entered:1, qualified:1, conversion:1, publishDaysMedian:null },
+      },
+      entered:4, qualified:2, conversion:0.5, pendingNow:2, pendingDaysAverage:6, pendingDaysMedian:2,
+      publishDaysMedian:4, publishedInWindow:1, searchCalls:3, automatedQualified:2, searchCallsPerQualified:1.5, jevUsd:0.01, extractionUsd:null,
+    });
   });
 });

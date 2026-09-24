@@ -83,12 +83,79 @@ export function buildRouteLedger(records, runs, { now = new Date(), days = 28, r
   }
 
   const finish = b => ({ ...b, scorePerCall:b.calls ? Number((b.score / b.calls).toFixed(3)) : null });
+  const metrics = buildMetrics(records, runs, { now, since });
   return {
     generatedAt:now.toISOString(), windowDays:days,
     definition:'合格新增＝最终已发布或已归档；报名中、即将报名计 2 分，其余计 1 分；待审不计分',
     routeShare:ROUTE_SHARE,
     routes:[...byRoute.values()].map(finish),
+    metrics,
     queries:[...byQuery.values()].map(finish).sort((a, b) => (b.score - a.score) || (a.calls - b.calls)),
+  };
+}
+
+const days = ms => Number((ms / 86400000).toFixed(1));
+const median = list => { if (!list.length) return null; const s = [...list].sort((a, b) => a - b); return s[Math.floor((s.length - 1) / 2)]; };
+
+// 方案里的三个衡量指标：草稿转为真实发布多少条、平均卡多久、每条发布花多少调用与费用。
+// 窗口内首次发现（或首次追溯）的记录为分母；发布耗时用 publishedAt − firstSeenAt；
+// 费用只合计有记录的 Jev 前置筛选费用，详情抽取费用各轮没有落盘，记为 null，不估算。
+// 按来源分开：人工按原文整理的记录发布快、不花搜索，混在一起会把搜索的效率算得虚高。
+export function originOf(record) {
+  if (record.discovery) return '自动发现';
+  if (record.task?.firstAttemptAt) return '记录追溯';
+  if (record.curationBatch || record.verifiedBy) return '人工整理';
+  return '早期记录（无来源链）';
+}
+const AUTOMATED = new Set(['自动发现', '记录追溯']);
+
+export function buildMetrics(records, runs, { now, since }) {
+  const entered = records.filter(record => {
+    const start = Date.parse(record.task?.firstAttemptAt || record.firstSeenAt || '');
+    return start >= since;
+  });
+  const qualified = entered.filter(record => QUALIFIED.has(record.dataStatus));
+  const byOrigin = {};
+  for (const record of entered) {
+    const origin = originOf(record);
+    const bucket = byOrigin[origin] ||= { entered:0, qualified:0, publishDays:[] };
+    bucket.entered += 1;
+    if (QUALIFIED.has(record.dataStatus)) bucket.qualified += 1;
+    const published = Date.parse(record.publishedAt || '');
+    const start = Date.parse(record.task?.firstAttemptAt || record.firstSeenAt || '');
+    if (published >= start) bucket.publishDays.push(published - start);
+  }
+  const automatedQualified = qualified.filter(record => AUTOMATED.has(originOf(record))).length;
+  const stuck = records.filter(record => PENDING.has(record.dataStatus) && Date.parse(record.firstSeenAt || ''))
+    .map(record => now.getTime() - Date.parse(record.firstSeenAt));
+  const toPublish = records.filter(record => Date.parse(record.publishedAt || '') >= since && Date.parse(record.firstSeenAt || ''))
+    .map(record => Date.parse(record.publishedAt) - Date.parse(record.firstSeenAt)).filter(ms => ms >= 0);
+  let calls = 0;
+  let jevUsd = 0;
+  let jevRecorded = false;
+  for (const run of runs) {
+    if (!(run.time >= since)) continue;
+    const failed = new Set((run.baidu?.failures || []).map(item => item.query));
+    calls += (run.baidu?.perQuery || []).filter(item => !failed.has(item.query)).length;
+    calls += (run.noticeLeads?.results || []).filter(item => !item.error).length;
+    calls += (run.traceDrafts?.results || []).filter(item => !item.skipped && !item.error).length;
+    for (const cost of [run.jev?.costUsd, run.noticeFollowupJev?.costUsd]) {
+      if (Number.isFinite(cost)) { jevUsd += cost; jevRecorded = true; }
+    }
+  }
+  return {
+    byOrigin:Object.fromEntries(Object.entries(byOrigin).map(([origin, b]) => [origin, {
+      entered:b.entered, qualified:b.qualified, conversion:Number((b.qualified / b.entered).toFixed(3)),
+      publishDaysMedian:b.publishDays.length ? days(median(b.publishDays)) : null,
+    }])),
+    entered:entered.length, qualified:qualified.length,
+    conversion:entered.length ? Number((qualified.length / entered.length).toFixed(3)) : null,
+    pendingNow:stuck.length, pendingDaysAverage:stuck.length ? days(stuck.reduce((a, b) => a + b, 0) / stuck.length) : null,
+    pendingDaysMedian:stuck.length ? days(median(stuck)) : null,
+    publishDaysMedian:toPublish.length ? days(median(toPublish)) : null, publishedInWindow:toPublish.length,
+    // 只用自动发现与记录追溯的合格数做分母；人工整理不花搜索。
+    searchCalls:calls, automatedQualified, searchCallsPerQualified:automatedQualified ? Number((calls / automatedQualified).toFixed(1)) : null,
+    jevUsd:jevRecorded ? Number(jevUsd.toFixed(6)) : null, extractionUsd:null,
   };
 }
 
@@ -101,6 +168,8 @@ export function loadRuns(runsDir, plansDir = null) {
     time:runDirTime(name),
     baidu:readJson(path.join(runsDir, name, 'baidu-candidates.json')),
     noticeLeads:readJson(path.join(runsDir, name, 'notice-resolution-leads.json')),
+    jev:readJson(path.join(runsDir, name, 'jev-filter-report.json')),
+    noticeFollowupJev:readJson(path.join(runsDir, name, 'notice-followup-filter-report.json')),
   })).filter(run => Number.isFinite(run.time));
   const traces = !plansDir || !fs.existsSync(plansDir) ? [] : fs.readdirSync(plansDir)
     .filter(name => /^trace-drafts-\d{4}-\d{2}-\d{2}\.json$/.test(name))
@@ -126,6 +195,9 @@ async function main() {
   fs.mkdirSync(path.dirname(out), { recursive:true });
   fs.writeFileSync(out, JSON.stringify(ledger, null, 2));
   for (const r of ledger.routes) console.log(`${r.route}：调用 ${r.calls}｜发现 ${r.discovered}｜合格 ${r.qualified}（报名中/即将 ${r.qualifiedOpen}）｜待审 ${r.pending}｜未通过 ${r.failed}｜每次调用得分 ${r.scorePerCall ?? '-'}`);
+  const m = ledger.metrics;
+  console.log(`指标：待办 ${m.pendingNow} 条，平均已卡 ${m.pendingDaysAverage ?? '-'} 天（中位 ${m.pendingDaysMedian ?? '-'}）｜搜索 ${m.searchCalls} 次，自动来源合格 ${m.automatedQualified} 条，每条 ${m.searchCallsPerQualified ?? '-'} 次｜Jev $${m.jevUsd ?? '-'}`);
+  for (const [origin, b] of Object.entries(m.byOrigin)) console.log(`  ${origin}：进入 ${b.entered}，合格 ${b.qualified}（${b.conversion}），发布耗时中位 ${b.publishDaysMedian ?? '-'} 天`);
   console.log(`台账：${out}`);
 }
 
