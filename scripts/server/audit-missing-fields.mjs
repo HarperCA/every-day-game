@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+const token=fs.readFileSync('/opt/daily-contest/.admin-token','utf8').trim();
+const response=await fetch('http://127.0.0.1:8787/api/adminData',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({adminToken:token,action:'bootstrap'})});
+const result=await response.json();if(!result.ok)throw Error(result.message);
+const records=result.data.records;
+const blank=v=>!String(v??'').trim();
+const fields={organizer:r=>blank(r.organizer),participants:r=>blank(r.participants),eligibility:r=>blank(r.eligibility),formatAndRules:r=>blank(r.formatAndRules),professions:r=>!r.professions?.length,sources:r=>!r.sources?.some(s=>/^https?:\/\//.test(s.url||'')),registrationStart:r=>!r.schedule?.registration_start,registrationEnd:r=>!r.schedule?.registration_end,registrationMethod:r=>blank(r.registrationMethod),registrationUrl:r=>blank(r.registrationUrl),fees:r=>blank(r.fees),teamSize:r=>blank(r.teamSize)};
+const rows=records.map(r=>({...r,missingFields:Object.entries(fields).filter(([,test])=>test(r)).map(([field])=>field)}));
+const summary={at:new Date().toISOString(),version:result.data.stateVersions.records,total:records.length,isolated:records.filter(r=>r.dataStatus==='quarantined').length,missingCore:rows.filter(r=>r.missingFields.some(f=>['organizer','participants','eligibility','formatAndRules','professions','sources'].includes(f))).length,counts:Object.fromEntries(Object.keys(fields).map(k=>[k,rows.filter(r=>r.missingFields.includes(k)).length])),publishedMissingCore:rows.filter(r=>r.dataStatus==='published'&&r.missingFields.some(f=>['organizer','participants','eligibility','formatAndRules','professions','sources'].includes(f))).length};
+const path='/opt/daily-contest/reports/missing-fields-'+Date.now()+'.json';
+fs.writeFileSync(path,JSON.stringify({summary,rows},null,2),{mode:0o600});
+console.log(JSON.stringify({path,...summary},null,2));
+console.log(JSON.stringify(rows.filter(r=>r.missingFields.some(f=>['organizer','participants','eligibility','formatAndRules','professions','sources'].includes(f))).map(r=>({id:r.id,name:r.name,missing:r.missingFields,source:r.sources?.[0]?.url,ai:r.aiReview?.summary})),null,2));
