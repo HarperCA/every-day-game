@@ -35,10 +35,10 @@ describe('栏目标签式的通知标题', () => {
     expect(isNoticeTitle(title)).toBe(true);
   });
 
-  it('不误伤正常赛事名', () => {
-    // 分隔符是关键：没有「标签+分隔符」这个结构就不算栏目标签。
+  it('按用户指定的硬规则拦截任何含“通知”的标题', () => {
     expect(isNoticeTitle('2026年辽宁省大学生智慧电力运行控制创新竞赛')).toBe(false);
     expect(isNoticeTitle('第二十三届中国研究生数学建模竞赛')).toBe(false);
-    expect(isNoticeTitle('全国大学生通知工程竞赛')).toBe(false);
+    expect(isNoticeTitle('全国大学生通知工程竞赛')).toBe(true);
+    expect(isNoticeTitle('2026年某某竞赛通知及报名说明')).toBe(true);
   });
 });

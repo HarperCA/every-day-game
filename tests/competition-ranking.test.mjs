@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const require = createRequire(import.meta.url);
 const RANKING_PATH = '../apps/miniprogram/cloudfunctions/adminData/competitionRanking.js';
 const {
-  WEIGHTS, accessibilityScore, completenessScore, diversify, opportunityScore, rankRecords, relevance, similarity, urgencyScore,
+  WEIGHTS, accessibilityScore, completenessScore, daysUntilNextRegistration, diversify, opportunityScore, rankRecords, relevance, similarity, urgencyScore,
 } = require(RANKING_PATH);
 const { filterPublicRecords } = require('../apps/miniprogram/cloudfunctions/publicData/publicQuery.js');
 
@@ -168,6 +168,36 @@ describe('diversity re-ranking', () => {
     ];
     const raw = rankRecords(scored, { diversify:false }, now).map(item => item.id);
     expect(raw.slice(0, 2).sort()).toEqual(['cs1', 'cs2']);
+  });
+});
+
+describe('distance to next registration (filter + sort)', () => {
+  it('is 0 for an open contest, its start date for an upcoming one, the estimate for an archived one', () => {
+    expect(daysUntilNextRegistration(record({ registration_status:'报名中' }), now)).toBe(0);
+    const upcoming = record({ registration_status:'即将报名', registration_start:days(45) });
+    expect(daysUntilNextRegistration(upcoming, now)).toBeCloseTo(45, 5);
+    const archived = record({ id:'gone', data_status:'archived', registration_status:'已截止', next_edition_estimate:days(200) });
+    expect(daysUntilNextRegistration(archived, now)).toBeCloseTo(200, 5);
+  });
+
+  it('is null when there is nothing to go on, so callers can push it to the end instead of guessing', () => {
+    expect(daysUntilNextRegistration(record({ registration_status:'时间待公布', registration_start:null }), now)).toBeNull();
+    // 已截止但还没被归档任务处理过的边缘情况：同样没有下一届的真实信息。
+    expect(daysUntilNextRegistration(record({ registration_status:'已截止', data_status:'published' }), now)).toBeNull();
+  });
+
+  it('rankRecords(sortBy:"time") orders soonest-first by default and reverses with sortOrder:"desc"', () => {
+    const soon = record({ id:'soon', registration_status:'即将报名', registration_start:days(10) });
+    const later = record({ id:'later', registration_status:'即将报名', registration_start:days(90) });
+    expect(rankRecords([later, soon], { sortBy:'time' }, now).map(item => item.id)).toEqual(['soon', 'later']);
+    expect(rankRecords([later, soon], { sortBy:'time', sortOrder:'desc' }, now).map(item => item.id)).toEqual(['later', 'soon']);
+  });
+
+  it('picking an explicit sort (recommend + asc/desc) skips the diversity shuffle for a predictable order', () => {
+    const strong = record({ id:'strong', recommendation:'强烈推荐' });
+    const weak = record({ id:'weak', recommendation:'谨慎报名' });
+    expect(rankRecords([weak, strong], { sortOrder:'desc' }, now).map(item => item.id)).toEqual(['strong', 'weak']);
+    expect(rankRecords([weak, strong], { sortOrder:'asc' }, now).map(item => item.id)).toEqual(['weak', 'strong']);
   });
 });
 

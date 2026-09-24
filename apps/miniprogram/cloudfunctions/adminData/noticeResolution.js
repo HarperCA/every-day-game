@@ -8,9 +8,25 @@
 // 按「标签 + 分隔符」整体匹配，而不是继续往枚举里加具体写法。
 const NOTICE_LABEL = /^(?:赛事|竞赛|比赛|大赛|活动)?(?:通知|公告|通告|公示|资讯)\s*[丨｜|：:·\-—]/;
 
+// 入库硬规则：赛事名称或届次名称只要含「通知」，就只能作为发现线索。
+// 这里故意不判断语境，也不检查正文/证据 URL；官方通知仍可用于追溯真正赛事。
+function hasNoticeKeyword(value) {
+  return String(value || '').normalize('NFKC').includes('通知');
+}
+
+const PROMOTIONAL_TITLE = /正式启动|正式开启|正式开赛|启动仪式|开幕仪式|正式拉开帷幕|火热开启|隆重开幕/;
+function blockedTitleReason(value) {
+  const title = String(value || '').normalize('NFKC');
+  if (hasNoticeKeyword(title)) return '名称含“通知”，只能作为线索，不得入赛事库';
+  if (title.includes('!')) return '名称含感叹号，疑似宣传或报道标题，不得入赛事库';
+  if (PROMOTIONAL_TITLE.test(title)) return '名称含“正式启动”等活动报道用语，不得入赛事库';
+  return '';
+}
+
 function isNoticeTitle(value) {
   const title = String(value || '').trim();
-  return /^(关于|转发|【?通知】?)/.test(title)
+  return hasNoticeKeyword(title)
+    || /^(关于|转发|【?通知】?)/.test(title)
     || NOTICE_LABEL.test(title)
     || /通知\s*_/.test(title)
     || /(?:的通知|报名通知|参赛通知|选拔通知)$/.test(title);
@@ -32,4 +48,4 @@ function isNonEventTitle(value) {
     || /决赛(?:在[^，。]{0,15})?(?:举行|闭幕|落幕|收官)$/.test(title);
 }
 
-module.exports = { isNoticeTitle, isSectionTitle, isNonEventTitle, needsNoticeResolution };
+module.exports = { hasNoticeKeyword, blockedTitleReason, isNoticeTitle, isSectionTitle, isNonEventTitle, needsNoticeResolution };

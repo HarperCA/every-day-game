@@ -12,6 +12,8 @@
 //    不是一回事，映射是判断不是事实，留空让人来定 —— 而且 professions
 //    为空时公开缓存本来就会拒绝发布，正好形成一道自然的提醒。
 const { deriveRewardTier, deriveScaleTier, normalizeRecognition } = require('./competitionValue');
+const { blockedTitleReason, isNoticeTitle } = require('./noticeResolution');
+const { normalizeEditionTitle } = require('./editionTitle');
 
 const ID_SAFE = /[^A-Za-z0-9_-]/g;
 
@@ -30,6 +32,7 @@ function firstQuote(items, value) {
 // 把抽取到的、带引文的事实整理成人工复核时看得见的待确认清单。
 function buildReviewNotes(candidate, extracted) {
   const notes = [];
+  if (candidate.discoveryNoticeUrl) notes.push(`通知仅作发现线索，赛事页和报名入口仍须独立核验：${candidate.discoveryNoticeUrl}`);
   if (extracted?.organizer) notes.push(`主办方待确认：${extracted.organizer.value}｜依据：${extracted.organizer.quote}`);
   for (const signal of extracted?.authority_signals || []) {
     notes.push(`权威性线索：${signal.signal}｜依据：${signal.quote}`);
@@ -41,6 +44,11 @@ function buildReviewNotes(candidate, extracted) {
     // 等级是判断不是事实，必须由人确认
     notes.push(`认可度建议（待人工确认）：${hint.path}／${hint.level}｜依据：${hint.quote}`);
   }
+  if (extracted?.registration_start) notes.push(`报名开始时间待确认：${extracted.registration_start.value}｜依据：${extracted.registration_start.quote}`);
+  if (extracted?.registration_end) notes.push(`报名截止时间待确认：${extracted.registration_end.value}｜依据：${extracted.registration_end.quote}`);
+  for (const [label, field] of [['参赛对象', 'participants'], ['参赛资格', 'eligibility'], ['赛制规则', 'format_and_rules'], ['队伍人数', 'team_size'], ['报名方式', 'registration_method'], ['费用', 'fees']]) {
+    if (extracted?.[field]) notes.push(`${label}待确认：${extracted[field].value}｜依据：${extracted[field].quote}`);
+  }
   for (const missing of extracted?.missing || []) notes.push(`原文未写明：${missing}`);
   if (!candidate.professions?.length) notes.push(`专业分类待人工判定；来源标签：${(candidate.tags || []).join('、') || '无'}`);
   return notes.slice(0, 40);
@@ -48,10 +56,13 @@ function buildReviewNotes(candidate, extracted) {
 
 function candidateToRecord(candidate, extractionResult, { now = new Date() } = {}) {
   if (!candidate || !candidate.name) throw new Error('invalid_candidate');
+  if (blockedTitleReason(candidate.name) || blockedTitleReason(candidate.seriesName) || isNoticeTitle(candidate.name) || isNoticeTitle(candidate.seriesName)) throw new Error('blocked_competition_title');
   const extracted = extractionResult?.ok ? extractionResult.extracted : null;
   const editionId = toSafeId('edition', candidate.externalId);
   const eventId = toSafeId('event', candidate.externalId);
   const timestamp = now.toISOString();
+  const editionName = String(candidate.seriesName ? `${candidate.seriesName}｜${candidate.name}` : candidate.name).slice(0, 200);
+  const title = normalizeEditionTitle({ name:String(candidate.name).slice(0, 200), editionName });
 
   const rewardHighlights = (extracted?.reward_highlights || []).map(item => item.value);
   const rewardAmount = Number.isFinite(Number(candidate.reward_amount)) ? Number(candidate.reward_amount) : null;
@@ -60,24 +71,26 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
   return {
     id:editionId,
     eventId,
-    name:String(candidate.name).slice(0, 200),
-    editionName:String(candidate.seriesName ? `${candidate.seriesName}｜${candidate.name}` : candidate.name).slice(0, 200),
+    name:title.name,
+    editionName,
+    editionYear:title.editionYear,
+    editionOrdinal:title.editionOrdinal,
     aliases:[],
-    organizer:extracted?.organizer ? String(extracted.organizer.value).slice(0, 200) : '',
+    organizer:extracted?.organizer ? String(extracted.organizer.value).slice(0, 200) : String(candidate.organizer || '').slice(0, 200),
     eventLevel:'其他/未明确',
     objectiveTags:(candidate.tags || []).filter(tag => typeof tag === 'string').slice(0, 10),
     professions:[], // 见文件头第三条：映射是判断，不猜
-    participants:'',
-    eligibility:'',
-    formatAndRules:'',
-    teamSize:'',
+    participants:extracted?.participants?.value || '',
+    eligibility:extracted?.eligibility?.value || '',
+    formatAndRules:extracted?.format_and_rules?.value || '',
+    teamSize:extracted?.team_size?.value || '',
     participationFormat:'暂未明确',
     teamSizeCategory:'暂未明确',
-    registrationMethod:'',
+    registrationMethod:extracted?.registration_method?.value || '',
     registrationOrganization:extracted?.registration_organization?.value || '暂未明确',
     registrationUrl:String(candidate.detailUrl || ''),
-    fees:'',
-    feeType:'暂未公布',
+    fees:extracted?.fees?.value || '',
+    feeType:extracted?.fees?.value ? (/免费|不收|免收|无报名费/.test(extracted.fees.value) ? '免费' : /\d\s*元|收费|报名费/.test(extracted.fees.value) ? '收费' : '暂未公布') : '暂未公布',
     lastVerifiedAt:timestamp,
 
     // 抓来的一律是草稿，发布闸必然拦住
@@ -85,16 +98,22 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
     systemValidation:'not_run',
     manualReview:'pending',
     qualityIssues:buildReviewNotes(candidate, extracted),
+    discoveryNoticeUrl:String(candidate.discoveryNoticeUrl || ''),
+    noticeResolution:null,
 
     schedule:{
       id:`schedule-${editionId}`,
       edition_id:editionId,
       track_id:null,
-      registration_start:candidate.registration_start || null,
-      registration_end:candidate.registration_end || null,
+      // 抽取给的日期带原文锚点、经过逐字回查，比抓取列表接口给的更可信，优先用它；
+      // 抓取本来就没给过日期（policy 明确写了"报名时间一律留空待抽取"），
+      // 这里的 candidate.registration_start 只是兼容将来某个来源直接给出日期的情况。
+      registration_start:extracted?.registration_start?.value || candidate.registration_start || null,
+      registration_end:extracted?.registration_end?.value || candidate.registration_end || null,
       competition_start:candidate.competition_start || null,
       competition_end:candidate.competition_end || null,
-      pending_announcement:!candidate.registration_end,
+      // Missing dates do not establish that the organizer has announced dates are pending.
+      pending_announcement:false,
       status_override:null,
       status_override_reason:null,
       time_note:'',
@@ -120,7 +139,16 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
       published_at:null,
       last_verified_at:timestamp,
       validity_status:'unchecked',
-    }],
+    }, ...(candidate.discoveryNoticeUrl ? [{
+      id:`source-${editionId}-notice`,
+      edition_id:editionId,
+      url:String(candidate.discoveryNoticeUrl),
+      source_type:'discovery_notice',
+      is_official:false,
+      published_at:null,
+      last_verified_at:timestamp,
+      validity_status:'unchecked',
+    }] : [])],
 
     rewardAmount,
     rewardTier:deriveRewardTier(rewardAmount),

@@ -21,3 +21,10 @@ it('does not quarantine specialized tasks just because the title lacks contest k
   const a={name:'CHIP2026-面向生物医学全文的特定患者表型概念识别任务',dataStatus:'draft'};
   expect(isolateMisimport(a)).toBe(a);
 });
+it('isolates a published school selection that has no parent event',()=>{
+  const a={name:'第二十届“挑战杯”全国大学生课外学术科技作品竞赛某大学校级选拔赛',dataStatus:'published'};
+  const q=isolateMisimport(a);
+  expect(q.dataStatus).toBe('quarantined');
+  expect(q.quarantine.reason).toContain('下级选拔');
+  expect(q.quarantine.previousStatus).toBe('published');
+});

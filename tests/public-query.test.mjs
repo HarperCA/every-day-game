@@ -35,6 +35,34 @@ describe('public competition query', () => {
     expect(currentRegistrationStatus({ registration_end:'2026-10-10T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('时间待公布');
   });
 
+  it('hides an archived record by default, same as anything past its deadline', () => {
+    const archived = { ...base, id:'gone', data_status:'archived', registration_start:'2025-08-01T00:00:00Z', registration_end:'2025-08-20T00:00:00Z', next_edition_estimate:'2026-08-01T00:00:00Z', search_text:'x' };
+    expect(filterPublicRecords([archived], {}, new Date('2026-01-01T00:00:00Z')).items).toHaveLength(0);
+  });
+
+  it('surfaces an archived record once the "距离报名时间" filter is on and its estimate falls inside the window', () => {
+    const archived = { ...base, id:'gone', data_status:'archived', registration_start:'2025-08-01T00:00:00Z', registration_end:'2025-08-20T00:00:00Z', next_edition_estimate:'2026-08-01T00:00:00Z', search_text:'x' };
+    const now = new Date('2026-06-01T00:00:00Z'); // 距估算日期约2个月
+    expect(filterPublicRecords([archived], { registrationWithin:'3m' }, now).items.map(i => i.id)).toEqual(['gone']);
+    expect(filterPublicRecords([archived], { registrationWithin:'1m' }, now).items).toHaveLength(0);
+  });
+
+  it('an upcoming (即将报名) record is also caught by the "距离报名时间" filter, using its own start date', () => {
+    const upcoming = { ...base, id:'soon', registration_start:'2026-08-20T00:00:00Z', search_text:'x' };
+    const now = new Date('2026-06-01T00:00:00Z'); // 距开始约2个半月
+    expect(filterPublicRecords([upcoming], { registrationWithin:'3m' }, now).items.map(i => i.id)).toEqual(['soon']);
+    expect(filterPublicRecords([upcoming], { registrationWithin:'1m' }, now).items).toHaveLength(0);
+  });
+
+  it('sorts by time ascending (default) or descending, unknown-date records always last', () => {
+    const soon = { ...base, id:'soon', registration_start:'2026-07-01T00:00:00Z', search_text:'a' };
+    const later = { ...base, id:'later', registration_start:'2026-09-01T00:00:00Z', search_text:'b' };
+    const unknown = { ...base, id:'unknown', registration_start:null, search_text:'c' };
+    const now = new Date('2026-06-01T00:00:00Z');
+    expect(filterPublicRecords([later, unknown, soon], { sortBy:'time' }, now).items.map(i => i.id)).toEqual(['soon', 'later', 'unknown']);
+    expect(filterPublicRecords([later, unknown, soon], { sortBy:'time', sortOrder:'desc' }, now).items.map(i => i.id)).toEqual(['later', 'soon', 'unknown']);
+  });
+
   it('tells "collection not created yet" apart from a real database failure', () => {
     // 公开缓存集合要等第一条记录发布才会被建出来。在那之前 list 应该
     // 拿到空列表，而不是把这个当成故障抛给用户 —— 否则小程序一条都没发布时

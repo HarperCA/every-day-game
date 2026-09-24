@@ -85,6 +85,22 @@ describe('verifying a model response', () => {
     expect(empty.reward_highlights).toEqual([]);
     expect(empty.organizer).toBeNull();
   });
+
+  it('retains sourced core fields and rejects an invented qualification', () => {
+    const verified = verifyAgainstSource({
+      participants:{ value:'全日制在校本科生与研究生', quote:'参赛对象为全日制在校本科生与研究生' },
+      eligibility:{ value:'仅限博士生', quote:'仅限博士生报名参赛' },
+      format_and_rules:{ value:'初赛线上提交', quote:'初赛为线上提交，复赛与决赛在承办单位现场进行' },
+      team_size:{ value:'每队不超过三人', quote:'每队不超过三人，可跨校组队' },
+      fees:{ value:'不收取报名费', quote:'参赛不收取任何报名费用' },
+    }, SOURCE);
+    expect(verified.participants.value).toBe('全日制在校本科生与研究生');
+    expect(verified.eligibility).toBeNull();
+    expect(verified.format_and_rules.value).toBe('初赛线上提交');
+    expect(verified.team_size.value).toBe('每队不超过三人');
+    expect(verified.fees.value).toBe('不收取报名费');
+    expect(verified.dropped.some(item => item.value === '仅限博士生')).toBe(true);
+  });
 });
 
 describe('turning verified facts into suggestions', () => {
@@ -299,6 +315,51 @@ describe('registration organization must land on the schema enum', () => {
     const prompt = buildExtractPrompt('正文', '某赛事');
     for (const value of REGISTRATION_ORGANIZATIONS) expect(prompt).toContain(value);
     expect(prompt).toContain('不要自己造措辞');
+  });
+});
+
+describe('registration dates must be real ISO dates with a genuine quote', () => {
+  const DATE_SOURCE = SOURCE + '报名时间为2026年10月15日至2026年11月20日，逾期不予受理。';
+
+  it('accepts a well-formed date backed by a real quote', () => {
+    const verified = verifyAgainstSource({
+      registration_start:{ value:'2026-10-15', quote:'报名时间为2026年10月15日至2026年11月20日' },
+      registration_end:{ value:'2026-11-20', quote:'报名时间为2026年10月15日至2026年11月20日' },
+    }, DATE_SOURCE);
+    expect(verified.registration_start.value).toBe('2026-10-15');
+    expect(verified.registration_end.value).toBe('2026-11-20');
+  });
+
+  it('rejects a value that is not a real ISO date, even with a genuine quote', () => {
+    // 模型有时会给"待定""10月"这类半截日期——格式不对就整条丢弃，不能塞进 schedule。
+    const verified = verifyAgainstSource({
+      registration_start:{ value:'10月', quote:'报名时间为2026年10月15日至2026年11月20日' },
+      registration_end:{ value:'2026-13-40', quote:'报名时间为2026年10月15日至2026年11月20日' },
+    }, DATE_SOURCE);
+    expect(verified.registration_start).toBeNull();
+    expect(verified.registration_end).toBeNull();
+  });
+
+  it('rejects a date whose quote does not actually appear in the source', () => {
+    const verified = verifyAgainstSource({
+      registration_start:{ value:'2026-01-01', quote:'报名时间为2026年1月1日起' }, // 编造
+    }, DATE_SOURCE);
+    expect(verified.registration_start).toBeNull();
+  });
+
+  it('turns verified dates into field suggestions', () => {
+    const verified = verifyAgainstSource({
+      registration_end:{ value:'2026-11-20', quote:'报名时间为2026年10月15日至2026年11月20日' },
+    }, DATE_SOURCE);
+    const suggestions = toFieldSuggestions(verified, 'https://example.com');
+    expect(suggestions).toContainEqual(expect.objectContaining({ field:'registration_end', value:'2026-11-20' }));
+  });
+
+  it('documents the required date format in the prompt', () => {
+    const prompt = buildExtractPrompt('正文', '某赛事');
+    expect(prompt).toContain('registration_start');
+    expect(prompt).toContain('registration_end');
+    expect(prompt).toContain('YYYY-MM-DD');
   });
 });
 

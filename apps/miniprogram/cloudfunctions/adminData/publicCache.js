@@ -1,4 +1,7 @@
 const { valueFields } = require('./competitionValue.js');
+const { blockedTitleReason, needsNoticeResolution } = require('./noticeResolution.js');
+const { titleHasEditionTokens } = require('./editionTitle.js');
+const { classifyCompetitionScope } = require('./competitionScope.js');
 const REGISTRATION_STATUSES = new Set(['时间待公布', '即将报名', '报名中', '已截止']);
 const RECOMMENDATION_WEIGHT = { '强烈推荐':0, '值得参加':1, '适合练手':2, '高难挑战':3, '谨慎报名':4, '信息不足':5 };
 
@@ -23,23 +26,43 @@ function requirePublishGate(record) {
   if (record.dataStatus !== 'published') throw new Error('public_cache_requires_published_record');
   if (record.systemValidation !== 'passed') throw new Error('public_cache_system_validation_required');
   if (record.manualReview !== 'passed') throw new Error('public_cache_manual_review_required');
+  if (blockedTitleReason(record.name) || blockedTitleReason(record.editionName) || needsNoticeResolution(record) || (record.qualityIssues || []).includes('notice_resolution_pending')) throw new Error('public_cache_notice_resolution_required');
+  if (classifyCompetitionScope(record).decision !== 'eligible') throw new Error('public_cache_competition_out_of_scope');
+  if (titleHasEditionTokens(record.name)) throw new Error('public_cache_title_metadata_not_separated');
   if (!/^https?:\/\//i.test(record.registrationUrl || '')) throw new Error('public_cache_registration_url_required');
-  const hasValidOfficialSource = (record.sources || []).some(source => source?.id && source.source_type && source.is_official && source.validity_status === 'valid' && /^https?:\/\//i.test(source.url || ''));
+  const hasValidOfficialSource = (record.sources || []).some(source => source?.id && source.source_type && !['discovery_notice','university_notice','search_candidate'].includes(source.source_type) && source.is_official && source.validity_status === 'valid' && /^https?:\/\//i.test(source.url || ''));
   if (!hasValidOfficialSource) throw new Error('public_cache_valid_official_source_required');
 }
 
+// 归档记录早就通过完整发布门槛才上过线，这里不重新走 requirePublishGate——
+// 报名链接、来源核验状态这些"能不能报名"相关的门槛，对一条已经报不上名、
+// 只是留着给学生看"下一届大概什么时候"的记录已经不适用了。
+function requireArchivedGate(record) {
+  if (record.dataStatus === 'quarantined') throw new Error('quarantined_record_not_public');
+  if (record.dataStatus !== 'archived') throw new Error('public_cache_requires_archived_record');
+  if (blockedTitleReason(record.name) || blockedTitleReason(record.editionName) || needsNoticeResolution(record)) throw new Error('public_cache_notice_resolution_required');
+  if (classifyCompetitionScope(record).decision !== 'eligible') throw new Error('public_cache_competition_out_of_scope');
+  if (titleHasEditionTokens(record.name)) throw new Error('public_cache_title_metadata_not_separated');
+}
+
 function toPublicCache(record, now = new Date()) {
-  requirePublishGate(record);
+  const archived = record.dataStatus === 'archived';
+  if (archived) requireArchivedGate(record); else requirePublishGate(record);
   const recommendation = record.recommendation?.recommendation || '信息不足';
   const status = registrationStatus(record, now);
   const aliases = Array.isArray(record.aliases) ? record.aliases.filter(value => typeof value === 'string') : [];
   const professions = Array.isArray(record.professions) ? record.professions.filter(value => typeof value === 'string') : [];
-  if (!record.id || !record.eventId || !record.name || !record.editionName || !professions.length) throw new Error('invalid_public_cache_record');
+  // 已归档记录允许专业标签为空——发现时报名就已截止、从没人工看过的候选，
+  // 走的是"直接归档"分支（见 intakeSchedule.js），本来就没人给它打过标签。
+  // 已发布记录仍然硬性要求非空，学生端的专业筛选靠它才能用。
+  if (!record.id || !record.eventId || !record.name || !record.editionName || (!archived && !professions.length)) throw new Error('invalid_public_cache_record');
   return {
     id:record.id,
     event_id:record.eventId,
     name:record.name,
     edition_name:record.editionName,
+    edition_year:String(record.editionYear || ''),
+    edition_ordinal:String(record.editionOrdinal || ''),
     aliases,
     organizer:String(record.organizer || ''),
     objective_tags:Array.isArray(record.objectiveTags) ? record.objectiveTags.slice(0, 10) : [],
@@ -76,31 +99,35 @@ function toPublicCache(record, now = new Date()) {
     // 与路径无关的排序基准：报名状态 > 推荐等级。
     // 价值分是分路径分岗位的，不能压进一个标量，所以排序在查询层按用户目标叠加。
     sort_weight:(REGISTRATION_STATUSES.has(status) ? ['报名中','即将报名','时间待公布','已截止'].indexOf(status) : 3) * 10 + (RECOMMENDATION_WEIGHT[recommendation] ?? 5),
-    data_status:'published',
+    data_status:archived ? 'archived' : 'published',
     system_validation:'passed',
     manual_review:'passed',
+    // 只有归档记录才有意义；发布中的记录这两个字段恒为 null，保持字段形状一致。
+    next_edition_estimate:archived ? (record.nextEditionEstimate || null) : null,
+    archived_at:archived ? (record.archivedAt || null) : null,
   };
 }
 
 async function syncPublicCache(transaction, previousRecords, nextRecords, now = new Date()) {
-  const previousPublished = new Set(previousRecords.filter(item => item?.dataStatus === 'published').map(item => item.id));
+  const isCacheable = status => status === 'published' || status === 'archived';
+  const previousCached = new Set(previousRecords.filter(item => isCacheable(item?.dataStatus)).map(item => item.id));
   const previousById = new Map(previousRecords.map(item => [item?.id, item]));
   const nextIds = new Set(nextRecords.map(item => item?.id).filter(Boolean));
   let published = 0;
   let removed = 0;
   for (const record of nextRecords) {
-    if (record?.dataStatus === 'published') {
+    if (isCacheable(record?.dataStatus)) {
       const previous = previousById.get(record.id);
-      if (!previous || previous.dataStatus !== 'published' || JSON.stringify(previous) !== JSON.stringify(record)) {
+      if (!previous || previous.dataStatus !== record.dataStatus || JSON.stringify(previous) !== JSON.stringify(record)) {
         await transaction.collection('event_edition_public_cache').doc(record.id).set({ data:toPublicCache(record, now) });
         published += 1;
       }
-    } else if (record?.id && previousPublished.has(record.id)) {
+    } else if (record?.id && previousCached.has(record.id)) {
       await transaction.collection('event_edition_public_cache').doc(record.id).remove();
       removed += 1;
     }
   }
-  for (const id of previousPublished) {
+  for (const id of previousCached) {
     if (!nextIds.has(id)) {
       await transaction.collection('event_edition_public_cache').doc(id).remove();
       removed += 1;

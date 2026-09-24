@@ -44,7 +44,11 @@ function toStructuredText(input, limit) {
     .slice(0, limit);
 }
 
-const PAGE_TIMEOUT_MS = 8000;
+// 实测 2026-09-19：从这台海外服务器抓中国高校站点，IPv6 直接不通（自动
+// 退回 IPv4），IPv4 连上后不少站点响应很慢——8 秒里有相当一部分"抓失败"
+// 其实是"没抓完"，给够时间(15秒内)能成功。20 秒不是随便定的上限，
+// 下面 TOTAL_BUDGET_MS 的预算分配还留得住。
+const PAGE_TIMEOUT_MS = 20000;
 // 云函数硬上限是 60 秒，被平台掐死时什么都拿不到，连失败原因都没有。
 // 所以自己先收口：总预算 52 秒，留 8 秒给平台调度和返回序列化。
 // 模型调用的超时不是写死的，而是「总预算减去抓页面已经花掉的时间」——
@@ -298,6 +302,12 @@ function buildExtractPrompt(pageText, contestName) {
     '',
     '只输出一个 JSON 对象，不要 Markdown 围栏，不要解释。字段：',
     'organizer: {value, anchor} 或 null —— 主办/承办单位全称，按正文写法。',
+    'participants: {value, anchor} 或 null —— 官方明确的参赛对象原文。',
+    'eligibility: {value, anchor} 或 null —— 学籍、成绩、地域等参赛资格限制原文。',
+    'format_and_rules: {value, anchor} 或 null —— 赛制、具体专业任务或评审规则原文。',
+    'team_size: {value, anchor} 或 null —— 每队人数或个人参赛要求原文。',
+    'registration_method: {value, anchor} 或 null —— 官方实际报名步骤原文。',
+    'fees: {value, anchor} 或 null —— 报名收费、免费或费用说明原文；没写不得填免费。',
     `reward_highlights: 数组，每项 {value, anchor}。value 只能取：${REWARD_HIGHLIGHTS.join('、')}。`,
     '  注意：只有正文明确写了对应待遇才能列出。写了奖金就列「现金奖金」，',
     '  写了实习机会或免笔试/直通面试才能列「实习或直通面试」，写了保研加分才能列「保研考研加分」。',
@@ -309,12 +319,24 @@ function buildExtractPrompt(pageText, contestName) {
     '  不要因为主办方是大公司就推断企业认可度高。',
     `registration_organization: {value, anchor} 或 null —— 报名由谁组织。value 只能取：${REGISTRATION_ORGANIZATIONS.join('、')}。`,
     '  按正文原话对应到最接近的一项；正文没写清楚就不要返回该项，不要自己造措辞。',
+    'registration_start: {value, anchor} 或 null —— 报名开始日期。value 必须是 YYYY-MM-DD；',
+    '  anchor 是正文里写这个日期的原文片段（例如「2026年10月15日」「10月15日起」）。只有一个日期、没写"开始"字样时，',
+    '  按"报名开始"理解；正文只说了截止日期、没说开始日期，就不要编一个开始日期出来。',
+    'registration_end: {value, anchor} 或 null —— 报名截止日期，格式和取法同上。',
     'missing: 字符串数组，最多 6 项 —— 正文里没有写到、因此无法抽取的关键项。',
     '',
     contestName ? `赛事名称（仅供定位，不可作为证据）：${contestName}` : '',
     '页面正文：',
     pageText,
   ].filter(Boolean).join('\n');
+}
+
+// 报名日期只接受 YYYY-MM-DD；格式不对的模型输出（比如"待定""10月"这种半截日期）
+// 宁可整条丢弃，也不要塞一个解析不出来的字符串进 schedule。
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function isValidIsoDate(value) {
+  if (!ISO_DATE_RE.test(String(value || ''))) return false;
+  return !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
 }
 
 // 逐字回查每条 quote，丢掉对不上的。返回保留项和被丢弃项，两者都要能被人看到。
@@ -336,6 +358,12 @@ function verifyAgainstSource(parsed, sourceText) {
   };
 
   const organizer = keepWithQuote(parsed.organizer, 'organizer');
+  const participants = keepWithQuote(parsed.participants, 'participants');
+  const eligibility = keepWithQuote(parsed.eligibility, 'eligibility');
+  const formatAndRules = keepWithQuote(parsed.format_and_rules, 'format_and_rules');
+  const teamSize = keepWithQuote(parsed.team_size, 'team_size');
+  const registrationMethod = keepWithQuote(parsed.registration_method, 'registration_method');
+  const fees = keepWithQuote(parsed.fees, 'fees');
   // 这个字段在 event_edition schema 里是枚举，模型返回散文会直接违反约束
   const registrationOrganization = REGISTRATION_ORGANIZATIONS.includes(parsed.registration_organization?.value)
     ? keepWithQuote(parsed.registration_organization, 'registration_organization')
@@ -362,12 +390,27 @@ function verifyAgainstSource(parsed, sourceText) {
     .map(item => keepWithQuote(item, 'recognition_hints'))
     .filter(Boolean);
 
+  const registrationStart = isValidIsoDate(parsed.registration_start?.value)
+    ? keepWithQuote(parsed.registration_start, 'registration_start')
+    : null;
+  const registrationEnd = isValidIsoDate(parsed.registration_end?.value)
+    ? keepWithQuote(parsed.registration_end, 'registration_end')
+    : null;
+
   return {
     organizer,
+    participants,
+    eligibility,
+    format_and_rules:formatAndRules,
+    team_size:teamSize,
+    registration_method:registrationMethod,
+    fees,
     reward_highlights:rewardHighlights,
     authority_signals:authoritySignals,
     recognition_hints:recognitionHints,
     registration_organization:registrationOrganization,
+    registration_start:registrationStart,
+    registration_end:registrationEnd,
     missing:(Array.isArray(parsed.missing) ? parsed.missing : []).filter(item => typeof item === 'string').slice(0, 10),
     dropped,
   };
@@ -379,9 +422,14 @@ function toFieldSuggestions(verified, sourceUrl) {
   const suggestions = [];
   const push = (field, value, quote) => suggestions.push({ field, value, quote, source:sourceUrl });
   if (verified.organizer) push('organizer', verified.organizer.value, verified.organizer.quote);
+  for (const [field, item] of Object.entries({participants:verified.participants,eligibility:verified.eligibility,format_and_rules:verified.format_and_rules,team_size:verified.team_size,registration_method:verified.registration_method,fees:verified.fees})) {
+    if (item) push(field, item.value, item.quote);
+  }
   if (verified.registration_organization) {
     push('registration_organization', verified.registration_organization.value, verified.registration_organization.quote);
   }
+  if (verified.registration_start) push('registration_start', verified.registration_start.value, verified.registration_start.quote);
+  if (verified.registration_end) push('registration_end', verified.registration_end.value, verified.registration_end.quote);
   for (const item of verified.reward_highlights) push('reward_highlights', item.value, item.quote);
   for (const hint of verified.recognition_hints) {
     suggestions.push({
@@ -500,6 +548,6 @@ module.exports = {
   PROMPT_VERSION, PAGE_TEXT_LIMIT, MIN_QUOTE_LENGTH, MAX_QUOTE_LENGTH,
   ANCHOR_MIN_LENGTH, ANCHOR_MAX_LENGTH, BOILERPLATE_MIN_CHARS, MAX_ANCHOR_OCCURRENCES, MIN_EVIDENCE_CHARS,
   TOTAL_BUDGET_MS, MIN_CHAT_TIMEOUT_MS, DEFAULT_MAX_TOKENS, EXTRACT_CONFIG_PREFIX, remainingChatBudget,
-  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, isSelfContained, looksLikeContestPage, toStructuredText,
+  buildExtractPrompt, expandAnchor, extractFromDetailPage, fetchDetailPage, isSelfContained, isValidIsoDate, looksLikeContestPage, toStructuredText,
   normalizeForQuoteMatch, quoteAppearsInSource, toFieldSuggestions, verifyAgainstSource,
 };

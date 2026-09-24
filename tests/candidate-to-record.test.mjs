@@ -57,6 +57,13 @@ describe('a crawled candidate always lands as a draft', () => {
     expect(record.systemValidation).toBe('not_run');
     expect(record.manualReview).toBe('pending');
   });
+  it('separates candidate year and edition number from the display title', () => {
+    const record = candidateToRecord({...candidate, name:'2026年第八届全国大学生设计大赛', seriesName:''}, extraction);
+    expect(record.name).toBe('全国大学生设计大赛');
+    expect(record.editionYear).toBe('2026');
+    expect(record.editionOrdinal).toBe('第八届');
+    expect(record.editionName).toBe('2026年第八届全国大学生设计大赛');
+  });
 
   it('is refused by the publish gate', () => {
     // 抓来的东西绕不过人工：发布闸要求 published + 双审通过 + 有效官方来源。
@@ -68,6 +75,12 @@ describe('a crawled candidate always lands as a draft', () => {
     const [source] = candidateToRecord(candidate, extraction).sources;
     expect(source.is_official).toBe(false);
     expect(source.validity_status).toBe('unchecked');
+  });
+  it('keeps the discovery notice separate from the proposed contest page', () => {
+    const record = candidateToRecord({...candidate, discoveryNoticeUrl:'https://school.example.edu/notice'}, extraction);
+    expect(record.discoveryNoticeUrl).toBe('https://school.example.edu/notice');
+    expect(record.sources).toHaveLength(2);
+    expect(record.sources[1]).toMatchObject({source_type:'discovery_notice',is_official:false,validity_status:'unchecked'});
   });
 });
 

@@ -1,9 +1,4 @@
 {
-  "triggers": [
-    {
-      "name": "competition-ai-review-batch",
-      "type": "timer",
-      "config": "0 0/5 * * * * *"
-    }
-  ]
+  "_comment": "原定时触发器 competition-ai-review-batch 已于 2026-09-18 删除，改由自有服务器 systemd timer 承担（见 scripts/server/daily-contest-ai-review.timer），因为 adminData 的业务逻辑已经跑在服务器上，CloudBase 这份定时器写的是脱节的旧数据库。这个函数本身仍部署在 CloudBase 作为回退，只是不再挂定时触发。",
+  "triggers": []
 }

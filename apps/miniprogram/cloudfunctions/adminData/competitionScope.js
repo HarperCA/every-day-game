@@ -1,5 +1,6 @@
 // 范围判断先于价值评分。未证实为大学生专业赛事的线索不得写入赛事库。
-const { isNoticeTitle, isNonEventTitle } = require('./noticeResolution');
+const { blockedTitleReason, isNoticeTitle, isNonEventTitle } = require('./noticeResolution');
+const { normalizeEditionTitle, titleHasEditionTokens } = require('./editionTitle');
 
 // 【已冻结，不要再往里加词】
 //
@@ -38,7 +39,14 @@ function classifyCompetitionScope(record = {}) {
   const reject = reason => ({ decision:'reject', reason });
   const pending = reason => ({ decision:'pending', reason });
   if (!title) return reject('缺少赛事名称');
+  const titleBlock = blockedTitleReason(title) || blockedTitleReason(record.editionName);
+  if (titleBlock) return reject(titleBlock);
   if (isClearlyOutOfScope({ ...record, name:title })) return reject('非大学生专业赛事');
+  // 校赛/院赛是上级赛事的报名或选拔环节，不是新的独立赛事。只有已经明确关联
+  // parentEventId 时才允许作为内部子记录保存；不能进入独立比赛列表。
+  if (/校级(?:选拔赛|初赛)|校内(?:选拔赛|初赛|赛)|院级(?:选拔赛|初赛)|学院选拔赛/.test(title) && !record.parentEventId) {
+    return reject('校赛或院赛是上级赛事的下级选拔，必须关联父赛事，不得作为独立赛事');
+  }
   if (isNoticeTitle(title) || isNonEventTitle(title) || /通知(?:[-_｜|]|$)/.test(title)) return reject('通知、栏目或目录线索，需要追溯比赛本身');
   if (/目录|清单|汇总|全梳理|资讯速递|参赛指南|赛题分析|报名表|模拟考场|错题重练|群众文艺|文化艺术季|音乐节|作品评选/.test(title)) return reject('目录、资料或兴趣文化活动，不是专业赛事');
   if (/喜报|学子获|获奖名单|晋级.*名单|斩获|创佳绩|(?:学院|大学|学校|团队|学生).*获.*(?:等奖|金奖|银奖|铜奖)|决赛.*(?:举行|闭幕|落幕|收官)/.test(title)) return reject('赛后报道或结果公示，不是赛事条目');
@@ -83,6 +91,18 @@ function requireScopeForNewRecords(previous, next) {
     const restoring = original?.dataStatus === 'quarantined' && record.dataStatus !== 'quarantined';
     if (restoring && record.dataStatus !== 'draft') throw new Error('隔离记录只能补齐资料后恢复为草稿');
     if (existing.has(`${record.id}\n${record.name}`) && !restoring) continue;
+    if (titleHasEditionTokens(record.name)) throw new Error(`赛事名称只保留正文，年份与届次须单独填写：${record.name}`);
+    // 存量字段迁移只移动名称中的年份/届次，不更改赛事身份和状态。旧草稿、
+    // 隔离条目可能本来就未达到当前准入门槛，不能因此阻断无损字段迁移。
+    const normalizationOnly = sameId.some(item => {
+      const expected = normalizeEditionTitle(item);
+      return item.editionName === record.editionName
+        && expected.name === record.name
+        && expected.editionYear === String(record.editionYear || '')
+        && expected.editionOrdinal === String(record.editionOrdinal || '')
+        && JSON.stringify({...item, name:record.name, editionYear:record.editionYear, editionOrdinal:record.editionOrdinal}) === JSON.stringify(record);
+    });
+    if (normalizationOnly && !restoring) continue;
     const scope = classifyCompetitionScope(record);
     if (scope.decision !== 'eligible') throw new Error(`赛事范围未通过：${record.name}；${scope.reason}`);
     const intake = assessIntakeRecord(record);
@@ -98,7 +118,8 @@ function assessIntakeRecord(record = {}) {
   for (const [key, label] of [['organizer','主办方'],['participants','参赛对象'],['eligibility','大学生资格依据'],['formatAndRules','专业任务与赛制']]) {
     if (!String(record[key] || '').trim()) missing.push(label);
   }
-  if (!record.professions?.length) missing.push('专业分类');
+  // 新抓到的草稿允许专业分类待定，后续由 Kimi 根据正文判定；发布仍须有分类。
+  if (!record.professions?.length && record.dataStatus !== 'draft') missing.push('专业分类');
   if (!(record.sources || []).some(source => /^https?:\/\//i.test(source.url || ''))) missing.push('来源网址');
   return missing.length ? {decision:'pending', reason:`缺少${missing.join('、')}，不得以标题关键词代替核验`, ruleVersion:'intake-v2'} : {...scope, ruleVersion:'intake-v2'};
 }

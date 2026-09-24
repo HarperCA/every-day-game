@@ -28,6 +28,10 @@ const AUTHORITY_PATTERNS = [
   // 实测「具身」系列三条赛道主办方证据完全相同，却因为其中一条正文偶然出现
   // 这类词而被拆成 2 admit / 1 review —— 一个模糊模式能决定判定，说明它标定错了。
   { pattern:/学术会议|全国[一-龥]{2,10}大会|届[一-龥]{0,10}大会|论文集/, signal:'依托学术会议', weight:1 },
+  // 知名技术平台联合主办/提供算力赞助——不是政府或学术机构，但真金白银投入
+  // （算力、数据集、奖金）本身就是水赛不会有的成本，值得算作一个独立信号。
+  // 权重比"学会"类低一档：这是商业信誉，不是行政/学术权威背书。
+  { pattern:/阿里云天池|DataFountain|Kaggle|华为云|腾讯云|百度飞桨|飞桨|魔搭社区|ModelScope|字节跳动|抖音集团/, signal:'知名技术平台联合主办或支持', weight:2 },
 ];
 
 // 水赛红旗。命中任一条都需要抵消证据才能收录。
@@ -78,7 +82,8 @@ function collectText(record = {}) {
 // 那个截止日期（校内选拔可能比国赛报名早两个月）。漏掉它，用户看到的国赛日期
 // 就是他已经没资格用的日期。两者的区别在于有没有上级赛事。
 function isSchoolOnly(record = {}) {
-  return record.tier === '校级' && !record.parentEventId && !record.advancesTo;
+  const level = String(record.eventLevel || record.tier || '');
+  return /校级/.test(level) && !record.parentEventId && !record.advancesTo;
 }
 
 function admissionSignals(record = {}) {

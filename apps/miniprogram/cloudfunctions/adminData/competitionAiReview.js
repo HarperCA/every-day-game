@@ -1,7 +1,15 @@
 const { nodeFetch } = require('./httpClient');
 const { isAllowed } = require('./robots');
 
-const PROMPT_VERSION = 'competition-review-kimi-v1';
+const PROMPT_VERSION = 'competition-review-kimi-v2';
+const FIELD_VERIFICATION_PROMPT_VERSION = 'competition-field-verify-v1';
+// 跟 apps/miniprogram/data/competitions.js 里实际在用的十三类保持一致——
+// 这是唯一真正被小程序端专业筛选用到的取值集合，不是随口列的示例。
+const PROFESSION_TAXONOMY = [
+  '综合/不限专业', '计算机与AI', '电子信息', '经管与商科', '生物与医药',
+  '机械与自动化', '数学与统计', '材料与化工', '能源与环境', '设计与艺术',
+  '人文与法学', '外语与教育', '建筑与土木',
+];
 const DEFAULT_MODEL = 'kimi-for-coding';
 const DEFAULT_BASE_URL = 'https://api.kimi.com/coding/v1';
 const EVIDENCE_TIMEOUT_MS = 5000;
@@ -36,6 +44,147 @@ const resultSchema = {
     evidence_refs:{ type:'array', maxItems:20, items:{ type:'string', maxLength:2048 } },
   },
 };
+
+// 新候选入库/已发布赛事每周复核共用同一套"三项核验"：名称、报名时间、
+// 报名/详情链接是否与来源一致。三项全过是自动发布（或维持已发布不动）的
+// 唯一依据，所以要求模型对每一项给出明确的 true/false，而不是笼统结论。
+//
+// 报名时间拆成 start/end 两个独立布尔值而不是一个 registration_time_correct——
+// 实测（2026-09-19）在 json_schema 模式不可用、退化成 json_object 时，模型会
+// 自己"脑补"成更自然的 registration_start_correct/registration_end_correct，
+// 而不是提示词里写的名字。与其硬掰模型的自然倾向，不如让 schema 顺着它。
+//
+// professions 不算三项之一（用户只要求核这三项），但发布/公开缓存两处
+// 都硬性要求专业标签非空，机制上少不了，所以搭这次调用一并问出来；
+// 拿不准时 professions_confident 给 false，调用方据此转人工，不强行打标。
+//
+// 报名开始/截止时间不是简单的对/错，是三选一：来源明确写了且跟记录一致
+// （confirmed_correct）、来源压根没提这个日期（not_specified——不是记录错了，
+// 是官方还没公布，属于"时间待公布"这个本来就存在的合法状态，不该拿来当
+// 发布的拦路虎）、来源写了但跟记录对不上（incorrect，需要修正值）。
+// 名称和链接没有"没提到"这种中间态，继续用简单的对/错布尔值。
+const DATE_STATUS_VALUES = ['confirmed_correct', 'not_specified', 'incorrect'];
+
+const fieldVerificationSchema = {
+  type:'object', additionalProperties:false,
+  required:[
+    'name_correct', 'name_correction',
+    'registration_start_status', 'registration_start_correction',
+    'registration_end_status', 'registration_end_correction',
+    'registration_url_correct', 'registration_url_correction',
+    'professions', 'professions_confident',
+    'summary',
+  ],
+  properties:{
+    name_correct:{ type:'boolean' },
+    name_correction:{ type:'string', maxLength:200 },
+    registration_start_status:{ type:'string', enum:DATE_STATUS_VALUES },
+    registration_start_correction:{ type:'string', maxLength:40 },
+    registration_end_status:{ type:'string', enum:DATE_STATUS_VALUES },
+    registration_end_correction:{ type:'string', maxLength:40 },
+    registration_url_correct:{ type:'boolean' },
+    registration_url_correction:{ type:'string', maxLength:2048 },
+    professions:{ type:'array', maxItems:5, items:{ type:'string', enum:PROFESSION_TAXONOMY } },
+    professions_confident:{ type:'boolean' },
+    summary:{ type:'string', minLength:1, maxLength:500 },
+  },
+};
+
+// json_schema 模式不可用时模型只受提示词约束，光靠文字描述字段名不够可靠——
+// 实测同一份文字描述换来过 url_correct、registration_url_correct 两种不同
+// 拼法。给一个字段名和值都具体的示例，比反复用文字强调更管用。
+const FIELD_VERIFICATION_EXAMPLE = JSON.stringify({
+  name_correct:true, name_correction:'',
+  registration_start_status:'incorrect', registration_start_correction:'2026-10-15',
+  registration_end_status:'not_specified', registration_end_correction:'',
+  registration_url_correct:true, registration_url_correction:'',
+  professions:['计算机与AI'], professions_confident:true,
+  summary:'名称和链接与来源一致，报名开始时间不对已给出修正；来源没写报名截止时间',
+});
+
+function buildFieldVerificationPrompt(record, evidence) {
+  return [
+    '核验以下赛事记录的 3 项内容是否与来源正文一致：名称、报名开始/截止时间、报名或详情链接。',
+    '名称和链接只有"对/不对"两种；报名开始时间和截止时间要从三种状态里选一个：',
+    'confirmed_correct（来源明确写了这个日期，且和记录一致）、',
+    'not_specified（来源压根没提到这个日期——不是记录错了，是官方还没公布，这不算错误）、',
+    'incorrect（来源写了这个日期，但跟记录不一致）。',
+    'incorrect 时在对应 correction 字段给出你认为正确的值（从来源原文摘取，不要编造）；',
+    'confirmed_correct 或 not_specified 时 correction 留空字符串。日期一律用 YYYY-MM-DD。',
+    `另外从以下专业分类里选出最多 5 个适合参赛的方向（只能选列表内的值，拿不准就 professions 留空数组、professions_confident 填 false）：${PROFESSION_TAXONOMY.join('、')}。`,
+    '只输出一个 JSON 对象，字段名和下面示例完全一致，不要改名、不要增减字段、不要加解释文字或 Markdown 围栏：',
+    FIELD_VERIFICATION_EXAMPLE,
+    `赛事记录：${JSON.stringify(compactRecord(record))}`,
+    `来源读取结果：${JSON.stringify(evidence.map(item => ({ ...item, imageUrl:undefined })))}`,
+  ].join('\n');
+}
+
+const FIELD_VERIFICATION_REQUIRED_BOOLEANS = ['name_correct', 'registration_url_correct', 'professions_confident'];
+const FIELD_VERIFICATION_REQUIRED_STATUSES = ['registration_start_status', 'registration_end_status'];
+
+function validateFieldVerificationResult(value) {
+  if (!value || typeof value !== 'object') throw new Error('ai_field_verification_invalid_result');
+  for (const key of FIELD_VERIFICATION_REQUIRED_BOOLEANS) {
+    if (typeof value[key] !== 'boolean') throw new Error(`ai_field_verification_invalid_${key}`);
+  }
+  for (const key of FIELD_VERIFICATION_REQUIRED_STATUSES) {
+    if (!DATE_STATUS_VALUES.includes(value[key])) throw new Error(`ai_field_verification_invalid_${key}`);
+  }
+  if (!Array.isArray(value.professions)) throw new Error('ai_field_verification_invalid_professions');
+  return value;
+}
+
+// record：candidateToRecord() 产出的草稿，或库里已发布的记录。
+// all_correct 由三项各自的布尔值算出来，不采信模型自己给的总览结论——
+// 避免"三项都说对，总览却说不对"这种模型自相矛盾时无所适从。
+async function runFieldVerification(record, request, { chatTimeoutMs, maxTokens } = {}) {
+  const config = readAiConfig();
+  if (!config.apiKey) {
+    throw new Error('ai_api_key_not_configured:请在云开发控制台的 adminData 云函数环境变量中添加 AI_API_KEY，保存后重新部署云函数');
+  }
+  const send = resolveRequest(request);
+  const evidence = await collectEvidence(record, send);
+  const promptText = buildFieldVerificationPrompt(record, evidence);
+  const messages = [
+    { role:'system', content:'你是严谨的大学生竞赛数据核验助手。不得将推测写成事实，找不到依据就如实填 false / 留空。只输出 JSON，字段名必须和示例一致。' },
+    { role:'user', content:promptText },
+  ];
+
+  let options = { useJsonSchema:true, includeTemperature:true, schema:fieldVerificationSchema, chatTimeoutMs, maxTokens };
+  let attempt = await callChatCompletion(send, config, messages, options);
+  for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
+    const next = adjustRequestOptions(attempt.status, attempt.raw, options);
+    if (!next) break;
+    options = next;
+    attempt = await callChatCompletion(send, config, messages, options);
+  }
+  if (!attempt.ok) {
+    const detail = attempt.payload?.error?.message || String(attempt.raw || '').slice(0, 300) || 'unknown';
+    throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
+  }
+  const choice = attempt.payload?.choices?.[0];
+  if (!String(choice?.message?.content || '').trim()) {
+    throw new Error(`ai_field_verification_empty_response:finish_${choice?.finish_reason || 'unknown'}`);
+  }
+  const result = validateFieldVerificationResult(parseModelJson(choice.message.content));
+  // not_specified 不算"没通过"——来源压根没公布这个日期，跟记录里把它留空
+  // 是一致的（对应"时间待公布"），不该拦发布；只有 incorrect（来源明确
+  // 说了另一个日期）才算真的不一致。
+  const dateResolved = status => status === 'confirmed_correct' || status === 'not_specified';
+  return {
+    ...result,
+    summary:typeof result.summary === 'string' ? result.summary : '',
+    all_correct:Boolean(result.name_correct && dateResolved(result.registration_start_status) && dateResolved(result.registration_end_status) && result.registration_url_correct),
+    provider:config.provider || 'kimi-code',
+    model:config.model,
+    prompt_version:FIELD_VERIFICATION_PROMPT_VERSION,
+    evidence_status:evidence.map(item => ({
+      url:item.url, status:item.status, chars:(item.text || '').length,
+      ...(item.error ? { error:item.error.slice(0, 120) } : {}),
+    })),
+    reviewed_at:new Date().toISOString(),
+  };
+}
 
 // prefix 允许某类任务走另一个供应商。
 //
@@ -155,11 +304,33 @@ async function loadRobots(send, origin, cache) {
   return pending;
 }
 
+// 天池详情页是前后端分离的，直接抓页面只拿得到导航栏和页脚这层空壳
+// （实测 2026-09-19：三项核验遇到天池链接系统性失败，全都是这个原因）。
+// scripts/server/run-extract.mjs 的批量抽取早就用这个接口绕过去了，
+// 这里补上同一个办法，两条抓取路径不再各修各的。
+const TIANCHI_ENTRANCE_RE = /tianchi\.aliyun\.com\/competition\/entrance\/(\d+)/;
+
+async function fetchTianchiRaceText(send, raceId) {
+  const response = await send(
+    `https://tianchi.aliyun.com/v3/proxy/competition/api/race/getDetail?raceId=${raceId}`,
+    { redirect:'follow', signal:timeoutSignal(EVIDENCE_TIMEOUT_MS), timeoutMs:EVIDENCE_TIMEOUT_MS, headers:{ 'User-Agent':USER_AGENT } },
+  );
+  if (!response.ok) return '';
+  const race = (await response.json())?.data?.race || {};
+  return [race.name, race.introduction, race.rule, race.reward, race.currentSeason?.rule, race.currentSeason?.reward]
+    .filter(value => typeof value === 'string').join('\n');
+}
+
 // 单个 URL 的抓取逻辑——先查 robots.txt 再抓正文，抽出来是因为
 // runCompetitionAiReviewAgentic 的工具执行器要复用同一套合规检查，
 // 不能因为是模型主动要求的链接就绕开 robots.txt。
 async function fetchEvidenceUrl(send, url, robotsCache) {
   try {
+    const tianchi = TIANCHI_ENTRANCE_RE.exec(url);
+    if (tianchi) {
+      const text = await fetchTianchiRaceText(send, tianchi[1]);
+      return text ? { url, status:'reachable', text:htmlToText(text) } : { url, status:'tianchi_empty', text:'' };
+    }
     const target = new URL(url);
     const robots = await loadRobots(send, target.origin, robotsCache);
     if (robots && !isAllowed(robots, USER_AGENT, target.pathname)) {
@@ -196,7 +367,9 @@ function validateResult(value) {
   if (!['recommend_approve','needs_changes','insufficient_evidence'].includes(value.decision)) throw new Error('ai_review_invalid_decision');
   if (!['low','medium','high'].includes(value.risk_level)) throw new Error('ai_review_invalid_risk');
   if (typeof value.summary !== 'string' || value.summary.trim().length < 5) throw new Error('ai_review_invalid_summary');
-  if (!Array.isArray(value.issues) || !Array.isArray(value.evidence_refs)) throw new Error('ai_review_invalid_evidence');
+  if (!Array.isArray(value.issues) || !Array.isArray(value.evidence_refs)) {
+    throw new Error('Kimi返回格式不完整：issues和evidence_refs必须是数组，审核结果未采用');
+  }
   return value;
 }
 
@@ -244,9 +417,12 @@ function parseModelJson(text) {
   }
 }
 
-function buildResponseFormat(useJsonSchema) {
+// schema 必须跟调用方实际要的结构一致——之前这里硬编码成 resultSchema，
+// 三项核验（字段完全不同）请求 json_schema 模式时会被套上错误的结构，
+// 只是恰好被"该模式当前不可用"的 400 掩盖了，没有立刻暴露。
+function buildResponseFormat(useJsonSchema, schema = resultSchema) {
   return useJsonSchema
-    ? { type:'json_schema', json_schema:{ name:'competition_ai_review', strict:true, schema:resultSchema } }
+    ? { type:'json_schema', json_schema:{ name:'competition_ai_review', strict:true, schema } }
     : { type:'json_object' };
 }
 
@@ -261,7 +437,7 @@ function supportsThinkingToggle(baseUrl) {
 }
 
 function buildRequestBody(config, messages, options) {
-  const body = { model:config.model, messages, response_format:buildResponseFormat(options.useJsonSchema) };
+  const body = { model:config.model, messages, response_format:buildResponseFormat(options.useJsonSchema, options.schema) };
   // kimi-for-coding 只接受 temperature=1，省略该字段等同于用模型默认值。
   if (options.includeTemperature) body.temperature = 0.1;
   // 生成长度是这套流程里最主要的耗时来源，云函数只有 60 秒，必须封顶。
@@ -283,13 +459,13 @@ function adjustRequestOptions(status, raw, options) {
 }
 
 async function callChatCompletion(request, config, messages, options) {
-  const chatTimeoutMs = Number(options.chatTimeoutMs) > 0 ? Number(options.chatTimeoutMs) : CHAT_TIMEOUT_MS;
+  // 0 表示自建服务器不再施加模型调用时限；未传值时保留旧运行环境的默认值。
+  const chatTimeoutMs = options.chatTimeoutMs === 0 ? 0 : Number(options.chatTimeoutMs) > 0 ? Number(options.chatTimeoutMs) : CHAT_TIMEOUT_MS;
   const response = await request(`${config.baseUrl}/chat/completions`, {
     method:'POST',
     headers:{ Authorization:`Bearer ${config.apiKey}`, 'Content-Type':'application/json' },
     body:JSON.stringify(buildRequestBody(config, messages, options)),
-    signal:timeoutSignal(chatTimeoutMs),
-    timeoutMs:chatTimeoutMs,
+    ...(chatTimeoutMs ? { signal:timeoutSignal(chatTimeoutMs), timeoutMs:chatTimeoutMs } : {}),
   });
   const raw = await response.text();
   let payload = null;
@@ -300,6 +476,11 @@ async function callChatCompletion(request, config, messages, options) {
 function buildPrompt(record, evidence, concise = false) {
   return [
     '审核以下赛事记录。只能依据提供的来源正文或图片作判断；证据不足必须选择 insufficient_evidence。',
+    '第一步必须判断记录是否代表一场可以独立收录的比赛。标题为清单、目录、栏目或学校获奖新闻的，即使提到真实比赛，也不能把这篇文章当成比赛记录。',
+    '还必须识别赛事从属关系：校赛、校级初赛、校内选拔、院级选拔、承办校选拔、单校推荐环节和某一赛道，都不是新的独立赛事。应从标题和正文提取其上级全国/省级赛事名称。',
+    '若属于下级选拔或赛道，必须选择 needs_changes、risk_level=high；issues 中使用 field=event_identity，finding 明确写“下级选拔/赛道，不是独立赛事”，recommendation 写“撤销独立记录并关联上级赛事：上级赛事名称”。',
+    '确认是误收时选择 needs_changes、risk_level=high，在 issues 中使用 field=event_identity，明确说明“非赛事条目，需隔离为线索”。标题已能确认是清单时，不要仅因正文不可读取就漏掉这个问题。',
+    '只有具体比赛身份成立后才核对大学生资格与专业任务；缺少原文依据不得建议通过。缺少日期不等于官方宣布时间待公布。',
     '核对届次、主办方、报名时间、资格、费用、赛制和报名入口。结果仅供人工复核。',
     // 定时任务受 60 秒云函数上限约束，必须压缩输出长度。
     concise ? 'summary 控制在 150 字以内，issues 最多 5 条，每条 finding 和 recommendation 各不超过 60 字。' : '',
@@ -524,6 +705,7 @@ async function runCompetitionAiReviewAgentic(record, request, {
 
 module.exports = {
   USER_AGENT,
+  PROFESSION_TAXONOMY,
   supportsThinkingToggle,
   extractFirstJsonObject,
   adjustRequestOptions,
@@ -532,6 +714,7 @@ module.exports = {
   timeoutSignal,
   aiReviewConfigStatus,
   buildRequestBody,
+  buildFieldVerificationPrompt,
   collectEvidence,
   compactRecord,
   htmlToText,
@@ -541,6 +724,8 @@ module.exports = {
   resolveRequest,
   runCompetitionAiReview,
   runCompetitionAiReviewAgentic,
+  runFieldVerification,
+  validateFieldVerificationResult,
   fetchEvidenceUrl,
   validateResult,
 };

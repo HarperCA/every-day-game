@@ -3,7 +3,11 @@ const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecor
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
-const gate = { data_status:'published', system_validation:'passed', manual_review:'passed' };
+const _ = db.command;
+// 已归档的赛事也要能被查到——学生端靠"距离报名时间"筛选把它们翻出来看
+// 下一届预计什么时候开始（见 publicQuery.js 的 registrationWithin）。
+const gate = { data_status:_.in(['published', 'archived']), system_validation:'passed', manual_review:'passed' };
+const PUBLIC_DATA_STATUSES = new Set(['published', 'archived']);
 
 async function loadPublishedRecords() {
   try {
@@ -24,7 +28,7 @@ exports.main = async event => {
       const id = normalizePublicRecordId(event.id);
       const result = await db.collection('event_edition_public_cache').doc(id).get();
       const item = result.data;
-      if (!item || item.data_status !== 'published' || item.system_validation !== 'passed' || item.manual_review !== 'passed') throw new Error('public_record_not_found');
+      if (!item || !PUBLIC_DATA_STATUSES.has(item.data_status) || item.system_validation !== 'passed' || item.manual_review !== 'passed') throw new Error('public_record_not_found');
       return { ok:true, data:{ ...item, registration_status:currentRegistrationStatus(item) } };
     }
     throw new Error('unsupported_action');

@@ -3,30 +3,43 @@ const { issueAdminSession, requireStaticAdminToken, verifyAdminSession } = requi
 const { nextStateVersion, normalizeStateVersion } = require('./stateVersion');
 const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbackMerge');
 const { buildSafeAuditEntry } = require('./auditValidation');
-const { syncPublicCache } = require('./publicCache');
-const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview } = require('./competitionAiReview');
+const { registrationStatus, syncPublicCache } = require('./publicCache');
+const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview, runFieldVerification } = require('./competitionAiReview');
 const { extractFromDetailPage } = require('./competitionExtract');
-const { countStaleRecords, nextFailureMark, runStatus, selectStaleRecords } = require('./aiReviewSchedule');
+const {
+  countStaleRecords, nextFailureMark, runStatus, selectStaleRecords,
+  countStaleForFieldVerification, selectStaleForFieldVerification, nextFieldVerificationFailureMark,
+} = require('./aiReviewSchedule');
+const { archiveRecord, shouldArchive } = require('./archiveSchedule');
+const { evaluateDraftStaleness } = require('./intakeSchedule');
+const { evidenceUnavailable, classifyFieldVerificationIssues, replaceFieldVerificationIssues, usableDate } = require('./fieldVerificationIssues');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
-const MAX_RECORDS = 100;
+// 100 这个数字是当年 CloudBase 单文档 1MB 上限估出来的，自建服务器 + SQLite 后
+// 这个限制已经不存在了（服务端请求体上限 10MB，见 apps/server/src/index.mjs）。
+// 放宽到 2000，给内容规模增长留够空间。
+const MAX_RECORDS = 2000;
 const MAX_FEEDBACKS = 1000;
 const MAX_AI_JOBS = 1000;
 // 实测：单条审核约 50 秒，且 Kimi 端并发请求是排队的，3 条并发只会让后两条超时。
 // 所以定时任务每次只处理 1 条。模型超时按剩余预算动态计算（见 runScheduledCompetitionAiReview），
 // 因为取证耗时不可预测；超限会被平台直接掐断，连失败记录都写不下。
 const SCHEDULED_BATCH_LIMIT = 1;
-const SCHEDULED_CHAT_TIMEOUT_MS = 40000;
-// 整次调用的自设预算，必须明显小于平台 60 秒硬上限。
-const SCHEDULED_BUDGET_MS = 47000;
-const SCHEDULED_SAVE_RESERVE_MS = 9000;
-const SCHEDULED_MIN_CHAT_TIMEOUT_MS = 15000;
 const SCHEDULED_MAX_TOKENS = 2000;
-const MANUAL_CHAT_TIMEOUT_MS = 50000;
+const MANUAL_CHAT_TIMEOUT_MS = 0;
 const MANUAL_MAX_TOKENS = 2600;
 const AI_RUN_LOG_DOC = 'ai_review_runs';
 const MAX_AI_RUN_LOG = 20;
+const ARCHIVE_RUN_LOG_DOC = 'archive_runs';
+const FIELD_VERIFICATION_RUN_LOG_DOC = 'field_verification_runs';
+const STALE_DRAFT_RUN_LOG_DOC = 'stale_draft_runs';
+// 三项核验一条约几秒到十几秒（比通用复核轻，不用等证据齐了才问，问题窄），
+// 但仍然按同一套"每次只处理少量、跑不完留给下一次"的节奏，避免单次调用超时。
+const FIELD_VERIFICATION_BATCH_LIMIT = 1;
+const FIELD_VERIFICATION_CHAT_TIMEOUT_MS = 0;
+const DISCOVERED_CHANNELS_DOC = 'discovered_channels';
+const PIPELINE_RUNS_DOC = 'pipeline_runs';
 
 function requireAdmin(event) {
   const expected = process.env.ADMIN_TOKEN;
@@ -206,13 +219,15 @@ async function exportCollection(name) {
 }
 
 async function bootstrap() {
-  const [competitionState, feedbackState, submittedFeedbacks, aiJobState, auditResult, lastAiReviewRun] = await Promise.all([
+  const [competitionState, feedbackState, submittedFeedbacks, aiJobState, auditResult, lastAiReviewRun, lastArchiveRun, lastFieldVerificationRun] = await Promise.all([
     loadState('competitions'),
     loadState('feedbacks'),
     loadSubmittedFeedbacks(),
     loadState('ai_jobs'),
     db.collection('audit_log').orderBy('created_at', 'desc').limit(100).get(),
     loadLastAiReviewRun(),
+    loadLastArchiveRun(),
+    loadLastFieldVerificationRun(),
   ]);
   const feedbacks = mergeFeedbackRecords(feedbackState.records, submittedFeedbacks, MAX_FEEDBACKS);
   return {
@@ -221,6 +236,8 @@ async function bootstrap() {
     aiJobs:aiJobState.records,
     audits:(auditResult.data || []).map(auditToAdmin),
     lastAiReviewRun,
+    lastArchiveRun,
+    lastFieldVerificationRun,
     stateVersions:{ records:competitionState.version, feedbacks:feedbackState.version, aiJobs:aiJobState.version },
   };
 }
@@ -248,10 +265,9 @@ function scheduledBatchLimit() {
   return Number.isInteger(configured) ? Math.min(10, Math.max(1, configured)) : SCHEDULED_BATCH_LIMIT;
 }
 
-// 一次调用只跑一批并发请求：证据抓取最多 8 秒、模型调用最多 40 秒，
-// 加上读写状态仍在 60 秒硬上限内。跑不完的记录留给下一次定时触发。
+// 自建服务器不再沿用云函数 60 秒总预算；仍每次只审核少量记录，
+// 防止定时任务重叠和同一批次写库冲突。
 async function runScheduledCompetitionAiReview(trigger = 'timer') {
-  const startedMs = Date.now();
   const startedAt = new Date().toISOString();
   const summary = {
     trigger, startedAt, completedAt:startedAt,
@@ -264,14 +280,7 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
     const due = selectStaleRecords(state.records, { limit });
     summary.selected = due.length;
     if (due.length) {
-      // 云函数 60 秒是硬上限，超限会被直接掐断、连失败记录都写不下。
-      // 取证耗时不可预测，所以按“已用掉多少”动态压缩模型调用的超时，
-      // 并为写回状态和运行日志留出固定余量。
-      const elapsed = Date.now() - startedMs;
-      const chatTimeoutMs = Math.max(
-        SCHEDULED_MIN_CHAT_TIMEOUT_MS,
-        Math.min(SCHEDULED_CHAT_TIMEOUT_MS, SCHEDULED_BUDGET_MS - elapsed - SCHEDULED_SAVE_RESERVE_MS),
-      );
+      const chatTimeoutMs = 0;
       summary.chatTimeoutMs = chatTimeoutMs;
       const { results, failures } = await runAiReviewPool(due, due.length, {
         chatTimeoutMs,
@@ -283,7 +292,7 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
       const records = state.records.map(record => {
         if (results.has(record.id)) {
           const { aiReviewFailure, ...rest } = record; // 成功后清除退避标记
-          return { ...rest, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-scheduled-review' };
+          return require('./quarantine').isolateMisimport({ ...rest, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-scheduled-review' }, now);
         }
         if (failureById.has(record.id)) {
           return { ...record, aiReviewFailure:nextFailureMark(record, failureById.get(record.id)) };
@@ -291,7 +300,7 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
         return record;
       });
       // 失败也要落盘，否则退避计数永远是 0，同一条记录会被无限重试。
-      if (results.size || failures.length) await saveState('competitions', records, state.version);
+      if (results.size || failures.length) await saveState('competitions', records, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], records));
       summary.succeeded = results.size;
       summary.failed = failures.length;
       summary.failures = failures.slice(0, 20);
@@ -307,6 +316,280 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
   // 成功、部分完成还是抛错都要落一条运行记录，否则定时任务失败时后台完全无感。
   await appendAiReviewRun(summary);
   return summary;
+}
+
+// 报名已截止的已发布赛事定期归档：撤出公开缓存（学生端看不到），记录本身
+// 保留（不是删除），附上"下一届大概什么时候开始报名"的粗略估算。
+// 和 AI 审核走同一套节奏——由外部定时器（自有服务器 systemd timer 或
+// CloudBase 定时触发器）调用这个 action，不在函数里自己维护 cron。
+async function archiveExpiredRegistrations(trigger = 'manual') {
+  const startedAt = new Date();
+  const summary = { trigger, startedAt:startedAt.toISOString(), scanned:0, archived:0, results:[] };
+  try {
+    const state = await loadState('competitions');
+    summary.scanned = state.records.length;
+    const results = [];
+    const nextRecords = state.records.map(record => {
+      if (!shouldArchive(record, registrationStatus, startedAt)) return record;
+      const updated = archiveRecord(record, startedAt);
+      results.push({ id:record.id, name:record.name, nextEditionEstimate:updated.nextEditionEstimate });
+      return updated;
+    });
+    summary.archived = results.length;
+    summary.results = results;
+    if (results.length) {
+      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords));
+    }
+    summary.status = 'completed';
+  } catch (error) {
+    summary.status = 'failed';
+    summary.error = String(error?.message || error).slice(0, 500);
+  }
+  summary.completedAt = new Date().toISOString();
+  summary.createdAt = summary.completedAt;
+  await appendArchiveRun(summary);
+  return summary;
+}
+
+async function appendArchiveRun(summary) {
+  try {
+    let runs = [];
+    try {
+      const current = await db.collection('admin_state').doc(ARCHIVE_RUN_LOG_DOC).get();
+      runs = Array.isArray(current.data?.runs) ? current.data.runs : [];
+    } catch (error) {
+      if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error;
+    }
+    await db.collection('admin_state').doc(ARCHIVE_RUN_LOG_DOC).set({ data:{
+      runs:[summary, ...runs].slice(0, MAX_AI_RUN_LOG),
+      updated_at:new Date().toISOString(),
+    } });
+  } catch (error) {
+    console.error('archive run log write failed', error);
+  }
+}
+
+async function loadLastArchiveRun() {
+  try {
+    const result = await db.collection('admin_state').doc(ARCHIVE_RUN_LOG_DOC).get();
+    const runs = Array.isArray(result.data?.runs) ? result.data.runs : [];
+    return runs[0] || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// 已发布赛事的每周维护：先把报名已经截止的直接归档（不占三项核验的名额，
+// 归档记录也不需要再核这些字段），再对剩下的已发布记录做三项核验
+// （名称/报名时间/链接）——核验通过什么都不用改；核验不通过且模型给出了
+// 具体修正值，直接改上去（学生正在看的数据不能拖到人工有空才修）；
+// 不通过又给不出修正值的，打上 needsManualReview 标记转人工，不能瞎猜着改。
+// 已发布记录的 not_specified 处理得比入库时更保守：如果这条记录本来就
+// 没有这个日期（一直是"时间待公布"），Kimi 这次读不到属于正常，不算问题；
+// 但如果这条记录本来是有真实日期的，Kimi 这次却读不到，更可能是取证没抓
+// 全（漏了正文），而不是官方真把日期撤了——学生已经在看这条数据，不能
+// 因为一次读取不完整就悄悄把已知信息清空，得转人工看一眼再定。
+function applyPublishedFieldCorrections(record, verification, now) {
+  const timestamp = now.toISOString();
+  const corrected = { ...record, schedule:{ ...record.schedule }, sources:[...record.sources] };
+  const notes = [];
+
+  // 取证失败时模型的“错误”判断没有事实依据，绝不据此改公开字段。
+  if (evidenceUnavailable(verification)) {
+    const issues = classifyFieldVerificationIssues(record, verification);
+    return { ...corrected, fieldVerification:verification, needsManualReview:true,
+      qualityIssues:replaceFieldVerificationIssues(record.qualityIssues, issues),
+      updatedAt:timestamp, updatedBy:'kimi-weekly-field-verification' };
+  }
+
+  if (!verification.name_correct) {
+    if (verification.name_correction) { corrected.name = verification.name_correction.slice(0, 200); notes.push(`Kimi周检自动改名为「${corrected.name}」`); }
+  }
+  if (verification.registration_start_status === 'incorrect') {
+    const startOk = usableDate(verification.registration_start_correction);
+    if (startOk) { corrected.schedule.registration_start = new Date(verification.registration_start_correction).toISOString(); notes.push('Kimi周检自动更新了报名开始时间'); }
+  }
+  if (verification.registration_end_status === 'incorrect') {
+    const endOk = usableDate(verification.registration_end_correction);
+    if (endOk) { corrected.schedule.registration_end = new Date(verification.registration_end_correction).toISOString(); notes.push('Kimi周检自动更新了报名截止时间'); }
+  }
+  if (!verification.registration_url_correct) {
+    if (verification.registration_url_correction && /^https?:\/\//i.test(verification.registration_url_correction)) {
+      corrected.registrationUrl = verification.registration_url_correction;
+      corrected.sources = corrected.sources.map((source, index) => index === 0 ? { ...source, url:verification.registration_url_correction, last_verified_at:timestamp } : source);
+      notes.push('Kimi周检自动更新了报名链接');
+    }
+  }
+
+  const issues = classifyFieldVerificationIssues(corrected, verification);
+
+  return {
+    ...corrected,
+    fieldVerification:verification,
+    needsManualReview:issues.length > 0,
+    qualityIssues:replaceFieldVerificationIssues(record.qualityIssues, [...notes, ...issues]),
+    lastVerifiedAt:issues.length ? record.lastVerifiedAt : timestamp,
+    updatedAt:timestamp,
+    updatedBy:'kimi-weekly-field-verification',
+  };
+}
+
+async function runFieldVerificationPool(records, options = {}) {
+  const results = new Map();
+  const failures = [];
+  for (const record of records) {
+    try {
+      results.set(record.id, await runFieldVerification(record, undefined, options));
+    } catch (error) {
+      failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
+    }
+  }
+  return { results, failures };
+}
+
+async function runScheduledPublishedVerification(trigger = 'timer') {
+  const startedAt = new Date();
+  const summary = {
+    trigger, startedAt:startedAt.toISOString(), completedAt:startedAt.toISOString(),
+    archived:0, selected:0, succeeded:0, corrected:0, flagged:0, failed:0,
+    status:'failed', failures:[],
+  };
+  try {
+    const state = await loadState('competitions');
+
+    // 第一步：报名已经截止的已发布记录，直接归档，不进三项核验。
+    const afterArchive = state.records.map(record => {
+      if (!shouldArchive(record, registrationStatus, startedAt)) return record;
+      summary.archived += 1;
+      return archiveRecord(record, startedAt);
+    });
+
+    const due = selectStaleForFieldVerification(afterArchive, { limit:FIELD_VERIFICATION_BATCH_LIMIT });
+    summary.selected = due.length;
+
+    let nextRecords = afterArchive;
+    if (summary.archived || due.length) {
+      const { results, failures } = due.length
+        ? await runFieldVerificationPool(due, { chatTimeoutMs:FIELD_VERIFICATION_CHAT_TIMEOUT_MS })
+        : { results:new Map(), failures:[] };
+      const now = new Date();
+      const failureById = new Map(failures.map(item => [item.recordId, item.error]));
+      nextRecords = afterArchive.map(record => {
+        if (results.has(record.id)) {
+          const { fieldVerificationFailure, ...rest } = record; // 成功后清除退避标记
+          const updated = applyPublishedFieldCorrections(rest, results.get(record.id), now);
+          if (updated.needsManualReview) summary.flagged += 1;
+          else if (!results.get(record.id).all_correct) summary.corrected += 1;
+          return updated;
+        }
+        if (failureById.has(record.id)) {
+          return { ...record, fieldVerificationFailure:nextFieldVerificationFailureMark(record, failureById.get(record.id), now) };
+        }
+        return record;
+      });
+      summary.succeeded = results.size;
+      summary.failed = failures.length;
+      summary.failures = failures.slice(0, 20);
+      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords));
+    }
+    summary.remaining = countStaleForFieldVerification(nextRecords);
+    summary.status = summary.failed && !summary.succeeded && due.length ? 'failed' : (summary.selected || summary.archived ? 'completed' : 'idle');
+  } catch (error) {
+    summary.error = String(error?.message || error).slice(0, 500);
+    summary.status = 'failed';
+  }
+  summary.completedAt = new Date().toISOString();
+  summary.createdAt = summary.completedAt;
+  await appendFieldVerificationRun(summary);
+  return summary;
+}
+
+async function appendFieldVerificationRun(summary) {
+  try {
+    let runs = [];
+    try {
+      const current = await db.collection('admin_state').doc(FIELD_VERIFICATION_RUN_LOG_DOC).get();
+      runs = Array.isArray(current.data?.runs) ? current.data.runs : [];
+    } catch (error) {
+      if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error;
+    }
+    await db.collection('admin_state').doc(FIELD_VERIFICATION_RUN_LOG_DOC).set({ data:{
+      runs:[summary, ...runs].slice(0, MAX_AI_RUN_LOG),
+      updated_at:new Date().toISOString(),
+    } });
+  } catch (error) {
+    console.error('field verification run log write failed', error);
+  }
+}
+
+async function loadLastFieldVerificationRun() {
+  try {
+    const result = await db.collection('admin_state').doc(FIELD_VERIFICATION_RUN_LOG_DOC).get();
+    const runs = Array.isArray(result.data?.runs) ? result.data.runs : [];
+    return runs[0] || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// 草稿超时兜底：不管是没日期、Kimi核验没通过、还是核验调用失败，只要
+// 一条草稿超过3天还没变成"已发布"或"已归档"，就该让人看一眼、并且看得到
+// 具体原因——而不是安静地躺在176条草稿里没人知道该先看哪条。
+// hold（半年以外先放着）的草稿在 ingest-candidates.mjs 里已经打了
+// stalenessExempt，evaluateDraftStaleness 会自动跳过，不会被误报。
+async function flagStaleDrafts(trigger = 'manual') {
+  const startedAt = new Date();
+  const summary = { trigger, startedAt:startedAt.toISOString(), scanned:0, flagged:0, results:[] };
+  try {
+    const state = await loadState('competitions');
+    summary.scanned = state.records.length;
+    const results = [];
+    const nextRecords = state.records.map(record => {
+      if (record.needsManualReview) return record; // 已经标过的不用重复标
+      const { stale, reason } = evaluateDraftStaleness(record, startedAt);
+      if (!stale) return record;
+      results.push({ id:record.id, name:record.name, reason });
+      return { ...record, needsManualReview:true, staleDraftReason:reason, updatedAt:startedAt.toISOString(), updatedBy:'stale-draft-flag' };
+    });
+    summary.flagged = results.length;
+    summary.results = results;
+    if (results.length) await saveState('competitions', nextRecords, state.version);
+    summary.status = 'completed';
+  } catch (error) {
+    summary.status = 'failed';
+    summary.error = String(error?.message || error).slice(0, 500);
+  }
+  summary.completedAt = new Date().toISOString();
+  summary.createdAt = summary.completedAt;
+  await appendStaleDraftRun(summary);
+  return summary;
+}
+
+async function appendStaleDraftRun(summary) {
+  try {
+    let runs = [];
+    try {
+      const current = await db.collection('admin_state').doc(STALE_DRAFT_RUN_LOG_DOC).get();
+      runs = Array.isArray(current.data?.runs) ? current.data.runs : [];
+    } catch (error) {
+      if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error;
+    }
+    await db.collection('admin_state').doc(STALE_DRAFT_RUN_LOG_DOC).set({ data:{
+      runs:[summary, ...runs].slice(0, MAX_AI_RUN_LOG),
+      updated_at:new Date().toISOString(),
+    } });
+  } catch (error) {
+    console.error('stale draft run log write failed', error);
+  }
+}
+
+async function loadDiscoveredChannels() {
+  try {
+    const result = await db.collection('admin_state').doc(DISCOVERED_CHANNELS_DOC).get();
+    return result.data?.channels && typeof result.data.channels === 'object' ? result.data.channels : {};
+  } catch (error) {
+    return {};
+  }
 }
 
 // 运行日志写进已有的 admin_state，而不是另建集合：
@@ -341,10 +624,50 @@ async function loadLastAiReviewRun() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  if (event.action === 'listPipelineRuns') {
+    try {
+      const result = await db.collection('admin_state').doc(PIPELINE_RUNS_DOC).get();
+      return { runs:Array.isArray(result.data?.runs) ? result.data.runs : [] };
+    } catch (error) {
+      if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) return { runs:[] };
+      throw error;
+    }
+  }
+  if (event.action === 'savePipelineRun') {
+    const run = event.run;
+    if (!run || typeof run !== 'object' || !/^[\w-]{12,80}$/.test(run.id || '')
+      || !Number.isFinite(Date.parse(run.finishedAt)) || JSON.stringify(run).length > 30000) {
+      throw new Error('invalid_pipeline_run');
+    }
+    return db.runTransaction(async transaction => {
+      let previous = [];
+      try {
+        const result = await transaction.collection('admin_state').doc(PIPELINE_RUNS_DOC).get();
+        previous = Array.isArray(result.data?.runs) ? result.data.runs : [];
+      } catch (error) {
+        if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error;
+      }
+      const runs = [run, ...previous.filter(item => item.id !== run.id)]
+        .sort((a, b) => String(b.finishedAt).localeCompare(String(a.finishedAt))).slice(0, 100);
+      await transaction.collection('admin_state').doc(PIPELINE_RUNS_DOC).set({ data:{ runs, updated_at:new Date().toISOString() } });
+      return { saved:1, total:runs.length };
+    });
+  }
   // 只读全量导出，专门给迁移到自有服务器用（见 docs/migration-to-self-hosted.md）。
   // userData 刻意只让用户读自己的数据，所以按用户存的那几张表没有全量接口——
   // 这个口子只有 ADMIN_TOKEN 能调，且只读不写。迁完可以删掉。
   if (event.action === 'exportCollection') return exportCollection(String(event.collection || ''));
+  // 可复用信源资产：抓取流水线发现的、值得下次继续盯的网站域名清单
+  // （见 scripts/crawler/lib/discoveredChannels.js）。合并逻辑在调用方做，
+  // 这里只负责读写整份 JSON——调用方只有抓取流水线自己（串行跑，没有并发
+  // 写入的风险），所以没有像 competitions 那样上乐观锁，保持简单。
+  if (event.action === 'listDiscoveredChannels') return loadDiscoveredChannels();
+  if (event.action === 'saveDiscoveredChannels') {
+    const channels = event.channels && typeof event.channels === 'object' ? event.channels : null;
+    if (!channels) throw new Error('invalid_channels');
+    await db.collection('admin_state').doc(DISCOVERED_CHANNELS_DOC).set({ data:{ channels, updated_at:new Date().toISOString() } });
+    return { saved:Object.keys(channels).length };
+  }
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
   // 一次性探测：当前模型是否真的接受图片输入。
   if (event.action === 'aiImageProbe') {
@@ -369,6 +692,9 @@ async function handle(event) {
   }
   // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
   if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');
+  if (event.action === 'archiveExpiredRegistrations') return archiveExpiredRegistrations('manual');
+  if (event.action === 'runScheduledFieldVerification') return runScheduledPublishedVerification(event.trigger || 'manual');
+  if (event.action === 'flagStaleDrafts') return flagStaleDrafts(event.trigger || 'manual');
   // 触发提醒推送：sendReminders 不接受匿名调用（平台返回 EXCEED_AUTHORITY），
   // 所以由已通过管理员认证的 adminData 内部转发，并带上共享密钥。
   if (event.action === 'dispatchReminders') {
@@ -395,12 +721,17 @@ async function handle(event) {
     const state = await loadState('competitions');
     const record = state.records.find(item => item.id === id);
     if (!record) throw new Error('competition_not_found');
+    if (record.dataStatus === 'quarantined') throw new Error('请先补齐资料并恢复为合格草稿，再执行审核');
     // 手动审核同样受 60 秒函数上限约束，只是允许比定时任务更长的结论。
     return runCompetitionAiReview(record, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS, maxTokens:MANUAL_MAX_TOKENS });
   }
   if (event.action === 'saveRecords') {
     const records = requireRecords(event.records, MAX_RECORDS, 'records');
-    return saveState('competitions', records, event.expectedVersion, (transaction, current) => syncPublicCache(transaction, current.records || [], records), event.auditEntry);
+    return saveState('competitions', records, event.expectedVersion, (transaction, current) => {
+      require('./competitionScope').requireScopeForNewRecords(current.records || [], records);
+      require('./quarantine').requireReviewDisposition(current.records || [], records);
+      return syncPublicCache(transaction, current.records || [], records);
+    }, event.auditEntry);
   }
   if (event.action === 'saveFeedbacks') {
     const records = requireRecords(event.records, MAX_FEEDBACKS, 'feedbacks');
@@ -445,3 +776,6 @@ exports.main = async event => {
 
 exports.runAiReviewPool = runAiReviewPool;
 exports.runScheduledCompetitionAiReview = runScheduledCompetitionAiReview;
+exports.archiveExpiredRegistrations = archiveExpiredRegistrations;
+exports.runScheduledPublishedVerification = runScheduledPublishedVerification;
+exports.flagStaleDrafts = flagStaleDrafts;

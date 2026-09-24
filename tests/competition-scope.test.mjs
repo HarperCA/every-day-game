@@ -19,6 +19,31 @@ describe('大学生专业赛事范围', () => {
     expect(() => requireScopeForNewRecords([{ id:'1', name:'全国大学生程序设计竞赛' }], [bad])).toThrow();
     expect(() => requireScopeForNewRecords([bad], [])).not.toThrow();
   });
+  it('任何名称或届次名称含“通知”都不得入库', () => {
+    const base = { id:'notice-1', name:'全国大学生电子设计竞赛', editionName:'2026年全国大学生电子设计竞赛', participants:'高校在校生', eligibility:'高校在校生', organizer:'中国电子学会', formatAndRules:'电子设计作品评审', professions:['电子信息'], sources:[{url:'https://example.org/competition'}] };
+    expect(classifyCompetitionScope({...base, name:'全国大学生电子设计竞赛报名通知'}).decision).toBe('reject');
+    expect(classifyCompetitionScope({...base, editionName:'2026年赛事通知'}).decision).toBe('reject');
+    expect(() => requireScopeForNewRecords([], [{...base, name:'全国大学生电子设计竞赛报名通知'}])).toThrow('不得入赛事库');
+  });
+  it('新入库名称不能混入年份和届次，原文可保留在届次名称', () => {
+    const record = {id:'edition-2027-example', name:'2027年第九届全国大学生电子设计竞赛', editionName:'2027年第九届全国大学生电子设计竞赛', organizer:'中国电子学会', participants:'高校在校生', eligibility:'高校在校生', formatAndRules:'电子设计作品评审', professions:['电子信息'], sources:[{url:'https://example.org/competition'}]};
+    expect(() => requireScopeForNewRecords([], [record])).toThrow('赛事名称只保留正文');
+    expect(() => requireScopeForNewRecords([], [{...record, name:'全国大学生电子设计竞赛', editionYear:'2027', editionOrdinal:'第九届'}])).not.toThrow();
+  });
+  it('允许只拆分存量草稿的标题字段，不借迁移改动其他业务数据', () => {
+    const before = {id:'existing-1', name:'第四届浙江农林大学新材料创新设计大赛', editionName:'第四届浙江农林大学新材料创新设计大赛', dataStatus:'draft'};
+    const after = {...before, name:'浙江农林大学新材料创新设计大赛', editionYear:'', editionOrdinal:'第四届'};
+    expect(() => requireScopeForNewRecords([before], [after])).not.toThrow();
+    expect(() => requireScopeForNewRecords([before], [{...after, organizer:'凭空增加的主办方'}])).toThrow('赛事范围未通过');
+  });
+  it.each(['2026年大学生创新大赛!', '2026年大学生创新大赛！', '2026年大学生创新大赛正式启动', '2026年大学生创新大赛启动仪式', '2026年大学生创新大赛火热开启'])('拦截感叹号和活动报道标题：%s', name => {
+    expect(classifyCompetitionScope({name}).decision).toBe('reject');
+  });
+  it('校赛选拔不得作为独立赛事，关联父赛事后才可保存为子记录', () => {
+    const school = { name:'第二十届“挑战杯”全国大学生课外学术科技作品竞赛某大学校级选拔赛', participants:'高校在校生', eligibility:'高校在校生', professions:['综合/不限专业'] };
+    expect(classifyCompetitionScope(school).decision).toBe('reject');
+    expect(classifyCompetitionScope({ ...school, parentEventId:'event-challenge-cup-2026' }).decision).toBe('eligible');
+  });
   it('拦截中小学和青少年赛事', () => {
     expect(isClearlyOutOfScope({ name:'2026中小学智能未来邀请赛' })).toBe(true);
     expect(isClearlyOutOfScope({ name:'全国青少年信息学奥林匹克竞赛' })).toBe(true);

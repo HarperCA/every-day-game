@@ -154,6 +154,21 @@ function relevance(item, query = {}, now = new Date()) {
   return { score, parts };
 }
 
+// 距离"能报名"还有多少天，统一口径给筛选和按时间排序共用：
+// 报名中 —— 现在就能报，记 0（最紧迫）；
+// 即将报名 —— 用官方公布的报名开始时间；
+// 已归档 —— 用推算的下一届时间（按上一届节奏推算，不是官方信息，见 archiveSchedule.js）；
+// 其余（时间待公布等）无法判断，返回 null，调用方要把 null 当"排除在外/排最后"处理。
+function daysUntilNextRegistration(item, now = new Date()) {
+  if (item.registration_status === '报名中') return 0;
+  const target = item.data_status === 'archived'
+    ? item.next_edition_estimate
+    : item.registration_status === '即将报名' ? item.registration_start : null;
+  if (!target) return null;
+  const diff = (new Date(target).getTime() - now.getTime()) / DAY_MS;
+  return Number.isFinite(diff) ? diff : null;
+}
+
 // 两条赛事有多像：共同的专业方向和目标标签越多越像。
 function similarity(a, b) {
   const setOf = item => new Set([...(item.professions || []), ...(item.objective_tags || [])]);
@@ -187,11 +202,31 @@ function diversify(scored, lambda = DIVERSITY_LAMBDA) {
   return selected.concat(rest);
 }
 
+// 按"距离能报名还有多久"排序，query.sortOrder === 'desc' 时最远的排最前，
+// 否则（含默认）最近的排最前。时间未知的记录（时间待公布等）永远排在最后，
+// 不参与升降序——放前面或后面都是误导，不如老实垫底。
+function sortByTime(items, query = {}, now = new Date()) {
+  const withTime = items.map(item => ({ item, days:daysUntilNextRegistration(item, now) }));
+  const known = withTime.filter(entry => entry.days !== null);
+  const unknown = withTime.filter(entry => entry.days === null);
+  const sign = query.sortOrder === 'desc' ? -1 : 1;
+  known.sort((a, b) => sign * (a.days - b.days) || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'zh-CN'));
+  return [...known, ...unknown].map(entry => entry.item);
+}
+
 // 打分 + 重排。稳定性由名称兜底，保证同分时顺序可复现。
+//
+// query.sortBy / query.sortOrder 是用户在"更多筛选"里主动选的排序方式——
+// 一旦选了，要的是可预测的确定顺序，多样性重排（diversify）这种"智能打散"
+// 反而是噪声，所以这时候跳过它；什么都没选时走原来的默认智能排序，不受影响。
 function rankRecords(items, query = {}, now = new Date()) {
+  if (query.sortBy === 'time') return sortByTime(items, query, now);
+  const explicitSort = Boolean(query.sortBy || query.sortOrder);
+  const desc = query.sortOrder !== 'asc';
   const scored = items
     .map(item => ({ item, ...relevance(item, query, now) }))
-    .sort((a, b) => b.score - a.score || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'zh-CN'));
+    .sort((a, b) => (desc ? b.score - a.score : a.score - b.score) || String(a.item.name || '').localeCompare(String(b.item.name || ''), 'zh-CN'));
+  if (explicitSort) return scored.map(entry => entry.item);
   return (query.diversify === false ? scored : diversify(scored)).map(entry => entry.item);
 }
 
@@ -199,5 +234,5 @@ module.exports = {
   WEIGHTS, RECOMMENDATION_SCORE, DIVERSITY_LAMBDA, DIVERSITY_POOL,
   SHORT_WINDOW_DAYS, SCHOOL_TIMING_URGENCY_FLOOR, TIMING_URGENCY_FLOOR, registrationWindowDays, urgencyScore, opportunityScore,
   goalMatchScore, professionMatchScore, accessibilityScore, completenessScore,
-  relevance, similarity, diversify, rankRecords,
+  daysUntilNextRegistration, relevance, similarity, diversify, sortByTime, rankRecords,
 };

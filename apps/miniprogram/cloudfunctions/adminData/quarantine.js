@@ -7,7 +7,7 @@ function isolateMisimport(record, now = new Date().toISOString()) {
     && record.aiReview?.risk_level === 'high'
     && (record.aiReview.issues || []).find(issue => issue.field === 'event_identity');
   // Only explicit non-event title findings or structured AI identity findings.
-  const titleReject = scope.decision === 'reject' && /通知|栏目|目录|报道|公示/.test(scope.reason);
+  const titleReject = scope.decision === 'reject' && /通知|栏目|目录|报道|公示|下级选拔|校赛|院赛/.test(scope.reason);
   if (!titleReject && !identityIssue) return record;
   return {...record, dataStatus:'quarantined', manualReview:'pending', systemValidation:'not_run',
     recommendation:{...record.recommendation, published_cache:false, manual_review:'pending', system_validation:'not_run'},

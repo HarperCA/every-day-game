@@ -59,6 +59,11 @@ describe('detecting a worthless contest', () => {
 });
 
 describe('school-only contests are out of scope', () => {
+  it('recognizes the eventLevel field used by stored records', () => {
+    expect(isSchoolOnly({ eventLevel:'校级' })).toBe(true);
+    expect(isSchoolOnly({ eventLevel:'国家级赛事校级选拔', parentEventId:'event-national' })).toBe(false);
+  });
+
   it('excludes a contest that only its own school runs', () => {
     // 学生对自己学校的赛事本来就知情，雷达没有增量价值。
     const internal = {
@@ -218,5 +223,32 @@ describe('the same evidence must give the same verdict', () => {
     // CHIP、SMP 这类是真正的会议评测，这个信号对它们应当继续成立。
     const conference = admissionSignals({ introduction:'第十四届全国社会媒体处理大会（SMP 2026）挑战赛。' });
     expect(conference.positives.join()).toContain('学术会议');
+  });
+});
+
+describe('a well-known tech platform behind the contest is a real signal, just not an academic/authority one', () => {
+  it('admits a contest whose only positive signal is a known platform providing real resources', () => {
+    // 蚂蚁灵波具身大模型挑战赛的真实情况：主办方是公司/平台，不命中任何学会/
+    // 行政机构模式，唯一的正面信号是实质回报——这类真实投入（算力、数据集）
+    // 的赛事不该因为主办方不是"学会"就一直卡在 review。
+    const record = {
+      organizer:'蚂蚁灵波科技、魔搭社区、阿里云天池',
+      introduction:'特别感谢 AMD 作为本次大赛算力支持伙伴，为赛事提供云端 GPU 算力支持。',
+      rewardHighlights:['现金奖金', '创业扶持'], // 现金不算数，创业扶持才是实质回报
+    };
+    expect(assessAdmission(record).verdict).toBe('admit');
+  });
+
+  it('weighs a known platform lower than a real academic/authority body', () => {
+    const platform = admissionSignals({ introduction:'技术支持：阿里云天池' });
+    const authority = admissionSignals({ introduction:'中国计算机学会主办' });
+    expect(platform.score).toBeLessThan(authority.score);
+  });
+
+  it('does not admit on the platform signal alone if nothing else backs it up, given the raised score is still shy of a second signal', () => {
+    // 平台信号本身只值 2 分，单独不够 admit（门槛 3 分）——这条断言锁定这个
+    // 有意的设计：平台信号是辅助信号，不是单独就能放行的强信号。
+    const platformOnly = admissionSignals({ introduction:'由魔搭社区提供支持。' });
+    expect(platformOnly.score).toBe(2);
   });
 });

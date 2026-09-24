@@ -1,5 +1,5 @@
 const AUDIT_ACTIONS = new Set([
-  'create', 'update', 'reset', 'submit_review', 'approve', 'reject', 'publish', 'unpublish', 'archive', 'offline',
+  'create', 'update', 'reset', 'submit_review', 'approve', 'reject', 'publish', 'unpublish', 'archive', 'offline', 'delete',
   'manual_review_pass', 'manual_review_reject', 'profession_mapping_update',
   'system_validation_run',
   'feedback_ai_queue', 'feedback_accept', 'feedback_reject', 'feedback_spotcheck_correct', 'feedback_spotcheck_incorrect', 'feedback_update',

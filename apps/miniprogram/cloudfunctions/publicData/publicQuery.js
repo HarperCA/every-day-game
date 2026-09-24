@@ -1,7 +1,11 @@
 // 价值评分与排序算法都与 adminData 共用同一份实现（内容必须逐字一致，由测试守护）。
-const { rankRecords } = require('./competitionRanking.js');
+const { daysUntilNextRegistration, rankRecords } = require('./competitionRanking.js');
 
 const MAX_PUBLIC_RECORDS = 500;
+const PUBLIC_DATA_STATUSES = new Set(['published', 'archived']);
+// "距离报名时间"筛选的三档，单位天——用近似值（30.5天/月），这是给学生看的
+// 粗筛，不是精确合同期限。
+const REGISTRATION_WITHIN_DAYS = { '1m':31, '3m':92, '6m':183 };
 
 function assertPublicRecordCapacity(records) {
   if (!Array.isArray(records)) throw new Error('invalid_public_records');
@@ -28,8 +32,10 @@ function currentRegistrationStatus(item, now = new Date()) {
 
 function filterPublicRecords(records, query = {}, now = new Date()) {
   const keyword = String(query.keyword || '').trim().toLowerCase().slice(0, 100);
+  const withinDays = Object.prototype.hasOwnProperty.call(REGISTRATION_WITHIN_DAYS, query.registrationWithin)
+    ? REGISTRATION_WITHIN_DAYS[query.registrationWithin] : null;
   const filtered = records.map(item => ({ ...item, registration_status:currentRegistrationStatus(item, now) })).filter(item => {
-    if (item?.data_status !== 'published' || item.system_validation !== 'passed' || item.manual_review !== 'passed') return false;
+    if (!PUBLIC_DATA_STATUSES.has(item?.data_status) || item.system_validation !== 'passed' || item.manual_review !== 'passed') return false;
     if (keyword && !String(item.search_text || '').includes(keyword)) return false;
     if (query.registrationStatus && item.registration_status !== query.registrationStatus) return false;
     if (query.eventLevel && item.event_level !== query.eventLevel) return false;
@@ -42,8 +48,16 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
     if (query.lifecycle && item.lifecycle !== query.lifecycle) return false;
     // 默认不展示已停办的赛事，但允许显式查询 —— 用户搜它时应看到「已停办」而不是搜不到。
     if (!query.lifecycle && item.lifecycle === '已停办') return false;
-    // 已截止是硬过滤而不是降权：报不上名的赛事排在第 50 位依然是噪声。
-    if (!query.registrationStatus && item.registration_status === '已截止') return false;
+    if (withinDays !== null) {
+      // 开了"距离报名时间"筛选：已截止/已归档不再一律隐藏，改用距离天数判断——
+      // 这正是已归档赛事（凭推算的下一届时间）能被看到的唯一入口。
+      const days = daysUntilNextRegistration(item, now);
+      if (days === null || days > withinDays) return false;
+    } else if (!query.registrationStatus && item.registration_status === '已截止') {
+      // 已截止是硬过滤而不是降权：报不上名的赛事排在第 50 位依然是噪声。
+      // 已归档记录的 registration_status 也会算成"已截止"，同样被挡在默认视图外。
+      return false;
+    }
     return true;
   });
   const ranked = rankRecords(filtered, query, now);
