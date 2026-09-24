@@ -5,8 +5,8 @@
 // 赛事这类没有专属平台、天池/DataFountain 都不会收录的冷门赛事。
 //
 // API：千帆平台"AI搜索"，POST https://qianfan.baidubce.com/v2/ai_search/web_search
-// 免费额度 50 次/天。2026-09-19 起默认跑 28 条查询模板（占约 56% 额度），
-// 留出余量给手动补跑；不追求刚好用满 50。
+// 官方文档当前标注该 web_search 接口每天免费 100 次；实际剩余额度以千帆控制台为准。
+// 默认查询模板数以 QUERY_TEMPLATES 为准，留出余量给通知追溯和手动补跑。
 //
 // 部署位置：/opt/daily-contest/search-baidu.mjs
 // 密钥：/opt/daily-contest/.baidu-search-key，单行纯文本，chmod 600
@@ -23,72 +23,31 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { setDefaultResultOrder } from 'node:dns';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+// 部署服务器到百度的 IPv6 路由不可用，Node fetch 默认选择后会 ETIMEDOUT；
+// IPv4 连通性已验证。只影响本进程的域名解析顺序。
+setDefaultResultOrder('ipv4first');
 const KEY_FILE = path.join(HERE, '.baidu-search-key');
 const SEARCH_URL = 'https://qianfan.baidubce.com/v2/ai_search/web_search';
 const SOURCE_NAME = '百度AI搜索';
+const WEB_RESULTS_PER_QUERY = 50; // 百度网页模态允许的最大值；计费按调用次数，不按返回条数。
 
-// 查询模板针对的正是"天池/DataFountain/赛氪这类聚合平台不会收录"的那几类：
-// 地方性赛事、企业赞助赛事、刚办的首届赛事、校级选拔通知。
-// query 本身不带年份，运行时拼当前年份，不用每年改代码。
-//
-// 2026-09-19 教训：原来只有 6 条，且大多是"XX通知""校内选拔"这类泛化措辞——
-// 这类词精确命中的往往是"学校自己转发上级赛事"的二手页面（比如"湖州学院
-// 关于组织参加XX省大学生XX竞赛的通知"），页面主体讲的是"我校怎么组织"，
-// 不会完整复述主办方资质链条，AI 抽取时收录门槛判定所需的权威信号
-// （教育部/学会/组委会字样）自然就抽不满分——不是赛事不够格，是二手转发页
-// 天生抽不出一手信源该有的权威表述。实测当天 20 条新候选、7 条成功抽取，
-// 0 条自动收录，全部卡在这个原因。
-//
-// 调整方向：
-//   1. 更多措辞明确指向"官方通知/官网/组委会"，而不是泛泛的"通知"——
-//      偏向命中赛事自己的官网或教育部/教育厅原始发文，而不是学校转发页。
-//   2. 按赛事门类拆分（设计/商科/语言/机器人/学科竞赛等），这类搜索天然
-//      更容易命中赛事自己的官网（用户搜的是"这个赛事"，不是"我们学校"）。
-//   3. "校内选拔"这类查询词继续保留但不再是主力——它们抽出来的候选大概率
-//      还是会落进 review 队列，但那正是它们的价值所在：报名截止日期往往
-//      比国赛早，漏了它学生看到的日期就是自己已经没资格用的日期，需要
-//      人工确认后收录，不能因为「大概率进不了 admit」就不搜。
-const QUERY_TEMPLATES = [
-  // —— 一手信源优先：教育部/教育厅/官方目录 ——
-  '教育部 关于举办 全国大学生 竞赛 通知 {year}',
-  '教育厅 大学生 竞赛 通知 {year}',
-  '{year}年 教育部 公布 大学生竞赛 名单',
-  '全国大学生竞赛分析报告 {year} 竞赛目录',
-  '{year} 学会 主办 大学生 竞赛 官网',
-  '{year} 协会 主办 大学生 挑战赛 报名',
-  '{year} 省级 大学生 学科竞赛 目录 公布',
-  // —— 按门类拆分：搜的是赛事本身，更容易命中赛事官网而不是学校转发页 ——
-  '{year} 大学生 人工智能 创新应用 大赛 官网',
-  '{year} 大学生 设计大赛 官方报名',
-  '{year} 大学生 创新创业大赛 官网 报名',
-  '{year} 大学生 数学建模 竞赛 官方通知',
-  '{year} 大学生 机器人 大赛 报名通知',
-  '{year} 大学生 英语 演讲 竞赛 官方通知',
-  '{year} 大学生 电子设计 竞赛 官网',
-  '{year} 大学生 编程 算法 竞赛 报名',
-  '{year} 大学生 商业 案例分析 大赛 官网',
-  '{year} 大学生 文化创意 设计大赛 报名',
-  '{year} 大学生 金融 科技 竞赛 报名通知',
-  '{year} 大学生 生物医药 创新 大赛 报名',
-  '{year} 大学生 环保 公益 创新大赛 报名',
-  '{year} 大学生 短视频 摄影 大赛 官方通知',
-  '{year} 大学生 广告 营销 创意大赛 报名',
-  '{year} 大学生 建筑 规划 设计竞赛 报名',
-  // —— 长尾发现：首届、企业命题、一般性新赛事 ——
-  '{year} 首届 大学生 大赛 报名',
-  '{year} 企业赞助 大学生 挑战赛 报名通知',
-  '{year} 大学生 创新创业 大赛 企业命题 报名',
-  '{year}年 大学生 竞赛 报名开始 新赛事',
-  // —— 校内选拔：命中率低但不可替代，报名截止日期往往比国赛早 ——
-  '大学生 竞赛 校内选拔 通知 {year}',
-  '{year} 科技创新挑战赛 报名 官网',
-  '{year} 全国高校 竞赛 报名截止 官方',
-  '{year} 创新创业大赛 报名 10月 政府',
+// 按用户确定的「最近可报名的大学生 + 专业 + 竞赛」逐专业搜索。
+// 搜索词只负责发现；是否仍可报名必须读取当届官方日期后核验。
+const PROFESSIONS = [
+  '计算机', '软件工程', '人工智能', '网络安全', '数据科学',
+  '电子信息', '通信工程', '自动化', '机械工程', '电气工程',
+  '机器人工程', '土木工程', '建筑学', '城乡规划', '化学工程',
+  '材料科学', '环境工程', '生物工程', '临床医学', '药学',
+  '农学', '食品科学', '金融学', '会计学', '工商管理',
+  '法学', '英语', '翻译', '新闻传播', '工业设计', '数学建模',
 ];
+export const QUERY_TEMPLATES = PROFESSIONS.map(profession =>
+  `{year} 最近可报名的大学生 ${profession} 专业竞赛 官网 报名入口`);
 
 // 2026-09-22 删除的 7 条查询，连同删除理由一并记下来，避免以后有人"补全门类"
 // 时再加回去：
@@ -214,16 +173,23 @@ export function toCandidate(reference, query) {
 }
 
 async function searchOnce(apiKey, query) {
-  const response = await fetch(SEARCH_URL, {
+  const request = () => fetch(SEARCH_URL, {
     method: 'POST',
     headers: { 'X-Appbuilder-Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       messages: [{ content: query, role: 'user' }],
       search_source: 'baidu_search_v2', // 必须带，否则可能不触发真实检索
-      resource_type_filter: [{ type: 'web', top_k: 10 }],
+      resource_type_filter: [{ type: 'web', top_k: WEB_RESULTS_PER_QUERY }],
     }),
     signal: AbortSignal.timeout(20000),
   });
+  let response;
+  try { response = await request(); }
+  catch (error) {
+    // 仅传输层失败时重试一次；HTTP 错误不重复消耗搜索额度。
+    await new Promise(resolve => setTimeout(resolve, 500));
+    response = await request();
+  }
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     throw new Error(`http_${response.status}: ${text.slice(0, 200)}`);
@@ -238,7 +204,7 @@ async function main() {
   const year = new Date().getFullYear();
   const queries = QUERY_TEMPLATES.slice(args.offset, args.offset + args.queries).map(template => template.replace('{year}', String(year)));
 
-  console.log(`查询 ${queries.length} 条（当日免费额度 50 次，每条查询算 1 次）\n`);
+  console.log(`查询 ${queries.length} 条（官方当前标注每日免费 100 次；实际余额以控制台为准）\n`);
 
   const seen = new Set();
   const allCandidates = [];

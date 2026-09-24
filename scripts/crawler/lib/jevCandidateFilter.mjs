@@ -1,0 +1,128 @@
+const DECISIONS_URL = 'https://openrouter.ai/api/alpha/decisions';
+export const JEV_MODEL = 'typesafe/jev-1.13';
+export const DEFAULT_CONFIDENCE = 0.8;
+
+export const JEV_CRITERIA = Object.freeze({
+  competition_site:'当届大学生专业赛事官网或正式赛事详情页，不是新闻、通知、目录、校赛或兴趣活动',
+  organizer_notice:'主办方或承办方发布的当届正式赛事通知，包含具体比赛信息，可作为核验证据但通知标题不可直接入赛事库',
+  registration_entry:'当届赛事的官方报名平台或报名入口页面',
+  directory_lead:'教育厅、学会或其他权威机构的省级赛事目录、项目清单或汇总页面，只作为进一步挖掘线索',
+  repost_or_school_selection:'普通转载、学校组织报名通知、校级选拔或校内赛，不是上级赛事自身的官方入口',
+  news_or_result:'获奖新闻、结果公示、决赛举行、启动开幕或赛后报道',
+  unrelated:'中小学生赛事、兴趣娱乐、群众体育、网站栏目、培训或其他与大学生专业竞赛无关内容',
+});
+
+const DIRECTORY = /(?:竞赛|赛事|项目)(?:目录|清单)|有哪些(?:学科)?竞赛|竞赛项目的公示|竞赛项目目录/;
+const SCHOOL_SELECTION = /校级选拔|校内选拔|校赛|院级选拔|院内选拔/;
+const RESULT_NEWS = /(?:获|荣获).{0,35}(?:奖|金牌|银牌|铜牌)|(?:一等奖|二等奖|三等奖)|决赛.{0,18}(?:举行|落幕|闭幕|收官)|(?:启动|开幕)仪式|正式启动|正式开启|正式开赛|正式拉开帷幕|火热开启|隆重开幕/;
+const COLUMN = /^(?:大赛动态|国赛公告|通知公告|竞赛分类[:：]?)$|学术资讯速递/;
+const ORGANIZATION_ONLY = /^(?:中国|全国|[\u4e00-\u9fa5]{2,8}省|[\u4e00-\u9fa5]{2,8}市)?[\u4e00-\u9fa5]{2,25}(?:学会|协会|学院|研究院|教育厅|教育局)$/;
+
+export function deterministicCandidateDecision(candidate = {}) {
+  const title = String(candidate.name || candidate.title || '').normalize('NFKC').trim();
+  if (!title) return { action:'reject', kind:'column_other', confidence:1, source:'rule', reason:'标题为空' };
+  if (title.includes('!')) return { action:'reject', kind:'news_or_result', confidence:1, source:'rule', reason:'标题含感叹号，按宣传或报道标题拦截' };
+  if (SCHOOL_SELECTION.test(title)) return { action:'reject', kind:'repost_or_school_selection', confidence:1, source:'rule', reason:'校级或校内选拔不作为独立赛事入库' };
+  if (DIRECTORY.test(title)) return { action:'lead', kind:'directory_lead', confidence:1, source:'rule', reason:'目录或清单仅保留为发现线索' };
+  if (RESULT_NEWS.test(title)) return { action:'reject', kind:'news_or_result', confidence:1, source:'rule', reason:'获奖、结果或活动报道不是赛事条目' };
+  if (COLUMN.test(title)) return { action:'reject', kind:'unrelated', confidence:1, source:'rule', reason:'栏目或资讯标题不是赛事' };
+  if (ORGANIZATION_ONLY.test(title) && !/大赛|竞赛|比赛|挑战赛/.test(title)) return { action:'reject', kind:'unrelated', confidence:1, source:'rule', reason:'机构名称不是具体赛事' };
+  return null;
+}
+
+function actionForKind(kind) {
+  if (['competition_site','organizer_notice','registration_entry'].includes(kind)) return 'fetch';
+  if (kind === 'directory_lead') return 'lead';
+  if (['repost_or_school_selection','news_or_result','unrelated'].includes(kind)) return 'reject';
+  return 'review';
+}
+
+function compactState(candidate = {}) {
+  return {
+    title:String(candidate.name || candidate.title || '').slice(0, 300),
+    snippet:String(candidate.description || candidate.summary || candidate.content || candidate.introduction || '').slice(0, 1600),
+    url:String(candidate.detailUrl || candidate.url || '').slice(0, 600),
+    source:String(candidate.source || candidate.sourceName || '').slice(0, 120),
+  };
+}
+
+export async function classifyCandidateWithJev(candidate, options = {}) {
+  const rule = deterministicCandidateDecision(candidate);
+  if (rule) return { candidate, ...rule, probabilities:null, cost:0 };
+
+  const apiKey = String(options.apiKey || '').trim();
+  if (!apiKey) {
+    return { candidate, action:'fetch', kind:'jev_unavailable', confidence:0, source:'fallback', reason:'未配置 OpenRouter API Key，保持旧流程继续核验', probabilities:null, cost:0 };
+  }
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const response = await fetchImpl(options.endpoint || DECISIONS_URL, {
+    method:'POST',
+    headers:{ authorization:`Bearer ${apiKey}`, 'content-type':'application/json', 'x-title':'Competition Radar Crawler' },
+    body:JSON.stringify({
+      model:options.model || JEV_MODEL,
+      state:compactState(candidate),
+      questions:{ kind:{ type:'choice', instructions:'判断这个搜索结果页面的类型。只根据标题、摘要、网址和来源判断；不能把学校转载当成承办方正式通知。', criteria:JEV_CRITERIA } },
+    }),
+    signal:AbortSignal.timeout(options.timeoutMs || 20000),
+  });
+  if (!response.ok) throw new Error(`jev_http_${response.status}:${(await response.text()).slice(0, 200)}`);
+  const payload = await response.json();
+  const answer = payload?.answers?.kind;
+  if (!answer?.choice || typeof answer.confidence !== 'number') throw new Error('jev_invalid_response');
+  const confidence = Number(answer.confidence);
+  const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
+  if (confidence < threshold) {
+    return { candidate, action:'review', kind:answer.choice, confidence, source:'jev', reason:`Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}，仅进人工线索报告`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
+  }
+  return { candidate, action:actionForKind(answer.choice), kind:answer.choice, confidence, source:'jev', reason:`Jev 分类为 ${answer.choice}`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
+}
+
+export async function filterCandidatesWithJev(candidates = [], options = {}) {
+  const decisions = new Array(candidates.length);
+  const pending = [];
+  for (const [index, candidate] of candidates.entries()) {
+    const rule = deterministicCandidateDecision(candidate);
+    if (rule) decisions[index] = { candidate, ...rule, probabilities:null, cost:0 };
+    else pending.push({ index, candidate });
+  }
+  const apiKey = String(options.apiKey || '').trim();
+  const batchSize = Math.max(1, Math.min(8, options.batchSize || 8));
+  for (let offset = 0; offset < pending.length; offset += batchSize) {
+    const batch = pending.slice(offset, offset + batchSize);
+    if (!apiKey) {
+      for (const { index, candidate } of batch) decisions[index] = { candidate, action:'fetch', kind:'jev_unavailable', confidence:0, source:'fallback', reason:'未配置 OpenRouter API Key，保持旧流程继续核验', probabilities:null, cost:0 };
+      continue;
+    }
+    try {
+      const questions = Object.fromEntries(batch.map((_, i) => [
+        `item_${i}`,
+        { type:'choice', instructions:`判断 items[${i}] 的页面类型。只根据标题、摘要、网址、来源判断。学校转载不能当作主办方或承办方正式通知。`, criteria:JEV_CRITERIA },
+      ]));
+      const fetchImpl = options.fetchImpl || globalThis.fetch;
+      const response = await fetchImpl(options.endpoint || DECISIONS_URL, {
+        method:'POST', headers:{ authorization:`Bearer ${apiKey}`, 'content-type':'application/json', 'x-title':'Competition Radar Crawler' },
+        body:JSON.stringify({ model:options.model || JEV_MODEL, state:{ items:batch.map(item => compactState(item.candidate)) }, questions }),
+        signal:AbortSignal.timeout(options.timeoutMs || 20000),
+      });
+      if (!response.ok) throw new Error(`jev_http_${response.status}`);
+      const payload = await response.json();
+      for (const [i, { index, candidate }] of batch.entries()) {
+        const answer = payload?.answers?.[`item_${i}`];
+        if (!answer?.choice || typeof answer.confidence !== 'number') throw new Error('jev_invalid_response');
+        const confidence = Number(answer.confidence);
+        const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
+        const action = confidence < threshold ? 'review' : actionForKind(answer.choice);
+        decisions[index] = { candidate, action, kind:answer.choice, confidence, source:'jev', reason:action === 'review' ? `Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}` : `Jev 分类为 ${answer.choice}`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) / batch.length };
+      }
+    } catch (error) {
+      for (const { index, candidate } of batch) decisions[index] = { candidate, action:'fetch', kind:'jev_error', confidence:0, source:'fallback', reason:`Jev 批量调用失败，保持旧流程继续核验：${String(error?.message || error).slice(0, 180)}`, probabilities:null, cost:0 };
+    }
+  }
+  return {
+    decisions,
+    fetch:decisions.filter(item => item.action === 'fetch').map(item => item.candidate),
+    leads:decisions.filter(item => item.action === 'lead' || item.action === 'review').map(item => item.candidate),
+    rejected:decisions.filter(item => item.action === 'reject').map(item => item.candidate),
+    cost:decisions.reduce((sum, item) => sum + Number(item.cost || 0), 0),
+  };
+}

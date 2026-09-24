@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { hostOf, isOutOfScopeReference, isRelevant, toCandidate } from '../scripts/server/search-baidu.mjs';
+import { QUERY_TEMPLATES, hostOf, isOutOfScopeReference, isRelevant, toCandidate } from '../scripts/server/search-baidu.mjs';
+
+describe('professional registration search queries', () => {
+  it('uses the recent-registration pattern across 31 specialties', () => {
+    expect(QUERY_TEMPLATES).toHaveLength(31);
+    expect(QUERY_TEMPLATES.every(query => query.includes('最近可报名的大学生') && query.includes('专业竞赛 官网 报名入口'))).toBe(true);
+    expect(QUERY_TEMPLATES.some(query => /校内选拔|竞赛目录|获奖新闻/.test(query))).toBe(false);
+  });
+});
 
 describe('filtering search noise before it costs an extraction call', () => {
   it('keeps results whose title or snippet actually mentions a competition', () => {

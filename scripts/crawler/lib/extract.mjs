@@ -6,6 +6,7 @@
 // AI 能据此核出「9月25日12时」「年龄不超过35岁」这类细节。
 // 所以这里既要去噪，也要能发现通往详情页的链接。
 import * as cheerio from 'cheerio';
+import { normalizeCrawlUrl } from './urlPolicy.mjs';
 
 const DROP_SELECTORS = 'script, style, noscript, nav, header, footer, aside, iframe, svg, form, .nav, .menu, .header, .footer, .sidebar, .breadcrumb';
 const MAIN_SELECTORS = ['article', 'main', '[role="main"]', '.article', '.content', '.detail', '.article-content', '.news-content', '#content', '#article'];
@@ -62,7 +63,7 @@ export function findNoticeLinks(html, baseUrl, { limit = 12 } = {}) {
     if (!sameSite) return;
     const text = normalizeWhitespace($(element).text()).slice(0, 120);
     if (!text || NOISE_ANCHORS.test(text)) return;
-    const href = absolute.href.split('#')[0];
+    const href = normalizeCrawlUrl(absolute.href);
     if (seen.has(href)) return;
     const isPdf = /\.pdf(\?|$)/i.test(href);
     // 详情页通常带日期或数字 id，纯栏目页一般没有

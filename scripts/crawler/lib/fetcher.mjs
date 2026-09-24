@@ -10,6 +10,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import iconv from 'iconv-lite';
 import { isAllowed } from './robots.mjs';
+import { normalizeCrawlUrl, readLimitedBody } from './urlPolicy.mjs';
 
 export const USER_AGENT = 'competition-crawler/1.0 (+admin source verification; respects robots.txt)';
 
@@ -21,6 +22,8 @@ const DEFAULT_OPTIONS = {
   maxBytes: 8 * 1024 * 1024,
   cacheDir: null,
   cacheTtlMs: 12 * 60 * 60 * 1000,
+  acceptLanguage: 'zh-CN,zh;q=0.9,en;q=0.7',
+  allowedMime: /^(text\/html|application\/xhtml\+xml|application\/json|text\/plain|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)(;|$)/i,
 };
 
 const BINARY_TYPES = /^(application\/pdf|application\/msword|application\/vnd|image\/|video\/|audio\/|application\/zip|application\/octet-stream)/i;
@@ -64,9 +67,10 @@ export class Fetcher {
 
   async throttle(host) {
     const last = this.lastHitAt.get(host) || 0;
-    const wait = last + this.options.perHostDelayMs - Date.now();
+    const reserved = Math.max(Date.now(), last + this.options.perHostDelayMs);
+    this.lastHitAt.set(host, reserved);
+    const wait = reserved - Date.now();
     if (wait > 0) await sleep(wait);
-    this.lastHitAt.set(host, Date.now());
   }
 
   async loadRobots(origin) {
@@ -110,9 +114,10 @@ export class Fetcher {
   }
 
   // 统一返回结构，任何失败都以 status 字段表达，不抛异常。
-  async get(url, { useCache = true } = {}) {
+  async get(url, { useCache = true, redirectCount = 0 } = {}) {
     let target;
     try {
+      url = normalizeCrawlUrl(url);
       target = new URL(url);
     } catch {
       return { url, status: 'invalid_url', text: '', body: null };
@@ -128,7 +133,7 @@ export class Fetcher {
     }
 
     const robots = await this.loadRobots(target.origin);
-    if (robots && !isAllowed(robots, USER_AGENT, target.pathname)) {
+    if (robots && !isAllowed(robots, USER_AGENT, target.pathname + target.search)) {
       this.stats.blocked += 1;
       return { url, status: 'blocked_by_robots', text: '', body: null };
     }
@@ -137,12 +142,22 @@ export class Fetcher {
     this.stats.requests += 1;
     try {
       const response = await fetch(url, {
-        headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/xhtml+xml,application/pdf,*/*' },
+        headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/xhtml+xml,application/json,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'accept-language': this.options.acceptLanguage },
         signal: AbortSignal.timeout(this.options.timeoutMs),
-        redirect: 'follow',
+        redirect: 'manual',
       });
+      if ([301,302,303,307,308].includes(response.status) && response.headers.get('location')) {
+        await response.body?.cancel();
+        if (redirectCount >= this.options.maxRedirects) return { url, status:'too_many_redirects', text:'', body:null };
+        const result = await this.get(new URL(response.headers.get('location'), url).href, {useCache, redirectCount:redirectCount + 1});
+        return {...result, url, finalUrl:result.finalUrl || result.url};
+      }
       const contentType = response.headers.get('content-type') || '';
-      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!this.options.allowedMime.test(contentType)) {
+        await response.body?.cancel();
+        return {url, status:'unsupported_type', contentType, text:'', body:null};
+      }
+      const buffer = await readLimitedBody(response, this.options.maxBytes);
       if (buffer.length > this.options.maxBytes) {
         return { url, status: 'too_large', httpStatus: response.status, contentType, text: '', body: null };
       }
@@ -164,7 +179,7 @@ export class Fetcher {
       return { ...entry, body: buffer };
     } catch (error) {
       this.stats.errors += 1;
-      const name = error?.name === 'TimeoutError' ? 'timeout' : 'network_error';
+      const name = error?.message === 'too_large' ? 'too_large' : error?.name === 'TimeoutError' ? 'timeout' : 'network_error';
       return { url, status: name, text: '', body: null, error: String(error?.message || error).slice(0, 200) };
     }
   }

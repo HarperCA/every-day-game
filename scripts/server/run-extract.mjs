@@ -16,6 +16,9 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { Fetcher } from './crawler/lib/fetcher.mjs';
+import { extractText } from './crawler/lib/extract.mjs';
+import { evidenceLinks, rankEvidenceLinks } from './crawler/lib/jevLinkRanker.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const KEY_FILE = path.join(HERE, '.extract-key');
@@ -41,6 +44,16 @@ const { extractFromDetailPage } = require(path.join(CJS_DIR, 'competitionExtract
 const SERVER_BUDGET_MS = 180000;
 const PER_CALL_DELAY_MS = 1200;
 const USER_AGENT = 'competition-crawler/1.0 (+admin source verification; respects robots.txt)';
+const evidenceFetcher = new Fetcher({ perHostDelayMs:1500 });
+
+function readOpenRouterKey() {
+  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY.trim();
+  const file = path.join(HERE, '.openrouter-key');
+  if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8').trim().replace(/^OPENROUTER_API_KEY=/, '');
+  const envFile = path.resolve(HERE, '..', '..', '.env');
+  const line = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8').match(/^OPENROUTER_API_KEY=(.+)$/m) : null;
+  return line?.[1]?.trim() || '';
+}
 
 function parseArgs(argv) {
   const args = { in:'', out:'', limit:0 };
@@ -90,7 +103,27 @@ async function sourceTextFor(candidate) {
       return '';
     }
   }
-  return '';
+  // 普通网站先抓页面，再对报名/章程/组织机构链接排序并读取最多 3 个。
+  // Fetcher 负责 robots、频率、大小与最终跳转；不把未经验证的链接标为官网。
+  const page = await evidenceFetcher.get(url);
+  if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) return '';
+  const links = evidenceLinks(page.text, page.finalUrl || url);
+  const ranked = await rankEvidenceLinks(links, { apiKey:readOpenRouterKey(), contestName:String(candidate.name || '') });
+  candidate.discoveredEvidence = ranked;
+  const sections = [`来源页面：${page.finalUrl || url}\n${extractText(page.text, { maxChars:14000 })}`];
+  let followed = 0;
+  for (const link of ranked) {
+    if (followed >= 3) break;
+    if (link.kind === 'other') continue;
+    if (link.status === 'ranked' && link.probability < 0.8) continue;
+    const linkedPage = await evidenceFetcher.get(link.url);
+    link.fetchStatus = linkedPage.status;
+    link.finalUrl = linkedPage.finalUrl || link.url;
+    if (linkedPage.status !== 'ok' || !/html/i.test(linkedPage.contentType || '')) continue;
+    sections.push(`链接类型：${link.kind}；链接文字：${link.label}；实际网址：${link.finalUrl}\n${extractText(linkedPage.text, { maxChars:8000 })}`);
+    followed += 1;
+  }
+  return sections.join('\n\n').slice(0, 30000);
 }
 
 async function main() {
@@ -118,7 +151,9 @@ async function main() {
         return { ok:false, status:'threw', url, error:String(error?.message || error).slice(0, 300) };
       }
     };
-    const text = await sourceTextFor(candidate);
+    let text = '';
+    try { text = await sourceTextFor(candidate); }
+    catch (error) { candidate.evidenceDiscoveryError = String(error?.message || error).slice(0, 180); }
     outcome = await runOnce(text);
     // 抽取结果不稳定：实测「跨本体具身」这条批量跑时什么都没抽到，
     // 单独连跑两次却都正确抽出了主办单位和四条权威信号。同样的输入、不同的输出。
@@ -131,7 +166,7 @@ async function main() {
       if (second.ok && !yieldedNothing(second)) outcome = second;
     }
     const elapsed = Date.now() - started;
-    results.push({ name, url, elapsedMs:elapsed, retried, ...outcome });
+    results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...outcome });
     const suffix = outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`
       : `失败 ${outcome.status}`;

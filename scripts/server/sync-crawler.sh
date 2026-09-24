@@ -17,14 +17,24 @@ for file in crawl-tianchi.mjs crawl-datafountain.mjs merge-candidates.mjs; do
   scp -q "$LOCAL_CRAWLER/$file" "$SERVER:$REMOTE/crawler/$file"
   echo "  crawler/$file"
 done
-for file in dedupe.mjs valueSource.mjs masters.mjs; do
+for file in dedupe.mjs valueSource.mjs masters.mjs discoveredChannels.mjs fetcher.mjs extract.mjs urlPolicy.mjs jevCandidateFilter.mjs jevLinkRanker.mjs; do
   scp -q "$LOCAL_CRAWLER/lib/$file" "$SERVER:$REMOTE/crawler/lib/$file"
   echo "  crawler/lib/$file"
 done
 
-echo "--- 同步流水线编排脚本 ---"
+echo "--- 同步百度AI搜索发现脚本（不碰 .baidu-search-key）---"
+scp -q "$LOCAL_SERVER/search-baidu.mjs" "$SERVER:$REMOTE/search-baidu.mjs"
+echo "  search-baidu.mjs"
+
+echo "--- 同步流水线编排与入库脚本 ---"
 scp -q "$LOCAL_SERVER/run-crawl-pipeline.mjs" "$SERVER:$REMOTE/run-crawl-pipeline.mjs"
+scp -q "$LOCAL_SERVER/pipeline-ledger.mjs" "$SERVER:$REMOTE/pipeline-ledger.mjs"
+scp -q "$LOCAL_SERVER/ingest-candidates.mjs" "$SERVER:$REMOTE/ingest-candidates.mjs"
+scp -q "$LOCAL_SERVER/resolve-notice-leads.mjs" "$SERVER:$REMOTE/resolve-notice-leads.mjs"
 echo "  run-crawl-pipeline.mjs"
+echo "  ingest-candidates.mjs"
+echo "  resolve-notice-leads.mjs"
 
 ssh "$SERVER" "mkdir -p $REMOTE/runs"
 echo "完成。密钥与 crontab 均未被本脚本修改。"
+echo "Jev 启用方式：在服务器创建 $REMOTE/.openrouter-key（单行密钥、chmod 600），或为 systemd 服务配置 OPENROUTER_API_KEY。"
