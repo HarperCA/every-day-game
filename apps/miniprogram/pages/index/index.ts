@@ -2,7 +2,7 @@ import { getProfessionOptions, listCompetitions } from '../../services/repositor
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
 
 const statusOptions = ['全部报名状态', '报名中', '即将报名', '时间待公布', '已截止'];
-const levelOptions = ['全部赛事级别', '国家级', '省级/区域级', '其他/未明确'];
+const levelOptions = ['全部赛事级别', '国际级', '国家级', '省级/区域级', '其他/未明确'];
 const professionOptions = ['全部适合专业', ...getProfessionOptions()];
 const participationFormatOptions = ['个人赛', '团队赛', '个人或团队均可', '暂未明确'];
 const teamSizeOptions = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];

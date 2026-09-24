@@ -1,3 +1,4 @@
+export const eventLevels = ['国际级', '国家级', '省级/区域级', '其他/未明确'];
 export const participationFormats = ['个人赛', '团队赛', '个人或团队均可', '暂未明确'];
 export const teamSizeCategories = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];
 export const feeTypes = ['免费', '收费', '不同赛项费用不同', '暂未公布'];
@@ -13,6 +14,7 @@ export function validateAdminRecord(record: any): string[] {
   if (/通知/.test(String(record.name || '')) || /通知/.test(String(record.editionName || ''))) errors.push('名称含“通知”的条目只能作为线索，不得入赛事库');
   if (/[!！]/.test(String(record.name || '')) || /[!！]/.test(String(record.editionName || ''))) errors.push('名称含感叹号，不得入赛事库');
   if (/正式启动|正式开启|正式开赛|启动仪式|开幕仪式|正式拉开帷幕|火热开启|隆重开幕/.test(`${record.name || ''} ${record.editionName || ''}`)) errors.push('名称含“正式启动”等活动报道用语，不得入赛事库');
+  if (!eventLevels.includes(record.eventLevel)) errors.push('赛事级别不在允许范围内');
   if (!participationFormats.includes(record.participationFormat)) errors.push('参赛形式不在允许范围内');
   if (!teamSizeCategories.includes(record.teamSizeCategory)) errors.push('队伍人数不在允许范围内');
   if (!feeTypes.includes(record.feeType)) errors.push('报名费用不在允许范围内');

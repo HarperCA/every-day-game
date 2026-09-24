@@ -22,7 +22,7 @@
     "track_name": {"type": "string"},
     "registration_status": {"enum": ["时间待公布", "即将报名", "报名中", "已截止"]},
     "registration_status_override": {"enum": ["时间待公布", "即将报名", "报名中", "已截止", null]},
-    "event_level": {"enum": ["国家级", "省级/区域级", "其他/未明确"]},
+    "event_level": {"enum": ["国际级", "国家级", "省级/区域级", "其他/未明确"]},
     "professions": {"type": "array", "items": {"type": "string"}},
     "participation_format": {"enum": ["个人赛", "团队赛", "个人或团队均可", "暂未明确"]},
     "team_size_category": {"enum": ["1人", "2～3人", "4～5人", "6人及以上", "人数范围不固定", "暂未明确"]},

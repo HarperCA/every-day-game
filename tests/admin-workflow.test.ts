@@ -5,6 +5,7 @@ const validRecord = {
   id: 'competition-1',
   name: '测试竞赛',
   editionName: '测试竞赛（2026）',
+  eventLevel: '国家级',
   participationFormat: '团队赛',
   teamSizeCategory: '2～3人',
   teamSize: '每队2—3人',
@@ -23,6 +24,10 @@ const validRecord = {
 };
 
 describe('admin review and publish workflow', () => {
+  it('赛事级别只接受四个枚举值，国际级单独成项', () => {
+    expect(getSystemReviewIssues({...validRecord, eventLevel:'国际级'})).toEqual([]);
+    expect(getSystemReviewIssues({...validRecord, eventLevel:'省级'})).toContain('赛事级别不在允许范围内');
+  });
   it('拦截手动新增及发布名称含“通知”的条目，但不误伤证据中的通知', () => {
     expect(getSystemReviewIssues({...validRecord, name:'测试竞赛通知'})).toContain('名称含“通知”的条目只能作为线索，不得入赛事库');
     expect(getPublishBlockers({...validRecord, name:'测试竞赛通知', systemValidation:'passed', manualReview:'passed'})).toContain('通知线索尚未解析为赛事');

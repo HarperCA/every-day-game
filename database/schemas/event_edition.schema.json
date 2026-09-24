@@ -9,7 +9,7 @@
     "event_id": {"type": "string", "minLength": 1},
     "edition_name": {"type": "string", "minLength": 1},
     "year": {"type": ["integer", "null"], "minimum": 2000, "maximum": 2100},
-    "event_level": {"enum": ["国家级", "省级/区域级", "其他/未明确"]},
+    "event_level": {"enum": ["国际级", "国家级", "省级/区域级", "其他/未明确"]},
     "participation_format": {"enum": ["个人赛", "团队赛", "个人或团队均可", "暂未明确"]},
     "team_size_category": {"enum": ["1人", "2～3人", "4～5人", "6人及以上", "人数范围不固定", "暂未明确"]},
     "fee_type": {"enum": ["免费", "收费", "不同赛项费用不同", "暂未公布"]},

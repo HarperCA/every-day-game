@@ -1,5 +1,5 @@
 export const REGISTRATION_STATUSES = ['时间待公布', '即将报名', '报名中', '已截止'] as const;
-export const EVENT_LEVELS = ['国家级', '省级/区域级', '其他/未明确'] as const;
+export const EVENT_LEVELS = ['国际级', '国家级', '省级/区域级', '其他/未明确'] as const;
 export const RECOMMENDATION_LEVELS = ['强烈推荐', '值得参加', '适合练手', '高难挑战', '谨慎报名', '信息不足'] as const;
 export const DATA_STATUSES = ['draft', 'pending_system_validation', 'pending_manual_review', 'published', 'reviewing', 'archived', 'offline'] as const;
 export const PARTICIPATION_FORMATS = ['个人赛', '团队赛', '个人或团队均可', '暂未明确'] as const;

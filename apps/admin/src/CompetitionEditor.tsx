@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { feeTypes, participationFormats, registrationOrganizations, teamSizeCategories } from './validation';
+import { eventLevels, feeTypes, participationFormats, registrationOrganizations, teamSizeCategories } from './validation';
 import { fromDateTimeLocal, linesToList, listToLines, toDateTimeLocal } from './editorUtils';
 import { displayAuditField } from './fieldLabels';
 
@@ -48,7 +48,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <label>年份或赛季<input value={editing.editionYear || ''} placeholder="如 2026 或 2025—2026" onChange={e=>set('editionYear',e.target.value)}/></label>
         <label>第几届<input value={editing.editionOrdinal || ''} placeholder="如 第八届；不明确可留空" onChange={e=>set('editionOrdinal',e.target.value)}/></label>
         <label className="wide">官方届次原文（追溯用，不作为标题）<input value={editing.editionName} onChange={e=>set('editionName',e.target.value)}/></label>
-        <label>赛事级别<input value={editing.eventLevel} onChange={e=>set('eventLevel',e.target.value)}/></label>
+        <label>赛事级别<select value={editing.eventLevel} onChange={e=>set('eventLevel',e.target.value)}>{eventLevels.map(value=><option key={value}>{value}</option>)}</select></label>
         <label className="wide">主办单位<input value={editing.organizer} onChange={e=>set('organizer',e.target.value)}/></label>
         <ListField label="别名（每行一项）" value={editing.aliases} onChange={value=>set('aliases',value)}/>
         <ListField label="客观标签（每行一项）" value={editing.objectiveTags} onChange={value=>set('objectiveTags',value)}/>
