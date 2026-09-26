@@ -3,6 +3,8 @@ Description=竞赛雷达追溯到期检查（traceDue 已过、仍是草稿的�
 After=daily-contest-api.service
 
 [Service]
+# 服务器在美国、没有 IPv6：Node 默认只等 250ms 就放弃 IPv4 改试 IPv6，连国内站点会超时，放宽到 2 秒
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
 Type=oneshot
 ExecStart=/usr/bin/node /opt/daily-contest/draft-triage-expire-trace.mjs --apply
 StandardOutput=append:/var/log/daily-contest-expire-trace.log

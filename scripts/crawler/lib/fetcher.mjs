@@ -7,6 +7,7 @@
 //   - 总时长超时，而不是 socket 空闲超时
 //   - 同域限速，避免给主办方站点造成压力
 import fs from 'node:fs/promises';
+import net from 'node:net';
 import path from 'node:path';
 import iconv from 'iconv-lite';
 import { isAllowed } from './robots.mjs';
@@ -26,7 +27,11 @@ const DEFAULT_OPTIONS = {
   allowedMime: /^(text\/html|application\/xhtml\+xml|application\/json|text\/plain|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)(;|$)/i,
 };
 
-const BINARY_TYPES = /^(application\/pdf|application\/msword|application\/vnd|image\/|video\/|audio\/|application\/zip|application\/octet-stream)/i;
+// 服务器在美国、没有 IPv6，连国内站点建连约 0.3 秒；Node 默认 250ms 就放弃 IPv4 改试 IPv6，结果整站超时。
+// systemd 单元里已用 NODE_OPTIONS 放宽，这里再兜一次，手动跑脚本时也生效。
+if (net.getDefaultAutoSelectFamilyAttemptTimeout?.() < 2000) net.setDefaultAutoSelectFamilyAttemptTimeout(2000);
+
+const BINARY_TYPES =/^(application\/pdf|application\/msword|application\/vnd|image\/|video\/|audio\/|application\/zip|application\/octet-stream)/i;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

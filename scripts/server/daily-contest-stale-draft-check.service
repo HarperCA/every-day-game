@@ -3,6 +3,8 @@ Description=竞赛雷达草稿超时检查（超过3天没自动发布/归档的
 After=daily-contest-api.service
 
 [Service]
+# 服务器在美国、没有 IPv6：Node 默认只等 250ms 就放弃 IPv4 改试 IPv6，连国内站点会超时，放宽到 2 秒
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
 Type=oneshot
 ExecStart=/bin/bash /opt/daily-contest/scheduled-stale-draft-check.sh
 StandardOutput=append:/var/log/daily-contest-stale-draft-check.log

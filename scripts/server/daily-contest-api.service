@@ -3,6 +3,8 @@ Description=竞赛雷达后端（自有服务器，替代 CloudBase 云函数）
 After=network.target
 
 [Service]
+# 服务器在美国、没有 IPv6：Node 默认只等 250ms 就放弃 IPv4 改试 IPv6，连国内站点会超时，放宽到 2 秒
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
 Type=simple
 WorkingDirectory=/opt/daily-contest/server
 # 只监听本机：对外由 nginx 反代，Node 服务本身不暴露端口

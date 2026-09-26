@@ -3,6 +3,8 @@ Description=竞赛雷达记录追溯（按搜索计划找当届通知，只把�
 After=daily-contest-api.service
 
 [Service]
+# 服务器在美国、没有 IPv6：Node 默认只等 250ms 就放弃 IPv4 改试 IPv6，连国内站点会超时，放宽到 2 秒
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
 Type=oneshot
 WorkingDirectory=/opt/daily-contest
 ExecStart=/usr/bin/node /opt/daily-contest/trace-drafts.mjs
