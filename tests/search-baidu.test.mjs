@@ -94,3 +94,21 @@ describe('keeping discovery and the admission gate on the same scope rules', () 
     expect(isOutOfScopeReference({ title: '关于举办2026年山东省大学生结构设计竞赛的通知' })).toBe(false);
   });
 });
+
+describe('搜索结果逐条去向', async () => {
+  const { screenReference, droppedEntry } = await import('../scripts/server/search-baidu.mjs');
+  it('四种丢弃原因各自判定，成为候选的带出候选', () => {
+    const seen = new Set();
+    expect(screenReference({ url:'https://tianchi.aliyun.com/x', title:'某大赛' }, 'q', '覆盖空白', seen).reason).toBe('known_source');
+    expect(screenReference({ url:'https://a.org/1', title:'全国青少年科技创新大赛' }, 'q', '覆盖空白', seen).reason).toBe('out_of_scope');
+    expect(screenReference({ url:'https://a.org/2', title:'计算机专业介绍', content:'就业前景' }, 'q', '覆盖空白', seen).reason).toBe('irrelevant');
+    const ok = screenReference({ url:'https://a.org/3', title:'全国大学生测试设计大赛' }, 'q', '覆盖空白', seen);
+    expect(ok.candidate.discovery).toMatchObject({ route:'覆盖空白', query:'q' });
+    seen.add(ok.candidate.externalId);
+    expect(screenReference({ url:'https://a.org/3', title:'全国大学生测试设计大赛' }, 'q', '覆盖空白', seen).reason).toBe('duplicate');
+  });
+  it('丢弃记录保留标题、网址、摘要和原因说明', () => {
+    expect(droppedEntry({ url:'https://a.org/2', title:'计算机专业介绍', content:'就业前景' }, 'q', '覆盖空白', 'irrelevant'))
+      .toEqual({ query:'q', route:'覆盖空白', reason:'irrelevant', reasonText:'标题和摘要都不含“赛”字', title:'计算机专业介绍', url:'https://a.org/2', snippet:'就业前景' });
+  });
+});

@@ -147,6 +147,28 @@ export function isRelevant(reference) {
   return RELEVANCE_KEYWORDS.some(keyword => text.includes(keyword));
 }
 
+// 一条搜索结果在脚本内的去向：丢弃（附原因）或成为候选。丢弃的也要逐条留档，
+// 否则“不相关”一类只剩数字，无从判断规则是不是太严（2026-09-26：550 条里 208 条被判不相关却看不到是哪些）。
+export const DROP_REASONS = {
+  known_source: '已有专门抓取器的平台', out_of_scope: '不在收录范围', irrelevant: '标题和摘要都不含“赛”字', duplicate: '同一轮已出现或缺标题网址',
+};
+export function screenReference(reference, query, route, seenIds) {
+  const host = hostOf(reference?.url);
+  if (KNOWN_SOURCE_HOSTS.some(known => host === known || host.endsWith(`.${known}`))) return { reason:'known_source' };
+  // 范围过滤放在相关性过滤之前：中小学/青少年/体育类标题往往同时含"大赛"，
+  // 相关性关键词拦不住它们，必须靠收录范围判断。
+  if (isOutOfScopeReference(reference)) return { reason:'out_of_scope' };
+  if (!isRelevant(reference)) return { reason:'irrelevant' };
+  const candidate = toCandidate(reference, query, route);
+  if (!candidate.name || !candidate.detailUrl || seenIds.has(candidate.externalId)) return { reason:'duplicate' };
+  return { candidate };
+}
+
+export function droppedEntry(reference, query, route, reason) {
+  return { query, route, reason, reasonText:DROP_REASONS[reason], title:String(reference?.title || '').trim().slice(0, 150),
+    url:String(reference?.url || ''), snippet:String(reference?.content || '').trim().slice(0, 160) };
+}
+
 // 拿 URL 算一个稳定 id：同一条搜索结果重跑多次要落在同一条候选上，
 // 而不是每次都当成新的重复写一遍——和其它来源"按 externalId 去重"的
 // 纪律一致。不用外部哈希库，标准库 crypto 就够。
@@ -230,6 +252,7 @@ async function main() {
   // 2026-09-21 那 7 条纯浪费的查询就是这么被漏了几个月的。
   const perQuery = new Map();
   const failures = [];
+  const dropped = [];
 
   for (const query of queries) {
     console.log(`--- ${query} ---`);
@@ -245,28 +268,15 @@ async function main() {
     }
     stats.referencesTotal += references.length;
     tally.references = references.length;
+    const route = routeOf.get(query) || DEFAULT_ROUTE;
     for (const reference of references) {
-      const host = hostOf(reference?.url);
-      if (KNOWN_SOURCE_HOSTS.some(known => host === known || host.endsWith(`.${known}`))) {
-        stats.knownSourceSkipped += 1;
-        continue;
-      }
-      // 范围过滤放在相关性过滤之前：中小学/青少年/体育类标题往往同时含"大赛"，
-      // 相关性关键词拦不住它们，必须靠收录范围判断。
-      if (isOutOfScopeReference(reference)) {
-        stats.outOfScopeSkipped += 1;
-        tally.outOfScope += 1;
-        continue;
-      }
-      if (!isRelevant(reference)) {
-        stats.filteredOut += 1;
-        tally.irrelevant += 1;
-        continue;
-      }
-      const candidate = toCandidate(reference, query, routeOf.get(query) || DEFAULT_ROUTE);
-      if (!candidate.name || !candidate.detailUrl || seen.has(candidate.externalId)) {
-        stats.duplicateWithinRun += 1;
-        tally.duplicate += 1;
+      const { reason, candidate } = screenReference(reference, query, route, seen);
+      if (reason) {
+        dropped.push(droppedEntry(reference, query, route, reason));
+        if (reason === 'known_source') stats.knownSourceSkipped += 1;
+        if (reason === 'out_of_scope') { stats.outOfScopeSkipped += 1; tally.outOfScope += 1; }
+        if (reason === 'irrelevant') { stats.filteredOut += 1; tally.irrelevant += 1; }
+        if (reason === 'duplicate') { stats.duplicateWithinRun += 1; tally.duplicate += 1; }
         continue;
       }
       seen.add(candidate.externalId);
@@ -291,6 +301,8 @@ async function main() {
     failures,
     candidateCount: allCandidates.length,
     candidates: allCandidates,
+    droppedCount: dropped.length,
+    dropped,
   };
 
   // 默认值 '../../reports/…' 是按仓库里 scripts/server/ 的嵌套深度写的，

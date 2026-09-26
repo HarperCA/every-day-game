@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>抓取结果明细</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1f2328;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--chip:#eef2ff}
+@media (prefers-color-scheme:dark){:root{--bg:#141517;--card:#1c1e21;--ink:#e6e6e6;--muted:#9aa0a6;--line:#2d3136;--accent:#6ea8fe;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--chip:#23283a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:20px 16px 48px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 10px}
+.sub{color:var(--muted);margin:0 0 18px}
+.funnel{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:120px;flex:1}
+.step b{display:block;font-size:22px}.step span{color:var(--muted);font-size:12px}
+.arrow{align-self:center;color:var(--muted)}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:8px;padding:10px 12px;margin:14px 0;color:var(--ink)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+input,select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit}
+input{flex:1;min-width:200px}
+.tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{position:sticky;top:0;background:var(--card);font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+td a{color:var(--accent);text-decoration:none;word-break:break-all}td a:hover{text-decoration:underline}
+.t{font-weight:600}.small{color:var(--muted);font-size:12px}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--chip);font-size:12px;white-space:nowrap}
+.s1{color:var(--muted)}.s2{color:var(--bad)}.s3{color:var(--warn)}.s4{color:var(--ok)}
+.count{color:var(--muted);font-size:13px;margin:6px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>抓取结果明细</h1>
+<p class="sub">一轮百度搜索的每条结果，从脚本内筛选、判重、前置筛选到读详情页、入库的去向。</p>
+<div class="funnel" id="funnel"></div>
+<div class="note" id="note"></div>
+
+<h2>逐条候选</h2>
+<div class="bar">
+  <input id="kw" placeholder="搜标题、网址或理由">
+  <select id="stage"><option value="">全部去向</option></select>
+  <select id="kind"><option value="">全部分类</option></select>
+  <select id="query"><option value="">全部查询</option></select>
+</div>
+<div class="count" id="count"></div>
+<div class="tablewrap"><table>
+  <thead><tr><th>#</th><th>标题 / 网址</th><th>判重</th><th>前置筛选</th><th>分类与理由</th><th>最终去向</th><th>来自哪条查询</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table></div>
+
+<h2>转入通知追溯的正式通知</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>找到的待核验页面</th></tr></thead>
+  <tbody id="notices"></tbody>
+</table></div>
+
+<h2>每条查询的 50 条结果去向</h2>
+<div class="tablewrap"><table>
+  <thead><tr><th>查询</th><th>路线</th><th>返回</th><th>不在收录范围</th><th>与竞赛不相关</th><th>同轮重复</th><th>成为候选</th></tr></thead>
+  <tbody id="pq"></tbody>
+</table></div>
+</main>
+<script>
+const D = __DATA__;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S = D.summary;
+const steps = [
+  [S.refs, `搜索结果（${S.queries} 条查询）`], [S.cands, '成为候选'], [S.new, '判重后是新的'],
+  [S.jev.fetch || 0, '前置筛选放行'], [S.detail, '读了详情页'], [S.extractOk, '抽取成功'], [S.added, '入库'],
+];
+document.getElementById('funnel').innerHTML = steps.map((s, i) =>
+  `${i ? '<div class="arrow">→</div>' : ''}<div class="step"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('');
+document.getElementById('note').innerHTML =
+  `搜索脚本内部丢掉了 <b>${S.dropped}</b> 条（不在收录范围 ${S.out}、与竞赛不相关 ${S.irr}、同轮重复 ${S.dupRun}${S.known ? `、已知来源 ${S.known}` : ''}）` +
+  (S.droppedLogged ? `，已逐条列在下表（去向选“搜索脚本丢弃”）。` : `，这一轮只记了数量、没有逐条记录，所以下表只有 ${S.cands} 条候选。`) +
+  `前置筛选：拦截 ${S.jev.reject || 0}、低置信度只留线索 ${S.jev.review || 0}、只留线索 ${S.jev.lead || 0}、放行 ${S.jev.fetch || 0}。` +
+  `放行的里面 ${S.formal} 条是正式通知，转去追溯赛事官网；读了详情页的 ${S.detail} 条最终未入库，原因：${Object.entries(S.fail).map(([k, v]) => `${esc(k)}（${v}）`).join('；')}。`;
+
+const opts = (id, vals) => { const el = document.getElementById(id); [...new Set(vals)].filter(Boolean).sort().forEach(v => el.insertAdjacentHTML('beforeend', `<option>${esc(v)}</option>`)); };
+opts('stage', D.rows.map(r => r.final.replace(/（.*$/, '')));
+opts('kind', D.rows.map(r => r.kind));
+opts('query', D.rows.map(r => r.q));
+
+function render() {
+  const kw = document.getElementById('kw').value.trim().toLowerCase();
+  const st = document.getElementById('stage').value, kd = document.getElementById('kind').value, q = document.getElementById('query').value;
+  const list = D.rows.filter(r => (!kw || `${r.t} ${r.u} ${r.reason} ${r.intro}`.toLowerCase().includes(kw))
+    && (!st || r.final.startsWith(st)) && (!kd || r.kind === kd) && (!q || r.q === q));
+  document.getElementById('count').textContent = `显示 ${list.length} / ${D.rows.length} 条`;
+  document.getElementById('rows').innerHTML = list.map((r, i) => `<tr>
+    <td class="small">${i + 1}</td>
+    <td><div class="t">${esc(r.t)}</div><a href="${esc(r.u)}" target="_blank" rel="noreferrer">${esc(r.u.length > 90 ? r.u.slice(0, 90) + '…' : r.u)}</a>${r.intro ? `<div class="small">${esc(r.intro)}</div>` : ''}</td>
+    <td>${r.dup === '新' ? '<span class="chip">新</span>' : `<span class="small">${esc(r.dup)}</span>`}</td>
+    <td>${esc(r.jev)}${r.conf != null ? `<div class="small">把握 ${Math.round(r.conf * 100)}%</div>` : ''}</td>
+    <td>${r.kind ? `<span class="chip">${esc(r.kind)}</span>` : ''}<div class="small">${esc(r.reason)}</div></td>
+    <td class="s${r.stage}">${esc(r.final)}</td>
+    <td class="small">${esc(r.q)}</td></tr>`).join('');
+}
+['kw', 'stage', 'kind', 'query'].forEach(id => document.getElementById(id).addEventListener('input', render));
+render();
+
+document.getElementById('notices').innerHTML = D.notices.map(n => `<tr>
+  <td><a href="${esc(n.u)}" target="_blank" rel="noreferrer">${esc(n.t)}</a></td><td>${esc(n.name)}</td><td class="small">${esc(n.q)}</td>
+  <td>${n.leads.length ? n.leads.map(l => `<div><a href="${esc(l.u)}" target="_blank" rel="noreferrer">${esc(l.t || l.u)}</a></div>`).join('') : '<span class="small">没有找到</span>'}</td></tr>`).join('');
+document.getElementById('pq').innerHTML = D.perQuery.map(p => `<tr><td>${esc(p.q)}</td><td class="small">${esc(p.route)}</td><td>${p.refs}</td><td>${p.out}</td><td>${p.irr}</td><td>${p.dupRun}</td><td><b>${p.cand}</b></td></tr>`).join('');
+</script>
+</body>
+</html>
