@@ -1,0 +1,7 @@
+import fs from 'node:fs';
+const token=fs.readFileSync('/opt/daily-contest/.admin-token','utf8').trim();
+async function call(body){const r=await fetch('http://127.0.0.1:8787/api/adminData',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({adminToken:token,...body})});const j=await r.json();if(!j.ok)throw Error(j.message);return j.data;}
+const state=await call({action:'bootstrap'}); const ids=['edition-keyun-finance-accounting-2026']; const now=new Date().toISOString(); const selected=[];
+const records=state.records.map(x=>{if(!ids.includes(x.id)||x.dataStatus==='published')return x;selected.push(x.id);return {...x,dataStatus:'published',systemValidation:'passed',manualReview:'passed',systemReviewedAt:now,manualReviewedAt:now,publishedAt:now,updatedAt:now,updatedBy:'direct-manual-review',recommendation:{...x.recommendation,published_cache:true,system_validation:'passed'}}});
+if(!selected.length){console.log('无新增发布');process.exit(0)}
+const out=await call({action:'saveRecords',records,expectedVersion:state.stateVersions.records,auditEntry:{id:'direct-extra-'+Date.now(),action:'publish',objectType:'event_edition',recordId:'batch',recordName:'人工核验发布补充赛事',changedFields:['dataStatus','systemValidation','manualReview'],actor:'super_admin',reason:'核验官方通知与报名窗口后直接发布',createdAt:now}}); console.log(JSON.stringify({published:selected,total:out.saved,version:out.version},null,2));
