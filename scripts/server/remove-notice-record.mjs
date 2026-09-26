@@ -1,5 +1,0 @@
-import fs from 'node:fs';
-const token=fs.readFileSync('/opt/daily-contest/.admin-token','utf8').trim();
-async function call(body){const r=await fetch('http://127.0.0.1:8787/api/adminData',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({adminToken:token,...body})});const j=await r.json();if(!j.ok)throw Error(j.message);return j.data;}
-const state=await call({action:'bootstrap'}); const matches=state.records.filter(x=>/荣成学院举办.*商业精英挑战赛跨境电商赛道|关于荣成学院举办/.test(String(x.name||''))); if(!matches.length){console.log('未找到目标记录');process.exit(0)}
-const now=new Date().toISOString(); const records=state.records.filter(x=>!matches.some(m=>m.id===x.id)); const out=await call({action:'saveRecords',records,expectedVersion:state.stateVersions.records,auditEntry:{id:'remove-notice-record-'+Date.now(),action:'delete',objectType:'event_edition',recordId:matches.map(x=>x.id).join(','),recordName:matches.map(x=>x.name).join('；'),changedFields:['record_removed'],actor:'super_admin',reason:'该条是通知标题而非赛事，按赛事库收录规则移除',createdAt:now}}); console.log(JSON.stringify({removed:matches.map(x=>({id:x.id,name:x.name})),total:out.saved,version:out.version},null,2));

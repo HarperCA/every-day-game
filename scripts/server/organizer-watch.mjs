@@ -3,8 +3,10 @@
 //
 // 监测哪些页面：
 //   1. 记录里标为主办方官网、官方报名系统的来源页；
-//   2. 主办方通知、主管部门通知所在的上一级栏目（如 …/tzgg/2026-09/xxx.html → …/tzgg/2026-09/），
+//   2. 主办方通知、主管部门通知所在站点的栏目页：先查信源表 watch-sources.json（人工确认过的真实栏目页，按站点登记）；
+//      表里没有的站点，才退回猜上一级目录（如 …/tzgg/2026-09/xxx.html → …/tzgg/2026-09/），
 //      第一次打开时确认是列表页（至少 5 个站内链接）才纳入，否则记为不可监测。
+//      猜目录常猜到附件目录、按月归档的文件夹，所以新站点应尽量登记进信源表。
 // 每轮最多 MAX_PAGES 个页面，按上次检查时间轮换；抓取遵守 robots.txt，同站限速（crawler/lib/fetcher.mjs）。
 //
 // 发现什么：
@@ -21,6 +23,7 @@ import { normalizeName } from './search-plan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.join(HERE, 'plans', 'organizer-watch-state.json');
+const SOURCES_FILE = path.join(HERE, 'watch-sources.json');
 const API = 'http://127.0.0.1:8787/api/adminData';
 const MAX_PAGES = 60;
 const MAX_SEEN_PER_PAGE = 400;
@@ -42,7 +45,8 @@ export function parentListing(url) {
   } catch { return null; }
 }
 
-export function watchPages(records) {
+// sources：信源表 { 站点域名: { columns:[栏目页网址], note } }。
+export function watchPages(records, sources = {}) {
   const pages = new Map();
   const add = (url, record, kind) => {
     if (!url || NOISY_HOSTS.test(hostOf(url))) return;
@@ -55,7 +59,11 @@ export function watchPages(records) {
     for (const source of record.sources || []) {
       if (!source.is_official || source.validity_status !== 'valid' || !/^https?:\/\//.test(source.url || '')) continue;
       if (['organizer_website', 'official_registration_system'].includes(source.source_type)) add(source.url, record, 'site');
-      else if (['organizer_notice', 'authority_notice'].includes(source.source_type)) add(parentListing(source.url), record, 'listing');
+      else if (['organizer_notice', 'authority_notice'].includes(source.source_type)) {
+        const columns = sources[hostOf(source.url)]?.columns;
+        if (columns?.length) columns.forEach(url => add(url, record, 'column'));
+        else add(parentListing(source.url), record, 'listing');
+      }
     }
   }
   return [...pages.values()];
@@ -138,7 +146,8 @@ async function main() {
     ...(record.sources || []).flatMap(source => [source.url, source.final_url]),
     ...(record.task?.leads || []).map(lead => lead.url), record.registrationUrl, record.discoveryNoticeUrl,
   ]).filter(Boolean));
-  const pages = watchPages(snapshot.records)
+  const sources = readJson(SOURCES_FILE, {});
+  const pages = watchPages(snapshot.records, sources)
     .filter(page => state.pages[page.url]?.status !== 'not_listing')
     .sort((a, b) => (Date.parse(state.pages[a.url]?.lastCheckedAt || '') || 0) - (Date.parse(state.pages[b.url]?.lastCheckedAt || '') || 0))
     .slice(0, maxPages);
@@ -180,7 +189,7 @@ async function main() {
   }
 
   const beijingDate = new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10);
-  const reportFile = path.join(HERE, 'plans', `organizer-watch-${beijingDate}.json`);
+  const reportFile = path.join(HERE, 'plans', `organizer-watch-${beijingDate}${dryRun ? '-dry-run' : ''}.json`);
   fs.mkdirSync(path.dirname(reportFile), { recursive:true });
   fs.writeFileSync(reportFile, JSON.stringify({ at:now.toISOString(), pages:pageResults, recordLeads:Object.fromEntries(recordLeads), newCompetitionLeads }, null, 2));
   console.log(`监测页面 ${pages.length}：正常 ${pageResults.filter(p => p.status === 'ok').length}，非列表页 ${pageResults.filter(p => p.status === 'not_listing').length}，失败 ${pageResults.filter(p => !['ok', 'not_listing'].includes(p.status)).length}｜记录线索 ${[...recordLeads.values()].flat().length} 条（${recordLeads.size} 条记录）｜新赛事线索 ${newCompetitionLeads.length} 条`);

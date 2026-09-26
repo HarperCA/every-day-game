@@ -101,7 +101,7 @@ async function main() {
     results.push({ ...target, references:references.length, leads:leads.map(lead => lead.url), error, task:nextTask(record, { query:target.query, leads, error }, now) });
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  const reportFile = path.join(HERE, 'plans', `trace-drafts-${beijingDate}.json`);
+  const reportFile = path.join(HERE, 'plans', `trace-drafts-${beijingDate}${dryRun ? '-dry-run' : ''}.json`);
   fs.writeFileSync(reportFile, JSON.stringify({ at:now.toISOString(), planFile, results:results.map(({ task, ...rest }) => rest) }, null, 2));
   const updates = new Map(results.filter(item => item.task).map(item => [item.recordId, item.task]));
   console.log(`追溯 ${targets.length} 条：搜索 ${results.filter(item => item.task && !item.error).length}，找到线索 ${results.filter(item => item.leads?.length).length}，失败 ${results.filter(item => item.error).length}，跳过 ${results.filter(item => item.skipped).length}`);

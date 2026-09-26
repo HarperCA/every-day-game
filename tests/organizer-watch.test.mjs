@@ -17,6 +17,20 @@ describe('主办方公告栏监测', () => {
     expect(parentListing('https://host.cn/a.html')).toBeNull();
   });
 
+  it('信源表登记过的站点改用真实栏目页，不再猜上一级目录', () => {
+    const records = [
+      { id:'a', name:'湖南省大学生统计建模大赛', dataStatus:'published', sources:[
+        { url:'http://jyt.hunan.gov.cn/tzgg/2026-03/abc.html', source_type:'authority_notice', is_official:true, validity_status:'valid' },
+        { url:'https://www.cms.org.cn/Uploads/20260702/x.pdf', source_type:'organizer_notice', is_official:true, validity_status:'valid' },
+      ] },
+    ];
+    const sources = { 'www.cms.org.cn':{ columns:['https://www.cms.org.cn/tzgg/', 'https://www.cms.org.cn/jsxx/'] } };
+    expect(watchPages(records, sources).map(p => [p.url, p.kind])).toEqual([
+      ['http://jyt.hunan.gov.cn/tzgg/2026-03/', 'listing'],
+      ['https://www.cms.org.cn/tzgg/', 'column'], ['https://www.cms.org.cn/jsxx/', 'column'],
+    ]);
+  });
+
   it('抽取链接：相对地址转绝对，优先较长的 title 属性，去掉脚本链接', () => {
     const html = '<a href="/tz/1.html" title="关于举办2026年湖南省大学生统计建模大赛的通知">关于举办2026年…</a><a href="javascript:void(0)">x</a><a href="2.html"><span>学院新闻</span></a>';
     expect(extractLinks(html, 'http://jyt.hunan.gov.cn/tzgg/')).toEqual([
