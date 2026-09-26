@@ -89,7 +89,7 @@ function requireScopeForNewRecords(previous, next) {
     const sameId = previous.filter(item => item.id === record.id);
     const original = sameId.find(item => item.name === record.name) || (sameId.length === 1 ? sameId[0] : null);
     const restoring = original?.dataStatus === 'quarantined' && record.dataStatus !== 'quarantined';
-    if (restoring && record.dataStatus !== 'draft') throw new Error('隔离记录只能补齐资料后恢复为草稿');
+    if (restoring && !['draft','published','archived'].includes(record.dataStatus)) throw new Error('隔离记录仅可人工恢复草稿、发布或归档');
     if (existing.has(`${record.id}\n${record.name}`) && !restoring) continue;
     if (titleHasEditionTokens(record.name)) throw new Error(`赛事名称只保留正文，年份与届次须单独填写：${record.name}`);
     // 存量字段迁移只移动名称中的年份/届次，不更改赛事身份和状态。旧草稿、

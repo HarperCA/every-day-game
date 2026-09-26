@@ -730,6 +730,7 @@ async function handle(event) {
     return saveState('competitions', records, event.expectedVersion, (transaction, current) => {
       require('./competitionScope').requireScopeForNewRecords(current.records || [], records);
       require('./quarantine').requireReviewDisposition(current.records || [], records);
+      require('./quarantine').requireQuarantineRecovery(current.records || [], records);
       return syncPublicCache(transaction, current.records || [], records);
     }, event.auditEntry);
   }

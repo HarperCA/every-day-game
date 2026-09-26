@@ -14,6 +14,7 @@ import { isPublishReady } from './adminWorkflow';
 import { cloudEnvironmentId, connectAdminCloud, describeCloudError, disconnectAdminCloud, initializeCloudRecords, type AiReviewRun } from './adminCloud';
 import { hydrateOperationStores } from './operationsStore';
 import { displayAuditField } from './fieldLabels';
+import { prepareQuarantineRecovery, type RecoveryTarget } from './quarantineRecovery';
 import './filterResultCount.css';
 
 const statusLabels: Record<string, string> = {
@@ -118,6 +119,36 @@ export default function App() {
     setNotice(`${original.name} 已提交从比赛库移除`);
   }
 
+  async function recoverEditor(target: RecoveryTarget) {
+    if (!editing || editingIndex === null || creatingPending) return;
+    const original = records[editingIndex];
+    if (!original || original.id !== editing.id || original.name !== editingOriginalName || original.dataStatus !== 'quarantined') {
+      setEditorErrors(['隔离记录已发生变化，请刷新后台后重新打开']);
+      return;
+    }
+    let updated: any;
+    try { updated = prepareQuarantineRecovery(editing, target); }
+    catch (error) { setEditorErrors([describeCloudError(error)]); return; }
+    const label = target === 'draft' ? '返回草稿' : target === 'published' ? '直接发布' : '归档';
+    if (!window.confirm(`确定将“${original.name}”从误收隔离中${label}吗？\n原隔离原因：${original.quarantine?.reason || '未记录'}\n这会保留处置审计；发布后会同步到公开赛事数据。`)) return;
+    const next = records.map((record,index) => index === editingIndex ? updated : record);
+    const audit = { id:`audit-${crypto.randomUUID()}`, action:'recover_quarantine', objectType:'event_edition',
+      recordId:updated.id, recordName:updated.name, changedFields:collectChangedFields(original,updated),
+      actor:'manual_admin', reason:`管理员复核误收隔离后${label}；原原因：${original.quarantine?.reason || '未记录'}`,
+      createdAt:new Date().toISOString() };
+    setCreatingPending(true);
+    try {
+      const saved = await saveManualRecords(next,audit);
+      setRecords(next); replaceAdminRecordCache(next);
+      const nextAudits = [audit,...audits]; setAudits(nextAudits); replaceAuditCache(nextAudits);
+      setEditing(null); setEditingIndex(null); setEditorErrors([]); setPage(1); setDataStatus(target);
+      setNotice((target === 'published' || target === 'archived') && !saved.publicCachePublished
+        ? `${updated.name} 状态已保存，但公开缓存未报告同步成功，请立即核查`
+        : `${updated.name} 已由管理员${label}${target === 'published' ? '，公开缓存已同步' : ''}`);
+    } catch (error) { setEditorErrors([describeCloudError(error)]); }
+    finally { setCreatingPending(false); }
+  }
+
   async function saveEditor() {
     if (!editing) return;
     if (creatingPending) return;
@@ -214,6 +245,6 @@ export default function App() {
         <footer className="panel-footer"><span>显示 {rows.length} / {records.length} 条 · 第 {Math.min(page,pageCount)} / {pageCount} 页</span><div><button disabled={page<=1} onClick={()=>setPage(value=>Math.max(1,value-1))}>上一页</button><button disabled={page>=pageCount} onClick={()=>setPage(value=>Math.min(pageCount,value+1))}>下一页</button></div></footer>
       </section>
       <section className="audit-panel"><div><h2>最近操作记录</h2><p>最近100条关键写操作同步保存至 CloudBase audit_log 集合。</p></div>{audits.length ? <ul>{audits.slice(0,5).map(entry=><li key={entry.id}><b>{entry.recordName}</b><span>{entry.action === 'reset' ? '恢复种子数据' : `${entry.action} · ${entry.changedFields.join('、')}`}</span><time>{entry.createdAt.slice(0,19).replace('T',' ')}</time></li>)}</ul> : <div className="empty-audit">暂无云端操作记录</div>}</section></>:activeSection==='review_publish'?<ReviewPublishModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice} lastAiReviewRun={lastAiReviewRun} onEdit={(_record,index)=>openEditor(index)}/>:activeSection==='profession_mapping'?<ProfessionMappingModule records={records} setRecords={setRecords} setAudits={setAudits} setNotice={setNotice}/>:activeSection==='pipeline_results'?<PipelineResultsModule/>:<OperationModules key={activeSection} section={activeSection} records={records} setRecords={setRecords} audits={audits} setAudits={setAudits} setNotice={setNotice}/>}</main>
-    {editing && <CompetitionEditor editing={editing} setEditing={setEditing} errors={editorErrors} onCancel={closeEditor} onSave={saveEditor} onDelete={deleteEditor} isNew={creating} saving={creatingPending}/>}
+    {editing && <CompetitionEditor editing={editing} setEditing={setEditing} errors={editorErrors} onCancel={closeEditor} onSave={saveEditor} onDelete={deleteEditor} onRecover={recoverEditor} isNew={creating} saving={creatingPending}/>}
   </div>;
 }

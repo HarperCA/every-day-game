@@ -157,17 +157,17 @@ export async function initializeCloudRecords(records: any[]) {
 }
 
 // Manual creation must await server validation before changing the local list.
-export async function saveManualRecords(records: any[], auditEntry: AuditEntry) {
+export async function saveManualRecords(records: any[], auditEntry: AuditEntry): Promise<{version:number;publicCachePublished?:number;publicCacheRemoved?:number}> {
   await writeQueue;
   requireWritablePage();
   emit('syncing');
-  const task = callAdmin<{ version:number }>('saveRecords', { records, auditEntry, expectedVersion:stateVersions.records });
-  writeQueue = task.then(result => { stateVersions.records = result.version; emit('synced'); }).catch(error => {
+  const task = callAdmin<{ version:number;publicCachePublished?:number;publicCacheRemoved?:number }>('saveRecords', { records, auditEntry, expectedVersion:stateVersions.records });
+  writeQueue = task.then(result => { stateVersions.records = result.version; emit('synced'); return result; }).catch(error => {
     if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
     emit('error', describeCloudError(error));
     throw error;
   });
-  await writeQueue;
+  return await writeQueue as {version:number;publicCachePublished?:number;publicCacheRemoved?:number};
 }
 
 export const queueCloudRecords = (records: any[], auditEntry?: AuditEntry) => enqueueState('saveRecords', 'records', { records, ...(auditEntry ? { auditEntry } : {}) });

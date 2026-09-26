@@ -6,7 +6,7 @@ import { displayAuditField } from './fieldLabels';
 const dataStatuses = ['draft', 'pending_system_validation', 'pending_manual_review', 'reviewing', 'published', 'archived', 'offline', 'quarantined'];
 const dataStatusLabels: Record<string, string> = { draft:'草稿', pending_system_validation:'待系统验证', pending_manual_review:'待人工核验', reviewing:'资料复核中', published:'已发布', archived:'已归档', offline:'已下架' };
 const validationStatuses = ['not_run', 'passed', 'failed'];
-dataStatusLabels.quarantined = '误收隔离（补齐资料后可恢复草稿）';
+dataStatusLabels.quarantined = '误收隔离（可人工恢复草稿、发布或归档）';
 const validationLabels: Record<string, string> = { not_run:'未执行', passed:'通过', failed:'未通过' };
 const manualStatuses = ['pending', 'passed', 'rejected'];
 const manualLabels: Record<string, string> = { pending:'待审核', passed:'通过', rejected:'驳回' };
@@ -18,11 +18,12 @@ interface Props {
   onCancel: () => void;
   onSave: () => void;
   onDelete: () => void;
+  onRecover?: (target:'draft'|'published'|'archived') => void;
   isNew?: boolean;
   saving?: boolean;
 }
 
-export default function CompetitionEditor({ editing, setEditing, errors, onCancel, onSave, onDelete, isNew = false, saving = false }: Props) {
+export default function CompetitionEditor({ editing, setEditing, errors, onCancel, onSave, onDelete, onRecover, isNew = false, saving = false }: Props) {
   const set = (field: string, value: unknown) => setEditing((current: any) => ({ ...current, [field]: value }));
   const setNested = (group: string, field: string, value: unknown) => setEditing((current: any) => ({ ...current, [group]: { ...current[group], [field]: value } }));
   const updateSource = (index: number, field: string, value: unknown) => setEditing((current: any) => ({
@@ -40,7 +41,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
       <div className="editor-head"><div><h2>{isNew ? '手动新增比赛' : '编辑赛事全部内容'}</h2><p>{isNew ? '填写实际比赛名称、届次、主办方、大学生资格、专业规则及来源；保存为草稿，审核后发布。' : `${editing.name} · ${editing.editionName}`}</p></div><button className="modal-close" onClick={onCancel}>×</button></div>
       <div className="editor-note">管理员可修改全部业务内容。赛事 ID、届次 ID 等关联主键只读，避免破坏数据库关联；保存前会展示二次确认。</div>
       {errors.length>0&&<div className="editor-errors">{errors.map(error=><div key={error}>· {error}</div>)}</div>}
-      {editing.quarantine && <div className="editor-errors">隔离原因：{editing.quarantine.reason}；隔离时间：{editing.quarantine.at}。原资料保留。恢复时请先补齐实际赛事名称、资格、专业任务和来源，再将数据状态改为草稿；恢复不等于发布。</div>}
+      {editing.dataStatus === 'quarantined' && editing.quarantine && <div className="editor-errors">隔离原因：{editing.quarantine.reason}；隔离时间：{editing.quarantine.at}。可先在此补正资料，再选择下方的人工处置按钮。直接发布需通过完整发布审核；归档需核实当届官方来源及报名已截止。</div>}
 
       <fieldset><legend>基本信息</legend><div className="editor-grid">
         <label>届次 ID（只读）<input value={editing.id} readOnly /></label><label>赛事 ID（只读）<input value={editing.eventId} readOnly /></label>
@@ -109,7 +110,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
       </div></fieldset>
 
       <fieldset><legend>审核与发布状态</legend><div className="editor-grid">
-        <label>数据状态<select value={editing.dataStatus} onChange={e=>set('dataStatus',e.target.value)} disabled={editing.dataStatus==='published'}>{dataStatuses.map(value=><option key={value} value={value} disabled={value==='published'}>{dataStatusLabels[value]}</option>)}</select></label>
+        <label>数据状态<select value={editing.dataStatus} onChange={e=>set('dataStatus',e.target.value)} disabled={editing.dataStatus==='published' || editing.dataStatus==='quarantined'}>{dataStatuses.map(value=><option key={value} value={value} disabled={value==='published'}>{dataStatusLabels[value]}</option>)}</select></label>
         <label>系统验证（只读）<select value={editing.systemValidation} disabled>{validationStatuses.map(value=><option key={value} value={value}>{validationLabels[value]}</option>)}</select></label>
         <label>人工审核（只读）<select value={editing.manualReview} disabled>{manualStatuses.map(value=><option key={value} value={value}>{manualLabels[value]}</option>)}</select></label>
         <label>最后核验日期<input type="date" value={editing.lastVerifiedAt?.slice(0,10)||''} onChange={e=>set('lastVerifiedAt',e.target.value?`${e.target.value}T00:00:00+08:00`:null)}/></label>
@@ -130,7 +131,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <button className="add-source" onClick={addSource}>＋ 添加数据来源</button>
       </fieldset>
 
-      <div className="editor-actions sticky-actions">{!isNew && <button className="danger-action" onClick={onDelete}>彻底移除这条赛事</button>}<button disabled={saving} onClick={onCancel}>取消</button><button disabled={saving} className="primary" onClick={onSave}>{saving ? '正在入库…' : isNew ? '保存到比赛库（草稿）' : '保存修改'}</button></div>
+      <div className="editor-actions sticky-actions">{!isNew && <button className="danger-action" onClick={onDelete}>彻底移除这条赛事</button>}{editing.dataStatus === 'quarantined' && onRecover && <><button disabled={saving} onClick={()=>onRecover('draft')}>返回草稿</button><button disabled={saving} onClick={()=>onRecover('archived')}>人工归档</button><button disabled={saving} className="primary" onClick={()=>onRecover('published')}>人工发布</button></>}<button disabled={saving} onClick={onCancel}>取消</button><button disabled={saving} className="primary" onClick={onSave}>{saving ? '正在保存…' : isNew ? '保存到比赛库（草稿）' : '保存修改'}</button></div>
     </section>
   </div>;
 }
