@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { describeCloudError, listPipelineRuns, type PipelineRun } from './adminCloud';
 import './pipelineResults.css';
+import PipelineRunDetail from './PipelineRunDetail';
 
 const count = (value:number | null | undefined) => value == null ? '未记录' : String(value);
 const time = (value:string | null) => value ? new Date(value).toLocaleString('zh-CN', { timeZone:'Asia/Shanghai' }) : '未记录';
@@ -10,6 +11,7 @@ export default function PipelineResultsModule() {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState('');
+  const [openRun, setOpenRun] = useState('');
   async function refresh() {
     setPending(true); setError('');
     try { setRuns((await listPipelineRuns()).runs || []); }
@@ -17,13 +19,14 @@ export default function PipelineResultsModule() {
     finally { setPending(false); }
   }
   useEffect(() => { void refresh(); }, []);
+  if (openRun) return <PipelineRunDetail runId={openRun} onBack={()=>setOpenRun('')}/>;
   return <div className="pipeline-results">
     <header><div><h1>抓取结果账</h1><p>逐轮核对发现、入库、发布和费用。未记录表示旧日志或供应商未提供该数据。</p></div><button onClick={()=>void refresh()} disabled={pending}>刷新</button></header>
     {error && <p role="alert" className="pipeline-error">读取失败：{error}</p>}
     {!error && pending && <p>正在读取运行记录…</p>}
     {!error && !pending && !runs.length && <section className="panel pipeline-empty">暂无结构化运行记录；下一轮抓取结束后会在这里显示。</section>}
     {runs.map(run => <section className="panel pipeline-run" key={run.id}>
-      <div className="pipeline-run-heading"><h2>{time(run.finishedAt)}</h2><span>{run.status === 'completed' ? '已完成' : run.status === 'failed' ? '失败' : run.status === 'dry_run' ? '试运行' : '仅筛选'}</span></div>
+      <div className="pipeline-run-heading"><h2>{time(run.finishedAt)}</h2><button className="pipeline-open" onClick={()=>setOpenRun(run.id)}>查看明细 ›</button><span>{run.status === 'completed' ? '已完成' : run.status === 'failed' ? '失败' : run.status === 'dry_run' ? '试运行' : '仅筛选'}</span></div>
       <div className="pipeline-run-counts">
         <div><span>搜索结果</span><b>{count(run.searchResults)}</b></div>
         <div><span>去重后线索</span><b>{count(run.newLeads)}</b></div>

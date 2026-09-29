@@ -583,6 +583,8 @@ async function handle(event) {
       throw error;
     }
   }
+  // 单轮抓取明细：读服务器 runs/<运行编号>/ 下的各阶段文件，逐条列出去向（只读）
+  if (event.action === 'pipelineRunDetail') return require('./pipelineRunDetail').loadRunDetail(event.runId);
   if (event.action === 'listPipelineRuns') {
     try {
       const result = await db.collection('admin_state').doc(PIPELINE_RUNS_DOC).get();

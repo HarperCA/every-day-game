@@ -233,6 +233,21 @@ export interface PipelineRun {
 
 export const listPipelineRuns = () => callAdmin<{runs:PipelineRun[]}>('listPipelineRuns');
 
+// 单轮抓取明细（adminData/pipelineRunDetail.js）
+export interface PipelineRunRow {
+  source:string; query:string; route:string; title:string; url:string; intro:string;
+  dup:string; filter:string; kind:string; reason:string; confidence:number | null; final:string; stage:number;
+}
+export interface PipelineRunDetail {
+  id:string;
+  summary:{ searchResults:number | null; queries:number; dropped:number; candidates:number; newCandidates:number; filter:Record<string, number>;
+    formalNotices:number; detailRead:number; extractOk:number; added:number | null; failureReasons:Record<string, number> };
+  rows:PipelineRunRow[];
+  notices:Array<{ title:string; url:string; name:string; query:string; leads:Array<{ title:string; url:string }> }>;
+  perQuery:Array<{ query:string; route:string; results:number; outOfScope:number; irrelevant:number; duplicate:number; candidates:number }>;
+}
+export const getPipelineRunDetail = (runId:string) => callAdmin<PipelineRunDetail>('pipelineRunDetail', { runId });
+
 // 网页测试版的匿名使用统计汇总（adminData/webStats.js）
 export interface WebStats {
   days:number; since:string; eventCount:number;
