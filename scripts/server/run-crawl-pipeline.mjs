@@ -48,14 +48,19 @@ let lastRunEntry = {};
 // 命名 crawl-<source>.mjs、用 --pages 控制抓取量。百度AI搜索不是爬某个网站，
 // 是问第三方搜索引擎，脚本独立放在顶层、用 --queries 控制用量，
 // 产出的候选形状和前两个一致，能直接喂进同一条判重/抽取/入库流水线。
+// uniqueUrls：来源平台给每场比赛一个唯一编号/网址。对它们“网址完全相同”才是判重依据，
+// 名字像不像不说明问题（辽宁的赛事都叫“辽宁省大学生××大赛”，字面相似度 0.6~0.7），
+// 所以名字相似但网址不同的“拿不准”按新候选处理。搜索来的候选仍按原规则。
 const SOURCE_CONFIG = {
-  tianchi: { script: 'crawler/crawl-tianchi.mjs', volumeFlag: '--pages' },
-  datafountain: { script: 'crawler/crawl-datafountain.mjs', volumeFlag: '--pages' },
+  tianchi: { script: 'crawler/crawl-tianchi.mjs', volumeFlag: '--pages', uniqueUrls: true },
+  datafountain: { script: 'crawler/crawl-datafountain.mjs', volumeFlag: '--pages', uniqueUrls: true },
   baidu: { script: 'search-baidu.mjs', volumeFlag: '--queries' },
+  // 辽宁省大学生创新创业管理共享平台：公开数据接口，经上海网页中转读取（platforms/upln.py）
+  upln: { command: 'python3', script: 'platforms/upln.py', uniqueUrls: true },
 };
 
 function parseArgs(argv) {
-  const args = { sources: ['tianchi', 'datafountain', 'baidu'], dryRun: false, filterOnly:false, pages: 0, queries:0 };
+  const args = { sources: ['tianchi', 'datafountain', 'upln', 'baidu'], dryRun: false, filterOnly:false, pages: 0, queries:0 };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--sources') args.sources = argv[i + 1].split(',').map(s => s.trim()).filter(Boolean);
     if (argv[i] === '--dry-run') args.dryRun = true;
@@ -85,8 +90,8 @@ function readOpenRouterKey() {
 }
 
 function run(cmd, args) {
-  console.log(`  $ node ${args.join(' ')}`);
-  execFileSync('node', args, { cwd: HERE, stdio: 'inherit' });
+  console.log(`  $ ${cmd} ${args.join(' ')}`);
+  execFileSync(cmd, args, { cwd: HERE, stdio: 'inherit' });
 }
 
 async function main() {
@@ -133,12 +138,12 @@ async function main() {
     const planFile = path.join(HERE, 'plans', `search-plan-${new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)}.json`);
     if (source === 'baidu' && fs.existsSync(planFile)) crawlArgs.push('--plan', planFile);
     console.log(`--- 抓取 ${source} ---`);
-    run('node', crawlArgs);
+    run(config.command || 'node', crawlArgs);
 
     const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
     const buckets = classifyCandidates(candidates, masters);
     collectMentions([buckets], masters, recordsById, mentionGroups);
-    const newCandidates = buckets.new.map(({ candidate }) => candidate);
+    const newCandidates = [...buckets.new, ...(config.uniqueUrls ? buckets.uncertain : [])].map(({ candidate }) => candidate);
     console.log(`${source}: 抓到 ${candidates.length} 条，new ${newCandidates.length}，`
       + `duplicate ${buckets.duplicate.length}，likely_duplicate ${buckets.likely_duplicate.length}，`
       + `uncertain ${buckets.uncertain.length}（命中已有赛事的整理进追溯清单，拿不准的跳过）\n`);
