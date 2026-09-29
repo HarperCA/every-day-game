@@ -92,3 +92,42 @@ describe('自动任务的审计日志', () => {
     expect(() => autoAudits([], [], 'someone')).toThrow();
   });
 });
+
+describe('来源不是官方原文与赛事是下级赛事分开判（2026-09-29）', () => {
+  const sourceReview = { decision:'needs_changes', risk_level:'medium', issues:[{ field:'source_quality', finding:'来源不是赛事官方原文，需补官方来源（学院转发通知）' }] };
+  const { buildPrompt, buildFieldVerificationPrompt, validateFieldVerificationResult } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+
+  it('来源问题只记下，草稿不隔离，已发布打人工核对', () => {
+    const draft = isolateMisimport({ ...published, dataStatus:'draft', aiReview:sourceReview }, now);
+    expect(draft.dataStatus).toBe('draft');
+    expect(draft.qualityIssues).toEqual(['AI来源审核：来源不是赛事官方原文，需补官方来源（学院转发通知）']);
+    const pub = isolateMisimport({ ...published, aiReview:sourceReview }, now);
+    expect(pub.dataStatus).toBe('published');
+    expect(pub.needsManualReview).toBe(true);
+    expect(applyReviewDisposition(published, sourceReview, now).qualityIssues).toEqual(pub.qualityIssues);
+    const fixed = isolateMisimport({ ...pub, aiReview:{ decision:'recommend_approve', risk_level:'low', issues:[] } }, now);
+    expect(fixed.qualityIssues).toEqual([]);
+    expect(fixed.needsManualReview).toBe(false);
+  });
+
+  it('周检遇到学校通知：不给日期建议，只提示补官方来源', () => {
+    const verification = { name_correct:false, name_correction:'黄山学院校赛', source_scope:'school_notice',
+      registration_start_status:'not_specified', registration_end_status:'incorrect', registration_end_correction:'2026-09-30',
+      registration_url_correct:true };
+    const next = applyPublishedFieldCorrections(published, verification, new Date(now));
+    expect(next.qualityIssues).toEqual(['周检：来源为学校转发或校内通知，其中的日期不是赛事本身的时间；需补官方来源']);
+    expect(next.name).toBe(published.name);
+    expect(next.needsManualReview).toBe(true);
+  });
+
+  it('提示词写明两件事分开判、赛项有独立报名可单独收录；旧响应缺来源性质按判断不了处理', () => {
+    const prompt = buildPrompt(published, []);
+    expect(prompt).toContain('field=source_quality');
+    expect(prompt).toContain('不能据此判定记录是下级赛事');
+    expect(prompt).toContain('有自己独立的报名入口或报名时间的，可以作为独立记录收录');
+    expect(buildFieldVerificationPrompt(published, [])).toContain('source_scope=school_notice');
+    const value = validateFieldVerificationResult({ name_correct:true, registration_url_correct:true, professions_confident:false,
+      registration_start_status:'not_specified', registration_end_status:'not_specified', professions:[] });
+    expect(value.source_scope).toBe('unclear');
+  });
+});

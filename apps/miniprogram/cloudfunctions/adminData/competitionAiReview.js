@@ -65,6 +65,9 @@ const resultSchema = {
 // 名称和链接没有"没提到"这种中间态，继续用简单的对/错布尔值。
 const DATE_STATUS_VALUES = ['confirmed_correct', 'not_specified', 'incorrect'];
 
+// 来源性质：学校转发或校内通知里的“校内报名截止”不是赛事本身的时间（2026-09-29 误归档 8 条的原因）。
+const SOURCE_SCOPES = ['official', 'school_notice', 'unclear'];
+
 const fieldVerificationSchema = {
   type:'object', additionalProperties:false,
   required:[
@@ -73,7 +76,7 @@ const fieldVerificationSchema = {
     'registration_end_status', 'registration_end_correction',
     'registration_url_correct', 'registration_url_correction',
     'professions', 'professions_confident',
-    'summary',
+    'source_scope', 'summary',
   ],
   properties:{
     name_correct:{ type:'boolean' },
@@ -86,6 +89,7 @@ const fieldVerificationSchema = {
     registration_url_correction:{ type:'string', maxLength:2048 },
     professions:{ type:'array', maxItems:5, items:{ type:'string', enum:PROFESSION_TAXONOMY } },
     professions_confident:{ type:'boolean' },
+    source_scope:{ type:'string', enum:SOURCE_SCOPES },
     summary:{ type:'string', minLength:1, maxLength:500 },
   },
 };
@@ -99,12 +103,15 @@ const FIELD_VERIFICATION_EXAMPLE = JSON.stringify({
   registration_end_status:'not_specified', registration_end_correction:'',
   registration_url_correct:true, registration_url_correction:'',
   professions:['计算机与AI'], professions_confident:true,
+  source_scope:'official',
   summary:'名称和链接与来源一致，报名开始时间不对已给出修正；来源没写报名截止时间',
 });
 
 function buildFieldVerificationPrompt(record, evidence) {
   return [
     '核验以下赛事记录的 3 项内容是否与来源正文一致：名称、报名开始/截止时间、报名或详情链接。',
+    '先判断来源性质，填 source_scope：official（赛事主办方、组委会或主管部门发布的通知、官网）、school_notice（学校或学院转发的通知、校内选拔或校赛通知）、unclear（判断不了）。',
+    'source_scope=school_notice 时，来源里的“校内报名截止”“校赛时间”等不是赛事本身的时间：报名开始和截止一律填 not_specified，不得判 incorrect；名称以记录为准，不要改成校赛名称。',
     '名称和链接只有"对/不对"两种；报名开始时间和截止时间要从三种状态里选一个：',
     'confirmed_correct（来源明确写了这个日期，且和记录一致）、',
     'not_specified（来源压根没提到这个日期——不是记录错了，是官方还没公布，这不算错误）、',
@@ -131,6 +138,8 @@ function validateFieldVerificationResult(value) {
     if (!DATE_STATUS_VALUES.includes(value[key])) throw new Error(`ai_field_verification_invalid_${key}`);
   }
   if (!Array.isArray(value.professions)) throw new Error('ai_field_verification_invalid_professions');
+  // 旧模型或旧响应可能没有这个字段，按“判断不了”处理，不因此判整次核验失败。
+  if (!SOURCE_SCOPES.includes(value.source_scope)) value.source_scope = 'unclear';
   return value;
 }
 
@@ -477,8 +486,13 @@ function buildPrompt(record, evidence, concise = false) {
   return [
     '审核以下赛事记录。只能依据提供的来源正文或图片作判断；证据不足必须选择 insufficient_evidence。',
     '第一步必须判断记录是否代表一场可以独立收录的比赛。标题为清单、目录、栏目或学校获奖新闻的，即使提到真实比赛，也不能把这篇文章当成比赛记录。',
-    '还必须识别赛事从属关系：校赛、校级初赛、校内选拔、院级选拔、承办校选拔、单校推荐环节和某一赛道，都不是新的独立赛事。应从标题和正文提取其上级全国/省级赛事名称。',
-    '若属于下级选拔或赛道，必须选择 needs_changes、risk_level=high；issues 中使用 field=event_identity，finding 明确写“下级选拔/赛道，不是独立赛事”，recommendation 写“撤销独立记录并关联上级赛事：上级赛事名称”。',
+    // 2026-09-29：原先只问“是不是独立赛事”，来源是学校转发通知时，真实的省赛、全国赛被判成下级选拔。
+    // 现拆成两件事分别回答：记录本身是不是下级赛事（event_identity）、来源是不是官方原文（source_quality）。
+    '判断赛事身份时分两件事，分别回答。',
+    '（一）记录本身是不是下级赛事：只看记录的 name 和主办方指的是哪场比赛，不看来源文章的性质。name 本身就是某项赛事的赛区初赛、分区赛、校赛、院赛、校内选拔、承办校选拔或单校推荐环节的，属于下级选拔：选择 needs_changes、risk_level=high，issues 中使用 field=event_identity，finding 写“下级选拔/赛道，不是独立赛事”，recommendation 写“撤销独立记录并关联上级赛事：上级赛事名称”。',
+    '赛项、专项赛、赛道：来源显示它有自己独立的报名入口或报名时间的，可以作为独立记录收录，不算下级选拔；只是同一次报名下的分组或方向、没有单独报名的，才按下级选拔处理。',
+    '（二）来源是不是这场比赛的官方原文：来源是学校或学院转发的通知、校内选拔或校赛通知、新闻报道、第三方汇总时，不能据此判定记录是下级赛事。此时 issues 中使用 field=source_quality，finding 写“来源不是赛事官方原文，需补官方来源”并注明来源类型，risk_level 至少 medium；来源里的校内报名时间、校赛安排不是赛事本身的时间，不得据此判定记录日期错误。',
+    '例：记录“安徽省大学生创意设计大赛”、来源是某学院《校赛暨省赛选拔赛通知》→ 省赛本身是独立赛事，只报 source_quality；记录“全国大学生数学竞赛北京赛区初赛”→ 名称本身是赛区初赛，报 event_identity。',
     '确认是误收时选择 needs_changes、risk_level=high，在 issues 中使用 field=event_identity，明确说明“非赛事条目，需隔离为线索”。标题已能确认是清单时，不要仅因正文不可读取就漏掉这个问题。',
     '只有具体比赛身份成立后才核对大学生资格与专业任务；缺少原文依据不得建议通过。缺少日期不等于官方宣布时间待公布。',
     '核对届次、主办方、报名时间、资格、费用、赛制和报名入口。结果仅供人工复核。',
@@ -715,6 +729,7 @@ module.exports = {
   aiReviewConfigStatus,
   buildRequestBody,
   buildFieldVerificationPrompt,
+  buildPrompt,
   collectEvidence,
   compactRecord,
   htmlToText,

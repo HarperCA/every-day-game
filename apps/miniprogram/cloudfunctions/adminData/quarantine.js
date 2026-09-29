@@ -2,8 +2,9 @@
 const { classifyCompetitionScope } = require('./competitionScope');
 const { assessIntakeRecord } = require('./competitionScope');
 const { requirePublishGate } = require('./publicCache');
-function isolateMisimport(record, now = new Date().toISOString()) {
-  if (record.dataStatus === 'quarantined') return record;
+function isolateMisimport(input, now = new Date().toISOString()) {
+  if (input.dataStatus === 'quarantined') return input;
+  const record = noteSourceQuality(input);
   const scope = classifyCompetitionScope(record);
   const identityIssue = record.aiReview?.decision === 'needs_changes'
     && record.aiReview?.risk_level === 'high'
@@ -22,9 +23,26 @@ function isolateMisimport(record, now = new Date().toISOString()) {
     updatedAt:now, updatedBy:'misimport-quarantine'};
 }
 const IDENTITY_FLAG = 'AI身份审核：';
+const SOURCE_FLAG = 'AI来源审核：';
 const withoutIdentityFlag = issues => (Array.isArray(issues) ? issues : []).filter(item => !String(item).startsWith(IDENTITY_FLAG));
-// 字段周检的问题（周检：…）也会让 needsManualReview 为真，撤掉身份标记时要保留它们的结论。
-const hasOtherManualIssues = issues => issues.some(item => String(item).startsWith('周检：'));
+// 字段周检（周检：…）和来源审核的问题也会让 needsManualReview 为真，撤掉身份标记时要保留它们的结论。
+const hasOtherManualIssues = issues => issues.some(item => /^(周检：|AI来源审核：)/.test(String(item)));
+
+// AI 认为来源不是赛事官方原文（学校转发、校内通知、新闻等）：只记问题，任何状态都不隔离。
+// 草稿会停在草稿——发布门槛本来就要求官方来源；已发布的打“需人工核对”。
+function noteSourceQuality(record) {
+  const issue = (record.aiReview?.issues || []).find(item => item.field === 'source_quality');
+  const rest = (Array.isArray(record.qualityIssues) ? record.qualityIssues : []).filter(item => !String(item).startsWith(SOURCE_FLAG));
+  if (!issue) {
+    if (rest.length === (record.qualityIssues || []).length) return record;
+    const next = { ...record, qualityIssues:rest };
+    if (record.dataStatus === 'published') next.needsManualReview = rest.some(item => /^(周检：|AI身份审核：)/.test(String(item)));
+    return next;
+  }
+  const next = { ...record, qualityIssues:[...rest, `${SOURCE_FLAG}${issue.finding}`] };
+  if (record.dataStatus === 'published') next.needsManualReview = true;
+  return next;
+}
 
 function flagPublishedIdentity(record, identityIssue, now) {
   const rest = withoutIdentityFlag(record.qualityIssues);
@@ -92,4 +110,4 @@ function requireQuarantineRecovery(previous, next, now = new Date()) {
     if (!Number.isFinite(end) || end >= now.getTime()) throw new Error('归档仅适用于报名截止日期已核实且已过的届次');
   }
 }
-module.exports = {isolateMisimport, requireReviewDisposition, requireQuarantineRecovery, flagPublishedIdentity, IDENTITY_FLAG};
+module.exports = {isolateMisimport, requireReviewDisposition, requireQuarantineRecovery, flagPublishedIdentity, IDENTITY_FLAG, SOURCE_FLAG};

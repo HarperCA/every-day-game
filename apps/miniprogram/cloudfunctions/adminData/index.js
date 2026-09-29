@@ -27,7 +27,7 @@ const MAX_AI_JOBS = 1000;
 // 所以定时任务每次只处理 1 条。模型超时按剩余预算动态计算（见 runScheduledCompetitionAiReview），
 // 因为取证耗时不可预测；超限会被平台直接掐断，连失败记录都写不下。
 const SCHEDULED_BATCH_LIMIT = 1;
-const SCHEDULED_MAX_TOKENS = 2000;
+const SCHEDULED_MAX_TOKENS = 4000; // 2026-09-29 提示词拆成两问后，2000 会被截断（finish_length）
 const MANUAL_CHAT_TIMEOUT_MS = 0;
 const MANUAL_MAX_TOKENS = 2600;
 const AI_RUN_LOG_DOC = 'ai_review_runs';

@@ -48,7 +48,10 @@ function replaceFieldVerificationIssues(existing, issues) {
 function applyPublishedFieldCorrections(record, verification, now) {
   const timestamp = now.toISOString();
   const suggestions = [];
-  if (!evidenceUnavailable(verification)) {
+  const schoolNotice = !evidenceUnavailable(verification) && verification.source_scope === 'school_notice';
+  if (schoolNotice) {
+    suggestions.push('周检：来源为学校转发或校内通知，其中的日期不是赛事本身的时间；需补官方来源');
+  } else if (!evidenceUnavailable(verification)) {
     if (!verification.name_correct && verification.name_correction) {
       suggestions.push(`周检：名称与来源不符，来源写作「${String(verification.name_correction).slice(0, 200)}」（未自动修改）`);
     }
@@ -62,10 +65,10 @@ function applyPublishedFieldCorrections(record, verification, now) {
       suggestions.push(`周检：报名链接与来源不符，来源为 ${verification.registration_url_correction}（未自动修改）`);
     }
   }
-  const issues = [...suggestions, ...classifyFieldVerificationIssues(record, verification)];
+  const issues = schoolNotice ? suggestions : [...suggestions, ...classifyFieldVerificationIssues(record, verification)];
   const qualityIssues = replaceFieldVerificationIssues(record.qualityIssues, issues);
   // AI 身份审核打的“需人工核对”标记（quarantine.js）不能被周检通过清掉。
-  const identityFlagged = qualityIssues.some(item => String(item).startsWith('AI身份审核：'));
+  const identityFlagged = qualityIssues.some(item => /^AI(身份|来源)审核：/.test(String(item)));
   return {
     ...record,
     fieldVerification:verification,
