@@ -10,6 +10,9 @@ function isolateMisimport(record, now = new Date().toISOString()) {
     && (record.aiReview.issues || []).find(issue => issue.field === 'event_identity');
   // Only explicit non-event title findings or structured AI identity findings.
   const titleReject = scope.decision === 'reject' && /通知|栏目|目录|报道|公示|下级选拔|校赛|院赛/.test(scope.reason);
+  // 已发布记录经过人工审核：AI 的身份结论只作为待核对问题，不自动撤下（2026-09-29 一轮周审误撤 16 条）。
+  // 标题规则（确定性的）仍按原样隔离。
+  if (!titleReject && record.dataStatus === 'published') return flagPublishedIdentity(record, identityIssue, now);
   if (!titleReject && !identityIssue) return record;
   return {...record, dataStatus:'quarantined', manualReview:'pending', systemValidation:'not_run',
     recommendation:{...record.recommendation, published_cache:false, manual_review:'pending', system_validation:'not_run'},
@@ -18,6 +21,24 @@ function isolateMisimport(record, now = new Date().toISOString()) {
       previousStatus:record.dataStatus, previousReview:{manualReview:record.manualReview,systemValidation:record.systemValidation}},
     updatedAt:now, updatedBy:'misimport-quarantine'};
 }
+const IDENTITY_FLAG = 'AI身份审核：';
+const withoutIdentityFlag = issues => (Array.isArray(issues) ? issues : []).filter(item => !String(item).startsWith(IDENTITY_FLAG));
+// 字段周检的问题（周检：…）也会让 needsManualReview 为真，撤掉身份标记时要保留它们的结论。
+const hasOtherManualIssues = issues => issues.some(item => String(item).startsWith('周检：'));
+
+function flagPublishedIdentity(record, identityIssue, now) {
+  const rest = withoutIdentityFlag(record.qualityIssues);
+  if (!identityIssue) {
+    if (rest.length === (record.qualityIssues || []).length) return record;
+    return { ...record, qualityIssues:rest, needsManualReview:hasOtherManualIssues(rest) };
+  }
+  const note = `${IDENTITY_FLAG}${identityIssue.finding}（已发布记录不自动隔离，请人工核对）`;
+  return { ...record, needsManualReview:true, qualityIssues:[...rest, note], updatedAt:now, updatedBy:'ai-identity-review' };
+}
+
+const isFlaggedPublished = record => record.dataStatus === 'published' && record.needsManualReview
+  && (record.qualityIssues || []).some(item => String(item).startsWith(IDENTITY_FLAG));
+
 function requireReviewDisposition(previous, next) {
   const byId = new Map(previous.map(record => [record.id, record]));
   for (const record of next) {
@@ -25,7 +46,7 @@ function requireReviewDisposition(previous, next) {
     if (JSON.stringify(old?.aiReview) === JSON.stringify(record.aiReview)) continue;
     const issue = record.aiReview?.decision === 'needs_changes' && record.aiReview?.risk_level === 'high'
       && record.aiReview.issues?.some(item => item.field === 'event_identity');
-    if (issue && (record.dataStatus !== 'quarantined' || !record.quarantine?.reason)) throw new Error('赛事身份审核未通过，必须进入误收隔离，不能继续保留普通草稿');
+    if (issue && !isFlaggedPublished(record) && (record.dataStatus !== 'quarantined' || !record.quarantine?.reason)) throw new Error('赛事身份审核未通过，必须进入误收隔离，不能继续保留普通草稿');
   }
 }
 
@@ -71,4 +92,4 @@ function requireQuarantineRecovery(previous, next, now = new Date()) {
     if (!Number.isFinite(end) || end >= now.getTime()) throw new Error('归档仅适用于报名截止日期已核实且已过的届次');
   }
 }
-module.exports = {isolateMisimport, requireReviewDisposition, requireQuarantineRecovery};
+module.exports = {isolateMisimport, requireReviewDisposition, requireQuarantineRecovery, flagPublishedIdentity, IDENTITY_FLAG};

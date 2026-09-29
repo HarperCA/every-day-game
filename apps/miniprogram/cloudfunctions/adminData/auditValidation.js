@@ -17,7 +17,8 @@ function validateAuditIdentity(entry) {
   return { action, objectType };
 }
 
-function buildSafeAuditEntry(entry) {
+// systemActor 只由服务器端自动任务传入（autoAudit.js），后台提交的审计一律记为 super_admin。
+function buildSafeAuditEntry(entry, { systemActor } = {}) {
   const auditIdentity = validateAuditIdentity(entry);
   const changedFields = Array.isArray(entry.changedFields) ? entry.changedFields.filter(field => typeof field === 'string').slice(0, 100) : [];
   const changes = entry.changes && typeof entry.changes === 'object' ? entry.changes : {};
@@ -25,7 +26,7 @@ function buildSafeAuditEntry(entry) {
   if (Number.isNaN(createdAt.getTime())) throw new Error('invalid_audit_created_at');
   return {
     id:entry.id,
-    actor_id:'super_admin',
+    actor_id:systemActor || 'super_admin',
     action:auditIdentity.action,
     object_type:auditIdentity.objectType,
     object_id:entry.recordId,

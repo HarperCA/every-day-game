@@ -41,4 +41,40 @@ function replaceFieldVerificationIssues(existing, issues) {
     !String(item).includes(LEGACY_ISSUE) && !String(item).startsWith(PREFIX)), ...issues];
 }
 
-module.exports = { LEGACY_ISSUE, evidenceUnavailable, usableDate, classifyFieldVerificationIssues, replaceFieldVerificationIssues };
+// 已发布记录的周检：AI 只提意见，不改线上字段（2026-09-29 起）。
+// 原先的做法是给出修正值就直接改，结果来源是学校转发通知时，把“校内报名截止”当成赛事截止日改了上去，
+// 随后被判过期归档（一轮误归档 8 条）。现在修正值只写进问题列表、打“需人工核对”，由人决定。
+// 取证失败、读不到原有日期等情况的处理不变（classifyFieldVerificationIssues）。
+function applyPublishedFieldCorrections(record, verification, now) {
+  const timestamp = now.toISOString();
+  const suggestions = [];
+  if (!evidenceUnavailable(verification)) {
+    if (!verification.name_correct && verification.name_correction) {
+      suggestions.push(`周检：名称与来源不符，来源写作「${String(verification.name_correction).slice(0, 200)}」（未自动修改）`);
+    }
+    for (const [key, label] of [['registration_start', '报名开始时间'], ['registration_end', '报名截止时间']]) {
+      const correction = verification[`${key}_correction`];
+      if (verification[`${key}_status`] === 'incorrect' && usableDate(correction)) {
+        suggestions.push(`周检：${label}与来源不符，来源为 ${String(correction).slice(0, 10)}（未自动修改；请确认来源是赛事官方通知而非校内通知）`);
+      }
+    }
+    if (!verification.registration_url_correct && /^https?:\/\//i.test(verification.registration_url_correction || '')) {
+      suggestions.push(`周检：报名链接与来源不符，来源为 ${verification.registration_url_correction}（未自动修改）`);
+    }
+  }
+  const issues = [...suggestions, ...classifyFieldVerificationIssues(record, verification)];
+  const qualityIssues = replaceFieldVerificationIssues(record.qualityIssues, issues);
+  // AI 身份审核打的“需人工核对”标记（quarantine.js）不能被周检通过清掉。
+  const identityFlagged = qualityIssues.some(item => String(item).startsWith('AI身份审核：'));
+  return {
+    ...record,
+    fieldVerification:verification,
+    needsManualReview:issues.length > 0 || identityFlagged,
+    qualityIssues,
+    lastVerifiedAt:issues.length ? record.lastVerifiedAt : timestamp,
+    updatedAt:timestamp,
+    updatedBy:'kimi-weekly-field-verification',
+  };
+}
+
+module.exports = { LEGACY_ISSUE, evidenceUnavailable, usableDate, classifyFieldVerificationIssues, replaceFieldVerificationIssues, applyPublishedFieldCorrections };

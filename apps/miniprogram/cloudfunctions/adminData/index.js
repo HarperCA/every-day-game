@@ -3,6 +3,7 @@ const { issueAdminSession, requireStaticAdminToken, verifyAdminSession } = requi
 const { nextStateVersion, normalizeStateVersion } = require('./stateVersion');
 const { canonicalFeedbackDocumentId, mergeFeedbackRecords } = require('./feedbackMerge');
 const { buildSafeAuditEntry } = require('./auditValidation');
+const { SYSTEM_ACTORS, autoAudits } = require('./autoAudit');
 const { registrationStatus, syncPublicCache } = require('./publicCache');
 const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview, runFieldVerification } = require('./competitionAiReview');
 const { extractFromDetailPage } = require('./competitionExtract');
@@ -12,7 +13,7 @@ const {
 } = require('./aiReviewSchedule');
 const { archiveRecord, shouldArchive } = require('./archiveSchedule');
 const { evaluateDraftStaleness } = require('./intakeSchedule');
-const { evidenceUnavailable, classifyFieldVerificationIssues, replaceFieldVerificationIssues, usableDate } = require('./fieldVerificationIssues');
+const { applyPublishedFieldCorrections } = require('./fieldVerificationIssues');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -67,8 +68,10 @@ async function loadState(id) {
   }
 }
 
-async function saveState(id, records, expectedVersion, transactionWork, auditEntry) {
+// systemAudits：自动任务的逐条审计（autoAudit.js 生成），与状态在同一事务里写入。
+async function saveState(id, records, expectedVersion, transactionWork, auditEntry, systemAudits = []) {
   const safeAuditEntry = auditEntry ? buildSafeAuditEntry(auditEntry) : null;
+  const safeSystemAudits = systemAudits.map(entry => buildSafeAuditEntry(entry, { systemActor:entry.systemActor }));
   return db.runTransaction(async transaction => {
     let current = { version:0 };
     try {
@@ -86,7 +89,8 @@ async function saveState(id, records, expectedVersion, transactionWork, auditEnt
       updated_by: 'super_admin',
     } });
     if (safeAuditEntry) await transaction.collection('audit_log').doc(safeAuditEntry.id).set({ data:safeAuditEntry });
-    return { saved:records.length, version, optimisticLockApplied:true, auditSaved:Boolean(safeAuditEntry), ...extra };
+    for (const entry of safeSystemAudits) await transaction.collection('audit_log').doc(entry.id).set({ data:entry });
+    return { saved:records.length, version, optimisticLockApplied:true, auditSaved:Boolean(safeAuditEntry), systemAudits:safeSystemAudits.length, ...extra };
   });
 }
 
@@ -182,7 +186,7 @@ function auditToAdmin(item) {
     recordName:item.record_name || item.recordName || item.object_id || item.recordId,
     changedFields:fieldNames,
     createdAt:item.created_at || item.createdAt,
-    actor:item.actor_id || item.actor || 'super_admin',
+    actor:SYSTEM_ACTORS[item.actor_id] || item.actor_id || item.actor || 'super_admin',
     reason:item.reason || undefined,
     changes,
   };
@@ -300,7 +304,7 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
         return record;
       });
       // 失败也要落盘，否则退避计数永远是 0，同一条记录会被无限重试。
-      if (results.size || failures.length) await saveState('competitions', records, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], records));
+      if (results.size || failures.length) await saveState('competitions', records, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], records), null, autoAudits(state.records, records, 'ai-review'));
       summary.succeeded = results.size;
       summary.failed = failures.length;
       summary.failures = failures.slice(0, 20);
@@ -338,7 +342,7 @@ async function archiveExpiredRegistrations(trigger = 'manual') {
     summary.archived = results.length;
     summary.results = results;
     if (results.length) {
-      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords));
+      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords), null, autoAudits(state.records, nextRecords, 'archive-job'));
     }
     summary.status = 'completed';
   } catch (error) {
@@ -377,61 +381,6 @@ async function loadLastArchiveRun() {
   } catch (error) {
     return null;
   }
-}
-
-// 已发布赛事的每周维护：先把报名已经截止的直接归档（不占三项核验的名额，
-// 归档记录也不需要再核这些字段），再对剩下的已发布记录做三项核验
-// （名称/报名时间/链接）——核验通过什么都不用改；核验不通过且模型给出了
-// 具体修正值，直接改上去（学生正在看的数据不能拖到人工有空才修）；
-// 不通过又给不出修正值的，打上 needsManualReview 标记转人工，不能瞎猜着改。
-// 已发布记录的 not_specified 处理得比入库时更保守：如果这条记录本来就
-// 没有这个日期（一直是"时间待公布"），Kimi 这次读不到属于正常，不算问题；
-// 但如果这条记录本来是有真实日期的，Kimi 这次却读不到，更可能是取证没抓
-// 全（漏了正文），而不是官方真把日期撤了——学生已经在看这条数据，不能
-// 因为一次读取不完整就悄悄把已知信息清空，得转人工看一眼再定。
-function applyPublishedFieldCorrections(record, verification, now) {
-  const timestamp = now.toISOString();
-  const corrected = { ...record, schedule:{ ...record.schedule }, sources:[...record.sources] };
-  const notes = [];
-
-  // 取证失败时模型的“错误”判断没有事实依据，绝不据此改公开字段。
-  if (evidenceUnavailable(verification)) {
-    const issues = classifyFieldVerificationIssues(record, verification);
-    return { ...corrected, fieldVerification:verification, needsManualReview:true,
-      qualityIssues:replaceFieldVerificationIssues(record.qualityIssues, issues),
-      updatedAt:timestamp, updatedBy:'kimi-weekly-field-verification' };
-  }
-
-  if (!verification.name_correct) {
-    if (verification.name_correction) { corrected.name = verification.name_correction.slice(0, 200); notes.push(`Kimi周检自动改名为「${corrected.name}」`); }
-  }
-  if (verification.registration_start_status === 'incorrect') {
-    const startOk = usableDate(verification.registration_start_correction);
-    if (startOk) { corrected.schedule.registration_start = new Date(verification.registration_start_correction).toISOString(); notes.push('Kimi周检自动更新了报名开始时间'); }
-  }
-  if (verification.registration_end_status === 'incorrect') {
-    const endOk = usableDate(verification.registration_end_correction);
-    if (endOk) { corrected.schedule.registration_end = new Date(verification.registration_end_correction).toISOString(); notes.push('Kimi周检自动更新了报名截止时间'); }
-  }
-  if (!verification.registration_url_correct) {
-    if (verification.registration_url_correction && /^https?:\/\//i.test(verification.registration_url_correction)) {
-      corrected.registrationUrl = verification.registration_url_correction;
-      corrected.sources = corrected.sources.map((source, index) => index === 0 ? { ...source, url:verification.registration_url_correction, last_verified_at:timestamp } : source);
-      notes.push('Kimi周检自动更新了报名链接');
-    }
-  }
-
-  const issues = classifyFieldVerificationIssues(corrected, verification);
-
-  return {
-    ...corrected,
-    fieldVerification:verification,
-    needsManualReview:issues.length > 0,
-    qualityIssues:replaceFieldVerificationIssues(record.qualityIssues, [...notes, ...issues]),
-    lastVerifiedAt:issues.length ? record.lastVerifiedAt : timestamp,
-    updatedAt:timestamp,
-    updatedBy:'kimi-weekly-field-verification',
-  };
 }
 
 async function runFieldVerificationPool(records, options = {}) {
@@ -490,7 +439,7 @@ async function runScheduledPublishedVerification(trigger = 'timer') {
       summary.succeeded = results.size;
       summary.failed = failures.length;
       summary.failures = failures.slice(0, 20);
-      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords));
+      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords), null, autoAudits(state.records, nextRecords, 'field-verification'));
     }
     summary.remaining = countStaleForFieldVerification(nextRecords);
     summary.status = summary.failed && !summary.succeeded && due.length ? 'failed' : (summary.selected || summary.archived ? 'completed' : 'idle');
@@ -553,7 +502,7 @@ async function flagStaleDrafts(trigger = 'manual') {
     });
     summary.flagged = results.length;
     summary.results = results;
-    if (results.length) await saveState('competitions', nextRecords, state.version);
+    if (results.length) await saveState('competitions', nextRecords, state.version, null, null, autoAudits(state.records, nextRecords, 'stale-draft-check'));
     summary.status = 'completed';
   } catch (error) {
     summary.status = 'failed';
