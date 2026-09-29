@@ -22,7 +22,8 @@ export function recordYear(record) {
 
 // 摘要里直接写出来的网址（去掉通知本身所在的网址）
 export function urlsInText(text, exclude = '') {
-  const found = String(text || '').match(/https?:\/\/[^\s<>"'，。；、）)】]+/g) || [];
+  // 网址只取合法的网址字符，遇到中文等立刻截断（“…/home报名时间为…”）
+  const found = String(text || '').match(/https?:\/\/[A-Za-z0-9\-._~:/?#[\]@!$&'*+,;=%]+/g) || [];
   return [...new Set(found.map(url => url.replace(/[.,;:]+$/, '')))].filter(url => url !== exclude);
 }
 

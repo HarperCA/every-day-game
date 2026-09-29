@@ -25,3 +25,22 @@ it('turns traced pages into candidates without admitting the notice title', () =
   expect(candidates[0].discoveryNoticeUrl).toBe('https://school.edu/notice');
   expect(followupCandidatesFromReport({results:[{proposedName:'赛事通知',leads:[{url:'https://contest.org'}]}]})).toEqual([]);
 });
+
+describe('所有通知都能追溯：按上级赛事分组、按重要程度分配额度（2026-09-29）', async () => {
+  const { groupNotices, noticeImportance } = await import('../scripts/server/resolve-notice-leads.mjs');
+  const notices = [
+    { name:'关于开展第八届全国大学生混凝土材料设计大赛校内选拔赛的通知', detailUrl:'https://a.edu.cn/1', introduction:'赛题详见官网 https://www.ccpa.com.cn/site/content/23851.html' },
+    { name:'关于举办2026年全国大学生混凝土材料设计大赛校级选拔的通知', detailUrl:'https://b.edu.cn/2', introduction:'' },
+    { name:'关于举办2026年湖南省大学生结构设计竞赛的通知', detailUrl:'https://c.edu.cn/3', introduction:'' },
+    { name:'关于期末考试安排的通知', detailUrl:'https://d.edu.cn/4', introduction:'' },
+  ];
+  it('同一场比赛的多篇通知归成一组，摘要里的官网网址收进来；不是比赛的通知不收', () => {
+    const groups = groupNotices(notices);
+    expect(groups.map(g => [g.proposedName, g.notices.length])).toEqual([['全国大学生混凝土材料设计大赛', 2], ['湖南省大学生结构设计竞赛', 1]]);
+    expect(groups[0].notices[0].urls).toEqual(['https://www.ccpa.com.cn/site/content/23851.html']);
+  });
+  it('被提到次数多、全国性的更优先', () => {
+    const [concrete, hunan] = groupNotices(notices);
+    expect(noticeImportance(concrete, 2026)).toBeGreaterThan(noticeImportance(hunan, 2026));
+  });
+});

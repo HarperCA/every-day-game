@@ -24,7 +24,7 @@ const MAX_LEADS = 10;
 
 // 线索按网站类型排序：公众号、百科、问答这类不收；学校网站多是转发，排在协会、政府、赛事官网等之后。
 // 按网址所属网站类型判断，不看标题关键词。
-const SKIP_LEAD_HOSTS = /(^|\.)(mp\.weixin\.qq\.com|weixin\.qq\.com|baike\.baidu\.com|zhidao\.baidu\.com|zhihu\.com|bilibili\.com|douyin\.com|xiaohongshu\.com)$/;
+const SKIP_LEAD_HOSTS = /(^|\.)(mp\.weixin\.qq\.com|weixin\.qq\.com|baike\.baidu\.com|zhidao\.baidu\.com|zhihu\.com|bilibili\.com|douyin\.com|xiaohongshu\.com|wjx\.(?:cn|top)|kdocs\.cn|docs\.qq\.com)$/;
 export function leadRank(url) {
   let host = '';
   try { host = new URL(url).hostname.toLowerCase(); } catch { return 9; }

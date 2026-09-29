@@ -159,14 +159,7 @@ async function runFieldVerification(record, request, { chatTimeoutMs, maxTokens 
     { role:'user', content:promptText },
   ];
 
-  let options = { useJsonSchema:true, includeTemperature:true, schema:fieldVerificationSchema, chatTimeoutMs, maxTokens };
-  let attempt = await callChatCompletion(send, config, messages, options);
-  for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
-    const next = adjustRequestOptions(attempt.status, attempt.raw, options);
-    if (!next) break;
-    options = next;
-    attempt = await callChatCompletion(send, config, messages, options);
-  }
+  const attempt = await completeWithLearnedOptions(send, config, messages, { useJsonSchema:true, includeTemperature:true, schema:fieldVerificationSchema, chatTimeoutMs, maxTokens });
   if (!attempt.ok) {
     const detail = attempt.payload?.error?.message || String(attempt.raw || '').slice(0, 300) || 'unknown';
     throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
@@ -469,6 +462,28 @@ function buildRequestBody(config, messages, options) {
 }
 
 // 各家模型对可选参数的支持不一致，按 provider 返回的 4xx 提示逐项降级，而不是一次性放弃。
+// 记住每个“接口 + 模型 + 是否要求 JSON 结构”试出来能用的参数组合（进程内，后端常驻所以长期有效）。
+// 2026-09-29 起：Kimi Code 接口不接受 temperature=0.1、也不支持 JSON 结构约束，
+// 原先每次调用都从头试——先两次 400 再成功，白白多花两次请求（Kimi 控制台里每 5 分钟两条 400）。
+const learnedRequestOptions = new Map();
+const learnedKey = (config, options) => `${config.baseUrl}|${config.model}|${options.schema ? 'schema' : 'plain'}`;
+
+async function completeWithLearnedOptions(send, config, messages, baseOptions) {
+  const key = learnedKey(config, baseOptions);
+  let options = { ...baseOptions, ...(learnedRequestOptions.get(key) || {}) };
+  let attempt = await callChatCompletion(send, config, messages, options);
+  for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
+    const next = adjustRequestOptions(attempt.status, attempt.raw, options);
+    if (!next) break;
+    options = next;
+    attempt = await callChatCompletion(send, config, messages, options);
+  }
+  if (attempt.ok) {
+    learnedRequestOptions.set(key, { useJsonSchema:options.useJsonSchema, includeTemperature:options.includeTemperature, disableThinking:options.disableThinking });
+  }
+  return attempt;
+}
+
 function adjustRequestOptions(status, raw, options) {
   if (status !== 400 && status !== 404 && status !== 422) return null;
   const message = String(raw || '');
@@ -572,14 +587,7 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
     { role:'user', content:userContent },
   ];
 
-  let options = { ...DEFAULT_REQUEST_OPTIONS, chatTimeoutMs, maxTokens };
-  let attempt = await callChatCompletion(send, config, messages, options);
-  for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
-    const next = adjustRequestOptions(attempt.status, attempt.raw, options);
-    if (!next) break;
-    options = next;
-    attempt = await callChatCompletion(send, config, messages, options);
-  }
+  const attempt = await completeWithLearnedOptions(send, config, messages, { ...DEFAULT_REQUEST_OPTIONS, chatTimeoutMs, maxTokens });
   if (!attempt.ok) {
     const detail = attempt.payload?.error?.message || String(attempt.raw || '').slice(0, 300) || 'unknown';
     throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
@@ -740,6 +748,8 @@ module.exports = {
   aiReviewConfigStatus,
   buildRequestBody,
   buildFieldVerificationPrompt,
+  completeWithLearnedOptions,
+  resetLearnedRequestOptions:() => learnedRequestOptions.clear(),
   buildPrompt,
   collectEvidence,
   compactRecord,

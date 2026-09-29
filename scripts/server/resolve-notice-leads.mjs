@@ -4,6 +4,8 @@ import { setDefaultResultOrder } from 'node:dns';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { leadRank } from './trace-drafts.mjs';
+import { urlsInText } from './known-event-mentions.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 setDefaultResultOrder('ipv4first');
@@ -33,7 +35,8 @@ export function selectLeads(references, noticeUrl, proposedName = '') {
     try {
       const url = new URL(item.url);
       const text = `${item.title || ''} ${item.content || ''}`;
-      return url.protocol === 'https:' && url.hostname !== noticeHost && /赛事|竞赛|比赛|大赛|报名|组委会/.test(text)
+      // http 的官网也收（如节能减排竞赛官网）；公众号、百科、问答不收
+      return /^https?:$/.test(url.protocol) && url.hostname !== noticeHost && leadRank(item.url) < 9 && /赛事|竞赛|比赛|大赛|报名|组委会/.test(text)
         && (!core || text.includes(core));
     } catch { return false; }
   }).slice(0, 5).map(item => ({ title:String(item.title || '').slice(0, 150), url:item.url, summary:String(item.content || '').slice(0, 300), status:'待核验' }));
@@ -50,7 +53,7 @@ export function followupCandidatesFromReport(report = {}) {
       || /通知|公告|公示|目录|清单|校赛|校内选拔|校级选拔/.test(proposedName)) continue;
     for (const lead of result.leads || []) {
       const url = String(lead.url || '');
-      if (!/^https:\/\//i.test(url) || seen.has(url)) continue;
+      if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
       seen.add(url);
       candidates.push({
         externalId:`notice-followup-${createHash('sha256').update(url).digest('hex').slice(0, 16)}`,
@@ -71,39 +74,102 @@ export function followupCandidatesFromReport(report = {}) {
   return candidates;
 }
 
+// 能追溯的上级赛事名：以“赛”结尾、至少 6 个字（“比赛”“大赛”这种太笼统）；
+// 学院自己办的（名字以某某学院开头、或带“院级”）没有上级赛事可追，不占搜索额度。
+const VALID_NAME = name => /(?:竞赛|大赛|挑战赛|比赛|联赛|锦标赛|赛)$/.test(name) && name.length >= 6
+  && !/通知|公告|公示|目录|清单|校赛|校内选拔|校级选拔|院级/.test(name)
+  && !/^[一-龥]{2,14}学院(?!杯)/.test(name);
+
+// 按上级赛事分组：同一场比赛的多篇通知只搜一次；摘要里直接写出的网址一并收集
+// 校内选拔、校赛、初赛这类通知，上级赛事名就是去掉结尾选拔环节后的部分：
+// “第八届全国大学生混凝土材料设计大赛校内选拔赛” → “第八届全国大学生混凝土材料设计大赛”
+export function parentCompetitionName(title) {
+  // 先去掉栏目标签：“以赛促学|外教社杯……”取分隔符之后；“【竞赛通知】……”去掉方括号标签
+  const cleaned = String(title || '').split(/[|｜丨]/).map(part => part.trim()).filter(Boolean).at(-1) || '';
+  let name = competitionNameFromNotice(cleaned.replace(/^(?:【[^】]*】\s*)+/, ''));
+  name = name
+    .replace(/^(?:[一-龥]{2,12}(?:大学|学院))?(?:关于)?(?:组织|开展|举办|参加|做好|转发)+(?:参加)?/, '')
+    .replace(/[(（]\s*\d+\s*届\s*[)）]/g, '')
+    // 只处理比赛名之后的部分：“……竞赛河南城建学院校赛”“……大赛郑州大学选拔赛”“……大赛校内选拔赛”
+    .replace(/(竞赛|大赛|挑战赛|比赛)[一-龥]{0,12}?(?:校内|校级|院级|校园)?(?:选拔赛?|预选赛|初赛|校赛|院赛)$/, '$1')
+    .replace(/^[一-龥]{2,12}?(?:大学|学院)(?=(?:19|20)\d{2}|第)/, '');
+  return name.trim();
+}
+
+export function groupNotices(candidates = []) {
+  const groups = new Map();
+  for (const candidate of candidates) {
+    const proposedName = parentCompetitionName(candidate.name);
+    if (!VALID_NAME(proposedName)) continue;
+    // 分组和搜索都用去掉年份、届次、引号后的名字：同一场比赛不同届的通知归成一组
+    const key = proposedName.replace(/(?:19|20)\d{2}\s*年?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '');
+    if (!groups.has(key)) groups.set(key, { proposedName:key, notices:[] });
+    groups.get(key).notices.push({ title:candidate.name, url:candidate.detailUrl, discovery:candidate.discovery || null,
+      urls:urlsInText(candidate.introduction, candidate.detailUrl).filter(url => leadRank(url) < 9).slice(0, 5) });
+  }
+  return [...groups.values()];
+}
+
+// 重要程度：提到它的通知越多越优先；带当年或明年年份的优先；全国性的优先于省级、省级优先于其他；
+// 摘要里已经写出网址的稍靠后（不搜也有线索）。
+export function noticeImportance(group, year = new Date().getFullYear()) {
+  const text = group.notices.map(notice => notice.title).join(' ');
+  const recent = new RegExp(`${year}|${year + 1}`).test(text) ? 2 : 0;
+  const level = /^(?:全国|中国|国际)/.test(group.proposedName) ? 2 : /^[一-龥]{2,3}(?:省|市|自治区)/.test(group.proposedName) ? 1 : 0;
+  const free = group.notices.some(notice => notice.urls.length) ? -1 : 0;
+  return group.notices.length * 2 + recent + level + free;
+}
+
+async function searchOnce(key, query) {
+  const request = () => fetch(SEARCH_URL, {
+    method:'POST', headers:{ 'X-Appbuilder-Authorization':`Bearer ${key}`, 'Content-Type':'application/json' },
+    body:JSON.stringify({ messages:[{ content:query, role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:10 }] }),
+    signal:AbortSignal.timeout(20000),
+  });
+  let response;
+  try { response = await request(); }
+  catch {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    response = await request();
+  }
+  if (!response.ok) throw new Error(`http_${response.status}`);
+  return (await response.json()).references || [];
+}
+
+// 用法: node resolve-notice-leads.mjs <候选文件> <结果文件> [--budget 10]
+// 2026-09-29 起：所有通知（含校内选拔、学校转发、赛事报道）都能追溯；按上级赛事分组，
+// 搜索额度按重要程度分配，摘要里写出的网址不花额度直接作为线索。
 async function main() {
-  const input = process.argv[2];
-  const output = process.argv[3];
-  if (!input || !output) throw new Error('用法: node resolve-notice-leads.mjs <候选文件> <结果文件>');
+  const argv = process.argv.slice(2);
+  const input = argv[0];
+  const output = argv[1];
+  const budget = argv.includes('--budget') ? Math.max(0, Number(argv[argv.indexOf('--budget') + 1]) || 0) : 10;
+  if (!input || !output) throw new Error('用法: node resolve-notice-leads.mjs <候选文件> <结果文件> [--budget 10]');
   const { candidates = [] } = JSON.parse(await fs.readFile(path.resolve(HERE, input), 'utf8'));
-  const noticeCandidates = candidates.filter(item => /^(关于|转发|【?通知】?|赛事通知[：:])|通知\s*_|(?:的通知|报名通知|参赛通知|选拔通知|的公告|报名公告)$/.test(item.name || ''));
-  // 搜索服务有日配额；剩余线索保留待下一轮处理。
-  const searchBatch = noticeCandidates.slice(0, 10);
+  const groups = groupNotices(candidates).sort((a, b) => noticeImportance(b) - noticeImportance(a));
   const key = (await fs.readFile(path.join(HERE, '.baidu-search-key'), 'utf8')).trim();
   const results = [];
-  for (const candidate of searchBatch) {
-    try {
-      const request = () => fetch(SEARCH_URL, {
-        method:'POST', headers:{ 'X-Appbuilder-Authorization':`Bearer ${key}`, 'Content-Type':'application/json' },
-        body:JSON.stringify({ messages:[{ content:followupQuery(candidate.name), role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:10 }] }),
-        signal:AbortSignal.timeout(20000),
-      });
-      let response;
-      try { response = await request(); }
-      catch {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        response = await request();
+  let searched = 0;
+  for (const [index, group] of groups.entries()) {
+    const first = group.notices[0];
+    const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:`通知摘要里写出的网址（来自：${notice.title.slice(0, 40)}）`, url, summary:'', status:'待核验' })));
+    const result = { noticeUrl:first.url, noticeTitle:first.title, noticeDiscovery:first.discovery, notices:group.notices.map(({ discovery, ...notice }) => notice),
+      proposedName:group.proposedName, importance:noticeImportance(group), leads:free };
+    if (index < budget) {
+      result.followupQuery = followupQuery(group.proposedName);
+      try {
+        const references = await searchOnce(key, result.followupQuery);
+        const seen = new Set(free.map(lead => lead.url));
+        result.leads.push(...selectLeads(references, first.url, group.proposedName).filter(lead => !seen.has(lead.url)));
+        searched += 1;
+      } catch (error) {
+        result.error = String(error?.message || error);
       }
-      if (!response.ok) throw new Error(`http_${response.status}`);
-      const payload = await response.json();
-      const proposedName = competitionNameFromNotice(candidate.name);
-      results.push({ noticeUrl:candidate.detailUrl, noticeTitle:candidate.name, noticeDiscovery:candidate.discovery || null, followupQuery:followupQuery(candidate.name), proposedName, leads:selectLeads(payload.references, candidate.detailUrl, proposedName) });
-    } catch (error) {
-      results.push({ noticeUrl:candidate.detailUrl, noticeTitle:candidate.name, proposedName:competitionNameFromNotice(candidate.name), leads:[], error:String(error?.message || error) });
     }
+    results.push(result);
   }
   await fs.writeFile(path.resolve(HERE, output), JSON.stringify({ results }, null, 2), 'utf8');
-  console.log(`通知线索 ${noticeCandidates.length} 条，本轮追溯 ${searchBatch.length} 条，找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
+  console.log(`通知 ${candidates.length} 条 → 上级赛事 ${groups.length} 场；搜索 ${searched} 场（额度 ${budget}）；找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

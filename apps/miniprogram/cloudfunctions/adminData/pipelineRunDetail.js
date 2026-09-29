@@ -12,7 +12,7 @@ const KIND = {
   repost_or_school_selection:'转载或校内选拔', news_or_result:'新闻或赛果', unrelated:'与赛事无关',
   organizer_notice:'主办方通知', competition_site:'赛事官网', registration_entry:'报名入口', directory_lead:'目录清单',
 };
-const ACTION = { fetch:'放行读正文', review:'低置信度，只留线索', lead:'只留线索', reject:'拦截' };
+const ACTION = { fetch:'放行读正文', review:'低置信度，只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃（与赛事无关）' };
 const SOURCE = { baidu:'百度搜索', tianchi:'天池', datafountain:'DataFountain' };
 
 const clip = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);

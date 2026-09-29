@@ -203,18 +203,27 @@ async function main() {
   const priority = new Map(jevResult.decisions.map(item => [item.candidate, item]));
   jevResult.fetch.sort((a, b) => (priority.get(b)?.probabilities?.competition_site || 0) + (priority.get(b)?.probabilities?.organizer_notice || 0) + (priority.get(b)?.probabilities?.registration_entry || 0)
     - ((priority.get(a)?.probabilities?.competition_site || 0) + (priority.get(a)?.probabilities?.organizer_notice || 0) + (priority.get(a)?.probabilities?.registration_entry || 0)));
+  // 2026-09-29 起：所有通知类（校内选拔、学校转发、赛事报道，以及标题是通知的主办方通知）都追溯上级赛事，
+  // 不再只取前 10 条；resolve-notice-leads 按上级赛事分组、按重要程度分配搜索额度。
   const formalNotices = jevResult.decisions
-    .filter(item => /通知|公告|通告/.test(item.candidate.name || '') && !['news_or_result','unrelated'].includes(item.kind))
-    .sort((a, b) => Number(b.kind === 'organizer_notice') - Number(a.kind === 'organizer_notice'))
-    .slice(0, 10)
+    .filter(item => item.action === 'trace' || (/通知|公告|通告/.test(item.candidate.name || '') && item.kind !== 'unrelated' && item.action !== 'reject'))
     .map(item => item.candidate);
+  const noticeBudget = (() => {
+    try { return Number(JSON.parse(fs.readFileSync(planFileFor(), 'utf8')).trace?.noticeFollowups) || 10; } catch { return 10; }
+  })();
   const followupFetch = [];
   if (formalNotices.length) {
     const noticesFile = path.join(RUN_DIR, 'formal-notices.json');
     const leadsFile = path.join(RUN_DIR, 'notice-resolution-leads.json');
     fs.writeFileSync(noticesFile, JSON.stringify({ candidates:formalNotices }, null, 2), 'utf8');
     try {
-      run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile]);
+      run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile, '--budget', String(noticeBudget)]);
+      // 已经搜索追溯过的通知记 30 天，避免同一篇通知每晚重复搜（额度不够没轮上的不记，下次还有机会）
+      if (!args.dryRun) {
+        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => item.followupQuery)
+          .flatMap(item => (item.notices || [{ url:item.noticeUrl }]).map(notice => ({ url:notice.url, reason:`已追溯上级赛事：${item.proposedName}`, stage:'通知追溯' })));
+        saveMemory(memoryFile, remember(loadMemory(memoryFile), traced));
+      }
       console.log(`正式通知 ${formalNotices.length} 条，赛事官网追溯线索已保存：${leadsFile}`);
       const followups = followupCandidatesFromReport(JSON.parse(fs.readFileSync(leadsFile, 'utf8'))).map(candidate => stampDiscovery(candidate, '通知追溯', RUN_ID));
       const followupReport = path.join(RUN_DIR, 'notice-followup-filter-report.json');
@@ -275,7 +284,7 @@ async function main() {
       const held = JSON.parse(fs.readFileSync(`${combinedFile}.scope-review.json`, 'utf8')).held || [];
       rejected.push(...held.filter(item => item.extraction?.ok !== false).map(item => ({ url:item.candidate?.detailUrl, reason:item.scope?.reason || item.reason, stage:'入库关' })));
     } catch { /* 这一轮没有入库关报告 */ }
-    saveMemory(memoryFile, remember(memory, rejected.filter(item => item.url)));
+    saveMemory(memoryFile, remember(loadMemory(memoryFile), rejected.filter(item => item.url)));
     console.log(`被拒网址记忆：本轮记下 ${rejected.length} 条`);
   }
 
@@ -287,6 +296,10 @@ async function main() {
 // 进程还在，pipeline.log 也没追加最后一行。cron 场景下这会让每次调用都挂着
 // 不退出，所以显式退出。
 
+
+function planFileFor() {
+  return path.join(HERE, 'plans', `search-plan-${new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)}.json`);
+}
 
 async function writeRunLog(entry) {
   lastRunEntry = { ...lastRunEntry, ...entry };

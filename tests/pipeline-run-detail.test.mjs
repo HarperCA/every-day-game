@@ -33,7 +33,7 @@ describe('单轮抓取明细', () => {
   it('每一条都有去向：搜索丢弃、判重、拦截、追溯、读详情', () => {
     expect(byUrl['https://a/0'].final).toBe('搜索时丢弃：不在收录范围');
     expect(byUrl['https://a/1'].final).toBe('判重跳过');
-    expect(byUrl['https://a/2']).toMatchObject({ final:'前置筛选拦截', kind:'转载或校内选拔', filter:'拦截' });
+    expect(byUrl['https://a/2']).toMatchObject({ final:'前置筛选拦截', kind:'转载或校内选拔', filter:'丢弃（与赛事无关）' });
     expect(byUrl['https://a/3'].final).toBe('转入通知追溯（找到 1 个待核验页面）');
     expect(byUrl['https://a/4'].final).toBe('读了详情页，未入库：标题不是一场具体比赛');
     expect(byUrl['https://a/5'].final).toBe('读详情页失败（blocked_by_robots）');

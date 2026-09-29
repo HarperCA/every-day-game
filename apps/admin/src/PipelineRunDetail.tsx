@@ -3,7 +3,7 @@ import { describeCloudError, getPipelineRunDetail, type PipelineRunDetail as Det
 
 // 单轮抓取明细：每一条候选从哪来、前置筛选怎么判、最后去了哪。点标题在新标签页打开原网页。
 const STAGE_CLASS = ['stage-dropped', 'stage-dup', 'stage-filtered', 'stage-traced', 'stage-read'];
-const FILTER_LABEL: Record<string, string> = { fetch:'放行读正文', review:'低置信度只留线索', lead:'只留线索', reject:'拦截' };
+const FILTER_LABEL: Record<string, string> = { fetch:'放行读正文', review:'低置信度只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃' };
 const shortUrl = (url:string) => url.length > 80 ? `${url.slice(0, 80)}…` : url;
 const finalGroup = (text:string) => text.replace(/（.*|：.*/, '');
 

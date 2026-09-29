@@ -11,13 +11,14 @@ describe('通知追溯', () => {
     expect(followupQuery(title)).toContain('主办方 赛事官网 官方报名');
   });
 
-  it('排除原通知页和非安全地址，结果仅作待核验线索', () => {
+  it('排除原通知页、公众号和百科；http 的官网也收（2026-09-29 起），结果仅作待核验线索', () => {
     expect(selectLeads([
       { url:'https://school.example.edu/notice', title:'报名通知' },
       { url:'http://event.example.org', title:'大赛官网' },
-      { url:'https://event.example.org', title:'大赛官网' },
+      { url:'https://mp.weixin.qq.com/s/abc', title:'大赛报名' },
+      { url:'https://baike.baidu.com/item/x', title:'大赛百科' },
     ], 'https://school.example.edu/notice')).toEqual([
-      { url:'https://event.example.org', title:'大赛官网', summary:'', status:'待核验' },
+      { url:'http://event.example.org', title:'大赛官网', summary:'', status:'待核验' },
     ]);
   });
 });

@@ -18,22 +18,26 @@ const RESULT_NEWS = /(?:获|荣获).{0,35}(?:奖|金牌|银牌|铜牌)|(?:一等
 const COLUMN = /^(?:大赛动态|国赛公告|通知公告|竞赛分类[:：]?)$|学术资讯速递/;
 const ORGANIZATION_ONLY = /^(?:中国|全国|[\u4e00-\u9fa5]{2,8}省|[\u4e00-\u9fa5]{2,8}市)?[\u4e00-\u9fa5]{2,25}(?:学会|协会|学院|研究院|教育厅|教育局)$/;
 
+// 2026-09-29 起：只有“与赛事无关”的才丢弃。
+// 校内选拔、学校转发、赛事新闻里都写着上级赛事的名字，往往还有官网网址，是找新赛事最好的线索，
+// 改为 trace（追溯上级赛事的官网和当届官方通知），不再拦下丢掉；原先按标题含感叹号拦截的规则去掉。
 export function deterministicCandidateDecision(candidate = {}) {
   const title = String(candidate.name || candidate.title || '').normalize('NFKC').trim();
   if (!title) return { action:'reject', kind:'column_other', confidence:1, source:'rule', reason:'标题为空' };
-  if (title.includes('!')) return { action:'reject', kind:'news_or_result', confidence:1, source:'rule', reason:'标题含感叹号，按宣传或报道标题拦截' };
-  if (SCHOOL_SELECTION.test(title)) return { action:'reject', kind:'repost_or_school_selection', confidence:1, source:'rule', reason:'校级或校内选拔不作为独立赛事入库' };
+  if (SCHOOL_SELECTION.test(title)) return { action:'trace', kind:'repost_or_school_selection', confidence:1, source:'rule', reason:'校级或校内选拔：不入库，追溯上级赛事的官网和官方通知' };
   if (DIRECTORY.test(title)) return { action:'lead', kind:'directory_lead', confidence:1, source:'rule', reason:'目录或清单仅保留为发现线索' };
-  if (RESULT_NEWS.test(title)) return { action:'reject', kind:'news_or_result', confidence:1, source:'rule', reason:'获奖、结果或活动报道不是赛事条目' };
-  if (COLUMN.test(title)) return { action:'reject', kind:'unrelated', confidence:1, source:'rule', reason:'栏目或资讯标题不是赛事' };
-  if (ORGANIZATION_ONLY.test(title) && !/大赛|竞赛|比赛|挑战赛/.test(title)) return { action:'reject', kind:'unrelated', confidence:1, source:'rule', reason:'机构名称不是具体赛事' };
+  if (RESULT_NEWS.test(title)) return { action:'trace', kind:'news_or_result', confidence:1, source:'rule', reason:'赛事报道：不入库，追溯赛事的官网和当届官方通知' };
+  if (COLUMN.test(title)) return { action:'lead', kind:'column_lead', confidence:1, source:'rule', reason:'栏目页：不是具体赛事，留作信源线索' };
+  if (ORGANIZATION_ONLY.test(title) && !/大赛|竞赛|比赛|挑战赛/.test(title)) return { action:'lead', kind:'organization_lead', confidence:1, source:'rule', reason:'机构名称：不是具体赛事，留作信源线索' };
   return null;
 }
 
 function actionForKind(kind) {
   if (['competition_site','organizer_notice','registration_entry'].includes(kind)) return 'fetch';
   if (kind === 'directory_lead') return 'lead';
-  if (['repost_or_school_selection','news_or_result','unrelated'].includes(kind)) return 'reject';
+  // 转发、校内选拔、赛事新闻：能顺着找到上级赛事的官网和报名入口，留作追溯线索
+  if (['repost_or_school_selection','news_or_result'].includes(kind)) return 'trace';
+  if (kind === 'unrelated') return 'reject';
   return 'review';
 }
 
@@ -122,6 +126,7 @@ export async function filterCandidatesWithJev(candidates = [], options = {}) {
     decisions,
     fetch:decisions.filter(item => item.action === 'fetch').map(item => item.candidate),
     leads:decisions.filter(item => item.action === 'lead' || item.action === 'review').map(item => item.candidate),
+    trace:decisions.filter(item => item.action === 'trace').map(item => item.candidate),
     rejected:decisions.filter(item => item.action === 'reject').map(item => item.candidate),
     cost:decisions.reduce((sum, item) => sum + Number(item.cost || 0), 0),
   };
