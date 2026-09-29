@@ -3,6 +3,9 @@
 这份说明同时放在仓库 `scripts/server/README.md` 和服务器 `/opt/daily-contest/README.md`。
 **改代码在本地仓库改，再同步到服务器**；不要直接在服务器上改（以 root 身份改的文件立刻影响线上）。
 
+看不懂 JavaScript 写法时，对照 [给 Python 使用者的 JavaScript 速查](../../docs/js-for-python.md)
+（服务器上是同目录的 `JS速查.md`）。
+
 ---
 
 ## 一、目录一览
