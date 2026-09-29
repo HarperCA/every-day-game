@@ -12,9 +12,11 @@ describe('building dedupe masters from live database records', () => {
     const masters = buildMastersFromRecords(records);
     expect(masters).toHaveLength(2);
     expect(masters[0]).toMatchObject({ id:'evt-1', standard_name:'蓝桥杯', website_url:'https://www.lanqiao.cn/a' });
+    // 所有届次的来源网址都收进来，给“网址完全相同才算重复”用
+    expect(masters[0].sourceUrls).toEqual(['https://www.lanqiao.cn/a', 'https://www.lanqiao.cn/b']);
   });
 
-  it('derives sourceHosts from every source url, for the domain-based uncertain match', () => {
+  it('derives sourceHosts from every source url', () => {
     const masters = buildMastersFromRecords([
       { eventId:'evt-1', name:'X 大赛', sources:[{ url:'https://a.example.com/x' }, { url:'https://b.example.com/y' }] },
     ]);

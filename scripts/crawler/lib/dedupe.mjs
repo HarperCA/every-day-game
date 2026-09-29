@@ -110,15 +110,35 @@ export function hostOf(url) {
 // 判定阈值。调高 = 更多条目落到人工，调低 = 更容易错误合并。
 // 包含匹配的最短长度：短名称（如「挑战杯」）会同时命中多个不同赛事。
 export const MIN_CONTAINMENT_LENGTH = 6;
+// 比对网址用的规范形式：不分 http/https、忽略 www、结尾斜杠和 # 锚点，保留路径和查询参数（平台靠参数区分比赛）。
+export function urlKey(url) {
+  try {
+    const u = new URL(String(url || ''));
+    if (!/^https?:$/.test(u.protocol)) return '';
+    return `${u.hostname.replace(/^www\./, '').toLowerCase()}${u.pathname.replace(/\/+$/, '')}${u.search}`;
+  } catch { return ''; }
+}
+
 export const DUPLICATE_THRESHOLD = 0.82;
 export const UNCERTAIN_THRESHOLD = 0.55;
 
 // masters: [{ id, standard_name, aliases: [], website_url, sourceHosts: [] }]
 export function matchCandidate(candidate, masters = []) {
   const candidateName = String(candidate?.name || '');
-  const candidateHost = hostOf(candidate?.detailUrl);
   if (!normalizeName(candidateName)) {
     return { verdict:'invalid', matchedId:null, confidence:0, reason:'候选没有可用名称' };
+  }
+
+  // 网址完全相同才算重复（2026-09-29 起替代原来的“同域名 → 拿不准”）：
+  // 天池、DataFountain 这类平台上挂着几百场比赛，同一个网站说明不了是同一场，
+  // 原规则让平台上的新比赛每晚都被当成“拿不准”跳过。平台上每场比赛网址各不相同，网址一致才是可靠信号。
+  const candidateUrl = urlKey(candidate?.detailUrl);
+  if (candidateUrl) {
+    for (const master of masters) {
+      if ((master.sourceUrls || [master.website_url]).some(url => urlKey(url) === candidateUrl)) {
+        return { verdict:'duplicate', matchedId:master.id, confidence:1, reason:`网址与「${master.standard_name}」的来源完全相同` };
+      }
+    }
   }
 
   const normalizedCandidate = normalizeName(candidateName);
@@ -183,29 +203,8 @@ export function matchCandidate(candidate, masters = []) {
     }
   }
 
-  // 域名相同是很强的信号，但不能单独定案：一个主办方站点下可能办多个赛事。
-  const hosts = new Set();
-  for (const master of masters) {
-    for (const url of [master.website_url, ...(master.sourceHosts || [])]) {
-      const host = hostOf(url) || String(url || '').toLowerCase();
-      if (host) hosts.add(`${master.id}::${host}`);
-    }
-  }
-  const hostMatch = candidateHost
-    ? [...hosts].find(entry => entry.endsWith(`::${candidateHost}`))
-    : null;
-
   if (best.score >= DUPLICATE_THRESHOLD) {
     return { verdict:'likely_duplicate', matchedId:best.master.id, confidence:best.score, reason:best.reason };
-  }
-  if (hostMatch) {
-    const masterId = hostMatch.split('::')[0];
-    return {
-      verdict:'uncertain',
-      matchedId:masterId,
-      confidence:Math.max(best.score, 0.5),
-      reason:`同域名 ${candidateHost}，但名称不匹配（${best.reason || '无相近名称'}）`,
-    };
   }
   if (best.score >= UNCERTAIN_THRESHOLD) {
     return { verdict:'uncertain', matchedId:best.master.id, confidence:best.score, reason:best.reason };

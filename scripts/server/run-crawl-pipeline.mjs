@@ -27,6 +27,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classifyCandidates, hostOf } from './crawler/lib/dedupe.mjs';
 import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
+import { collectMentions } from './known-event-mentions.mjs';
+import { loadMemory, recentlyRejected, remember, saveMemory } from './rejected-memory.mjs';
 import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
 import { followupCandidatesFromReport } from './resolve-notice-leads.mjs';
 import { stampDiscovery } from './discovery.mjs';
@@ -110,6 +112,9 @@ async function main() {
   // 2. 逐个来源抓取 + 判重，只留 new。
   const allNew = [];
   const summary = [];
+  // 判重命中库里已有赛事的通知不再丢掉：整理成清单，02:15 记录追溯据此找官方来源（known-event-mentions.mjs）
+  const recordsById = new Map(records.map(record => [record.id, record]));
+  const mentionGroups = new Map();
   for (const source of args.sources) {
     const config = SOURCE_CONFIG[source];
     if (!config || !fs.existsSync(path.join(HERE, config.script))) {
@@ -132,10 +137,11 @@ async function main() {
 
     const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
     const buckets = classifyCandidates(candidates, masters);
+    collectMentions([buckets], masters, recordsById, mentionGroups);
     const newCandidates = buckets.new.map(({ candidate }) => candidate);
     console.log(`${source}: 抓到 ${candidates.length} 条，new ${newCandidates.length}，`
       + `duplicate ${buckets.duplicate.length}，likely_duplicate ${buckets.likely_duplicate.length}，`
-      + `uncertain ${buckets.uncertain.length}（后三类跳过，交人工）\n`);
+      + `uncertain ${buckets.uncertain.length}（命中已有赛事的整理进追溯清单，拿不准的跳过）\n`);
 
     for (const candidate of newCandidates) {
       masters.push({
@@ -153,9 +159,27 @@ async function main() {
     });
   }
 
+  const mentionsFile = path.join(RUN_DIR, 'known-event-mentions.json');
+  fs.writeFileSync(mentionsFile, JSON.stringify({ createdAt:new Date().toISOString(), groups:[...mentionGroups.values()] }, null, 2), 'utf8');
+  console.log(`提到库里已有赛事的通知：涉及 ${mentionGroups.size} 场赛事，清单 ${mentionsFile}
+`);
+
   if (!allNew.length) {
     console.log('没有新候选，流水线到此结束（未调用 AI，未写库）。');
     await writeRunLog({ summary, extracted: 0, ingest: null });
+    return;
+  }
+
+  // 近 30 天已经被拒过的网址不再处理（rejected-memory.mjs）：否则同一批赛题、栏目页每晚重复读详情再被拒
+  const memoryFile = path.join(HERE, 'plans', 'rejected-urls.json');
+  const memory = loadMemory(memoryFile);
+  const beforeMemory = allNew.length;
+  allNew.splice(0, allNew.length, ...allNew.filter(candidate => !recentlyRejected(memory, candidate.detailUrl)));
+  if (beforeMemory !== allNew.length) console.log(`近 30 天已被拒过的 ${beforeMemory - allNew.length} 条跳过（被拒网址记忆）
+`);
+  if (!allNew.length) {
+    console.log('去掉已被拒过的之后没有新候选，流水线结束（未调用 AI，未写库）。');
+    await writeRunLog({ summary, rememberedSkipped:beforeMemory, extracted:0, ingest:null });
     return;
   }
 
@@ -244,7 +268,18 @@ async function main() {
   if (args.dryRun) ingestArgs.push('--dry-run');
   run('node', ingestArgs);
 
-  await writeRunLog({ summary, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, noticeFollowups:followupFetch.length, extracted:detailCandidates.length, ingest:'see stdout above' });
+  // 记住这一轮被拒的网址：前置筛选拦截的、读了详情但没能入库的（读详情失败的不记，下次还能再试）
+  if (!args.dryRun) {
+    const rejected = jevResult.decisions.filter(item => item.action === 'reject').map(item => ({ url:item.candidate.detailUrl, reason:item.reason, stage:'前置筛选' }));
+    try {
+      const held = JSON.parse(fs.readFileSync(`${combinedFile}.scope-review.json`, 'utf8')).held || [];
+      rejected.push(...held.filter(item => item.extraction?.ok !== false).map(item => ({ url:item.candidate?.detailUrl, reason:item.scope?.reason || item.reason, stage:'入库关' })));
+    } catch { /* 这一轮没有入库关报告 */ }
+    saveMemory(memoryFile, remember(memory, rejected.filter(item => item.url)));
+    console.log(`被拒网址记忆：本轮记下 ${rejected.length} 条`);
+  }
+
+  await writeRunLog({ summary, rememberedSkipped:beforeMemory - allNew.length, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, noticeFollowups:followupFetch.length, extracted:detailCandidates.length, ingest:'see stdout above' });
 }
 
 // cloudbase SDK 的匿名会话会挂一个不自然结束的句柄（推测是 auth 的 keepalive/

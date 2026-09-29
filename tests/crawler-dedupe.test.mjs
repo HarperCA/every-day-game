@@ -126,12 +126,18 @@ describe('matching against the existing library', () => {
     expect(match.matchedId).toBeNull();
   });
 
-  it('flags a same-domain contest as uncertain instead of merging it', () => {
-    // 一个主办方站点下可能办多个赛事，域名相同不足以定案。
-    const local = [{ id:'m1', standard_name:'甲赛事', aliases:[], website_url:'https://example.org/a', sourceHosts:[] }];
-    const match = matchCandidate({ name:'完全无关的乙赛事', detailUrl:'https://example.org/b' }, local);
-    expect(match.verdict).toBe('uncertain');
-    expect(match.matchedId).toBe('m1');
+  it('same website is not enough: platform contests with different names are new', () => {
+    // 天池、DataFountain 这类平台挂着几百场比赛，同一个网站说明不了是同一场（2026-09-29 起）。
+    const local = [{ id:'m1', standard_name:'蚂蚁灵波具身大模型挑战赛', aliases:[], website_url:'https://tianchi.aliyun.com/competition/entrance/1', sourceHosts:['tianchi.aliyun.com'] }];
+    const match = matchCandidate({ name:'CSIG图像图形技术挑战赛', detailUrl:'https://tianchi.aliyun.com/competition/entrance/2' }, local);
+    expect(match.verdict).toBe('new');
+  });
+
+  it('an identical url is a duplicate even when the name differs', () => {
+    const local = [{ id:'m1', standard_name:'甲赛事', aliases:[], website_url:'https://example.org/a', sourceUrls:['https://www.example.org/race?id=7'] }];
+    const match = matchCandidate({ name:'换了个写法的名称', detailUrl:'http://example.org/race?id=7#top' }, local);
+    expect(match).toMatchObject({ verdict:'duplicate', matchedId:'m1' });
+    expect(matchCandidate({ name:'换了个写法的名称', detailUrl:'https://example.org/race?id=8' }, local).verdict).toBe('new');
   });
 
   it('rejects a candidate with no usable name', () => {
