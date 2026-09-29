@@ -12,6 +12,7 @@ import path from 'node:path';
 import iconv from 'iconv-lite';
 import { isAllowed } from './robots.mjs';
 import { normalizeCrawlUrl, readLimitedBody } from './urlPolicy.mjs';
+import { relayFetch, shouldRelay } from './relay.mjs';
 
 export const USER_AGENT = 'competition-crawler/1.0 (+admin source verification; respects robots.txt)';
 
@@ -119,7 +120,25 @@ export class Fetcher {
   }
 
   // 统一返回结构，任何失败都以 status 字段表达，不抛异常。
-  async get(url, { useCache = true, redirectCount = 0 } = {}) {
+  // 直接取不到（连不上、超时、403）时改走国内中转（relay.mjs）。中转也遵守 robots.txt。
+  async get(url, options = {}) {
+    const direct = await this.getDirect(url, options);
+    if (!shouldRelay(direct.status) || options.redirectCount) return direct;
+    const relayed = await relayFetch(direct.url || url);
+    this.stats.relayed = (this.stats.relayed || 0) + 1;
+    if (relayed.status !== 'ok' || !relayed.buffer) return { ...direct, relayStatus:relayed.status };
+    const contentType = relayed.contentType;
+    if (!this.options.allowedMime.test(contentType)) return { url:direct.url || url, status:'unsupported_type', contentType, text:'', body:null, via:'relay' };
+    const isBinary = BINARY_TYPES.test(contentType);
+    const charset = isBinary ? null : detectCharset(contentType, relayed.buffer);
+    return {
+      url:direct.url || url, finalUrl:relayed.finalUrl, status:'ok', httpStatus:relayed.httpStatus, contentType, charset, isBinary,
+      bytes:relayed.buffer.length, text:isBinary ? '' : decodeBody(relayed.buffer, charset), fetchedAt:Date.now(),
+      body:relayed.buffer, via:'relay', tlsUnverified:relayed.tlsUnverified,
+    };
+  }
+
+  async getDirect(url, { useCache = true, redirectCount = 0 } = {}) {
     let target;
     try {
       url = normalizeCrawlUrl(url);

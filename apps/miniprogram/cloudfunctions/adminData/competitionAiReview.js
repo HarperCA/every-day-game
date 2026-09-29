@@ -333,7 +333,18 @@ async function fetchTianchiRaceText(send, raceId) {
 // 单个 URL 的抓取逻辑——先查 robots.txt 再抓正文，抽出来是因为
 // runCompetitionAiReviewAgentic 的工具执行器要复用同一套合规检查，
 // 不能因为是模型主动要求的链接就绕开 robots.txt。
+// 直接取不到（连不上、超时、403）时改走国内中转（pageRelayClient.js）；中转取到的内容照常转成正文。
 async function fetchEvidenceUrl(send, url, robotsCache) {
+  const direct = await fetchEvidenceUrlDirect(send, url, robotsCache);
+  const { shouldRelay, relayFetch } = require('./pageRelayClient');
+  if (!shouldRelay(direct.status)) return direct;
+  const relayed = await relayFetch(url);
+  if (relayed.status !== 'ok' || !relayed.buffer) return { ...direct, relayStatus:relayed.status };
+  if (/^image\//i.test(relayed.contentType) || /pdf|msword|officedocument/i.test(relayed.contentType)) return { ...direct, relayStatus:`relay_${relayed.contentType.split(';')[0]}` };
+  return { url, status:'reachable', via:'relay', tlsUnverified:relayed.tlsUnverified, text:htmlToText(relayed.buffer.toString('utf8')) };
+}
+
+async function fetchEvidenceUrlDirect(send, url, robotsCache) {
   try {
     const tianchi = TIANCHI_ENTRANCE_RE.exec(url);
     if (tianchi) {
