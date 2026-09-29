@@ -233,6 +233,21 @@ export interface PipelineRun {
 
 export const listPipelineRuns = () => callAdmin<{runs:PipelineRun[]}>('listPipelineRuns');
 
+// 网页测试版的匿名使用统计汇总（adminData/webStats.js）
+export interface WebStats {
+  days:number; since:string; eventCount:number;
+  totals:{ visitors:number; returningVisitors:number; returningRate:number; detailVisitors:number; detailRate:number; officialVisitors:number; officialRate:number;
+    searches:number; zeroResultSearches:number; detailViews:number; officialOpens:number; copies:number; favoritesOn:number; favoritesOff:number; feedback:number };
+  devices:Record<string, number>;
+  daily:Array<{ date:string; visitors:number; newVisitors:number; searches:number; detailViews:number; officialOpens:number }>;
+  topKeywords:Array<{ keyword:string; count:number; zeroResults:number }>;
+  topViewed:Array<{ id:string; name:string; views:number; visitors:number }>;
+  topOfficial:Array<{ id:string; name:string; opens:number }>;
+  topFilters:Array<{ filter:string; count:number }>;
+  feedback:Array<{ at:string; id:string; name:string; text:string }>;
+}
+export const getWebStats = (days = 30) => callAdmin<WebStats>('webStats', { days });
+
 export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
   const problems: string[] = [];
   if (!status.apiKeyConfigured) problems.push('AI_API_KEY 未配置：请在云开发控制台的 adminData 云函数环境变量中添加，保存后重新部署');

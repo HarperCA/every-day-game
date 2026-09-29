@@ -1,0 +1,70 @@
+/* 网页端补充样式：小程序自带的组件（按钮、底部标签栏、弹窗、提示）在网页上要自己画。 */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif; line-height: 1.5; }
+a { color: inherit; }
+#app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 64px; }
+@media (min-width: 520px) { body { background: #e9eef2; } #app { background: #f5f7fa; box-shadow: 0 0 24px rgba(15, 23, 42, .08); } }
+
+/* 测试版标识 */
+.test-bar { position: sticky; top: 0; z-index: 900; max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 8px;
+  background: #fff; border-bottom: 1px solid #e6ebf1; padding: 8px 12px; font-size: 12px; color: #6b778c; }
+.test-bar b { color: #0c6071; font-size: 14px; }
+.test-bar .tag-test { background: #fff2d6; color: #8a5a00; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
+.test-bar button { border: 0; background: none; color: #087e8b; font-size: 14px; padding: 0 4px 0 0; cursor: pointer; flex: none; }
+.test-bar b, .test-bar .tag-test { flex: none; }
+.test-bar .test-hint { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 有返回按钮时位置不够，提示文字让位 */
+.test-bar button:not([hidden]) ~ .test-hint { display: none; }
+
+/* 按钮：对应小程序 button 的默认样子 */
+.btn { display: block; width: 100%; padding: 11px 0; border: 1px solid transparent; border-radius: 8px; background: #f2f4f6; color: #172033;
+  font-size: 15px; text-align: center; text-decoration: none; cursor: pointer; font-family: inherit; }
+.btn.mini { display: inline-block; width: auto; padding: 5px 12px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 首页：下拉筛选用原生 select 叠在文字上，外观保持小程序的样子 */
+.pg-index .filter { position: relative; cursor: pointer; display: block; }
+.pg-index .filter select { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.pg-index .search-row input { border: 0; outline: 0; font-size: 14px; min-width: 0; }
+.pg-index .search-row .btn.mini { border-radius: 8px; }
+.pg-index .competition, .pg-favorites .favorite-card, [data-act] { cursor: pointer; }
+.pg-index .load-more .btn { color: #087e8b; background: #e8f4f5; }
+.pg-index .filter-mask { max-width: 480px; margin: 0 auto; }
+.pg-index .sheet-scroll { overflow-y: auto; }
+
+/* 详情页 */
+.pg-detail .action { margin-top: 9px; }
+.pg-detail a.btn.primary { display: block; }
+.pg-detail .source a { color: #1f6f8b; }
+
+/* 纠错页（小程序的 input/textarea/picker 换成网页表单元素） */
+.pg-feedback form { padding: 14px; }
+.pg-feedback .field { display: block; margin-bottom: 14px; }
+.pg-feedback .field > span { display: block; font-weight: 700; margin-bottom: 6px; }
+.pg-feedback .field i { font-style: normal; color: #8a96a8; font-weight: 400; font-size: 12px; }
+.pg-feedback textarea, .pg-feedback input, .pg-feedback select { width: 100%; border: 1px solid #dfe5ec; border-radius: 8px; padding: 9px 10px; font: inherit; background: #f8fafb; }
+.pg-feedback textarea { min-height: 110px; resize: vertical; }
+.pg-feedback small { display: block; text-align: right; color: #8a96a8; }
+.pg-feedback .submit { margin: 4px 0 0; }
+.pg-feedback .records { margin-top: 12px; padding: 14px; }
+
+/* 底部标签栏 */
+#tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 800; max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr;
+  background: #fff; border-top: 1px solid #e6ebf1; padding-bottom: env(safe-area-inset-bottom); }
+#tabbar[hidden] { display: none; }
+#tabbar a { display: flex; flex-direction: column; align-items: center; padding: 6px 0 5px; font-size: 11px; color: #64748b; text-decoration: none; }
+#tabbar a.active { color: #087e8b; }
+#tabbar .tab-icon { font-size: 19px; line-height: 1.2; }
+
+/* 弹窗与提示（对应 wx.showModal / wx.showToast） */
+.dialog-mask { position: fixed; inset: 0; z-index: 2000; background: rgba(15, 23, 42, .48); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.dialog { width: 100%; max-width: 320px; background: #fff; border-radius: 12px; overflow: hidden; text-align: center; }
+.dialog-title { font-weight: 700; font-size: 16px; padding: 20px 16px 6px; }
+.dialog-content { color: #526172; padding: 0 20px 20px; font-size: 14px; }
+.dialog-actions { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #edf0f4; }
+.dialog-actions button { border: 0; background: #fff; padding: 13px 0; font-size: 15px; cursor: pointer; }
+.dialog-actions .dialog-ok { color: #087e8b; font-weight: 700; border-left: 1px solid #edf0f4; }
+#toast { position: fixed; left: 50%; top: 45%; transform: translate(-50%, -50%); z-index: 2100; background: rgba(23, 32, 51, .86); color: #fff;
+  padding: 10px 18px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+#toast.show { opacity: 1; }

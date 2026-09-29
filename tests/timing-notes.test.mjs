@@ -58,8 +58,10 @@ describe('both data paths carry the fields', () => {
   const repository = fs.readFileSync(new URL('../apps/miniprogram/services/repository.ts', import.meta.url), 'utf8');
 
   it('reads the cloud-computed fields for published records', () => {
-    expect(repository).toContain('item.school_timing_dependent');
-    expect(repository).toContain('item.timing_reliability');
+    // 公开记录的字段转换已拆到 publicRecord.ts（小程序与网页测试版共用）
+    const publicRecord = fs.readFileSync(new URL('../apps/miniprogram/services/publicRecord.ts', import.meta.url), 'utf8');
+    expect(publicRecord).toContain('item.school_timing_dependent');
+    expect(publicRecord).toContain('item.timing_reliability');
   });
 
   it('computes them locally for preview data, which never reaches the cloud function', () => {

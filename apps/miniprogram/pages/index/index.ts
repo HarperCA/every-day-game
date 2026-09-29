@@ -1,21 +1,8 @@
 import { getProfessionOptions, listCompetitions } from '../../services/repository';
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
+import { statusOptions, levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, registrationWithinOptions, registrationWithinValues, sortByOptions, sortByValues, sortOrderOptions, sortOrderValues } from '../../services/filterOptions';
 
-const statusOptions = ['全部报名状态', '报名中', '即将报名', '时间待公布', '已截止'];
-const levelOptions = ['全部赛事级别', '国际级', '国家级', '省级/区域级', '其他/未明确'];
 const professionOptions = ['全部适合专业', ...getProfessionOptions()];
-const participationFormatOptions = ['个人赛', '团队赛', '个人或团队均可', '暂未明确'];
-const teamSizeOptions = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];
-const feeTypeOptions = ['免费', '收费', '不同赛项费用不同', '暂未公布'];
-const registrationOrganizationOptions = ['自行报名', '学校统一报名', '两种方式均可', '需先校内选拔', '以赛区或学校通知为准', '暂未明确'];
-// 显示文案 → 传给接口的值。"不限"/"推荐排序" 对应空字符串，即不传这个筛选项。
-const registrationWithinOptions = ['不限', '半年以内', '3个月以内', '1个月以内'];
-const registrationWithinValues = ['', '6m', '3m', '1m'];
-const sortByOptions = ['推荐排序', '按报名时间'];
-const sortByValues = ['', 'time'];
-const sortOrderOptions = ['升序', '降序'];
-const sortOrderValues = ['asc', 'desc'];
-
 const moreFieldMap: Record<string, string> = {
   participationFormat: 'draftParticipationFormat',
   teamSizeCategory: 'draftTeamSizeCategory',

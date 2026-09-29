@@ -1,5 +1,8 @@
 const cloud = require('wx-server-sdk');
 const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
+const { sanitizeBatch, createRateLimiter } = require('./webEvents');
+
+const trackLimiter = createRateLimiter();
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -30,6 +33,13 @@ exports.main = async event => {
       const item = result.data;
       if (!item || !PUBLIC_DATA_STATUSES.has(item.data_status) || item.system_validation !== 'passed' || item.manual_review !== 'passed') throw new Error('public_record_not_found');
       return { ok:true, data:{ ...item, registration_status:currentRegistrationStatus(item) } };
+    }
+    // 网页测试版的匿名使用统计（见 webEvents.js）。超限或格式不对时静默丢弃，不影响页面。
+    if (event?.action === 'track') {
+      const { visitor, items } = sanitizeBatch(event);
+      if (!items.length || !trackLimiter.allow(visitor, items.length)) return { ok:true, data:{ saved:0 } };
+      for (const item of items) await db.collection('web_events').add({ data:item });
+      return { ok:true, data:{ saved:items.length } };
     }
     throw new Error('unsupported_action');
   } catch (error) {

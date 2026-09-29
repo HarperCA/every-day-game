@@ -573,6 +573,16 @@ async function loadLastAiReviewRun() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  // 网页测试版的使用统计汇总（原始事件由 publicData 的 track 写入 web_events）。
+  if (event.action === 'webStats') {
+    try {
+      const result = await db.collection('web_events').limit(200000).get();
+      return require('./webStats').aggregateWebStats(result.data || [], { days:Number(event.days) || 30 });
+    } catch (error) {
+      if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) return require('./webStats').aggregateWebStats([]);
+      throw error;
+    }
+  }
   if (event.action === 'listPipelineRuns') {
     try {
       const result = await db.collection('admin_state').doc(PIPELINE_RUNS_DOC).get();
