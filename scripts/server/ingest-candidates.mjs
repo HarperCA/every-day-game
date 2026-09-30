@@ -69,7 +69,7 @@ function primeExtractAiEnv() {
 const extractAiConfigured = primeExtractAiEnv();
 
 const require = createRequire(import.meta.url);
-const { candidateToRecord } = require(path.join(CJS_DIR, 'candidateToRecord.js'));
+const { candidateToRecord, withVerifiedName } = require(path.join(CJS_DIR, 'candidateToRecord.js'));
 const { blockedTitleReason, isNoticeTitle, isNonEventTitle } = require(path.join(CJS_DIR, 'noticeResolution.js'));
 const { isClearlyOutOfScope, classifyCompetitionScope, assessIntakeRecord } = require(path.join(CJS_DIR, 'competitionScope.js'));
 const { assessAdmission } = require(path.join(CJS_DIR, 'competitionAdmission.js'));
@@ -239,14 +239,15 @@ async function main() {
   let eligibleDiscovered = 0;
 
   const now = new Date();
-  for (const candidate of candidates) {
+  for (const rawCandidate of candidates) {
+    const extraction = extractions.find(item => item.url === rawCandidate.detailUrl);
+    const candidate = withVerifiedName(rawCandidate, extraction);
     // 标题命中「通知」仅能留在抓取报告作追溯线索，不能进入赛事库。
     const titleBlock = blockedTitleReason(candidate.name) || blockedTitleReason(candidate.seriesName);
     if (titleBlock || isNoticeTitle(candidate.name) || isNoticeTitle(candidate.seriesName)) {
       skipped.push([candidate.name, titleBlock || '通知或公告标题仅作发现线索，不予入库']);
       continue;
     }
-    const extraction = extractions.find(item => item.url === candidate.detailUrl);
     const merged = withExtraction(candidate, extraction);
     // 百度只给标题、网址和正文片段；资格等字段必须等详情页抽取完成后
     // 再判断。先检查候选会把有正文证据的比赛当成“缺少资格”误拦。

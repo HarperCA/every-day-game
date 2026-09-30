@@ -33,6 +33,7 @@ function firstQuote(items, value) {
 function buildReviewNotes(candidate, extracted) {
   const notes = [];
   if (candidate.discoveryNoticeUrl) notes.push(`通知仅作发现线索，赛事页和报名入口仍须独立核验：${candidate.discoveryNoticeUrl}`);
+  if (candidate.searchTitle) notes.push(`比赛名称取自正文（搜索标题为「${candidate.searchTitle}」）｜依据：${candidate.nameEvidence || ''}`);
   if (extracted?.organizer) notes.push(`主办方待确认：${extracted.organizer.value}｜依据：${extracted.organizer.quote}`);
   for (const signal of extracted?.authority_signals || []) {
     notes.push(`权威性线索：${signal.signal}｜依据：${signal.quote}`);
@@ -52,6 +53,18 @@ function buildReviewNotes(candidate, extracted) {
   for (const missing of extracted?.missing || []) notes.push(`原文未写明：${missing}`);
   if (!candidate.professions?.length) notes.push(`专业分类待人工判定；来源标签：${(candidate.tags || []).join('、') || '无'}`);
   return notes.slice(0, 40);
+}
+
+// 平台登记的赛事（天池、DataFountain、辽宁平台），名字是平台自己登记的，照旧用。
+const PLATFORM_SOURCES = new Set(['tianchi', 'datafountain', 'upln']);
+
+// 搜索来的网页，候选名是百度给的标题，常常是栏目名（“学会动态”）或网站口号
+// （“激发学习英语的兴趣,增加词汇储备量”）。读完正文后，改用正文里原样出现、带引文的比赛全称
+// （抽取模块已核对过名称逐字出现在正文里）；正文没写明是哪场比赛的，保留原标题，照旧由范围闸拦下。
+function withVerifiedName(candidate, extractionResult) {
+  const verified = extractionResult?.ok ? extractionResult.extracted?.competition_name : null;
+  if (!verified?.value || PLATFORM_SOURCES.has(candidate?.discovery?.source)) return candidate;
+  return { ...candidate, name:verified.value, searchTitle:candidate.name, nameEvidence:verified.quote };
 }
 
 function candidateToRecord(candidate, extractionResult, { now = new Date() } = {}) {
@@ -169,4 +182,4 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
   };
 }
 
-module.exports = { buildReviewNotes, candidateToRecord, toSafeId };
+module.exports = { buildReviewNotes, candidateToRecord, toSafeId, withVerifiedName };

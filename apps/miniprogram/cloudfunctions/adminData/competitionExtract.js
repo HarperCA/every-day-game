@@ -19,7 +19,7 @@ const {
   loadRobots, parseModelJson, readAiConfig, resolveRequest, timeoutSignal,
 } = require('./competitionAiReview');
 
-const PROMPT_VERSION = 'competition-extract-v2-anchor';
+const PROMPT_VERSION = 'competition-extract-v3-name';
 // 批量抽取走 EXTRACT_ 前缀的配置，未设置时逐项回退到通用的 AI_*。
 // 抽取是突发型负载：几百场集中跑会撞上会员制的窗口配额，
 // 而审核是低频的，留在原供应商上不受影响。
@@ -301,6 +301,8 @@ function buildExtractPrompt(pageText, contestName) {
     '4. 每个数组最多 4 项，只留最有代表性的。',
     '',
     '只输出一个 JSON 对象，不要 Markdown 围栏，不要解释。字段：',
+    'competition_name: {value, anchor} 或 null —— 这个页面讲的是哪一场比赛：正文里写出的比赛全称，value 必须和正文某处逐字相同（可以带年份、届次），',
+    '  不要自己拼接、补全或改写；搜索标题可能是栏目名或口号，不能当比赛名。正文没写明是哪一场比赛就给 null。',
     'organizer: {value, anchor} 或 null —— 主办/承办单位全称，按正文写法。',
     'participants: {value, anchor} 或 null —— 官方明确的参赛对象原文。',
     'eligibility: {value, anchor} 或 null —— 学籍、成绩、地域等参赛资格限制原文。',
@@ -357,6 +359,15 @@ function verifyAgainstSource(parsed, sourceText) {
     return null;
   };
 
+  // 比赛全称：除了锚点能定位，名称本身也必须在正文里原样出现——名字错一个字就是另一场比赛，不能由模型拼出来。
+  const nameValue = String(parsed.competition_name?.value || '').trim();
+  let competitionName = null;
+  if (parsed.competition_name && typeof parsed.competition_name === 'object') {
+    const nameInSource = nameValue.length >= 4 && nameValue.length <= 80
+      && normalizeForQuoteMatch(sourceText).includes(normalizeForQuoteMatch(nameValue));
+    if (nameInSource) competitionName = keepWithQuote({ ...parsed.competition_name, value:nameValue }, 'competition_name');
+    else dropped.push({ field:'competition_name', value:nameValue, quote:String(parsed.competition_name.anchor || '').slice(0, 120) });
+  }
   const organizer = keepWithQuote(parsed.organizer, 'organizer');
   const participants = keepWithQuote(parsed.participants, 'participants');
   const eligibility = keepWithQuote(parsed.eligibility, 'eligibility');
@@ -398,6 +409,7 @@ function verifyAgainstSource(parsed, sourceText) {
     : null;
 
   return {
+    competition_name:competitionName,
     organizer,
     participants,
     eligibility,
@@ -421,6 +433,7 @@ function verifyAgainstSource(parsed, sourceText) {
 function toFieldSuggestions(verified, sourceUrl) {
   const suggestions = [];
   const push = (field, value, quote) => suggestions.push({ field, value, quote, source:sourceUrl });
+  if (verified.competition_name) push('competition_name', verified.competition_name.value, verified.competition_name.quote);
   if (verified.organizer) push('organizer', verified.organizer.value, verified.organizer.quote);
   for (const [field, item] of Object.entries({participants:verified.participants,eligibility:verified.eligibility,format_and_rules:verified.format_and_rules,team_size:verified.team_size,registration_method:verified.registration_method,fees:verified.fees})) {
     if (item) push(field, item.value, item.quote);

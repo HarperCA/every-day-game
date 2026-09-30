@@ -115,7 +115,12 @@ function assessIntakeRecord(record = {}) {
   const scope = classifyCompetitionScope(record);
   if (scope.decision !== 'eligible') return scope;
   const missing = [];
+  // 参赛对象已明确写了大学生（本科、研究生、高校在校生……）时，它本身就是大学生资格依据，
+  // 不再要求“参赛资格”一栏另有内容——很多官网只写一句“参赛对象：在校大学生”，没有单独的资格段落。
+  // 2026-09-30 用户确认放宽。
+  const participantsShowCollege = COLLEGE_AUDIENCE.test(String(record.participants || ''));
   for (const [key, label] of [['organizer','主办方'],['participants','参赛对象'],['eligibility','大学生资格依据'],['formatAndRules','专业任务与赛制']]) {
+    if (key === 'eligibility' && participantsShowCollege) continue;
     if (!String(record[key] || '').trim()) missing.push(label);
   }
   // 新抓到的草稿允许专业分类待定，后续由 Kimi 根据正文判定；发布仍须有分类。
