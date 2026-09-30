@@ -1,6 +1,4 @@
 .hero { background:#0c6071; color:#fff; border-radius:28rpx; padding:34rpx 28rpx 28rpx; }
-.hero-brand { display:flex; align-items:center; gap:12rpx; margin-bottom:18rpx; font-size:27rpx; font-weight:700; }
-.brand-logo { width:38rpx; height:38rpx; flex-shrink:0; }
 .search-row { display:flex; background:#fff; border-radius:16rpx; padding:8rpx; }
 .search-row input { flex:1; color:#172033; padding:10rpx 14rpx; }
 .search-row button { margin:0; background:#0d8793; color:#fff; }

@@ -1,1 +1,1 @@
-{"navigationBarTitleText":"竞赛雷达","enablePullDownRefresh":true}
+{"navigationBarTitleText": "竞赛雷达", "enablePullDownRefresh": true, "navigationStyle": "custom", "usingComponents": {"brand-nav": "/components/brand-nav/brand-nav"}}

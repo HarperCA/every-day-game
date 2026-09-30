@@ -1,0 +1,4 @@
+.brand-nav { position:fixed; top:0; left:0; right:0; z-index:100; background:#ffffff; }
+.brand-nav-bar { display:flex; align-items:center; justify-content:center; gap:12rpx; }
+.brand-nav-logo { width:44rpx; height:44rpx; flex-shrink:0; }
+.brand-nav-title { font-size:34rpx; font-weight:600; color:#000000; }

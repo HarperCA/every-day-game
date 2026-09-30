@@ -1,3 +1,4 @@
+<brand-nav />
 <view class="page">
   <view class="profile card">
     <view class="avatar">微</view>
