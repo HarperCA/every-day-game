@@ -7,6 +7,7 @@ const { SYSTEM_ACTORS, autoAudits } = require('./autoAudit');
 const { registrationStatus, syncPublicCache } = require('./publicCache');
 const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview, runFieldVerification } = require('./competitionAiReview');
 const { extractFromDetailPage } = require('./competitionExtract');
+const { REASONING_COLLECTION, buildReasoningDoc, createReasoningCollector, saveReasoningDocs } = require('./aiReasoning');
 const {
   countStaleRecords, nextFailureMark, runStatus, selectStaleRecords,
   countStaleForFieldVerification, selectStaleForFieldVerification, nextFieldVerificationFailureMark,
@@ -27,9 +28,11 @@ const MAX_AI_JOBS = 1000;
 // 所以定时任务每次只处理 1 条。模型超时按剩余预算动态计算（见 runScheduledCompetitionAiReview），
 // 因为取证耗时不可预测；超限会被平台直接掐断，连失败记录都写不下。
 const SCHEDULED_BATCH_LIMIT = 1;
-const SCHEDULED_MAX_TOKENS = 4000; // 2026-09-29 提示词拆成两问后，2000 会被截断（finish_length）
+// 2026-09-29 提示词拆成两问后，2000 会被截断（finish_length）；
+// 2026-09-30 要求 Kimi 用中文思考，思考比英文长约一倍，思考和答案共用这个上限，再放宽到 8000
+const SCHEDULED_MAX_TOKENS = 8000;
 const MANUAL_CHAT_TIMEOUT_MS = 0;
-const MANUAL_MAX_TOKENS = 2600;
+const MANUAL_MAX_TOKENS = 8000;
 const AI_RUN_LOG_DOC = 'ai_review_runs';
 const MAX_AI_RUN_LOG = 20;
 const ARCHIVE_RUN_LOG_DOC = 'archive_runs';
@@ -253,10 +256,14 @@ async function runAiReviewPool(records, concurrency = 5, options = {}) {
   async function worker() {
     while (cursor < records.length) {
       const record = records[cursor++];
+      // 这次审核里 Kimi 的思考过程，审核结束后写进 ai_reasoning（成功失败都记，失败时更需要看它想了什么）
+      const collector = createReasoningCollector({ recordId:record.id, recordName:record.name });
       try {
-        results.set(record.id, await runCompetitionAiReview(record, undefined, options));
+        results.set(record.id, await runCompetitionAiReview(record, undefined, { ...options, onReasoning:collector.onReasoning }));
       } catch (error) {
         failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
+      } finally {
+        await saveReasoningDocs(db, collector.docs());
       }
     }
   }
@@ -387,10 +394,13 @@ async function runFieldVerificationPool(records, options = {}) {
   const results = new Map();
   const failures = [];
   for (const record of records) {
+    const collector = createReasoningCollector({ recordId:record.id, recordName:record.name });
     try {
-      results.set(record.id, await runFieldVerification(record, undefined, options));
+      results.set(record.id, await runFieldVerification(record, undefined, { ...options, onReasoning:collector.onReasoning }));
     } catch (error) {
       failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
+    } finally {
+      await saveReasoningDocs(db, collector.docs());
     }
   }
   return { results, failures };
@@ -573,6 +583,36 @@ async function loadLastAiReviewRun() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  // AI 思考过程（aiReasoning.js）：按赛事列出，最新的在前（只读）
+  if (event.action === 'listAiReasoning') {
+    const recordId = String(event.recordId || '').trim();
+    if (!recordId) throw new Error('invalid_record_id');
+    try {
+      const result = await db.collection(REASONING_COLLECTION).where({ record_id:recordId })
+        .orderBy('created_at', 'desc').limit(Math.min(50, Math.max(1, Number(event.limit) || 20))).get();
+      return result.data || [];
+    } catch (error) {
+      if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) return [];
+      throw error;
+    }
+  }
+  // 服务器脚本（入库时的收录判断、三项核验等）产生的思考过程，经这里写库
+  if (event.action === 'saveAiReasoning') {
+    const docs = (Array.isArray(event.docs) ? event.docs : []).slice(0, 200)
+      .filter(doc => doc && typeof doc.text === 'string' && doc.text.trim())
+      .map(doc => buildReasoningDoc({
+        kind:String(doc.kind || 'unknown').slice(0, 40),
+        recordId:doc.record_id ? String(doc.record_id).slice(0, 120) : null,
+        recordName:doc.record_name, url:doc.url, model:doc.model, provider:doc.provider,
+        reasoning:{ text:doc.text, tokens:Number.isFinite(doc.tokens) ? doc.tokens : null, finishReason:doc.finish_reason || null },
+        createdAt:Number.isNaN(Date.parse(doc.created_at)) ? new Date().toISOString() : new Date(doc.created_at).toISOString(),
+        // extra 只收简单的键值（轮次、触发方式、运行编号之类），防止塞进大对象
+        extra:doc.extra && typeof doc.extra === 'object' ? Object.fromEntries(Object.entries(doc.extra).slice(0, 10)
+          .filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value))
+          .map(([key, value]) => [String(key).slice(0, 40), typeof value === 'string' ? value.slice(0, 300) : value])) : null,
+      }));
+    return { saved:await saveReasoningDocs(db, docs) };
+  }
   // 单轮抓取明细：读服务器 runs/<运行编号>/ 下的各阶段文件，逐条列出去向（只读）
   if (event.action === 'pipelineRunDetail') return require('./pipelineRunDetail').loadRunDetail(event.runId);
   if (event.action === 'listPipelineRuns') {
@@ -674,7 +714,12 @@ async function handle(event) {
     if (!record) throw new Error('competition_not_found');
     if (record.dataStatus === 'quarantined') throw new Error('请先补齐资料并恢复为合格草稿，再执行审核');
     // 手动审核同样受 60 秒函数上限约束，只是允许比定时任务更长的结论。
-    return runCompetitionAiReview(record, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS, maxTokens:MANUAL_MAX_TOKENS });
+    const collector = createReasoningCollector({ recordId:record.id, recordName:record.name, extra:{ trigger:'manual' } });
+    try {
+      return await runCompetitionAiReview(record, undefined, { chatTimeoutMs:MANUAL_CHAT_TIMEOUT_MS, maxTokens:MANUAL_MAX_TOKENS, onReasoning:collector.onReasoning });
+    } finally {
+      await saveReasoningDocs(db, collector.docs());
+    }
   }
   if (event.action === 'saveRecords') {
     const records = requireRecords(event.records, MAX_RECORDS, 'records');

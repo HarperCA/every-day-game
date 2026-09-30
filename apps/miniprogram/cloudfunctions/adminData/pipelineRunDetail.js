@@ -13,7 +13,7 @@ const KIND = {
   organizer_notice:'主办方通知', competition_site:'赛事官网', registration_entry:'报名入口', directory_lead:'目录清单',
 };
 const ACTION = { fetch:'放行读正文', review:'低置信度，只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃（与赛事无关）' };
-const SOURCE = { baidu:'百度搜索', tianchi:'天池', datafountain:'DataFountain' };
+const SOURCE = { baidu:'百度搜索', tianchi:'天池', upln:'辽宁平台', datafountain:'DataFountain' };
 
 const clip = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
 
@@ -62,6 +62,8 @@ function composeRunDetail(runId, files) {
           const why = heldReason.get(url);
           if (!result.ok) Object.assign(row, { final:`读详情页失败（${result.status || result.error || '未知'}）`, stage:4 });
           else Object.assign(row, { final:why ? `读了详情页，未入库：${why}` : '读了详情页，已写入后台', stage:4 });
+          // 读详情时 AI 的思考过程（2026-09-30 起打开并记录，见 aiReasoning.js）
+          if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
         } else if (decision.action === 'fetch') Object.assign(row, { final:'放行但未读正文（未进入本轮读取名额）', stage:2 });
         else if (decision.action === 'reject') Object.assign(row, { final:'前置筛选拦截', stage:2 });
         else Object.assign(row, { final:'只留作线索，未入库', stage:2 });

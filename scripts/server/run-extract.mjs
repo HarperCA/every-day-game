@@ -41,7 +41,9 @@ const require = createRequire(import.meta.url);
 const { extractFromDetailPage } = require(path.join(CJS_DIR, 'competitionExtract.js'));
 
 // 服务器没有 60 秒上限，给模型更充裕的时间；仍然设上限，避免单条卡死拖垮整批。
-const SERVER_BUDGET_MS = 180000;
+// 2026-09-30 测试阶段打开了 DeepSeek 的思考（cjs/aiReasoning.js），一条要多想几十秒，放宽到 5 分钟。
+// 思考过程随结果写进 --out 文件（每条结果的 reasoning 字段），后台“抓取结果账”明细里可以展开看。
+const SERVER_BUDGET_MS = 300000;
 const PER_CALL_DELAY_MS = 1200;
 const USER_AGENT = 'competition-crawler/1.0 (+admin source verification; respects robots.txt)';
 const evidenceFetcher = new Fetcher({ perHostDelayMs:1500 });
@@ -187,9 +189,10 @@ async function main() {
     }
     const elapsed = Date.now() - started;
     results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...outcome });
-    const suffix = outcome.ok
+    const thought = outcome.reasoning?.chars ? ` 思考${outcome.reasoning.chars}字` : '';
+    const suffix = (outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`
-      : `失败 ${outcome.status}`;
+      : `失败 ${outcome.status}`) + thought;
     const retryMark = retried ? ' (重试)' : '';
     console.log(`[${index + 1}/${candidates.length}] ${String(elapsed).padStart(6)}ms  ${suffix}${retryMark}  ${name.slice(0, 30)}`);
     if (index < candidates.length - 1) await sleep(PER_CALL_DELAY_MS);

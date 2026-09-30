@@ -16,6 +16,7 @@ import { hydrateOperationStores } from './operationsStore';
 import { displayAuditField } from './fieldLabels';
 import { prepareQuarantineRecovery, type RecoveryTarget } from './quarantineRecovery';
 import './filterResultCount.css';
+import './aiThinking.css';
 
 const statusLabels: Record<string, string> = {
   quarantined: '误收隔离（不计入比赛库）',

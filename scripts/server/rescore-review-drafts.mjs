@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { applyIntakeDecision } from './ingest-candidates.mjs';
+import { applyIntakeDecision, flushReasoning, logReasoning } from './ingest-candidates.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CJS_DIR = path.join(HERE, 'cjs');
@@ -126,7 +126,7 @@ async function main() {
 
     if (rescoredVerdict !== 'admit' && extractAiConfigured) {
       try {
-        const judgment = await judgeAdmissionWithAi(admissionInput);
+        const judgment = await judgeAdmissionWithAi(admissionInput, undefined, { onReasoning:logReasoning(record, { stage:'复检收录判断' }) });
         if (judgment.worth_including && judgment.confident) rescoredVerdict = 'admit';
         judgmentNote = `AI收录判断：${judgment.worth_including ? '认为有收录价值' : '认为价值不足'}（${judgment.confident ? '有把握' : '没把握，仍按原判定处理'}）｜${judgment.reason}`;
       } catch (error) {
@@ -147,6 +147,8 @@ async function main() {
   console.log(`\n复检通过、升级为 admit 并处理：${promoted.length} 条｜仍是 review：${stillReview.length} 条`);
   for (const [name, label] of promoted) console.log(`  + ${label.padEnd(12)} ${name.slice(0, 34)}`);
 
+  // 收录判断和三项核验的思考过程（见 ingest-candidates.mjs 的 reasoningLog）
+  await flushReasoning(call, { dryRun:args.dryRun });
   if (args.dryRun) { console.log('\n--dry-run：未写入。'); return; }
   if (!promoted.length) { console.log('\n没有需要写入的变更。'); return; }
 

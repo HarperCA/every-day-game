@@ -18,11 +18,20 @@ function fakeKimi() {
 }
 
 describe('Kimi 请求参数记忆', () => {
-  const config = { baseUrl:'https://api.kimi.com/coding/v1', model:'kimi-for-coding', apiKey:'k' };
   const messages = [{ role:'user', content:'x' }];
-  it('第一次试出来，第二次直接成功', async () => {
+  it('Kimi 会员通道：一开始就不带 temperature 和 JSON 结构约束，重启后第一次也不再 400（2026-09-30）', async () => {
     resetLearnedRequestOptions();
     const kimi = fakeKimi();
+    const config = { baseUrl:'https://api.kimi.com/coding/v1', model:'kimi-for-coding', apiKey:'k' };
+    const first = await completeWithLearnedOptions(kimi.send, config, messages, { useJsonSchema:true, includeTemperature:true, schema:{ type:'object' } });
+    expect(first.ok).toBe(true);
+    expect(kimi.calls).toHaveLength(1);
+    expect(first.options).toMatchObject({ useJsonSchema:false, includeTemperature:false });
+  });
+  it('其他接口：第一次试出来，第二次直接成功', async () => {
+    resetLearnedRequestOptions();
+    const kimi = fakeKimi();
+    const config = { baseUrl:'https://other.example/v1', model:'some-model', apiKey:'k' };
     const first = await completeWithLearnedOptions(kimi.send, config, messages, { useJsonSchema:true, includeTemperature:true, schema:{ type:'object' } });
     expect(first.ok).toBe(true);
     expect(kimi.calls).toHaveLength(3);

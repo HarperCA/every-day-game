@@ -237,6 +237,7 @@ export const listPipelineRuns = () => callAdmin<{runs:PipelineRun[]}>('listPipel
 export interface PipelineRunRow {
   source:string; query:string; route:string; title:string; url:string; intro:string;
   dup:string; filter:string; kind:string; reason:string; confidence:number | null; final:string; stage:number;
+  thinking?:string; // 读详情时 AI 的思考过程
 }
 export interface PipelineRunDetail {
   id:string;
@@ -247,6 +248,14 @@ export interface PipelineRunDetail {
   perQuery:Array<{ query:string; route:string; results:number; outOfScope:number; irrelevant:number; duplicate:number; candidates:number }>;
 }
 export const getPipelineRunDetail = (runId:string) => callAdmin<PipelineRunDetail>('pipelineRunDetail', { runId });
+
+// AI 思考过程（后端 aiReasoning.js，存在 ai_reasoning 集合）：按赛事列出，最新的在前
+export interface AiReasoningEntry {
+  kind:string; record_id:string | null; record_name:string; url:string; model:string; provider:string;
+  text:string; text_zh?:string | null; translation?:'pending' | 'done' | 'failed' | 'not_needed'; chars:number; truncated:boolean; tokens:number | null; finish_reason:string | null; created_at:string;
+  extra?:Record<string, string | number | boolean> | null;
+}
+export const listAiReasoning = (recordId:string, limit = 20) => callAdmin<AiReasoningEntry[]>('listAiReasoning', { recordId, limit });
 
 export function describeAiReviewConfig(status: AiReviewConfigStatus): string {
   const problems: string[] = [];

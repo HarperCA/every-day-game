@@ -13,7 +13,7 @@ SERVER="${DEPLOY_SERVER:-root@107.175.111.18}"
 REMOTE="/opt/daily-contest"
 LOCAL_FN="apps/miniprogram/cloudfunctions/adminData"
 
-MODULES=(competitionExtract.js competitionAiReview.js competitionValue.js competitionAdmission.js competitionAdmissionAi.js candidateToRecord.js noticeResolution.js competitionScope.js intakeSchedule.js httpClient.js robots.js)
+MODULES=(competitionExtract.js competitionAiReview.js competitionValue.js competitionAdmission.js competitionAdmissionAi.js candidateToRecord.js noticeResolution.js competitionScope.js intakeSchedule.js httpClient.js robots.js aiReasoning.js pageRelayClient.js editionTitle.js publicCache.js)
 
 echo "--- 同步抽取模块到 $REMOTE/cjs ---"
 ssh "$SERVER" "mkdir -p $REMOTE/cjs && printf '%s' '{\"type\":\"commonjs\"}' > $REMOTE/cjs/package.json"

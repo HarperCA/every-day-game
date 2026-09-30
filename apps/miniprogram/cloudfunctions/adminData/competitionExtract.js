@@ -18,6 +18,7 @@ const {
   USER_AGENT, adjustRequestOptions, callChatCompletion, htmlToText,
   loadRobots, parseModelJson, readAiConfig, resolveRequest, timeoutSignal,
 } = require('./competitionAiReview');
+const { reasoningFromPayload, reportReasoning, thinkingEnabled } = require('./aiReasoning');
 
 const PROMPT_VERSION = 'competition-extract-v3-name';
 // 批量抽取走 EXTRACT_ 前缀的配置，未设置时逐项回退到通用的 AI_*。
@@ -60,7 +61,10 @@ const DEFAULT_CHAT_TIMEOUT_MS = 40000;
 // max_tokens 是上限不是目标：锚点已经让实际输出变短，耗时随之下降，
 // 但上限收得太紧会让 kimi-for-coding 返回空内容（它会先消耗 token 做内部推理）。
 // 本轮早先在 AI 审核上踩过同一个坑：900 太小，返回 ai_review_empty_response。
-const DEFAULT_MAX_TOKENS = 2000;
+// 2026-09-30 测试阶段打开了 DeepSeek 的思考（aiReasoning.js），思考和答案共用这个上限：
+// 实测一个“是/否”问题就想了六千多字符、把 2000 用光、答案为空。所以思考打开时放宽到 32000
+// （DeepSeek 官方单次输出上限是 384K，这里远没到）；关掉思考时仍用原来的 2000。
+const DEFAULT_MAX_TOKENS = thinkingEnabled() ? 32000 : 2000;
 
 // 返回这次调用还能给模型多少时间。低于最小值说明抓页面已经耗掉太多，
 // 与其发一个注定超时的请求，不如直接放弃。
@@ -478,7 +482,7 @@ function looksLikeContestPage(text, contestName) {
 // text 可由调用方传入：前后端分离的站点需要走各自的接口取正文，
 // 那件事在服务器侧的爬虫里做（不受 60 秒限制），这里只负责抽取。
 // 引文仍然只对传入的这段文本回查，所以「证据可复核」这一性质不受影响。
-async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens, startedAt = Date.now(), totalBudgetMs = TOTAL_BUDGET_MS } = {}) {
+async function extractFromDetailPage(url, request, { contestName = '', text = '', chatTimeoutMs, maxTokens, startedAt = Date.now(), totalBudgetMs = TOTAL_BUDGET_MS, onReasoning } = {}) {
   const config = readAiConfig(process.env, EXTRACT_CONFIG_PREFIX);
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
 
@@ -537,8 +541,19 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
     attempt = await callChatCompletion(send, config, messages, options);
   }
 
+  // 思考过程随抽取结果一起返回（服务器批量抽取会把它写进当晚的运行文件）
+  const reasoning = reasoningFromPayload(attempt.payload);
+  reportReasoning(onReasoning, { kind:'extract', model:config.model, provider:config.provider || 'deepseek', url, reasoning });
   const content = attempt.payload?.choices?.[0]?.message?.content;
-  if (!content) throw new Error('ai_extract_empty_response');
+  if (!content) {
+    // 答案为空多半是思考把额度用完了：不再直接抛错，把思考过程带回去，才看得出它卡在哪
+    return {
+      ok:false, status:'ai_extract_empty_response', url, promptVersion:PROMPT_VERSION,
+      sourceChars:page.text.length, elapsedMs:Date.now() - startedAt, model:config.model,
+      finishReason:attempt.payload?.choices?.[0]?.finish_reason || null, reasoning,
+      error:'模型没有给出答案（finish_reason 为 length 说明额度被思考用完）',
+    };
+  }
   const parsed = parseModelJson(content);
   const verified = verifyAgainstSource(parsed, page.text);
 
@@ -552,6 +567,7 @@ async function extractFromDetailPage(url, request, { contestName = '', text = ''
     extracted:verified,
     suggestions:toFieldSuggestions(verified, url),
     droppedCount:verified.dropped.length,
+    reasoning,
     // 抽取只提建议，不写库：发布与否由人决定。
     applied:false,
   };

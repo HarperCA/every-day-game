@@ -1,5 +1,6 @@
 const { nodeFetch } = require('./httpClient');
 const { isAllowed } = require('./robots');
+const { reasoningFromPayload, reportReasoning, thinkingEnabled, withReasoningLanguage } = require('./aiReasoning');
 
 const PROMPT_VERSION = 'competition-review-kimi-v2';
 const FIELD_VERIFICATION_PROMPT_VERSION = 'competition-field-verify-v1';
@@ -146,7 +147,7 @@ function validateFieldVerificationResult(value) {
 // record：candidateToRecord() 产出的草稿，或库里已发布的记录。
 // all_correct 由三项各自的布尔值算出来，不采信模型自己给的总览结论——
 // 避免"三项都说对，总览却说不对"这种模型自相矛盾时无所适从。
-async function runFieldVerification(record, request, { chatTimeoutMs, maxTokens } = {}) {
+async function runFieldVerification(record, request, { chatTimeoutMs, maxTokens, onReasoning } = {}) {
   const config = readAiConfig();
   if (!config.apiKey) {
     throw new Error('ai_api_key_not_configured:请在云开发控制台的 adminData 云函数环境变量中添加 AI_API_KEY，保存后重新部署云函数');
@@ -165,6 +166,8 @@ async function runFieldVerification(record, request, { chatTimeoutMs, maxTokens 
     throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
   }
   const choice = attempt.payload?.choices?.[0];
+  // 思考过程先记下来：就算这次没给出结论，也要能看到它想到哪一步卡住了
+  reportReasoning(onReasoning, { kind:'field_verification', model:config.model, provider:config.provider || 'kimi-code', reasoning:reasoningFromPayload(attempt.payload) });
   if (!String(choice?.message?.content || '').trim()) {
     throw new Error(`ai_field_verification_empty_response:finish_${choice?.finish_reason || 'unknown'}`);
   }
@@ -441,22 +444,24 @@ function buildResponseFormat(useJsonSchema, schema = resultSchema) {
 
 const DEFAULT_REQUEST_OPTIONS = { useJsonSchema:true, includeTemperature:true };
 
-// DeepSeek 的思考模式默认打开且 effort 默认 high。抽取和审核都是机械任务，
-// 思维链不提高准确性，却会先吃掉 max_tokens —— 实测 5 条里有 2 条因此
-// 返回空 content（ai_extract_empty_response）。所以对该供应商显式关掉。
-// 这个参数其他供应商不认识，只在识别出 DeepSeek 时才带上。
+// DeepSeek 的思考模式默认打开且 effort 默认 high。原先对它显式关掉：思考会先吃掉 max_tokens，
+// 实测 5 条里有 2 条因此返回空 content（ai_extract_empty_response）。
+// 2026-09-30 测试阶段按用户要求打开（aiReasoning.js 的 thinkingEnabled，环境变量 AI_THINKING=off 可恢复关闭），
+// 调用方相应放宽了 max_tokens。这个参数其他供应商不认识，只在识别出 DeepSeek 时才带上。
 function supportsThinkingToggle(baseUrl) {
   return /deepseek/i.test(String(baseUrl || ''));
 }
 
 function buildRequestBody(config, messages, options) {
-  const body = { model:config.model, messages, response_format:buildResponseFormat(options.useJsonSchema, options.schema) };
+  // 所有调用都要求模型用中文思考，思考过程存下来给人看（aiReasoning.js）
+  const body = { model:config.model, messages:withReasoningLanguage(messages), response_format:buildResponseFormat(options.useJsonSchema, options.schema) };
   // kimi-for-coding 只接受 temperature=1，省略该字段等同于用模型默认值。
   if (options.includeTemperature) body.temperature = 0.1;
   // 生成长度是这套流程里最主要的耗时来源，云函数只有 60 秒，必须封顶。
   if (Number(options.maxTokens) > 0) body.max_tokens = Number(options.maxTokens);
+  // disableThinking === false 表示供应商拒绝了 thinking 参数（见 adjustRequestOptions），那就不带
   if (options.disableThinking !== false && supportsThinkingToggle(config.baseUrl)) {
-    body.thinking = { type:'disabled' };
+    body.thinking = { type:thinkingEnabled() ? 'enabled' : 'disabled' };
   }
   return body;
 }
@@ -466,11 +471,18 @@ function buildRequestBody(config, messages, options) {
 // 2026-09-29 起：Kimi Code 接口不接受 temperature=0.1、也不支持 JSON 结构约束，
 // 原先每次调用都从头试——先两次 400 再成功，白白多花两次请求（Kimi 控制台里每 5 分钟两条 400）。
 const learnedRequestOptions = new Map();
+// 学到的参数只在内存里，后端一重启就清空，重启后第一次审核又会先吃两条 400
+// （Kimi 控制台 2026-09-29 23:10 那两条就是 14:09 重启后的第一次审核）。
+// Kimi 会员通道不接受 temperature=0.1 和 JSON 结构约束已经确定，直接从这组参数起步。
+function knownProviderOptions(config) {
+  if (/api\.kimi\.com\/coding/i.test(String(config.baseUrl || ''))) return { includeTemperature:false, useJsonSchema:false };
+  return {};
+}
 const learnedKey = (config, options) => `${config.baseUrl}|${config.model}|${options.schema ? 'schema' : 'plain'}`;
 
 async function completeWithLearnedOptions(send, config, messages, baseOptions) {
   const key = learnedKey(config, baseOptions);
-  let options = { ...baseOptions, ...(learnedRequestOptions.get(key) || {}) };
+  let options = { ...baseOptions, ...knownProviderOptions(config), ...(learnedRequestOptions.get(key) || {}) };
   let attempt = await callChatCompletion(send, config, messages, options);
   for (let retry = 0; retry < 2 && !attempt.ok; retry += 1) {
     const next = adjustRequestOptions(attempt.status, attempt.raw, options);
@@ -481,7 +493,8 @@ async function completeWithLearnedOptions(send, config, messages, baseOptions) {
   if (attempt.ok) {
     learnedRequestOptions.set(key, { useJsonSchema:options.useJsonSchema, includeTemperature:options.includeTemperature, disableThinking:options.disableThinking });
   }
-  return attempt;
+  // 把实际用上的参数带回去，调用方记录“这次用了什么格式”要用
+  return { ...attempt, options };
 }
 
 function adjustRequestOptions(status, raw, options) {
@@ -568,7 +581,7 @@ async function probeImageCapability(imageUrl, request, { chatTimeoutMs = 40000 }
   };
 }
 
-async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxTokens, concise = false } = {}) {
+async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxTokens, concise = false, onReasoning } = {}) {
   const config = readAiConfig();
   if (!config.apiKey) {
     throw new Error('ai_api_key_not_configured:请在云开发控制台的 adminData 云函数环境变量中添加 AI_API_KEY，保存后重新部署云函数');
@@ -594,6 +607,7 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
   }
 
   const choice = attempt.payload?.choices?.[0];
+  reportReasoning(onReasoning, { kind:'ai_review', model:config.model, provider:config.provider || 'kimi-code', reasoning:reasoningFromPayload(attempt.payload) });
   // 内容为空通常是 max_tokens 截断，把 finish_reason 带出来才能判断是截断还是过滤。
   if (!String(choice?.message?.content || '').trim()) {
     throw new Error(`ai_review_empty_response:finish_${choice?.finish_reason || 'unknown'}`);
@@ -611,8 +625,9 @@ async function runCompetitionAiReview(record, request, { chatTimeoutMs, maxToken
       chars:(item.text || '').length,
       ...(item.error ? { error:item.error.slice(0, 120) } : {}),
     })),
-    response_format:options.useJsonSchema ? 'json_schema' : 'json_object',
-    temperature_sent:options.includeTemperature,
+    // 原先这里引用了一个本函数里没有定义的 options，记下来的格式不准；改用实际发出去的参数
+    response_format:attempt.options?.useJsonSchema ? 'json_schema' : 'json_object',
+    temperature_sent:Boolean(attempt.options?.includeTemperature),
     reviewed_at:new Date().toISOString(),
     response_id:attempt.payload?.id || null,
   };
@@ -648,7 +663,7 @@ const FETCH_TOOL_DECLARATION = {
 };
 
 async function runCompetitionAiReviewAgentic(record, request, {
-  chatTimeoutMs = 60000, maxTokens, maxToolTurns = MAX_AGENTIC_TOOL_TURNS,
+  chatTimeoutMs = 60000, maxTokens, maxToolTurns = MAX_AGENTIC_TOOL_TURNS, onReasoning,
 } = {}) {
   const config = readAiConfig();
   if (!config.apiKey) {
@@ -675,7 +690,7 @@ async function runCompetitionAiReviewAgentic(record, request, {
   for (let turn = 0; turn <= maxToolTurns; turn += 1) {
     const allowTools = turn < maxToolTurns;
     const body = {
-      model:config.model, messages,
+      model:config.model, messages:withReasoningLanguage(messages),
       ...(allowTools ? { tools:[FETCH_TOOL_DECLARATION] } : {}),
       // 工具调用轮不强制 JSON 格式（两者同时要求很多供应商不支持）；
       // 确定是最后一轮（没有工具可调）才要求严格 JSON。
@@ -694,6 +709,7 @@ async function runCompetitionAiReviewAgentic(record, request, {
     try { payload = JSON.parse(raw); } catch (error) { throw new Error(`ai_review_unparsable_response:${raw.slice(0, 200)}`); }
     const message = payload?.choices?.[0]?.message;
     const toolCalls = Array.isArray(message?.tool_calls) ? message.tool_calls : [];
+    reportReasoning(onReasoning, { kind:'ai_review_agentic', model:config.model, provider:config.provider || 'kimi-code', reasoning:reasoningFromPayload(payload), extra:{ turn:turn + 1, toolCalls:toolCalls.length } });
 
     if (!toolCalls.length) {
       if (!String(message?.content || '').trim()) throw new Error('ai_review_empty_response');
@@ -711,7 +727,8 @@ async function runCompetitionAiReviewAgentic(record, request, {
       };
     }
 
-    messages.push({ role:'assistant', content:message.content ?? '', tool_calls:message.tool_calls });
+    // Kimi、DeepSeek 的文档都要求：带工具的多轮对话里，上一轮的思考过程要原样回传，否则报 400
+    messages.push({ role:'assistant', content:message.content ?? '', tool_calls:message.tool_calls, ...(message.reasoning_content ? { reasoning_content:message.reasoning_content } : {}) });
     for (const call of toolCalls) {
       const fn = call.function || {};
       let output;
@@ -750,6 +767,7 @@ module.exports = {
   buildFieldVerificationPrompt,
   completeWithLearnedOptions,
   resetLearnedRequestOptions:() => learnedRequestOptions.clear(),
+  knownProviderOptions,
   buildPrompt,
   collectEvidence,
   compactRecord,

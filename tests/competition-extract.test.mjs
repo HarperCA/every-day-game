@@ -596,11 +596,19 @@ describe('deepseek thinking mode', () => {
     adjustRequestOptions, buildRequestBody, supportsThinkingToggle,
   } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
 
-  it('turns thinking off for deepseek, and only for deepseek', () => {
-    // 思考模式默认打开、effort 默认 high，思维链会先吃掉 max_tokens ——
-    // 实测 5 条里有 2 条因此返回空 content。抽取是机械任务，思考不提高准确性。
+  it('sets thinking explicitly for deepseek, and only for deepseek', () => {
+    // 2026-09-30 测试阶段按用户要求打开思考并记录（aiReasoning.js）；AI_THINKING=off 恢复原来的关闭。
+    // 关闭的原因仍然成立：思维链会先吃掉 max_tokens，实测 5 条里有 2 条因此返回空 content，
+    // 所以打开时调用方同时放宽了 max_tokens。
     const deepseek = buildRequestBody({ model:'deepseek-flash', baseUrl:'https://api.deepseek.com' }, [], {});
-    expect(deepseek.thinking).toEqual({ type:'disabled' });
+    expect(deepseek.thinking).toEqual({ type:'enabled' });
+    const previous = process.env.AI_THINKING;
+    process.env.AI_THINKING = 'off';
+    try {
+      expect(buildRequestBody({ model:'deepseek-flash', baseUrl:'https://api.deepseek.com' }, [], {}).thinking).toEqual({ type:'disabled' });
+    } finally {
+      if (previous === undefined) delete process.env.AI_THINKING; else process.env.AI_THINKING = previous;
+    }
 
     // 这个参数别家不认识，带上去可能直接 400。
     const kimi = buildRequestBody({ model:'kimi-for-coding', baseUrl:'https://api.kimi.com/coding/v1' }, [], {});

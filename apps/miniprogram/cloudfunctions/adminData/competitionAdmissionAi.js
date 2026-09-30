@@ -18,11 +18,13 @@
 const {
   adjustRequestOptions, callChatCompletion, parseModelJson, readAiConfig, resolveRequest, timeoutSignal,
 } = require('./competitionAiReview');
+const { reasoningFromPayload, reportReasoning, thinkingEnabled } = require('./aiReasoning');
 
 const EXTRACT_CONFIG_PREFIX = 'EXTRACT_';
 const PROMPT_VERSION = 'competition-admission-ai-v1';
-const CHAT_TIMEOUT_MS = 30000;
-const MAX_TOKENS = 500;
+// 2026-09-30 测试阶段打开了思考（aiReasoning.js）：思考和答案共用 max_tokens，500 会被思考用光、答案为空
+const CHAT_TIMEOUT_MS = thinkingEnabled() ? 180000 : 30000;
+const MAX_TOKENS = thinkingEnabled() ? 8000 : 500;
 
 const judgmentSchema = {
   type:'object', additionalProperties:false,
@@ -84,7 +86,7 @@ function validateJudgment(value) {
 
 // candidate：withExtraction(candidate, extraction) 产出的那个合并对象，
 // 跟传给 assessAdmission 的输入同一个形状，不用另外拼一份。
-async function judgeAdmissionWithAi(candidate, request, { chatTimeoutMs = CHAT_TIMEOUT_MS, maxTokens = MAX_TOKENS } = {}) {
+async function judgeAdmissionWithAi(candidate, request, { chatTimeoutMs = CHAT_TIMEOUT_MS, maxTokens = MAX_TOKENS, onReasoning } = {}) {
   const config = readAiConfig(process.env, EXTRACT_CONFIG_PREFIX);
   if (!config.apiKey) throw new Error('ai_api_key_not_configured');
   const send = resolveRequest(request);
@@ -107,6 +109,7 @@ async function judgeAdmissionWithAi(candidate, request, { chatTimeoutMs = CHAT_T
     throw new Error(`ai_provider_error:${attempt.status}:${detail}`);
   }
   const choice = attempt.payload?.choices?.[0];
+  reportReasoning(onReasoning, { kind:'admission', model:config.model, provider:config.provider || 'deepseek', reasoning:reasoningFromPayload(attempt.payload) });
   if (!String(choice?.message?.content || '').trim()) {
     throw new Error(`ai_admission_judgment_empty_response:finish_${choice?.finish_reason || 'unknown'}`);
   }

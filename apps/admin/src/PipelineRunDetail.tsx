@@ -56,7 +56,7 @@ export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBa
           <td>{row.dup === '新' ? <span className="chip">新</span> : <small className="muted">{row.dup}</small>}</td>
           <td>{row.filter}{row.confidence != null && <small className="muted">把握 {Math.round(row.confidence * 100)}%</small>}</td>
           <td>{row.kind && <span className="chip">{row.kind}</span>}<small className="muted">{row.reason}</small></td>
-          <td className={STAGE_CLASS[row.stage]}>{row.final}</td>
+          <td className={STAGE_CLASS[row.stage]}>{row.final}{row.thinking && <details className="ai-thinking"><summary>AI 思考过程（{row.thinking.length} 字）</summary><pre>{row.thinking}</pre></details>}</td>
           <td className="muted">{row.query}</td>
         </tr>)}</tbody>
       </table></div>

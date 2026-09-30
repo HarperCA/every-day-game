@@ -76,6 +76,30 @@ const { assessAdmission } = require(path.join(CJS_DIR, 'competitionAdmission.js'
 const { judgeAdmissionWithAi } = require(path.join(CJS_DIR, 'competitionAdmissionAi.js'));
 const { classifyIntake, applyFieldVerification } = require(path.join(CJS_DIR, 'intakeSchedule.js'));
 const { runFieldVerification, PROFESSION_TAXONOMY } = require(path.join(CJS_DIR, 'competitionAiReview.js'));
+const { buildReasoningDoc, thinkingEnabled } = require(path.join(CJS_DIR, 'aiReasoning.js'));
+
+// 本次运行里 AI 的思考过程（2026-09-30 测试阶段：所有模型的思考都打开并记录，见 cjs/aiReasoning.js）。
+// 运行结束时写进运行目录的 ai-reasoning.json，并经后台 saveAiReasoning 存进 ai_reasoning，
+// 后台“审核发布”里按赛事可以查看。rescore-review-drafts.mjs 也复用这里。
+export const reasoningLog = [];
+export const logReasoning = (record, extra = {}) => entry => reasoningLog.push(buildReasoningDoc({
+  ...entry, recordId:record?.id || null, recordName:record?.name || '', extra:{ ...extra, ...(entry.extra || {}) },
+}));
+
+// 把攒下的思考过程落文件、写库（dry-run 只落文件）。清空后可重复调用。
+export async function flushReasoning(call, { dryRun = false, file = '' } = {}) {
+  const docs = reasoningLog.splice(0, reasoningLog.length);
+  if (!docs.length) return 0;
+  if (file) fs.writeFileSync(file, JSON.stringify({ createdAt:new Date().toISOString(), dryRun, entries:docs }, null, 2));
+  if (dryRun) { console.log(`AI 思考过程 ${docs.length} 条：只写了文件（dry-run）${file ? '：' + file : ''}`); return 0; }
+  let saved = 0;
+  for (let i = 0; i < docs.length; i += 100) {
+    try { saved += (await call({ action:'saveAiReasoning', docs:docs.slice(i, i + 100) }))?.saved || 0; }
+    catch (error) { console.log(`AI 思考过程写库失败：${String(error?.message || error).slice(0, 160)}`); }
+  }
+  console.log(`AI 思考过程：${docs.length} 条，写库 ${saved} 条${file ? '，文件：' + file : ''}`);
+  return saved;
+}
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -86,7 +110,7 @@ async function fillDraftProfessions(record) {
     return record;
   }
   try {
-    const verification = await runFieldVerification(record, undefined, { chatTimeoutMs:50000, maxTokens:1200 });
+    const verification = await runFieldVerification(record, undefined, { chatTimeoutMs:180000, maxTokens:8000, onReasoning:logReasoning(record, { stage:'草稿专业分类' }) });
     const readable = verification.evidence_status?.some(item => item.status === 'reachable' && item.chars > 100);
     const validProfessions = (verification.professions || []).filter(item => PROFESSION_TAXONOMY.includes(item));
     record.aiProfessionClassification = {
@@ -142,14 +166,19 @@ async function applyIntakeDecision(record, existingRecords, now = new Date()) {
     return { record:{ ...record, qualityIssues:[...record.qualityIssues, '进入半年审核窗口，但服务器未配置 AI 密钥，暂转人工'] }, label:'review' };
   }
   try {
-    const verification = await runFieldVerification(record, undefined, { chatTimeoutMs:50000, maxTokens:1200 });
+    const verification = await runFieldVerification(record, undefined, { chatTimeoutMs:180000, maxTokens:8000, onReasoning:logReasoning(record, { stage:'入库三项核验' }) });
     const readable = verification.evidence_status?.some(item => item.status === 'reachable' && item.chars > 100);
     const supported = (verification.professions || []).filter(item => PROFESSION_TAXONOMY.includes(item));
     const safeVerification = readable ? { ...verification, professions:supported } : {
       ...verification, professions:[], professions_confident:false,
       summary:`来源正文不可读，不能据此填写专业分类或自动发布；${verification.summary}`,
     };
-    const updated = applyFieldVerification(record, safeVerification, now);
+    let updated = applyFieldVerification(record, safeVerification, now);
+    // 2026-09-30 起测试：AI 思考全部打开，自动发布照常，但在后台“审核发布”的发布状态旁留一条备注，
+    // 提醒人工点“AI思考过程”核对。只给后台看，公开缓存是字段白名单，小程序端看不到。
+    if (updated.dataStatus === 'published' && thinkingEnabled()) {
+      updated = { ...updated, aiAutoPublishNote:`AI 思考测试期间自动发布（${now.toISOString().slice(0, 10)}）：三项核验由 Kimi 完成，请点“AI思考过程”核对依据` };
+    }
     return { record:updated, label:updated.dataStatus === 'published' ? 'auto-publish' : 'review' };
   } catch (error) {
     return {
@@ -279,7 +308,7 @@ async function main() {
     let admissionJudgment = null;
     if (verdict === 'review' && extractAiConfigured) {
       try {
-        admissionJudgment = await judgeAdmissionWithAi(merged);
+        admissionJudgment = await judgeAdmissionWithAi(merged, undefined, { onReasoning:logReasoning(record, { stage:'收录判断' }) });
         if (admissionJudgment.worth_including && admissionJudgment.confident) verdict = 'admit';
       } catch (error) {
         admissionJudgment = { error:String(error?.message || error).slice(0, 200) };
@@ -350,6 +379,7 @@ async function main() {
   for (const [name, why] of skipped) console.log(`  - ${String(why).padEnd(24)} ${name.slice(0, 30)}`);
 
   const reportFile = path.join(path.dirname(path.resolve(HERE, args.candidates)), 'ingest-report.json');
+  await flushReasoning(call, { dryRun:args.dryRun, file:path.join(path.dirname(path.resolve(HERE, args.candidates)), 'ai-reasoning.json') });
   const writeIngestReport = persisted => {
     const failureReasons = {};
     for (const [, reason] of skipped) failureReasons[reason] = (failureReasons[reason] || 0) + 1;

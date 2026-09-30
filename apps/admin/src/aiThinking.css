@@ -1,0 +1,16 @@
+/* AI 思考过程：抓取结果账明细里的展开块，以及审核发布页的弹窗 */
+.ai-thinking { margin-top:6px; }
+.ai-thinking summary { cursor:pointer; color:#0f766e; font-size:12px; }
+.ai-thinking pre { white-space:pre-wrap; word-break:break-word; max-height:360px; overflow:auto; margin:6px 0 0; padding:10px; background:#f6f8fa; border:1px solid #e5e9ef; border-radius:6px; font:12px/1.65 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color:#334155; }
+.ai-thinking-mask { position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.45); display:flex; align-items:center; justify-content:center; padding:24px; }
+.ai-thinking-dialog { width:min(880px, 100%); max-height:88vh; display:flex; flex-direction:column; background:#fff; border-radius:10px; box-shadow:0 12px 40px rgba(15,23,42,.25); }
+.ai-thinking-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid #e5e9ef; }
+.ai-thinking-head b { display:block; font-size:16px; }
+.ai-thinking-head small { color:#64748b; }
+.ai-thinking-body { overflow:auto; padding:10px 18px 18px; }
+.ai-thinking-body .ai-thinking { border-bottom:1px solid #eef1f5; padding:8px 0; }
+.ai-thinking-body .ai-thinking summary { font-size:13px; }
+.ai-thinking-body .ai-thinking pre { max-height:none; }
+.ai-thinking-empty { color:#64748b; }
+.ai-thinking-original { margin-top:6px; }
+.ai-thinking-original summary { color:#64748b; font-size:12px; }
