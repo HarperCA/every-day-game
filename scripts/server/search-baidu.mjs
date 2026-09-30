@@ -112,8 +112,8 @@ export function isOutOfScopeReference(reference) {
   return isClearlyOutOfScope({ name: reference?.title || '' });
 }
 
-// 天池、DataFountain、赛氪已经有专属抓取器，搜索结果里再出现这些域名
-// 只会被判重打回 duplicate/likely_duplicate，白占一次额度——直接跳过。
+// 天池、赛氪已经有专属抓取器，搜索结果里再出现这些域名只会被判重打回，白占一次额度——直接跳过。
+// DataFountain 2026-09-30 起整个来源停用（全是过期比赛和练习题），搜索结果里的也一样跳过，不从这条路绕回来。
 const KNOWN_SOURCE_HOSTS = ['tianchi.aliyun.com', 'datafountain.cn', 'saikr.com'];
 
 function parseArgs(argv) {

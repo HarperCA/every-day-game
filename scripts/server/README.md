@@ -17,7 +17,7 @@
 ├── functions/         后端的业务函数：adminData（后台）、publicData（小程序读数据）、
 │                      userData、login、sendReminders
 ├── cjs/               adminData 部分模块的副本，给下面的脚本直接调用（抽字段、判范围、打分）
-├── crawler/           抓取层：统一网页抓取器（遵守 robots.txt、同站限速）、天池/DataFountain 抓取器
+├── crawler/           抓取层：统一网页抓取器（遵守 robots.txt、同站限速）、天池抓取器
 │   └── cache/         网页缓存，可随时删
 ├── README.md          本文件
 ├── *.mjs / *.sh       定时任务脚本（见第二节，每个都有用）
@@ -48,7 +48,8 @@
 | 00:50 | `search-plan.mjs` | 排好当晚的搜索计划：额度按 追溯 60% / 覆盖空白 25% / 新词试探 15% 分配 |
 | 01:00 | `run-crawl-pipeline.mjs` | **抓取流水线**，依次调用下面这些： |
 | | 　`search-baidu.mjs` | 　调百度搜索找候选；丢弃的结果逐条留档 |
-| | 　`crawler/crawl-*.mjs` | 　抓天池、DataFountain 两个平台 |
+| | 　`crawler/crawl-tianchi.mjs` | 　抓天池平台 |
+| | 　`platforms/upln.py` | 　抓辽宁省大学生创新创业平台（经上海中转，读附件正文） |
 | | 　`crawler/lib/jevCandidateFilter.mjs` | 　AI 前置筛选：官方通知、官网放行，转载、校赛、新闻拦下 |
 | | 　`resolve-notice-leads.mjs` | 　正式通知转去找赛事官网 |
 | | 　`run-extract.mjs` | 　读详情页，AI 抽字段 |

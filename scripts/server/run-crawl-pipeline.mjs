@@ -12,15 +12,15 @@
 // 判重范围是「库里当前全部记录」，不是两天前的种子快照——每次流水线跑之前
 // 先读一次 bootstrap，避免同一场比赛被两个来源分别抓两次都判成「new」。
 // 同一次运行里，来源之间也共享这份不断增长的 masters 列表：A 来源判出的
-// new 会在处理 B 来源之前追加进 masters，防止同一场比赛被天池和
-// DataFountain 各判一次「新」而重复入库。
+// new 会在处理 B 来源之前追加进 masters，防止同一场比赛被两个来源
+// 各判一次「新」而重复入库。
 //
 // 只有 classifyCandidates 判定为 new 的候选才会进入抽取；duplicate /
 // likely_duplicate / uncertain 一律跳过、只记日志，不占用抽取额度，
 // 也不会被写库——这些情况本来就该交给人工核对，和现有 merge-candidates.mjs
 // 的策略一致。
 //
-// 用法：node run-crawl-pipeline.mjs [--sources tianchi,datafountain] [--dry-run] [--pages 5]
+// 用法：node run-crawl-pipeline.mjs [--sources tianchi,upln] [--dry-run] [--pages 5]
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,7 +44,7 @@ const STARTED_AT = new Date().toISOString();
 let runOptions = { dryRun:false, filterOnly:false };
 let lastRunEntry = {};
 
-// 天池/DataFountain 是"针对单个网站写死接口"的抓取器，统一放在 crawler/ 下、
+// 天池是"针对单个网站写死接口"的抓取器，统一放在 crawler/ 下、
 // 命名 crawl-<source>.mjs、用 --pages 控制抓取量。百度AI搜索不是爬某个网站，
 // 是问第三方搜索引擎，脚本独立放在顶层、用 --queries 控制用量，
 // 产出的候选形状和前两个一致，能直接喂进同一条判重/抽取/入库流水线。
@@ -53,14 +53,15 @@ let lastRunEntry = {};
 // 所以名字相似但网址不同的“拿不准”按新候选处理。搜索来的候选仍按原规则。
 const SOURCE_CONFIG = {
   tianchi: { script: 'crawler/crawl-tianchi.mjs', volumeFlag: '--pages', uniqueUrls: true },
-  datafountain: { script: 'crawler/crawl-datafountain.mjs', volumeFlag: '--pages', uniqueUrls: true },
+  // DataFountain 已于 2026-09-30 停用：平台的“可报名”标记不可靠，每晚交来的 32 场全是已截止的旧比赛
+  // 或 2099 年截止的练习题，还把一个大赛的每道赛题各列一条。用户决定整个来源不要了。
   baidu: { script: 'search-baidu.mjs', volumeFlag: '--queries' },
   // 辽宁省大学生创新创业管理共享平台：公开数据接口，经上海网页中转读取（platforms/upln.py）
   upln: { command: 'python3', script: 'platforms/upln.py', uniqueUrls: true },
 };
 
 function parseArgs(argv) {
-  const args = { sources: ['tianchi', 'datafountain', 'upln', 'baidu'], dryRun: false, filterOnly:false, pages: 0, queries:0 };
+  const args = { sources: ['tianchi', 'upln', 'baidu'], dryRun: false, filterOnly:false, pages: 0, queries:0 };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--sources') args.sources = argv[i + 1].split(',').map(s => s.trim()).filter(Boolean);
     if (argv[i] === '--dry-run') args.dryRun = true;
@@ -191,7 +192,7 @@ async function main() {
   // 3. 内容下载前筛选：硬规则先处理目录、校赛、新闻等明确类型，
   // 剩余候选再交给 Jev 做有界分类。低置信度只进线索报告；Jev 不可用或
   // 调用失败时保持旧流程继续抓取，避免外部模型故障导致整条流水线零产出。
-  // 平台登记的赛事（天池、DataFountain、辽宁平台）本身就是结构化的比赛条目，不需要 Jev 判断“是什么网页”，
+  // 平台登记的赛事（天池、辽宁平台）本身就是结构化的比赛条目，不需要 Jev 判断“是什么网页”，
   // 直接去读详情；Jev 只看搜索来的候选（2026-09-30：辽宁平台 11 场被 Jev 判“拿不准”、只留作线索）。
   const isPlatform = candidate => Boolean(SOURCE_CONFIG[candidate.discovery?.source]?.uniqueUrls);
   const platformNew = allNew.filter(isPlatform);
