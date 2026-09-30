@@ -113,7 +113,8 @@ ${parsed.text}` : `附件《${file.name}》未能读出文字：${parsed.status}
 // 按站点决定怎么取正文。取不到就返回空串，让抽取模块自己去抓页面。
 async function sourceTextFor(candidate) {
   const url = String(candidate.detailUrl || candidate.url || '');
-  if (candidate.evidence?.api) return platformText(candidate);
+  // 只认布尔 true（辽宁平台脚本写的）：百度、天池、DataFountain 的 evidence.api 是接口网址字符串，不能走这条路
+  if (candidate.evidence?.api === true) return platformText(candidate);
   const tianchi = /tianchi\.aliyun\.com\/competition\/entrance\/(\d+)/.exec(url);
   if (tianchi) {
     try {
