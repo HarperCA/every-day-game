@@ -1,5 +1,4 @@
 <view class="page" wx:if="{{item}}">
-  <view wx:if="{{item.preview}}" class="preview-banner">开发预览数据 · 尚未完成人工核验</view>
   <view class="summary card">
     <view class="status">{{item.registrationStatus}}</view>
     <view class="title">{{item.name}}</view>
@@ -31,7 +30,7 @@
   <view class="fold-heading" bindtap="toggleRules" role="button" aria-expanded="{{rulesExpanded}}"><text>参赛与规则</text><text class="fold-action">{{rulesExpanded ? '收起 ▲' : '展开 ▼'}}</text></view>
   <view wx:if="{{rulesExpanded}}" class="text-card card"><view class="label">参赛对象与资格</view><view>{{item.participants || '待官方资料补充'}}</view><view class="label">团队人数</view><view>{{item.teamSize || '以具体赛项为准'}}</view><view class="label">赛项/组别</view><view>{{item.track.name}}</view><view class="label">比赛形式与作品要求</view><view>{{item.formatAndRules}}</view><view class="label">报名费及其他费用</view><view>{{item.fees}}</view></view>
   <view class="fold-heading" bindtap="toggleOfficialInfo" role="button" aria-expanded="{{officialInfoExpanded}}"><text>官方信息</text><text class="fold-action">{{officialInfoExpanded ? '收起 ▲' : '展开 ▼'}}</text></view>
-  <view wx:if="{{officialInfoExpanded}}" class="text-card card"><view class="label">主办单位</view><view>{{item.organizer}}</view><view class="label">官方报名方式</view><view>{{item.registrationMethod}}</view><view class="label">官方来源</view><view class="source" wx:for="{{item.sources}}" wx:key="id">{{item.source_type}} · {{item.url}}</view><view class="label">最后核验时间</view><view>{{item.lastVerifiedDate}}</view><view wx:if="{{item.preview}}" class="notice">链接仅完成格式校验，尚未进行本轮在线可达性复核。</view><view wx:else class="notice">该公开记录已通过系统验证和管理员人工复核；请在报名前再次核对主办方最新通知。</view></view>
+  <view wx:if="{{officialInfoExpanded}}" class="text-card card"><view class="label">主办单位</view><view>{{item.organizer}}</view><view class="label">官方报名方式</view><view>{{item.registrationMethod}}</view><view class="label">官方来源</view><view class="source" wx:for="{{item.sources}}" wx:key="id">{{item.source_type}} · {{item.url}}</view><view class="label">最后核验时间</view><view>{{item.lastVerifiedDate}}</view><view class="notice">该公开记录已通过系统验证和管理员人工复核；请在报名前再次核对主办方最新通知。</view></view>
   <button class="reminder-action action" bindtap="openReminderPanel">{{reminderCount ? '管理提醒 · ' + reminderCount + '项' : '设置提醒'}}</button>
   <button class="primary action" disabled="{{!item.registrationUrlUsable}}" bindtap="copyRegistrationUrl">{{item.registrationUrlUsable ? '复制官方报名链接' : '官方报名链接待更新'}}</button>
   <button class="secondary action" bindtap="feedback">信息纠错</button>

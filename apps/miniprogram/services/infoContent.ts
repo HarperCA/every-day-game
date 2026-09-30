@@ -1,4 +1,4 @@
-// 说明页文案（推荐等级、隐私、关于）。小程序和网页测试版共用；网页端的隐私说明另写（apps/web）。
+// 说明页文案（推荐等级、隐私、关于）。
 
 export interface InfoSection {
   title: string;

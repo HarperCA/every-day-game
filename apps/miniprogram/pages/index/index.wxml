@@ -1,5 +1,4 @@
 <view class="page">
-  <view wx:if="{{preview}}" class="preview-banner">开发预览：30场底稿尚未完成人工核验，不代表正式发布</view>
   <view class="hero">
     <view class="hero-brand">
       <image class="brand-logo" src="/assets/competition-radar-logo.svg" mode="aspectFit" aria-hidden="true" />

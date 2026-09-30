@@ -1,6 +1,5 @@
 // 公开接口（publicData）返回的记录 → 页面用的字段。
-// 小程序和网页测试版（apps/web）共用这一份，两边显示的字段口径一致。
-// 不能引用 wx 或种子数据：网页端会直接打包这个文件。
+// 不引用 wx，测试可以直接加载这个文件。
 
 export const STATUS_CLASS: Record<string, string> = { '报名中': 'status-open', '即将报名': 'status-upcoming', '时间待公布': 'status-pending', '已截止': 'status-closed' };
 
@@ -31,6 +30,5 @@ export function hydratePublic(item: any) {
     dataStatus:item.data_status || 'published',
     nextEditionEstimate:item.next_edition_estimate || '',
     nextEditionEstimateDate:item.next_edition_estimate ? item.next_edition_estimate.substring(0, 10) : '',
-    preview:false,
   };
 }

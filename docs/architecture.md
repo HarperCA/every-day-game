@@ -18,7 +18,7 @@
 
 ## 数据访问边界
 
-`listCompetitions(query)` 与 `getCompetition(id)` 是用户端唯一读取入口。`publicData` 生产适配器只返回 `data_status=published`、系统验证通过且人工核验通过的公开缓存；当前 `USE_CLOUD_PUBLIC_DATA=false`，因为30条底稿的官方来源仍是 `unchecked`，开发适配器继续显示待核验种子并保留“开发预览”提示。首条合规缓存生成、匿名只读权限应用并完成验收后，才能把开关改为 `true`。
+`listCompetitions(query)` 与 `getCompetition(id)` 是用户端唯一读取入口。`publicData` 生产适配器只返回 `data_status=published`、系统验证通过且人工核验通过的公开缓存；早期用 30 场本地种子数据的“开发预览”适配器已于 2026-09-30 删除，小程序只读公开缓存。
 
 用户端不调用 AI。推荐在管理端生成、系统验证、人工核验后缓存，缓存键为 `event_edition_id + event_data_version + recommendation_rule_version`。
 

@@ -57,9 +57,6 @@ Page({
     hasMore: false,
     loading: true,
     error: '',
-    // 默认不显示“开发预览”提示：真实数据来自服务器，只有退回本地样例数据时（result.preview 为 true）才显示。
-    // 原先默认 true，每次进入首页、数据还没加载完时都会闪一下这条提示。
-    preview: false,
   },
   onLoad() { this.load(true); },
   onShow() {
@@ -234,7 +231,6 @@ Page({
         total: result.total,
         hasMore: result.hasMore,
         page,
-        preview: result.preview,
         loading: false,
       });
     } catch (error) {

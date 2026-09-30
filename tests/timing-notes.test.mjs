@@ -5,29 +5,7 @@ import fs from 'node:fs';
 const require = createRequire(import.meta.url);
 const { SCHOOL_TIMING_NOTES, TIMING_RELIABILITY, schoolTimingAdvice } = require('../apps/miniprogram/cloudfunctions/adminData/competitionValue.js');
 
-// 小程序侧的 TypeScript 副本只在开发预览数据下使用（预览不经过云函数）。
-// 这里不导入 TS，而是逐字比对源文本：一旦漂移，用户在预览和正式数据下
-// 会看到不同的说明文案。
-const miniprogramSource = fs.readFileSync(new URL('../apps/miniprogram/services/timing.ts', import.meta.url), 'utf8');
-
-describe('timing notes stay identical across the cloud function and the miniprogram', () => {
-  it('carries every note verbatim', () => {
-    for (const [organization, note] of Object.entries(SCHOOL_TIMING_NOTES)) {
-      expect(miniprogramSource).toContain(organization);
-      expect(miniprogramSource).toContain(note);
-    }
-  });
-
-  it('carries the same reliability mapping', () => {
-    for (const [organization, reliability] of Object.entries(TIMING_RELIABILITY)) {
-      expect(miniprogramSource).toMatch(new RegExp(`'${organization}':\\s*'${reliability}'`));
-    }
-  });
-
-  it('carries the same call to action', () => {
-    expect(miniprogramSource).toContain('请尽快向教务处、学院或指导老师确认本校安排，不要等到官方截止日。');
-  });
-});
+// 小程序端的时间提示文案由服务端计算（publicData 返回），开发预览用的本地副本 timing.ts 已于 2026-09-30 删除。
 
 describe('what the detail page shows', () => {
   const wxml = fs.readFileSync(new URL('../apps/miniprogram/pages/detail/detail.wxml', import.meta.url), 'utf8');
@@ -54,18 +32,12 @@ describe('what the detail page shows', () => {
   });
 });
 
-describe('both data paths carry the fields', () => {
-  const repository = fs.readFileSync(new URL('../apps/miniprogram/services/repository.ts', import.meta.url), 'utf8');
-
+describe('published records carry the fields', () => {
   it('reads the cloud-computed fields for published records', () => {
-    // 公开记录的字段转换已拆到 publicRecord.ts（小程序与网页测试版共用）
+    // 公开记录的字段转换在 publicRecord.ts
     const publicRecord = fs.readFileSync(new URL('../apps/miniprogram/services/publicRecord.ts', import.meta.url), 'utf8');
     expect(publicRecord).toContain('item.school_timing_dependent');
     expect(publicRecord).toContain('item.timing_reliability');
-  });
-
-  it('computes them locally for preview data, which never reaches the cloud function', () => {
-    expect(repository).toContain('schoolTimingAdvice(item.registrationOrganization');
   });
 
   it('agrees with the cloud function on every organization value in the seed data', () => {

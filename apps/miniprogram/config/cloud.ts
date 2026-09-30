@@ -25,10 +25,5 @@ export const API_BASE_URL = 'https://107-175-111-18.sslip.io';
 
 export const CLOUD_ENV_ID = 'daily-contest-dev-d8dbbhc653e221';
 
-// 读云端公开缓存而不是本地种子数据。
-// 前置条件：event_edition_public_cache 里有通过全部发布门槛的数据。
-// 没有数据时列表为空（不会报错——集合不存在已按空列表处理）。
-export const USE_CLOUD_PUBLIC_DATA = true;
-
 // 在微信公众平台「订阅消息」中申请模板后填写。
 export const REMINDER_TEMPLATE_ID = '1-cgPt-WP5tLOUwCNBhr5YMtEIQ-SneYzQbWTURiTCo';

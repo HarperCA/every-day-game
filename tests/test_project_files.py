@@ -66,11 +66,12 @@ class ProjectFileTests(unittest.TestCase):
         self.assertIn('bindtap="clearFilters"', page)
         self.assertIn("selectedConditions", logic)
 
-    def test_index_preview_banner_follows_repository_mode(self):
-        page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")
-        logic = (MINI / "pages/index/index.ts").read_text(encoding="utf-8")
-        self.assertIn('wx:if="{{preview}}" class="preview-banner"', page)
-        self.assertIn("preview: result.preview", logic)
+    def test_development_preview_mode_is_gone(self):
+        # 2026-09-30 删除“开发预览”模式：首页和详情页都不再有预览提示，也不再打包本地样例数据
+        for page in ("pages/index/index.wxml", "pages/detail/detail.wxml"):
+            self.assertNotIn("preview-banner", (MINI / page).read_text(encoding="utf-8"))
+        self.assertFalse((MINI / "data/competitions.js").exists())
+        self.assertNotIn("USE_CLOUD_PUBLIC_DATA", (MINI / "services/repository.ts").read_text(encoding="utf-8"))
 
     def test_more_filter_sheet_and_combined_query_exist(self):
         page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")

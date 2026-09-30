@@ -3,8 +3,8 @@ const { isAllowed } = require('./robots');
 
 const PROMPT_VERSION = 'competition-review-kimi-v2';
 const FIELD_VERIFICATION_PROMPT_VERSION = 'competition-field-verify-v1';
-// 跟 apps/miniprogram/data/competitions.js 里实际在用的十三类保持一致——
-// 这是唯一真正被小程序端专业筛选用到的取值集合，不是随口列的示例。
+// 跟小程序端专业筛选用的十三类（apps/miniprogram/services/filterOptions.ts 的 PROFESSION_CATEGORIES）保持一致，
+// 不是随口列的示例；tests/miniprogram-shared.test.mjs 保证两边一致。
 const PROFESSION_TAXONOMY = [
   '综合/不限专业', '计算机与AI', '电子信息', '经管与商科', '生物与医药',
   '机械与自动化', '数学与统计', '材料与化工', '能源与环境', '设计与艺术',
