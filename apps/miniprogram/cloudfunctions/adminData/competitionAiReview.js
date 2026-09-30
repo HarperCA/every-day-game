@@ -3,7 +3,7 @@ const { isAllowed } = require('./robots');
 const { reasoningFromPayload, reportReasoning, thinkingEnabled, withReasoningLanguage } = require('./aiReasoning');
 
 const PROMPT_VERSION = 'competition-review-kimi-v2';
-const FIELD_VERIFICATION_PROMPT_VERSION = 'competition-field-verify-v1';
+const FIELD_VERIFICATION_PROMPT_VERSION = 'competition-field-verify-v2-submission-deadline';
 // 跟小程序端专业筛选用的十三类（apps/miniprogram/services/filterOptions.ts 的 PROFESSION_CATEGORIES）保持一致，
 // 不是随口列的示例；tests/miniprogram-shared.test.mjs 保证两边一致。
 const PROFESSION_TAXONOMY = [
@@ -117,6 +117,7 @@ function buildFieldVerificationPrompt(record, evidence) {
     'confirmed_correct（来源明确写了这个日期，且和记录一致）、',
     'not_specified（来源压根没提到这个日期——不是记录错了，是官方还没公布，这不算错误）、',
     'incorrect（来源写了这个日期，但跟记录不一致）。',
+    '报名截止：正文没有单独写“报名截止”、但写了收稿截止、作品提交截止、作品报送截止的，把这个日期当作报名截止（这类比赛报名和交作品一起完成，过了这个日期就参加不了）。记录里的截止日期和收稿/作品提交截止一致的，算 confirmed_correct，不要判 not_specified 或 incorrect。',
     'incorrect 时在对应 correction 字段给出你认为正确的值（从来源原文摘取，不要编造）；',
     'confirmed_correct 或 not_specified 时 correction 留空字符串。日期一律用 YYYY-MM-DD。',
     `另外从以下专业分类里选出最多 5 个适合参赛的方向（只能选列表内的值，拿不准就 professions 留空数组、professions_confident 填 false）：${PROFESSION_TAXONOMY.join('、')}。`,

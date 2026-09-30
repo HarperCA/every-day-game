@@ -167,3 +167,35 @@ describe('evaluateDraftStaleness', () => {
     expect(draftStalenessReason(record)).toBeTruthy();
   });
 });
+
+// 2026-09-30：发现时已截止的收进库里作为已归档，估算下一届
+describe('发现时已截止：估算下一届', () => {
+  const { estimateNextEditionFromClosed, classifyIntake } = require('../apps/miniprogram/cloudfunctions/adminData/intakeSchedule.js');
+  const now = new Date('2026-09-30T00:00:00Z');
+  it('本届有报名开始：往后推一年', () => {
+    const r = estimateNextEditionFromClosed({ schedule:{ registration_start:'2026-03-01T00:00:00.000Z', registration_end:'2026-06-01T00:00:00.000Z' } }, null);
+    expect(r.nextEditionEstimate.slice(0, 10)).toBe('2027-03-01');
+    expect(r.nextEditionEndEstimate.slice(0, 10)).toBe('2027-06-01');
+    expect(r.nextEditionBasis).toContain('本届报名开始');
+  });
+  it('只有截止（收稿截止）：只推下一届大约何时截止，不硬凑开始日期', () => {
+    const r = estimateNextEditionFromClosed({ schedule:{ registration_start:null, registration_end:'2026-06-01' } }, null);
+    expect(r.nextEditionEstimate).toBeNull();
+    expect(r.nextEditionEndEstimate.slice(0, 10)).toBe('2027-06-01');
+    expect(r.nextEditionBasis).toContain('只写了截止');
+  });
+  it('classifyIntake 的归档结论带上估算', () => {
+    const decision = classifyIntake({ name:'湖南省大学生化工设计竞赛', schedule:{ registration_end:'2026-06-01' } }, [], now);
+    expect(decision).toMatchObject({ decision:'archive' });
+    expect(decision.nextEditionEndEstimate.slice(0, 10)).toBe('2027-06-01');
+  });
+});
+
+describe('收稿截止当作报名截止', () => {
+  const { buildExtractPrompt } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+  const { buildFieldVerificationPrompt } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+  it('抽取和三项核验的提示词口径一致', () => {
+    expect(buildExtractPrompt('正文', '某大赛')).toContain('收稿截止、作品提交截止、作品报送截止');
+    expect(buildFieldVerificationPrompt({ id:'a', name:'某大赛', schedule:{} }, [])).toContain('收稿截止、作品提交截止、作品报送截止');
+  });
+});

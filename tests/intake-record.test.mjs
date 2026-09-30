@@ -34,3 +34,9 @@ it('still accepts the whole contest, and a stage explicitly linked to its parent
   expect(classifyCompetitionScope({ name:'湖南省大学生化工设计竞赛', participants:'在读本科生', formatAndRules:'化工设计' }).decision).toBe('eligible');
   expect(classifyCompetitionScope({ name:'湖南省大学生化工设计竞赛（初赛）', parentEventId:'event-x', participants:'在读本科生', formatAndRules:'化工设计' }).decision).toBe('eligible');
 });
+
+it('发现时已截止的归档记录可以暂缺专业分类；其他归档或发布仍要求', () => {
+  const base = { id:'n', name:'湖南省大学生化工设计竞赛', organizer:'湖南省化学化工学会', participants:'在读本科生', eligibility:'本科三年级', formatAndRules:'化工设计', professions:[], sources:[{ url:'http://www.hncci.com/a401.html' }] };
+  expect(assessIntakeRecord({ ...base, dataStatus:'archived', archivedReason:'discovered_already_closed' }).decision).toBe('eligible');
+  expect(assessIntakeRecord({ ...base, dataStatus:'archived', archivedReason:'registration_closed' }).decision).toBe('pending');
+});

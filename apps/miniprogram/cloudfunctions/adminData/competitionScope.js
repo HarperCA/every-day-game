@@ -130,7 +130,10 @@ function assessIntakeRecord(record = {}) {
     if (!String(record[key] || '').trim()) missing.push(label);
   }
   // 新抓到的草稿允许专业分类待定，后续由 Kimi 根据正文判定；发布仍须有分类。
-  if (!record.professions?.length && record.dataStatus !== 'draft') missing.push('专业分类');
+  // 发现时就已截止、直接归档的（2026-09-30 起收进库里）同样允许待定：它不上小程序，等人工补。
+  const pendingProfessionsAllowed = record.dataStatus === 'draft'
+    || (record.dataStatus === 'archived' && record.archivedReason === 'discovered_already_closed');
+  if (!record.professions?.length && !pendingProfessionsAllowed) missing.push('专业分类');
   if (!(record.sources || []).some(source => /^https?:\/\//i.test(source.url || ''))) missing.push('来源网址');
   return missing.length ? {decision:'pending', reason:`缺少${missing.join('、')}，不得以标题关键词代替核验`, ruleVersion:'intake-v2'} : {...scope, ruleVersion:'intake-v2'};
 }

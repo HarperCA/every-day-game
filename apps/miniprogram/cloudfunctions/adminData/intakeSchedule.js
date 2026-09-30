@@ -38,6 +38,25 @@ function findPriorEdition(record, existingRecords = []) {
   return best;
 }
 
+// 发现时已截止、要归档的：估算下一届（2026-09-30 起这类不再丢弃，收进库里作为已归档）。
+// 下一届报名开始 = 本届报名开始（或比赛开始）往后推一年；本届没写，再用库里往届推。
+// 本届只写了截止（常见的是收稿截止），就只推一个“下一届大约截止”，不硬凑开始日期。
+// 都是按一年周期的粗估，只给管理员参考，字段名和说明都要体现这一点。
+function estimateNextEditionFromClosed(record, priorRecord) {
+  const plusYear = value => {
+    const time = Date.parse(value || '');
+    return Number.isFinite(time) ? new Date(time + NEXT_EDITION_OFFSET_MS).toISOString() : null;
+  };
+  const ownStart = record?.schedule?.registration_start || record?.schedule?.competition_start;
+  const start = plusYear(ownStart) || estimateRegistrationStart(priorRecord);
+  const end = plusYear(record?.schedule?.registration_end);
+  const basis = ownStart ? '按本届报名开始时间往后推一年'
+    : start ? '本届没写报名开始，按库里往届的报名开始时间往后推一年'
+      : end ? '本届只写了截止时间，按它往后推一年，只能估计下一届大约何时截止'
+        : '无法估算';
+  return { nextEditionEstimate:start, nextEditionEndEstimate:end, nextEditionBasis:basis };
+}
+
 function estimateRegistrationStart(priorRecord) {
   const base = priorRecord?.schedule?.registration_start || priorRecord?.schedule?.competition_start;
   if (!base) return null;
@@ -54,7 +73,7 @@ function classifyIntake(record, existingRecords = [], now = new Date()) {
     const endTime = Date.parse(end);
     if (Number.isFinite(endTime) && endTime < now.getTime()) {
       const prior = findPriorEdition(record, existingRecords);
-      return { decision:'archive', reason:'发现时报名已截止', nextEditionEstimate:estimateRegistrationStart(prior) };
+      return { decision:'archive', reason:'发现时报名已截止', ...estimateNextEditionFromClosed(record, prior) };
     }
   }
 
@@ -202,6 +221,6 @@ function applyFieldVerification(record, verification, now) {
 
 module.exports = {
   REVIEW_WINDOW_MS, NEXT_EDITION_OFFSET_MS, STALE_DRAFT_DAYS,
-  normalizeCompetitionName, findPriorEdition, estimateRegistrationStart, classifyIntake,
+  normalizeCompetitionName, findPriorEdition, estimateRegistrationStart, estimateNextEditionFromClosed, classifyIntake,
   draftStalenessReason, evaluateDraftStaleness, applyFieldVerification,
 };

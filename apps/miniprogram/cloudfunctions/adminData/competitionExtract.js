@@ -20,7 +20,7 @@ const {
 } = require('./competitionAiReview');
 const { reasoningFromPayload, reportReasoning, thinkingEnabled } = require('./aiReasoning');
 
-const PROMPT_VERSION = 'competition-extract-v3-name';
+const PROMPT_VERSION = 'competition-extract-v4-submission-deadline';
 // 批量抽取走 EXTRACT_ 前缀的配置，未设置时逐项回退到通用的 AI_*。
 // 抽取是突发型负载：几百场集中跑会撞上会员制的窗口配额，
 // 而审核是低频的，留在原供应商上不受影响。
@@ -329,6 +329,7 @@ function buildExtractPrompt(pageText, contestName) {
     '  anchor 是正文里写这个日期的原文片段（例如「2026年10月15日」「10月15日起」）。只有一个日期、没写"开始"字样时，',
     '  按"报名开始"理解；正文只说了截止日期、没说开始日期，就不要编一个开始日期出来。',
     'registration_end: {value, anchor} 或 null —— 报名截止日期，格式和取法同上。',
+    '  正文没有单独写“报名截止”、但写了收稿截止、作品提交截止、作品报送截止的，把这个日期当作报名截止（这类比赛报名和交作品一起完成，过了这个日期就参加不了）。anchor 取写这个日期的原文。',
     'missing: 字符串数组，最多 6 项 —— 正文里没有写到、因此无法抽取的关键项。',
     '',
     contestName ? `赛事名称（仅供定位，不可作为证据）：${contestName}` : '',
