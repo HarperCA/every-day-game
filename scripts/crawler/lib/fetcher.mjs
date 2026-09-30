@@ -25,14 +25,15 @@ const DEFAULT_OPTIONS = {
   cacheDir: null,
   cacheTtlMs: 12 * 60 * 60 * 1000,
   acceptLanguage: 'zh-CN,zh;q=0.9,en;q=0.7',
-  allowedMime: /^(text\/html|application\/xhtml\+xml|application\/json|text\/plain|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document)(;|$)/i,
+  // force-download / octet-stream：不少平台（如辽宁省大学生创新创业平台）附件下载用这种类型，按文件内容再判断是 PDF 还是 Word
+  allowedMime: /^(text\/html|application\/xhtml\+xml|application\/json|text\/plain|application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/force-download|application\/octet-stream|application\/x-download)(;|$)/i,
 };
 
 // 服务器在美国、没有 IPv6，连国内站点建连约 0.3 秒；Node 默认 250ms 就放弃 IPv4 改试 IPv6，结果整站超时。
 // systemd 单元里已用 NODE_OPTIONS 放宽，这里再兜一次，手动跑脚本时也生效。
 if (net.getDefaultAutoSelectFamilyAttemptTimeout?.() < 2000) net.setDefaultAutoSelectFamilyAttemptTimeout(2000);
 
-const BINARY_TYPES =/^(application\/pdf|application\/msword|application\/vnd|image\/|video\/|audio\/|application\/zip|application\/octet-stream)/i;
+const BINARY_TYPES =/^(application\/pdf|application\/force-download|application\/x-download|application\/msword|application\/vnd|image\/|video\/|audio\/|application\/zip|application\/octet-stream)/i;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

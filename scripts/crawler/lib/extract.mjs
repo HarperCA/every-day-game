@@ -5,6 +5,7 @@
 // 真正有价值的是「通知详情页」——教育部通知详情页 5714 字符全是正文，
 // AI 能据此核出「9月25日12时」「年龄不超过35岁」这类细节。
 // 所以这里既要去噪，也要能发现通往详情页的链接。
+import zlib from 'node:zlib';
 import * as cheerio from 'cheerio';
 import { normalizeCrawlUrl } from './urlPolicy.mjs';
 
@@ -125,5 +126,42 @@ export async function extractPdfText(buffer, { maxChars = 20000 } = {}) {
     return { text: normalizeWhitespace(parsed.text).slice(0, maxChars), status: 'ok', pages: parsed.numpages };
   } catch (error) {
     return { text: '', status: 'pdf_parse_failed', error: String(error?.message || error).slice(0, 200) };
+  }
+}
+
+// Word（.docx）文本抽取：docx 是一个 zip 包，正文在 word/document.xml。
+// 用 Node 自带的 zlib 解压，不引入新依赖。老式 .doc（二进制）不支持。
+export function extractDocxText(buffer, { maxChars = 20000 } = {}) {
+  try {
+    if (!buffer || buffer.length < 22 || buffer.readUInt32LE(0) !== 0x04034b50) return { text: '', status: 'not_docx' };
+    // 从末尾找“中央目录结束”记录
+    let eocd = -1;
+    for (let i = buffer.length - 22; i >= Math.max(0, buffer.length - 65557); i -= 1) {
+      if (buffer.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) return { text: '', status: 'bad_zip' };
+    const entries = buffer.readUInt16LE(eocd + 10);
+    let offset = buffer.readUInt32LE(eocd + 16);
+    for (let n = 0; n < entries && offset + 46 <= buffer.length; n += 1) {
+      if (buffer.readUInt32LE(offset) !== 0x02014b50) break;
+      const method = buffer.readUInt16LE(offset + 10);
+      const compressedSize = buffer.readUInt32LE(offset + 20);
+      const nameLength = buffer.readUInt16LE(offset + 28);
+      const extraLength = buffer.readUInt16LE(offset + 30);
+      const commentLength = buffer.readUInt16LE(offset + 32);
+      const localOffset = buffer.readUInt32LE(offset + 42);
+      const name = buffer.toString('utf8', offset + 46, offset + 46 + nameLength);
+      offset += 46 + nameLength + extraLength + commentLength;
+      if (name !== 'word/document.xml') continue;
+      const dataStart = localOffset + 30 + buffer.readUInt16LE(localOffset + 26) + buffer.readUInt16LE(localOffset + 28);
+      const raw = buffer.subarray(dataStart, dataStart + compressedSize);
+      const xml = (method === 8 ? zlib.inflateRawSync(raw) : raw).toString('utf8');
+      const text = xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab\/>/g, ' ').replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+      return { text: normalizeWhitespace(text).slice(0, maxChars), status: 'ok' };
+    }
+    return { text: '', status: 'no_document_xml' };
+  } catch (error) {
+    return { text: '', status: 'docx_parse_failed', error: String(error?.message || error).slice(0, 200) };
   }
 }

@@ -6,16 +6,18 @@
 平台只接受国内访问，所以经腾讯云开发上海的网页中转（pageRelay）去取。
 
 输出和天池、DataFountain 抓取器一样格式的候选文件，交给每晚流水线判重、前置筛选、抽取、入库。
-注意：平台上的 startTime / endTime 作为“平台显示的起止时间”放进候选，并标记需复核——
-它通常是报名时间，但没逐条核对原文前不当作已核实的事实（抽取和人工审核再确认）。
+注意：平台上的 startTime / endTime 只作为“平台显示的起止时间”写进正文和 platformTimes，
+不填进报名日期——它说不清是报名还是比赛时间；报名日期只用附件通知原文里抽出来、带引文的。
 
 只用 Python 标准库。用法：python3 upln.py --out 候选文件.json [--year 2026]
 """
 import argparse
 import base64
 import datetime
+import html
 import json
 import os
+import re
 import sys
 import time
 import urllib.request
@@ -65,11 +67,11 @@ def relay_json(url, retries=2):
     raise RuntimeError(f'取不到 {url}：{last}')
 
 
-def iso(value):
-    """平台时间 “2026-09-19 00:00:00” → 带北京时区的时间；空值原样返回 None。"""
-    if not value:
-        return None
-    return value.replace(' ', 'T') + '+08:00'
+def plain(value):
+    """详情正文是网页片段：去掉标签、还原 &mdash; 之类的转义，免得抽取引文里带乱码。"""
+    text = re.sub(r'<(br|/p|/div|/li)[^>]*>', '\n', str(value or ''), flags=re.I)
+    text = html.unescape(re.sub(r'<[^>]+>', '', text))
+    return re.sub(r'\n\s*\n+', '\n', text).strip()
 
 
 def candidate_from(detail, list_item, state):
@@ -81,9 +83,9 @@ def candidate_from(detail, list_item, state):
     files = [f"{item.get('name') or item.get('fileName') or '附件'}（{FILE_URL}{item.get('id')}）" for item in (detail.get('fileList') or []) if item.get('id')]
     intro = '\n'.join(filter(None, [
         f"辽宁省大学生创新创业管理共享平台（辽宁省教育厅）赛事，状态：{state}。",
-        f"简介：{detail.get('synopsis')}" if detail.get('synopsis') else '',
+        f"简介：{plain(detail.get('synopsis'))}" if detail.get('synopsis') else '',
         f"平台显示的起止时间：{detail.get('startTime') or '未写'} 至 {detail.get('endTime') or '未写'}（需对照通知原文确认是报名时间还是比赛时间）",
-        f"正文：{detail.get('detail')}" if detail.get('detail') else '',
+        f"正文：{plain(detail.get('detail'))}" if detail.get('detail') else '',
         ('附件：' + '；'.join(files)) if files else '',
     ]))
     return {
@@ -95,17 +97,21 @@ def candidate_from(detail, list_item, state):
         'introduction': intro[:4000],
         'tags': ['辽宁省', '省级平台'],
         'organizer': organizer,
-        'registration_start': iso(detail.get('startTime')),
-        'registration_end': iso(detail.get('endTime')),
+        # 平台的 startTime / endTime 说不清是报名还是比赛时间，不直接当报名日期；只在正文里列出，日期以附件原文抽取为准
+        'registration_start': None,
+        'registration_end': None,
+        'platformTimes': {'start': detail.get('startTime'), 'end': detail.get('endTime')},
         'competition_start': None,
         'competition_end': None,
         'region': '辽宁省',
         'lifecycle': state,
         'editionYear': detail.get('year'),
         'attachments': files,
+        # 结构化的附件清单，读详情时下载 PDF / Word 读出正文（run-extract.mjs 的 platformText）
+        'attachmentFiles': [{'name': item.get('name') or item.get('fileName') or '附件', 'url': f"{FILE_URL}{item.get('id')}"}
+                            for item in (detail.get('fileList') or []) if item.get('id')],
         'evidence': {'source': '辽宁省大学生创新创业管理共享平台', 'url': f"{BASE}/detail?id={detail['id']}", 'api': True,
                      'fetchedAt': datetime.datetime.now(datetime.timezone.utc).isoformat()},
-        # 起止时间来自平台列表字段，未逐条对照原文，交给抽取和人工确认
         'needsReview': ['registration_start', 'registration_end', 'eligibility', 'fees', 'professions'],
     }
 

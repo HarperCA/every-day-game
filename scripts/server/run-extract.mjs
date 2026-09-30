@@ -17,7 +17,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { Fetcher } from './crawler/lib/fetcher.mjs';
-import { extractText } from './crawler/lib/extract.mjs';
+import { extractDocxText, extractPdfText, extractText } from './crawler/lib/extract.mjs';
 import { evidenceLinks, rankEvidenceLinks } from './crawler/lib/jevLinkRanker.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -92,9 +92,28 @@ async function tianchiText(raceId) {
     .filter(value => typeof value === 'string').join('\n');
 }
 
+// 平台条目（如辽宁省大学生创新创业平台）：详情接口返回的是数据不是网页，正文常常只有“详见附件”，
+// 参赛对象、资格、赛制都在附件通知里。用来源脚本整理好的正文，再读最多 4 个 PDF / Word 附件。
+async function platformText(candidate) {
+  const sections = [`来源：${candidate.evidence?.source || '平台'}（${candidate.detailUrl}）
+${candidate.introduction || ''}`];
+  const files = (candidate.attachmentFiles || []).filter(file => /\.(pdf|docx)$/i.test(file.name || '')).slice(0, 4);
+  for (const file of files) {
+    const page = await evidenceFetcher.get(file.url);
+    const buffer = page.body;
+    if (page.status !== 'ok' || !buffer?.length) { sections.push(`附件《${file.name}》读取失败：${page.status}`); continue; }
+    const head = buffer.subarray(0, 4).toString('latin1');
+    const parsed = head.startsWith('%PDF') ? await extractPdfText(buffer, { maxChars:9000 }) : head.startsWith('PK') ? extractDocxText(buffer, { maxChars:9000 }) : { text:'', status:'unknown_format' };
+    sections.push(parsed.text ? `附件《${file.name}》正文：
+${parsed.text}` : `附件《${file.name}》未能读出文字：${parsed.status}`);
+  }
+  return sections.join('\n\n').slice(0, 30000);
+}
+
 // 按站点决定怎么取正文。取不到就返回空串，让抽取模块自己去抓页面。
 async function sourceTextFor(candidate) {
   const url = String(candidate.detailUrl || candidate.url || '');
+  if (candidate.evidence?.api) return platformText(candidate);
   const tianchi = /tianchi\.aliyun\.com\/competition\/entrance\/(\d+)/.exec(url);
   if (tianchi) {
     try {
