@@ -191,8 +191,16 @@ async function main() {
   // 3. 内容下载前筛选：硬规则先处理目录、校赛、新闻等明确类型，
   // 剩余候选再交给 Jev 做有界分类。低置信度只进线索报告；Jev 不可用或
   // 调用失败时保持旧流程继续抓取，避免外部模型故障导致整条流水线零产出。
-  console.log(`=== Jev 前置筛选 ${allNew.length} 条新候选 ===`);
-  const jevResult = await filterCandidatesWithJev(allNew, { apiKey:readOpenRouterKey() });
+  // 平台登记的赛事（天池、DataFountain、辽宁平台）本身就是结构化的比赛条目，不需要 Jev 判断“是什么网页”，
+  // 直接去读详情；Jev 只看搜索来的候选（2026-09-30：辽宁平台 11 场被 Jev 判“拿不准”、只留作线索）。
+  const isPlatform = candidate => Boolean(SOURCE_CONFIG[candidate.discovery?.source]?.uniqueUrls);
+  const platformNew = allNew.filter(isPlatform);
+  console.log(`=== Jev 前置筛选 ${allNew.length - platformNew.length} 条新候选（平台条目 ${platformNew.length} 条直接读详情） ===`);
+  const jevResult = await filterCandidatesWithJev(allNew.filter(candidate => !isPlatform(candidate)), { apiKey:readOpenRouterKey() });
+  for (const candidate of platformNew) {
+    jevResult.decisions.push({ candidate, action:'fetch', kind:'platform_entry', confidence:1, source:'platform', reason:'平台登记的赛事条目，跳过前置筛选直接读详情', probabilities:null, cost:0 });
+    jevResult.fetch.push(candidate);
+  }
   const jevReport = path.join(RUN_DIR, 'jev-filter-report.json');
   fs.writeFileSync(jevReport, JSON.stringify({
     createdAt:new Date().toISOString(), model:'typesafe/jev-1.13', confidenceThreshold:0.8,

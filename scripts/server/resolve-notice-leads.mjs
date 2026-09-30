@@ -152,7 +152,9 @@ async function main() {
   let searched = 0;
   for (const [index, group] of groups.entries()) {
     const first = group.notices[0];
-    const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:`通知摘要里写出的网址（来自：${notice.title.slice(0, 40)}）`, url, summary:'', status:'待核验' })));
+    // 标题用网站域名：原先把来源通知标题放进标题，追溯阶段“标题含通知就跳过”的规则把这些官网全拦了（2026-09-30）
+    const hostOf = url => { try { return new URL(url).hostname; } catch { return url; } };
+    const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:hostOf(url), url, summary:`通知摘要里写出的网址，来自：${notice.title.slice(0, 60)}`, status:'待核验' })));
     const result = { noticeUrl:first.url, noticeTitle:first.title, noticeDiscovery:first.discovery, notices:group.notices.map(({ discovery, ...notice }) => notice),
       proposedName:group.proposedName, importance:noticeImportance(group), leads:free };
     if (index < budget) {
