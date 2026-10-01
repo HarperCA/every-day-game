@@ -2,6 +2,7 @@ import { REMINDER_TEMPLATE_ID } from './config/cloud';
 import { initializeFavoritesCloudSync } from './services/favorites';
 import { loginWithWechat } from './services/cloudSession';
 import { initializeRemindersCloudSync } from './services/reminders';
+import { initClientLog, reportIssue } from './services/clientLog';
 
 App({
   globalData: {
@@ -16,6 +17,15 @@ App({
   onLaunch() {
     // 微信云开发可静默取得 openid。这里不在启动时自动登录，必须由用户点击并确认。
     this.globalData.userDataReady = Promise.resolve();
+    // 访问异常上报：记下网络类型，补发上次没发出去的（clientLog.ts）
+    initClientLog();
+  },
+  // 小程序代码报错、没人接住的 Promise 失败，都记一笔
+  onError(message: string) {
+    reportIssue('js_error', { message: String(message || '').slice(0, 300) });
+  },
+  onUnhandledRejection(event: any) {
+    reportIssue('js_error', { action: 'unhandledRejection', message: String(event?.reason?.message || event?.reason || '').slice(0, 300) });
   },
   async requestWechatLogin() {
     if (this.globalData.loginState === 'success') return true;
@@ -66,6 +76,7 @@ App({
     try {
       await task;
     } catch (error) {
+      reportIssue('user_data_failed', { action: 'login', message: error instanceof Error ? error.message : String(error) });
       this.globalData.loginState = 'failed';
       this.globalData.userId = '';
       this.globalData.loginError = error instanceof Error ? error.message : '微信登录失败';

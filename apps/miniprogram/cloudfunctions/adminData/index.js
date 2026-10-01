@@ -583,6 +583,41 @@ async function loadLastAiReviewRun() {
 
 async function handle(event) {
   if (event.action === 'bootstrap') return bootstrap();
+  // 小程序访问异常（clientIssues.js）：服务器 pull-client-logs.mjs 从上海拉回来后经这里写库。
+  // 按上海那边的 _id / 日期存，重复拉取会覆盖成同一条，不会重复计数。
+  if (event.action === 'saveClientLogs') {
+    const issues = (Array.isArray(event.issues) ? event.issues : []).slice(0, 500);
+    const stats = (Array.isArray(event.stats) ? event.stats : []).slice(0, 100);
+    let savedIssues = 0;
+    for (const issue of issues) {
+      const id = String(issue?._id || '').slice(0, 80);
+      if (!/^[A-Za-z0-9_-]{6,80}$/.test(id) || typeof issue.kind !== 'string') continue;
+      // 只留已知字段，每个截断（上海 clientLog 已经清洗过一次，这里不信任外部数据，再做一次）
+      const data = { kind:String(issue.kind).slice(0, 30) };
+      for (const field of ['at', 'received_at', 'page', 'action', 'message', 'extra', 'networkType', 'platform', 'system', 'wechatVersion', 'sdkVersion', 'appVersion', 'envVersion']) {
+        data[field] = String(issue[field] ?? '').slice(0, 300);
+      }
+      data.elapsed_ms = issue.elapsed_ms != null && Number.isFinite(Number(issue.elapsed_ms)) ? Number(issue.elapsed_ms) : null;
+      await db.collection('client_issues').doc(id).set({ data });
+      savedIssues += 1;
+    }
+    let savedStats = 0;
+    for (const row of stats) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(row?.date || ''))) continue;
+      await db.collection('client_stats').doc(row.date).set({ data:{ date:row.date, list:Number(row.list) || 0, get:Number(row.get) || 0 } });
+      savedStats += 1;
+    }
+    return { savedIssues, savedStats };
+  }
+  // 后台“访问异常”页：最近 N 天的成功率、各类异常、最近的异常明细（只读）
+  if (event.action === 'clientIssues') {
+    const days = Math.min(60, Math.max(1, Number(event.days) || 14));
+    const read = async name => {
+      try { return (await db.collection(name).limit(20000).get()).data || []; }
+      catch (error) { if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) return []; throw error; }
+    };
+    return require('./clientIssues').aggregateClientIssues(await read('client_issues'), await read('client_stats'), { days });
+  }
   // AI 思考过程（aiReasoning.js）：按赛事列出，最新的在前（只读）
   if (event.action === 'listAiReasoning') {
     const recordId = String(event.recordId || '').trim();

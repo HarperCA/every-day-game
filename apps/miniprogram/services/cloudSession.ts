@@ -1,4 +1,5 @@
 import { API_BASE_URL, CLOUD_ENV_ID, USE_SELF_HOSTED_BACKEND } from '../config/cloud';
+import { reportIssue, SLOW_THRESHOLD_MS } from './clientLog';
 
 let sessionReady = false;
 let cloudInitialized = false;
@@ -94,7 +95,14 @@ export function isCloudSessionReady(): boolean {
 export async function callUserData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   if (!sessionReady) throw new Error('微信登录尚未完成');
   if (USE_SELF_HOSTED_BACKEND) {
-    return requestSelfHosted<T>('/api/userData', { action, __openid: currentOpenid, ...payload });
+    const started = Date.now();
+    try {
+      return await requestSelfHosted<T>('/api/userData', { action, __openid: currentOpenid, ...payload });
+    } catch (error) {
+      // 收藏、提醒同步失败：记一笔（访问异常上报，见 clientLog.ts）
+      reportIssue('user_data_failed', { action: `userData.${action}`, message: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - started });
+      throw error;
+    }
   }
   const response = await wx.cloud.callFunction({ name: 'userData', data: { action, ...payload } });
   return resultData<T>(response);
@@ -104,13 +112,26 @@ export async function callUserData<T>(action: string, payload: Record<string, un
 // 2026-10-01 起先读腾讯云开发上海环境里的 publicData：服务器在美国，国内手机跨境访问又慢又时常连不上，
 // 服务器每 5 分钟把公开数据同步一份到上海（scripts/server/sync-public-cache.mjs），这条走微信内网。
 // 上海那边出错（比如某条刚发布、还没同步过去），再退回美国服务器读，两条路互为备份。
+// 出问题时匿名记一笔（clientLog.ts）：上海失败退回美国、两边都失败、加载超过 3 秒。
 export async function callPublicData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
+  const started = Date.now();
+  const describe = (error: unknown) => (error instanceof Error ? error.message : String((error as any)?.errMsg || error));
+  let result: T;
   try {
     ensureCloudInitialized();
     const response = await wx.cloud.callFunction({ name: 'publicData', data: { action, ...payload } });
-    return resultData<T>(response);
+    result = resultData<T>(response);
   } catch (cloudError) {
     if (!USE_SELF_HOSTED_BACKEND) throw cloudError;
-    return requestSelfHosted<T>('/api/publicData', { action, ...payload });
+    try {
+      result = await requestSelfHosted<T>('/api/publicData', { action, ...payload });
+      reportIssue('cloud_fallback', { action: `publicData.${action}`, message: describe(cloudError), elapsedMs: Date.now() - started });
+    } catch (selfHostedError) {
+      reportIssue('load_failed', { action: `publicData.${action}`, message: describe(selfHostedError), extra: `上海：${describe(cloudError)}`.slice(0, 200), elapsedMs: Date.now() - started });
+      throw selfHostedError;
+    }
   }
+  const elapsed = Date.now() - started;
+  if (elapsed > SLOW_THRESHOLD_MS) reportIssue('slow', { action: `publicData.${action}`, elapsedMs: elapsed });
+  return result;
 }

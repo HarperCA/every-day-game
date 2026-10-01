@@ -1,0 +1,14 @@
+/* 访问异常页 */
+.client-issues>header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.client-issues>header p{color:#526571;max-width:760px;line-height:1.7;margin:6px 0 0}
+.client-issues-actions{display:flex;gap:8px}.client-issues-actions select,.client-issues-actions button{padding:8px 12px;border:1px solid #cad8df;border-radius:9px;background:#fff;color:#176276;font:inherit}
+.client-issues .panel{padding:16px;margin-bottom:14px}.client-issues h2{font-size:16px;margin:0 0 10px}
+.client-issues-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.client-issues-summary>div{padding:12px;border-radius:9px;background:#f2f7f9}.client-issues-summary span{display:block;color:#657d87;font-size:12px}
+.client-issues-summary b{display:block;font-size:24px;margin-top:4px}.client-issues-summary small{color:#8193a0}
+.client-issues table{width:100%;border-collapse:collapse;font-size:13px}.client-issues th,.client-issues td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid #eef1f5}
+.client-issues th{color:#64748b;white-space:nowrap}.client-issues td small{display:block;color:#6b7280}
+.client-issues .bad{color:#b91c1c;font-weight:600}.client-issues .muted{color:#6b7280}
+.client-issues-split{display:grid;grid-template-columns:1fr 1fr;gap:20px}.client-issues-split ul{list-style:none;margin:0;padding:0}
+.client-issues-split li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef1f5}
+.client-issues-error{color:#a13d3d}

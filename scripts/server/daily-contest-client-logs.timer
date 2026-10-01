@@ -1,0 +1,10 @@
+[Unit]
+Description=每 5 分钟拉一次小程序访问异常记录
+
+[Timer]
+OnCalendar=*:1/5
+AccuracySec=30s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

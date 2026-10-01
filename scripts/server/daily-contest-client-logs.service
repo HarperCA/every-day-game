@@ -1,0 +1,11 @@
+[Unit]
+Description=竞赛雷达小程序访问异常记录从腾讯云开发上海拉回本地（见 pull-client-logs.mjs）
+After=daily-contest-api.service
+
+[Service]
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/pull-client-logs.mjs
+StandardOutput=append:/var/log/daily-contest-client-logs.log
+StandardError=append:/var/log/daily-contest-client-logs.log

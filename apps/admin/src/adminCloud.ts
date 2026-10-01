@@ -249,6 +249,21 @@ export interface PipelineRunDetail {
 }
 export const getPipelineRunDetail = (runId:string) => callAdmin<PipelineRunDetail>('pipelineRunDetail', { runId });
 
+// 小程序访问异常（后端 clientIssues.js）：成功率、各类异常、最近明细
+export interface ClientIssue {
+  kind:string; at:string; received_at:string; page:string; action:string; message:string; extra:string;
+  networkType:string; platform:string; system:string; wechatVersion:string; sdkVersion:string; appVersion:string; envVersion:string;
+  elapsed_ms:number | null;
+}
+export interface ClientIssueReport {
+  days:number; kindLabels:Record<string, string>;
+  summary:{ attempts:number; successRate:number | null; issues:number };
+  daily:Array<{ date:string; shanghaiOk:number; fallback:number; failed:number; slow:number; userDataFailed:number; jsError:number; attempts:number; successRate:number | null }>;
+  byKind:Record<string, number>; byNetwork:Record<string, number>; byAction:Record<string, number>;
+  recent:ClientIssue[];
+}
+export const getClientIssues = (days = 14) => callAdmin<ClientIssueReport>('clientIssues', { days });
+
 // AI 思考过程（后端 aiReasoning.js，存在 ai_reasoning 集合）：按赛事列出，最新的在前
 export interface AiReasoningEntry {
   kind:string; record_id:string | null; record_name:string; url:string; model:string; provider:string;

@@ -87,6 +87,24 @@ exports.main = async event => {
       return { ok:true, status:'ok', removed };
     }
     if (params.action === 'status') return { ok:true, status:'ok', count:(await allIds()).length };
+    // 访问异常（clientLog 云函数收的）和每日成功加载次数（publicData 记的），给美国服务器拉回去在后台显示
+    if (params.action === 'pullClientLogs') {
+      const since = String(params.since || '1970-01-01T00:00:00.000Z');
+      const limit = Math.min(500, Math.max(1, Number(params.limit) || 200));
+      const _ = db.command;
+      const issues = await db.collection('client_issues').where({ received_at:_.gte(since) })
+        .orderBy('received_at', 'asc').limit(limit).get().then(r => r.data || []).catch(error => {
+          if (missingCollection(error)) return [];
+          throw error;
+        });
+      const fromDate = String(params.statsFrom || '1970-01-01');
+      const stats = await db.collection('client_stats').where({ date:_.gte(fromDate) }).limit(100).get()
+        .then(r => r.data || []).catch(error => {
+          if (missingCollection(error)) return [];
+          throw error;
+        });
+      return { ok:true, status:'ok', issues, stats, hasMore:issues.length === limit };
+    }
     return { ok:false, status:'unsupported_action' };
   } catch (error) {
     return { ok:false, status:'error', error:String(error?.message || error).slice(0, 300) };
