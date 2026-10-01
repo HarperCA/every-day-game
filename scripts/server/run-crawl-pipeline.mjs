@@ -25,7 +25,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classifyCandidates, hostOf } from './crawler/lib/dedupe.mjs';
+import { classifyCandidates, hostOf, matchByUrlOnly } from './crawler/lib/dedupe.mjs';
 import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
 import { collectMentions } from './known-event-mentions.mjs';
 import { loadMemory, recentlyRejected, remember, saveMemory } from './rejected-memory.mjs';
@@ -254,7 +254,11 @@ async function main() {
         if (decision.action !== 'fetch' || !['competition_site','registration_entry'].includes(decision.kind)) continue;
         if (/通知|公告|通告|校级|校内|选拔|获奖|喜报/.test(decision.candidate.name || '')) continue;
         const candidate = { ...decision.candidate, name:decision.candidate.proposedCompetitionName };
-        if (!classifyCandidates([candidate], followupMasters).new.length) continue;
+        // 通知正文里写出的官网只按网址判重（名字相似度对它们不可靠）；搜索搜到的仍按名字判
+        const isDuplicate = candidate.fromNoticeText
+          ? Boolean(matchByUrlOnly(candidate, followupMasters))
+          : !classifyCandidates([candidate], followupMasters).new.length;
+        if (isDuplicate) continue;
         followupFetch.push(candidate);
         followupMasters.push({ id:`pending-${candidate.externalId}`, standard_name:candidate.name, aliases:[], website_url:candidate.detailUrl, sourceHosts:[hostOf(candidate.detailUrl)] });
       }

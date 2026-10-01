@@ -164,3 +164,24 @@ describe('classification buckets', () => {
     expect(buckets.invalid).toHaveLength(1);
   });
 });
+
+// 2026-10-01：通知正文里写出的官网只按网址判重
+import { matchByUrlOnly } from '../scripts/crawler/lib/dedupe.mjs';
+describe('只按网址判重', () => {
+  const masters = [
+    { id:'a', standard_name:'中国大学生服务外包创新创业大赛', aliases:[], website_url:'http://www.fwwb.org.cn/', sourceUrls:['http://www.fwwb.org.cn/'] },
+    { id:'b', standard_name:'某大赛', aliases:[], website_url:'https://www.example.org/race/' },
+  ];
+  it('名字再像，网址不同就不是重复：名字相似度 0.62 的两场不同比赛', () => {
+    const candidate = { name:'中国大学生材料热处理创新创业大赛', detailUrl:'http://www.dasai.chts.org.cn/' };
+    expect(matchCandidate(candidate, masters).verdict).toBe('uncertain'); // 原来的名字判重会把它拦下
+    expect(matchByUrlOnly(candidate, masters)).toBeNull();
+  });
+  it('网址完全相同才算：不分 http/https、www、结尾斜杠', () => {
+    expect(matchByUrlOnly({ detailUrl:'https://fwwb.org.cn' }, masters)?.id).toBe('a');
+    expect(matchByUrlOnly({ detailUrl:'http://example.org/race' }, masters)?.id).toBe('b');
+  });
+  it('没有网址就当不重复', () => {
+    expect(matchByUrlOnly({ detailUrl:'' }, masters)).toBeNull();
+  });
+});

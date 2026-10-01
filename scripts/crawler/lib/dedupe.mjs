@@ -119,6 +119,18 @@ export function urlKey(url) {
   } catch { return ''; }
 }
 
+// 只比网址：候选的网址和库里（或本轮已排队的）某场赛事的来源网址完全相同才算重复，不看名字。
+// 给“通知正文里写出的官网”用（2026-10-01）：名字相似度对它们不可靠——
+// “中国大学生材料热处理创新创业大赛”和“中国大学生服务外包创新创业大赛”相似度 0.62，是两场不同的比赛，却被判成拿不准丢掉。
+export function matchByUrlOnly(candidate, masters = []) {
+  const key = urlKey(candidate?.detailUrl);
+  if (!key) return null;
+  for (const master of masters) {
+    if ((master.sourceUrls || [master.website_url]).some(url => urlKey(url) === key)) return master;
+  }
+  return null;
+}
+
 export const DUPLICATE_THRESHOLD = 0.82;
 export const UNCERTAIN_THRESHOLD = 0.55;
 
