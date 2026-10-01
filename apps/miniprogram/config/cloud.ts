@@ -25,5 +25,10 @@ export const API_BASE_URL = 'https://107-175-111-18.sslip.io';
 
 export const CLOUD_ENV_ID = 'daily-contest-dev-d8dbbhc653e221';
 
+// 2026-10-01 起：登录、收藏、提醒改由腾讯云开发上海环境处理（login、userData 云函数），走微信内网，不再跨境到美国服务器
+// （实测从上海连美国服务器一次 3～8.6 秒）。身份由微信云开发直接给出，不再由请求自带。
+// 纠错反馈仍走美国服务器：管理员在那边的后台审核。改回 false 即全部回到美国服务器。
+export const USER_DATA_ON_CLOUD = true;
+
 // 在微信公众平台「订阅消息」中申请模板后填写。
 export const REMINDER_TEMPLATE_ID = '1-cgPt-WP5tLOUwCNBhr5YMtEIQ-SneYzQbWTURiTCo';

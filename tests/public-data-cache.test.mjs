@@ -59,3 +59,11 @@ describe('上海 publicData 的保持运行与缓存', () => {
     expect(calls.docReads).toBe(1);
   });
 });
+
+describe('经 HTTP 访问服务的调用只接受“保持运行”', () => {
+  it('warm 可以；读列表、读详情一律拒绝（小程序不走这条路）', async () => {
+    expect(await main({ httpMethod:'POST', body:JSON.stringify({ action:'warm' }) })).toEqual({ ok:true, warmed:2 });
+    expect(await main({ httpMethod:'POST', body:JSON.stringify({ action:'list', query:{} }) })).toEqual({ ok:false, message:'forbidden' });
+    expect(await main({ httpMethod:'POST', body:'不是 JSON' })).toEqual({ ok:false, message:'forbidden' });
+  });
+});

@@ -45,3 +45,11 @@ describe('按大小分批', async () => {
     expect(batches.length).toBeGreaterThan(1);
   });
 });
+
+describe('保持运行的地址', () => {
+  it('由同步地址换出 /public-data', async () => {
+    const { warmEndpoint } = await import('../scripts/server/sync-public-cache.mjs');
+    expect(warmEndpoint('https://env-123.ap-shanghai.app.tcloudbase.com/public-sync')).toBe('https://env-123.ap-shanghai.app.tcloudbase.com/public-data');
+    expect(warmEndpoint('')).toBe('');
+  });
+});

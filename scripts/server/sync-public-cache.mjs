@@ -111,6 +111,24 @@ async function main() {
   console.log(`${stamp} 公开数据 ${docs.length} 条：推送 ${saved} 条，上海删除 ${removed} 条${plan.fullDue ? '（整体核对）' : ''}`);
 }
 
+// 让上海的 publicData 保持运行（2026-10-01）：云开发自己的定时触发器在这个环境不执行，
+// 所以借这个每 5 分钟跑一次的同步顺便调一下。同步成功与否都调；失败只记一行，不影响同步结果。
+export function warmEndpoint(syncEndpoint) {
+  return String(syncEndpoint || '').replace(/\/public-sync\/?$/, '/public-data');
+}
+async function warmShanghai() {
+  const url = warmEndpoint(readConfig('.sync-endpoint'));
+  if (!/\/public-data$/.test(url)) return;
+  try {
+    const response = await fetch(url, { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ action:'warm' }), signal:AbortSignal.timeout(20000) });
+    const result = await response.json().catch(() => ({}));
+    if (!result.ok) console.error(`${new Date().toISOString()} 上海 publicData 保持运行失败：HTTP ${response.status} ${JSON.stringify(result).slice(0, 120)}`);
+  } catch (error) {
+    console.error(`${new Date().toISOString()} 上海 publicData 保持运行失败：${String(error?.message || error).slice(0, 120)}`);
+  }
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => { console.error(`${new Date().toISOString()} ${error.message}`); process.exit(1); });
+  main().catch(error => { console.error(`${new Date().toISOString()} ${error.message}`); process.exitCode = 1; })
+    .finally(() => (process.argv.includes('--dry-run') ? undefined : warmShanghai()));
 }

@@ -1,8 +1,12 @@
-import { API_BASE_URL, CLOUD_ENV_ID, USE_SELF_HOSTED_BACKEND } from '../config/cloud';
+import { API_BASE_URL, CLOUD_ENV_ID, USE_SELF_HOSTED_BACKEND, USER_DATA_ON_CLOUD } from '../config/cloud';
+
+// 仍走美国服务器的用户操作：纠错反馈（管理员在美国服务器的后台审核）
+const SELF_HOSTED_USER_ACTIONS = new Set(['submitFeedback', 'listFeedback']);
 import { reportIssue, SLOW_THRESHOLD_MS } from './clientLog';
 
 let sessionReady = false;
 let cloudInitialized = false;
+let currentUserId = '';
 // 自有后端用 openid 认身份；登录后存下来，后续请求带上。
 let currentOpenid = '';
 
@@ -63,6 +67,26 @@ function ensureCloudInitialized() {
 
 export async function loginWithWechat(): Promise<LoginResult> {
   sessionReady = false;
+  currentUserId = '';
+  currentOpenid = '';
+
+  if (USER_DATA_ON_CLOUD) {
+    // 腾讯云开发上海：身份由微信云开发直接给出（云函数里 cloud.getWXContext()），不用自己换
+    const started = Date.now();
+    try {
+      ensureCloudInitialized();
+      const response = await wx.cloud.callFunction({ name: 'login' });
+      const data = resultData<LoginResult & { openid?: string }>(response);
+      if (!data.userId) throw new Error('登录云函数未返回用户标识');
+      currentOpenid = data.openid || '';
+      currentUserId = data.userId;
+      sessionReady = true;
+      return { userId: data.userId, isNewUser: data.isNewUser };
+    } catch (error) {
+      reportIssue('user_data_failed', { action: 'login', message: error instanceof Error ? error.message : String((error as any)?.errMsg || error), elapsedMs: Date.now() - started });
+      throw error;
+    }
+  }
 
   if (USE_SELF_HOSTED_BACKEND) {
     // 自有后端没有微信和腾讯云之间那条内建信任通道，身份要自己换：
@@ -75,7 +99,8 @@ export async function loginWithWechat(): Promise<LoginResult> {
     });
     const data = await requestSelfHosted<LoginResult & { openid?: string }>('/api/login', { code });
     if (!data.userId) throw new Error('登录接口未返回用户标识');
-    currentOpenid = data.openid || currentOpenid;
+    currentOpenid = data.openid || '';
+    currentUserId = data.userId;
     sessionReady = true;
     return { userId: data.userId, isNewUser: data.isNewUser };
   }
@@ -84,6 +109,7 @@ export async function loginWithWechat(): Promise<LoginResult> {
   const response = await wx.cloud.callFunction({ name: 'login' });
   const data = resultData<LoginResult>(response);
   if (!data.userId) throw new Error('登录云函数未返回用户标识');
+  currentUserId = data.userId;
   sessionReady = true;
   return data;
 }
@@ -92,8 +118,26 @@ export function isCloudSessionReady(): boolean {
   return sessionReady;
 }
 
+export function getCurrentUserId(): string {
+  return sessionReady ? currentUserId : '';
+}
+
 export async function callUserData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   if (!sessionReady) throw new Error('微信登录尚未完成');
+  if (USER_DATA_ON_CLOUD && !SELF_HOSTED_USER_ACTIONS.has(action)) {
+    const started = Date.now();
+    try {
+      ensureCloudInitialized();
+      const response = await wx.cloud.callFunction({ name: 'userData', data: { action, ...payload } });
+      const data = resultData<T>(response);
+      const elapsed = Date.now() - started;
+      if (elapsed > SLOW_THRESHOLD_MS) reportIssue('slow', { action: `userData.${action}`, elapsedMs: elapsed });
+      return data;
+    } catch (error) {
+      reportIssue('user_data_failed', { action: `userData.${action}`, message: error instanceof Error ? error.message : String((error as any)?.errMsg || error), elapsedMs: Date.now() - started });
+      throw error;
+    }
+  }
   if (USE_SELF_HOSTED_BACKEND) {
     const started = Date.now();
     try {

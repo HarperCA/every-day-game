@@ -21,7 +21,13 @@ async function currentUserId() {
   const { OPENID } = cloud.getWXContext();
   if (!OPENID) throw new Error('unauthenticated');
   const result = await db.collection('user_account').where({ openid: OPENID }).limit(1).get();
-  if (!result.data.length) throw new Error('user_account_not_found');
+  if (!result.data.length) {
+    // 2026-10-01 起登录、收藏、提醒都在腾讯云上海，只有纠错反馈仍在美国服务器（管理员在后台审核）。
+    // 在上海新注册的用户第一次在这边提交反馈时，这边还没有账号：按同一个微信身份补建一个，不再报“账号不存在”。
+    const now = new Date().toISOString();
+    const created = await db.collection('user_account').add({ data:{ openid:OPENID, appid:null, unionid:null, status:'active', created_at:now, updated_at:now, last_login_at:now } });
+    return created._id;
+  }
   if (result.data[0].status !== 'active') throw new Error('user_account_disabled');
   return result.data[0]._id;
 }

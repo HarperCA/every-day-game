@@ -68,14 +68,34 @@ async function countLoad(action) {
   }
 }
 
+// 经腾讯云 HTTP 访问服务（/public-data）进来的调用：event.body 是 JSON 字符串。
+// 这条路只给服务器“保持运行”用（每 5 分钟同步完公开数据后调一次），别的动作一律拒绝——
+// 小程序读数据走 wx.cloud.callFunction，不经过 HTTP。
+// 为什么不用云开发自己的定时触发器：2026-09-15 查明它在这个环境不执行（见 sendReminders 的提交记录）。
+function httpParams(event) {
+  if (!event || typeof event.body !== 'string') return null;
+  const raw = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
+  try { return JSON.parse(raw || '{}') || {}; } catch { return {}; }
+}
+
+// 记下最近一次“保持运行”的调用（谁触发的、什么时候），用来确认保持运行真的在跑
+async function recordWarm(via) {
+  if (process.env.COUNT_LOADS !== '1') return;
+  try { await db.collection('admin_state').doc('public_data_warm').set({ data:{ at:new Date().toISOString(), via } }); } catch (_ignored) { /* 探针失败不影响 */ }
+}
+
 const isPublic = item => Boolean(item) && PUBLIC_DATA_STATUSES.has(item.data_status) && item.system_validation === 'passed' && item.manual_review === 'passed';
 
-exports.main = async event => {
+exports.main = async rawEvent => {
+  const fromHttp = httpParams(rawEvent);
+  if (fromHttp && fromHttp.action !== 'warm') return { ok:false, message:'forbidden' };
+  const event = fromHttp || rawEvent;
   try {
-    // 保持运行：定时触发器每 5 分钟调一次（部署时配置），顺便刷新缓存，让实例不休眠、用户请求不用等冷启动。
-    // 这类调用不算用户访问，不计数。
+    // 保持运行：服务器每 5 分钟经 HTTP 调一次（也保留云开发定时触发器，万一平台恢复了也能用），
+    // 顺便刷新缓存，让实例不休眠、用户请求不用等冷启动。这类调用不算用户访问，不计数。
     if (event?.Type === 'Timer' || event?.action === 'warm') {
       const records = await loadPublishedRecordsCached({ refresh:true });
+      await recordWarm(event?.Type === 'Timer' ? 'timer' : fromHttp ? 'http' : 'direct');
       return { ok:true, warmed:records.length };
     }
     if (event?.action === 'list') {

@@ -79,7 +79,16 @@ async function sendReminder(item, now) {
   });
 }
 
-exports.main = async event => {
+// 经腾讯云 HTTP 访问服务（/send-reminders）调用时，参数在 event.body（JSON 字符串）里。
+// 2026-10-01 起提醒数据在上海，由服务器每 5 分钟经 HTTP 派发（云开发定时触发器在这个环境不执行）。
+function readParams(event) {
+  if (!event || typeof event.body !== 'string') return event;
+  const raw = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
+  try { return JSON.parse(raw || '{}') || {}; } catch { return {}; }
+}
+
+exports.main = async rawEvent => {
+  const event = readParams(rawEvent);
   const wxContext = cloud.getWXContext();
   let via;
   try {

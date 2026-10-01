@@ -31,5 +31,6 @@ exports.main = async () => {
     }
   }
 
-  return { ok: true, data: { userId, isNewUser } };
+  // openid 是用户自己的微信身份，返回给小程序：纠错反馈仍走美国服务器，那边要靠它认人（2026-10-01）
+  return { ok: true, data: { userId, isNewUser, openid: OPENID } };
 };
