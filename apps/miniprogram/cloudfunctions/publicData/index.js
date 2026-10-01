@@ -9,6 +9,33 @@ const _ = db.command;
 const gate = { data_status:_.in(['published', 'archived']), system_validation:'passed', manual_review:'passed' };
 const PUBLIC_DATA_STATUSES = new Set(['published', 'archived']);
 
+// 公开数据在实例里缓存一会儿（2026-10-01）：原先每次请求都把全部公开比赛从数据库读一遍再排序，
+// 实测上海每次 0.4～0.9 秒。数据本来就是服务器每 5 分钟同步一次，缓存 60 秒对用户没有影响。
+// 只在设了 PUBLIC_CACHE_SECONDS 的环境开（上海部署时设 60）；美国服务器上是兜底读取，不缓存，保证刚发布的马上能读到。
+const CACHE_MS = Math.max(0, Number(process.env.PUBLIC_CACHE_SECONDS) || 0) * 1000;
+let cached = { at:0, records:null };
+
+async function loadPublishedRecordsCached({ refresh = false } = {}) {
+  if (CACHE_MS && !refresh && cached.records && Date.now() - cached.at < CACHE_MS) return cached.records;
+  const records = await loadPublishedRecords();
+  if (CACHE_MS) { cached = { at:Date.now(), records }; listMemo.clear(); }
+  return records;
+}
+
+// 同一个查询的排序结果也缓存（和上面的数据缓存同进同出）：实测数据缓存命中后，列表仍要约 0.3 秒，
+// 时间花在 137 条记录的排序打分上（128MB 的实例分到的 CPU 很少）；首页默认查询人人相同，缓存后几乎不用再算。
+const listMemo = new Map();
+const LIST_MEMO_MAX = 200;
+function filterCached(records, query) {
+  if (!CACHE_MS) return filterPublicRecords(records, query);
+  const key = JSON.stringify(query);
+  if (listMemo.has(key)) return listMemo.get(key);
+  const data = filterPublicRecords(records, query);
+  if (listMemo.size >= LIST_MEMO_MAX) listMemo.delete(listMemo.keys().next().value);
+  listMemo.set(key, data);
+  return data;
+}
+
 async function loadPublishedRecords() {
   try {
     const result = await db.collection('event_edition_public_cache').where(gate).limit(MAX_PUBLIC_RECORDS + 1).get();
@@ -41,18 +68,27 @@ async function countLoad(action) {
   }
 }
 
+const isPublic = item => Boolean(item) && PUBLIC_DATA_STATUSES.has(item.data_status) && item.system_validation === 'passed' && item.manual_review === 'passed';
+
 exports.main = async event => {
   try {
+    // 保持运行：定时触发器每 5 分钟调一次（部署时配置），顺便刷新缓存，让实例不休眠、用户请求不用等冷启动。
+    // 这类调用不算用户访问，不计数。
+    if (event?.Type === 'Timer' || event?.action === 'warm') {
+      const records = await loadPublishedRecordsCached({ refresh:true });
+      return { ok:true, warmed:records.length };
+    }
     if (event?.action === 'list') {
-      const data = filterPublicRecords(await loadPublishedRecords(), event.query || {});
-      await countLoad('list');
-      return { ok:true, data };
+      // 访问计数和读数据同时进行，不再读完才开始写计数
+      const [records] = await Promise.all([loadPublishedRecordsCached(), countLoad('list')]);
+      return { ok:true, data:filterCached(records, event.query || {}) };
     }
     if (event?.action === 'get') {
       const id = normalizePublicRecordId(event.id);
-      const result = await db.collection('event_edition_public_cache').doc(id).get();
-      const item = result.data;
-      if (!item || !PUBLIC_DATA_STATUSES.has(item.data_status) || item.system_validation !== 'passed' || item.manual_review !== 'passed') throw new Error('public_record_not_found');
+      // 先在缓存里找；找不到（比如刚同步过来的）再查数据库
+      const hit = CACHE_MS ? (await loadPublishedRecordsCached()).find(record => record.id === id || record._id === id) : null;
+      const item = hit || (await db.collection('event_edition_public_cache').doc(id).get()).data;
+      if (!isPublic(item)) throw new Error('public_record_not_found');
       await countLoad('get');
       return { ok:true, data:{ ...item, registration_status:currentRegistrationStatus(item) } };
     }
