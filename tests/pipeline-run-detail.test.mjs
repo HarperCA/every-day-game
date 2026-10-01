@@ -50,26 +50,62 @@ describe('单轮抓取明细', () => {
   });
 });
 
-// 2026-10-01：漏斗可以点，按每条走到的步数筛；“已写入后台”对照入库报告里真正写入的编号；追溯来的页面也列出来
-describe('漏斗各步与真实入库', () => {
+// 2026-10-01：数据流图——每条比赛带“经过路径”，流程图上的数字由路径算出，点开的清单一定和图上数字一致
+import { NODES } from '../apps/miniprogram/cloudfunctions/adminData/pipelineFlow.js';
+
+describe('流程图定义自洽', () => {
+  it('每个处理结果指向的环节都存在；结束环节没有后续', () => {
+    for (const [id, node] of Object.entries(NODES)) {
+      if (node.kind === 'end') { expect(node.outcomes, id).toBeUndefined(); continue; }
+      for (const [outcome, def] of Object.entries(node.outcomes)) expect(NODES[def.to], `${id}.${outcome} → ${def.to}`).toBeTruthy();
+    }
+  });
+});
+
+describe('每条比赛的路径与流程图', () => {
   const withIngest = {
     ...files,
     'combined-candidates.json':{ candidates:[{ detailUrl:'https://a/4', externalId:'search-a4' }, { detailUrl:'https://a/5' }, { detailUrl:'https://f/1', externalId:'trace-f1', name:'追溯来的大赛' }] },
     'combined-extracted.json':{ results:[{ url:'https://a/4', ok:true }, { url:'https://a/5', ok:false, status:'blocked_by_robots' }, { url:'https://f/1', ok:true }] },
     'combined-candidates.json.scope-review.json':{ held:[] },
-    'notice-followup-filter-report.json':{ decisions:[{ url:'https://f/1', title:'f.example.org', proposedName:'追溯来的大赛', action:'fetch', kind:'competition_site', confidence:0.9 }] },
-    'ingest-report.json':{ added:1, addedIds:['edition-search-a4'], updatedIds:[], skippedList:[{ name:'追溯来的大赛', reason:'发现时已过报名截止时间' }], failureReasons:{} },
+    'notice-followup-filter-report.json':{ decisions:[{ url:'https://f/1', title:'f.example.org', proposedName:'追溯来的大赛', action:'fetch', kind:'competition_site', confidence:0.9, source:'notice_text' }] },
+    'ingest-report.json':{ added:1, addedIds:['edition-search-a4'], updatedIds:[], addedList:[{ name:'x', label:'archive', id:'edition-search-a4' }],
+      skippedList:[{ name:'追溯来的大赛', reason:'发现时已过报名截止时间' }], failureReasons:{} },
   };
   const detail = composeRunDetail('2026-09-30T17-00-15-235Z', withIngest);
   const byUrl = Object.fromEntries(detail.rows.map(row => [row.url, row]));
-  it('真正写入的才算入库；入库时跳过的显示跳过原因', () => {
+  const path = row => row.trail.map(entry => `${entry.n}:${entry.o}`).join(' > ');
+
+  it('真正写入的才算入库；写入的带上是归档还是自动发布；入库时跳过的显示原因', () => {
     expect(byUrl['https://a/4']).toMatchObject({ final:'读了详情页，已写入后台' });
-    expect(byUrl['https://a/4'].steps).toEqual(['search', 'candidate', 'new', 'passed', 'read', 'extracted', 'added']);
+    expect(path(byUrl['https://a/4'])).toBe('search:ok > dedupe:new > rule:pass > jev:fetch > read:ok > extract:ok > same_name:new > scope:pass > gate:written > end_written:');
+    expect(byUrl['https://a/4'].trail.find(entry => entry.n === 'gate').note).toContain('归档');
     expect(byUrl['https://f/1']).toMatchObject({ source:'通知追溯', final:'读了详情页，未入库：发现时已过报名截止时间' });
-    expect(byUrl['https://f/1'].steps).toEqual(['read', 'extracted']);
+    expect(path(byUrl['https://f/1'])).toBe('trace:found > followup:read > read:ok > extract:ok > same_name:new > scope:pass > gate:skip > end_scope:');
   });
-  it('漏斗数字按每条的步数算', () => {
-    expect(detail.steps).toMatchObject({ read:3, extracted:2, added:1 });
-    expect(detail.steps.search).toBe(detail.rows.filter(row => row.steps.includes('search')).length);
+  it('读取失败、判重跳过、前置筛选各自落在对应的结束环节', () => {
+    expect(path(byUrl['https://a/5'])).toBe('search:ok > dedupe:new > rule:pass > jev:fetch > read:fail > end_readfail:');
+    expect(path(byUrl['https://a/1'])).toBe('search:ok > dedupe:skip > end_dup:');
+    expect(path(byUrl['https://a/0'])).toBe('search:dropped > end_dropped:');
+    expect(path(byUrl['https://a/2'])).toBe('search:ok > dedupe:new > rule:pass > jev:reject > end_rejected:');
+  });
+  it('标题是通知、被转去追溯的：路径标明“转去追溯”，并带上找到几个页面', () => {
+    expect(path(byUrl['https://a/3'])).toBe('search:ok > dedupe:new > rule:pass > jev:notice > trace:found');
+  });
+  it('图上的数字就是路径里数出来的：节点流入、处理结果、连线', () => {
+    const node = id => detail.flow.nodes.find(item => item.id === id);
+    const edge = id => detail.flow.edges.find(item => item.id === id)?.count || 0;
+    expect(node('read').in).toBe(2 + 1);          // a/4、a/5 和追溯来的 f/1
+    expect(node('read').outcomes.find(item => item.id === 'fail').count).toBe(1);
+    expect(node('extract').outcomes.find(item => item.id === 'ok').count).toBe(2);
+    expect(node('end_written').in).toBe(1);
+    expect(edge('read>extract')).toBe(2);
+    // 从“通知追溯”出来的页面连线（虚拟路径）算连线，但不算追溯环节处理了它
+    expect(edge('trace>followup')).toBeGreaterThanOrEqual(1);
+    expect(node('trace').in).toBe(detail.rows.filter(row => row.trail.some(entry => entry.n === 'trace' && !entry.virtual)).length);
+  });
+  it('老的运行没有入库明细时不报错，按原来的判断显示', () => {
+    const old = composeRunDetail('2026-09-28T17-00-00-614Z', { ...files, 'ingest-report.json':{ added:0, failureReasons:{} } });
+    expect(old.rows.every(row => Array.isArray(row.trail))).toBe(true);
   });
 });

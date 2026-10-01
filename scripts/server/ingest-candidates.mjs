@@ -296,7 +296,7 @@ async function main() {
           skipped.push([candidate.name, `库里已有同名赛事「${same.name}」，来源已存在，不新增`]);
         } else {
           next[next.indexOf(same)] = supplemented;
-          updated.push([candidate.name, '补来源']);
+          updated.push([candidate.name, '补来源', supplemented.id]);
         }
         continue;
       }
@@ -384,12 +384,12 @@ async function main() {
 
     if (!current) {
       next.push(record);
-      added.push([candidate.name, label, verdict]);
+      added.push([candidate.name, label, verdict, record.id]);
       admittedCandidates.push(candidate);
       continue;
     }
     next[next.indexOf(current)] = record;
-    updated.push([candidate.name, label]);
+    updated.push([candidate.name, label, record.id]);
     admittedCandidates.push(candidate);
   }
 
@@ -426,6 +426,9 @@ async function main() {
       skipped:skipped.length, failureReasons,
       // 逐条跳过原因（后台“查看明细”按名字对上，2026-10-01 起）
       skippedList:skipped.map(([name, reason]) => ({ name, reason })),
+      // 逐条写入了什么（后台数据流图据此区分新增草稿 / 自动发布 / 归档 / 补来源）
+      addedList:added.map(([name, label, verdict, id]) => ({ name, label, verdict, id })),
+      updatedList:updated.map(([name, label, id]) => ({ name, label, id })),
       addedIds:persisted ? next.filter(record => !byId.has(record.id)).map(record => record.id) : [],
       publishedIds:persisted ? next.filter(record => record.dataStatus === 'published' &&
         (!byId.has(record.id) || byId.get(record.id).dataStatus !== 'published')).map(record => record.id) : [],

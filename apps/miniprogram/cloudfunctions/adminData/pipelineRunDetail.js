@@ -2,9 +2,11 @@
 // 给后台“抓取结果账”的“查看明细”用（原先是 scripts/run-report/build.py 手动生成的 HTML）。
 //
 // 每一条候选从哪来、判重结果、前置筛选结论和理由、最终去向；搜索脚本内部丢掉的也逐条列出。
+// 2026-10-01 起每条还带 trail（它依次经过了哪些环节、在每个环节的结果），并由此算出数据流图（pipelineFlow.js）。
 const fs = require('node:fs');
 const path = require('node:path');
 const { toSafeId } = require('./candidateToRecord');
+const { buildFlow, finalizeTrail } = require('./pipelineFlow');
 
 const RUNS_DIR = process.env.RUNS_DIR || path.resolve(__dirname, '..', '..', 'runs');
 const RUN_ID = /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/;
@@ -15,8 +17,12 @@ const KIND = {
 };
 const ACTION = { fetch:'放行读正文', review:'低置信度，只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃（与赛事无关）' };
 const SOURCE = { baidu:'百度搜索', tianchi:'天池', upln:'辽宁平台', datafountain:'DataFountain' };
+// 读详情这一步（下载网页、检查是不是空壳）失败的状态；其余失败算 AI 抽取这一步
+const READ_FAIL = /robots|boilerplate|fetch_failed|unsupported|^http_|invalid_url|network|timeout|too_large|budget|forbidden|not_found/i;
+const WRITTEN_LABEL = { archive:'归档', 'auto-publish':'自动发布', review:'待人工审核', hold:'先放草稿（报名较晚）', admit:'进入草稿', draft:'进入草稿' };
 
 const clip = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
+const step = (n, o, note = '', extra = {}) => ({ n, o, note:clip(note, 160), ...extra });
 
 // files：{ 文件名: 解析后的 JSON }；缺的文件当作这一步没跑到。
 function composeRunDetail(runId, files) {
@@ -38,33 +44,104 @@ function composeRunDetail(runId, files) {
   const candidateByUrl = new Map(combined.map(item => [item.detailUrl, item]));
   // 入库报告里实际写入的记录编号（新增或更新）；老的运行没有这个字段，退回原来的判断
   const writtenIds = Array.isArray(ingest.addedIds) ? new Set([...(ingest.addedIds || []), ...(ingest.updatedIds || [])]) : null;
-  // 入库时跳过的（比如“发现时已过报名截止”）不在 scope-review 里，按名字对上入库报告的 skippedList（2026-10-01 起才有）
+  // 入库时跳过的（比如“库里已有同名”“门槛没过”）不在 scope-review 里，按名字对上入库报告的 skippedList（2026-10-01 起才有）
   const skippedReason = new Map((ingest.skippedList || []).map(item => [item.name, item.reason]));
+  const supplemented = new Set((ingest.updatedList || []).filter(item => item.label === '补来源').map(item => item.name));
+  const writtenLabel = new Map([...(ingest.addedList || []), ...(ingest.updatedList || [])].filter(item => item.id).map(item => [item.id, item.label]));
 
-  // 读了详情页的那一条最后怎样：读失败 / 被入库关拦下 / 跳过 / 写入（2026-10-01：原先没被拦下的一律显示“已写入后台”，
-  // 实际上入库时因“已过报名截止”跳过的也会这样显示，现在对照入库报告里真正写入的编号）
-  function readOutcome(url) {
+  // 读了详情页以后这一条依次经过：读详情 → 抽取 → 按真名查库 → 范围检查 → 入库门槛。返回最后的去向文字和这几步的路径。
+  // （2026-10-01：原先没被拦下的一律显示“已写入后台”，实际上入库时因“已过报名截止”跳过的也会这样显示，现在对照入库报告里真正写入的编号）
+  function analyzeRead(url) {
     const result = extractByUrl.get(url) || {};
-    if (!result.ok) return { final:`读详情页失败（${result.status || result.error || '未知'}）`, extracted:false, added:false };
-    const why = heldReason.get(url);
-    if (why) return { final:`读了详情页，未入库：${why}`, extracted:true, added:false };
+    const trail = [];
+    if (!extractByUrl.has(url)) {
+      trail.push(step('read', 'fail', '没有读取记录'));
+      return { final:'读详情页失败（未知）', trail };
+    }
+    if (!result.ok) {
+      const status = result.status || result.error || '未知';
+      if (READ_FAIL.test(String(status))) trail.push(step('read', 'fail', String(status)));
+      else trail.push(step('read', 'ok'), step('extract', 'fail', String(status)));
+      return { final:`读详情页失败（${status}）`, trail };
+    }
+    trail.push(step('read', 'ok'), step('extract', 'ok', result.extracted?.competition_name?.value ? `比赛名：${result.extracted.competition_name.value}` : ''));
     const candidate = candidateByUrl.get(url);
-    if (!writtenIds) return { final:'读了详情页，已写入后台', extracted:true, added:true };
+    const realName = result.extracted?.competition_name?.value;
+    const names = [candidate?.name, realName].filter(Boolean);
+    const sameNameReason = names.map(name => skippedReason.get(name)).find(reason => /^库里已有同名/.test(reason || ''));
+    if (names.some(name => supplemented.has(name))) {
+      trail.push(step('same_name', 'supplement', '库里已有同名赛事，给它补了来源'));
+      return { final:'读了详情页：库里已有同名赛事，已补来源', trail };
+    }
+    if (sameNameReason) {
+      trail.push(step('same_name', 'exists', sameNameReason));
+      return { final:`读了详情页，未入库：${sameNameReason}`, trail };
+    }
+    trail.push(step('same_name', 'new'));
+    const why = heldReason.get(url);
+    if (why) {
+      trail.push(step('scope', 'reject', why));
+      return { final:`读了详情页，未入库：${why}`, trail };
+    }
+    trail.push(step('scope', 'pass'));
     let id = '';
     try { id = candidate?.externalId ? toSafeId('edition', candidate.externalId) : ''; } catch { id = ''; }
-    if (id && writtenIds.has(id)) return { final:'读了详情页，已写入后台', extracted:true, added:true };
-    const name = result.extracted?.competition_name?.value;
-    const skipped = skippedReason.get(candidate?.name) || (name && skippedReason.get(name));
-    if (skipped) return { final:`读了详情页，未入库：${skipped}`, extracted:true, added:false };
-    if (ingest.persisted === false || ingest.dryRun) return { final:'读了详情页（试运行，未写库）', extracted:true, added:false };
-    return { final:'读了详情页，未入库（原因见入库报告汇总）', extracted:true, added:false };
+    if (!writtenIds) {
+      trail.push(step('gate', 'written', '写入后台（老的运行记录，没有区分新增还是跳过）'));
+      return { final:'读了详情页，已写入后台', trail };
+    }
+    if (id && writtenIds.has(id)) {
+      trail.push(step('gate', 'written', writtenLabel.get(id) ? `写入后台：${WRITTEN_LABEL[writtenLabel.get(id)] || writtenLabel.get(id)}` : '写入后台'));
+      return { final:'读了详情页，已写入后台', trail };
+    }
+    const skipped = names.map(name => skippedReason.get(name)).find(Boolean);
+    if (skipped) {
+      trail.push(step('gate', 'skip', skipped));
+      return { final:`读了详情页，未入库：${skipped}`, trail };
+    }
+    if (ingest.persisted === false || ingest.dryRun) {
+      trail.push(step('gate', 'dry', '试运行，未写库'));
+      return { final:'读了详情页（试运行，未写库）', trail };
+    }
+    trail.push(step('gate', 'skip', '原因见入库报告汇总'));
+    return { final:'读了详情页，未入库（原因见入库报告汇总）', trail };
+  }
+
+  // 前置筛选之后这条走向哪里：追溯 / 读详情 / 搁置
+  function afterFilter(row, url, decision, trail) {
+    const action = decision.action;
+    if (formalUrls.has(url)) {
+      const found = leadsByNotice.get(url);
+      const pages = found?.leads?.length || 0;
+      // 前置筛选本来没判“追溯”，但标题是通知，流水线把它转去追溯了：路径上标出来
+      const last = trail[trail.length - 1];
+      if (action !== 'trace' && last && (last.n === 'jev' || last.n === 'rule')) last.o = 'notice';
+      trail.push(step('trace', pages ? 'found' : found?.followupQuery ? 'none' : 'skipped', pages ? `找到 ${pages} 个待核验页面` : found?.followupQuery ? '搜索后没找到' : '本晚搜索额度用完或名字不成立'));
+      Object.assign(row, { final:`转入通知追溯（找到 ${pages} 个待核验页面）`, stage:3 });
+    } else if (combinedUrls.has(url)) {
+      const outcomeRead = analyzeRead(url);
+      Object.assign(row, { final:outcomeRead.final, stage:4 });
+      trail.push(...outcomeRead.trail);
+      const result = extractByUrl.get(url) || {};
+      // 读详情时 AI 的思考过程（2026-09-30 起打开并记录，见 aiReasoning.js）
+      if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
+    } else if (action === 'fetch') {
+      Object.assign(row, { final:'放行但未读正文（未进入本轮读取名额）', stage:2 });
+      const last = trail[trail.length - 1];
+      if (last) last.o = last.n === 'dedupe' ? 'platform_unread' : 'fetch_unread';
+    } else if (action === 'reject') {
+      Object.assign(row, { final:'前置筛选拦截', stage:2 });
+    } else {
+      Object.assign(row, { final:'只留作线索，未入库', stage:2 });
+    }
   }
 
   const rows = [];
   // 搜索脚本内部就丢掉的（9 月 26 日起逐条记录）
   for (const item of baidu.dropped || []) {
+    const reason = item.reasonText || item.reason || '';
     rows.push({ source:'百度搜索', query:item.query || '', route:item.route || '', title:clip(item.title, 150), url:item.url || '', intro:clip(item.snippet, 160),
-      dup:'', filter:'', kind:'', reason:item.reasonText || item.reason || '', confidence:null, final:`搜索时丢弃：${item.reasonText || item.reason || ''}`, stage:0, steps:['search'] });
+      dup:'', filter:'', kind:'', reason, confidence:null, final:`搜索时丢弃：${reason}`, stage:0, trail:finalizeTrail([step('search', 'dropped', reason)]) });
   }
   const sourceFiles = Object.keys(files).filter(name => /-candidates\.json$/.test(name) && !name.startsWith('combined') && name !== 'formal-notices.json');
   for (const name of sourceFiles) {
@@ -73,32 +150,32 @@ function composeRunDetail(runId, files) {
       const url = candidate.detailUrl;
       const decision = decisionByUrl.get(url);
       const row = { source:SOURCE[key] || key, query:candidate.matchedQuery || '', route:candidate.discovery?.route || '', title:clip(candidate.name, 150), url:url || '',
-        intro:clip(candidate.introduction, 160), dup:'', filter:'', kind:'', reason:'', confidence:null, final:'', stage:1,
-        // 这一条走到了漏斗的哪几步（后台点漏斗、选“流程环节”按这个筛）
-        steps:key === 'baidu' ? ['search', 'candidate'] : ['candidate'] };
+        intro:clip(candidate.introduction, 160), dup:'', filter:'', kind:'', reason:'', confidence:null, final:'', stage:1 };
+      const trail = [step(key === 'baidu' ? 'search' : 'platforms', 'ok')];
       if (!decision) {
         Object.assign(row, { dup:'已在库或疑似重复', reason:'判重时与库里已有赛事重名或疑似重名，本轮跳过', final:'判重跳过', stage:1 });
+        trail.push(step('dedupe', 'skip', row.reason));
       } else {
         Object.assign(row, { dup:'新', filter:ACTION[decision.action] || decision.action, kind:KIND[decision.kind] || decision.kind || '',
           reason:decision.reason || '', confidence:Number.isFinite(decision.confidence) ? decision.confidence : null });
-        row.steps.push('new');
-        if (decision.action === 'fetch') row.steps.push('passed');
-        if (formalUrls.has(url)) {
-          const found = leadsByNotice.get(url)?.leads?.length || 0;
-          Object.assign(row, { final:`转入通知追溯（找到 ${found} 个待核验页面）`, stage:3 });
-        } else if (combinedUrls.has(url)) {
-          const result = extractByUrl.get(url) || {};
-          const outcome = readOutcome(url);
-          Object.assign(row, { final:outcome.final, stage:4 });
-          row.steps.push('read');
-          if (outcome.extracted) row.steps.push('extracted');
-          if (outcome.added) row.steps.push('added');
-          // 读详情时 AI 的思考过程（2026-09-30 起打开并记录，见 aiReasoning.js）
-          if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
-        } else if (decision.action === 'fetch') Object.assign(row, { final:'放行但未读正文（未进入本轮读取名额）', stage:2 });
-        else if (decision.action === 'reject') Object.assign(row, { final:'前置筛选拦截', stage:2 });
-        else Object.assign(row, { final:'只留作线索，未入库', stage:2 });
+        if (decision.source === 'platform') {
+          // 平台登记的赛事跳过前置筛选，直接去读详情
+          trail.push(step('dedupe', 'platform'));
+          afterFilter(row, url, decision, trail);
+          row.filter = '平台条目，直接读详情';
+        } else {
+          trail.push(step('dedupe', 'new'));
+          const note = `${KIND[decision.kind] || decision.kind || ''}${Number.isFinite(decision.confidence) ? ` ${Math.round(decision.confidence * 100)}%` : ''}：${decision.reason || ''}`;
+          const outcome = decision.action === 'review' ? 'lead' : decision.action;
+          if (decision.source === 'rule') {
+            trail.push(step('rule', outcome, note));
+          } else {
+            trail.push(step('rule', 'pass'), step('jev', outcome, note));
+          }
+          afterFilter(row, url, decision, trail);
+        }
       }
+      row.trail = finalizeTrail(trail);
       rows.push(row);
     }
   }
@@ -112,30 +189,30 @@ function composeRunDetail(runId, files) {
     const row = { source:'通知追溯', query:'', route:'通知追溯', title:clip(decision.title || decision.proposedName, 150), url:decision.url,
       intro:clip(decision.proposedName ? `追溯的上级赛事：${decision.proposedName}` : '', 160), dup:'', filter:ACTION[decision.action] || decision.action || '',
       kind:KIND[decision.kind] || decision.kind || '', reason:decision.reason || '', confidence:Number.isFinite(decision.confidence) ? decision.confidence : null,
-      final:'', stage:3, steps:[] };
+      final:'', stage:3 };
+    // 从“通知追溯”环节出来的页面：先补一条只用来画连线的路径（不算追溯环节处理了它）
+    const trail = [step('trace', 'found', '', { virtual:true })];
     if (combinedUrls.has(decision.url)) {
+      const outcomeRead = analyzeRead(decision.url);
+      Object.assign(row, { final:outcomeRead.final, stage:4 });
+      trail.push(step('followup', 'read', decision.source === 'notice_text' ? '通知正文里写出的网址，直接放行' : decision.reason || ''), ...outcomeRead.trail);
       const result = extractByUrl.get(decision.url) || {};
-      const outcome = readOutcome(decision.url);
-      Object.assign(row, { final:outcome.final, stage:4 });
-      row.steps.push('read');
-      if (outcome.extracted) row.steps.push('extracted');
-      if (outcome.added) row.steps.push('added');
       if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
     } else {
       row.final = decision.action === 'fetch' ? '追溯页面：放行但判重未通过或标题含通知，未读' : `追溯页面：${ACTION[decision.action] || decision.action}，未读`;
+      trail.push(step('followup', 'skip', row.final));
     }
+    row.trail = finalizeTrail(trail);
     rows.push(row);
   }
 
   const count = map => Object.fromEntries(Object.entries(map));
-  const stepCount = key => rows.filter(row => (row.steps || []).includes(key)).length;
   const actions = {};
   for (const item of jev.decisions || []) actions[item.action] = (actions[item.action] || 0) + 1;
   return {
     id:runId,
-    // 漏斗每一步的条数，按表里每条实际走到的步数算，点漏斗筛出来的条数和这里一致
-    steps:{ search:stepCount('search'), candidate:stepCount('candidate'), new:stepCount('new'), passed:stepCount('passed'),
-      read:stepCount('read'), extracted:stepCount('extracted'), added:stepCount('added') },
+    // 数据流图：环节、连线、各环节的流入数和处理结果数，都由每条比赛的 trail 算出
+    flow:buildFlow(rows),
     summary:{
       searchResults:baidu.stats?.referencesTotal ?? null, queries:baidu.stats?.queries ?? (baidu.queries || []).length,
       dropped:baidu.droppedCount ?? (baidu.dropped || []).length,

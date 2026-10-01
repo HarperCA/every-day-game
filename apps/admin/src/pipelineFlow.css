@@ -1,0 +1,31 @@
+/* 抓取流水线数据流图 */
+.pipeline-flow{margin-bottom:16px}
+.flow-legend{font-size:12.5px;color:#475569;line-height:1.9;margin-bottom:8px}
+.flow-canvas{height:820px;border:1px solid #e3e9ee;border-radius:12px;background:#f8fafc;overflow:hidden}
+.flow-badge{display:inline-block;padding:1px 8px;border-radius:999px;background:#e0f2f1;color:#0f766e;font-size:11.5px;font-weight:600;margin-right:6px}
+.flow-badge.ai{background:#ede9fe;color:#6d28d9}.flow-badge.end{background:#f1f5f9;color:#475569}
+.flow-node{background:#fff;border:1.5px solid #cbd5e1;border-radius:12px;padding:9px 11px;box-shadow:0 1px 4px rgba(15,23,42,.08);cursor:pointer;font-size:12px}
+.flow-node:hover{box-shadow:0 3px 12px rgba(15,23,42,.18)}
+.flow-node.selected{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+.flow-node.idle{opacity:.55}
+.flow-system{border-left:5px solid #14b8a6}.flow-ai{border-left:5px solid #8b5cf6}
+.flow-end{border-left:5px solid #94a3b8;background:#f8fafc}
+.flow-end.tone-bad{border-left-color:#dc2626}.flow-end.tone-warn{border-left-color:#d97706}.flow-end.tone-good{border-left-color:#16a34a;background:#f0fdf4}
+.flow-node-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px;line-height:1.4}.flow-node-head b{font-size:13px;color:#0f172a}
+.flow-node-count{margin:4px 0;color:#64748b}.flow-node-count strong{font-size:20px;color:#0f172a;margin:0 4px}
+.flow-outcomes{list-style:none;margin:6px 0 0;padding:6px 0 0;border-top:1px dashed #e2e8f0}
+.flow-outcomes li{display:flex;justify-content:space-between;gap:8px;color:#475569;line-height:1.7}.flow-outcomes b{color:#0f172a}
+.flow-hint{color:#64748b;font-size:13px;margin:10px 2px}
+.flow-panel{margin-top:12px;padding:14px 16px;background:#fff;border:1px solid #e3e9ee;border-radius:12px}
+.flow-panel h3{margin:0 0 6px;font-size:16px}.flow-panel h4{margin:14px 0 6px;font-size:14px;color:#334155}
+.flow-who{margin:0;color:#475569;font-size:13px}.flow-desc{margin:4px 0 0;color:#64748b;font-size:13px;line-height:1.7}
+.flow-group{border-top:1px solid #eef1f5;padding:8px 0}
+.flow-group-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.flow-group-head span{color:#64748b;font-size:13px}
+.flow-group-head button{margin-left:auto;padding:3px 10px;border:1px solid #9ec9ce;border-radius:8px;background:#fff;color:#087e8b;cursor:pointer;font-size:12px}
+.flow-rows{list-style:none;margin:6px 0 0;padding:0}.flow-rows li{padding:5px 0;border-bottom:1px dotted #eef1f5;font-size:13px}
+.flow-rows a{color:#1d4ed8;text-decoration:none;word-break:break-all}.flow-rows a:hover{text-decoration:underline}
+.flow-rows small{display:block;color:#6b7280;line-height:1.55}
+.flow-more{margin-top:6px;padding:5px 12px;border:1px solid #cad8df;border-radius:8px;background:#fff;color:#176276;cursor:pointer;font-size:12px}
+.react-flow__attribution{font-size:10px}
+/* 连线的接入点只用来定位，不显示小圆点 */
+.flow-node .react-flow__handle{opacity:0;pointer-events:none}
