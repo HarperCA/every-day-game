@@ -41,7 +41,9 @@ function requestSelfHosted<T>(path: string, data: Record<string, unknown>): Prom
         resolve(body.data as T);
       },
       fail(error: any) {
-        reject(new Error(error?.errMsg || '网络请求失败'));
+        // 跨境网络偶尔连不上（errMsg 形如 request:fail -118:net::ERR_CONNECTION_TIMED_OUT），给用户看不懂的代码没有用
+        const raw = String(error?.errMsg || '');
+        reject(new Error(/timeout|timed_out|fail/i.test(raw) ? '网络不太稳定，请稍后重试' : raw || '网络请求失败'));
       },
     });
   });
@@ -98,12 +100,17 @@ export async function callUserData<T>(action: string, payload: Record<string, un
   return resultData<T>(response);
 }
 
+// 浏览赛事、搜索、看详情（公开数据，不需要身份）。
+// 2026-10-01 起先读腾讯云开发上海环境里的 publicData：服务器在美国，国内手机跨境访问又慢又时常连不上，
+// 服务器每 5 分钟把公开数据同步一份到上海（scripts/server/sync-public-cache.mjs），这条走微信内网。
+// 上海那边出错（比如某条刚发布、还没同步过去），再退回美国服务器读，两条路互为备份。
 export async function callPublicData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  if (USE_SELF_HOSTED_BACKEND) {
-    // 公开数据不需要身份，谁都能读——和原来 publicData 云函数一致。
+  try {
+    ensureCloudInitialized();
+    const response = await wx.cloud.callFunction({ name: 'publicData', data: { action, ...payload } });
+    return resultData<T>(response);
+  } catch (cloudError) {
+    if (!USE_SELF_HOSTED_BACKEND) throw cloudError;
     return requestSelfHosted<T>('/api/publicData', { action, ...payload });
   }
-  ensureCloudInitialized();
-  const response = await wx.cloud.callFunction({ name: 'publicData', data: { action, ...payload } });
-  return resultData<T>(response);
 }

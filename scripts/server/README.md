@@ -40,6 +40,7 @@
 | `scheduled-ai-review.sh` | AI 审核：拿待审记录去读来源网页，让 AI 核对字段，结果写进审核意见 |
 | `scheduled-field-verify.sh` | 已发布赛事的三项核验（名称、报名时间、链接）；已截止的先归档，其余每周核一遍 |
 | `scheduled-reminders.sh` | 给订阅了的用户发报名截止提醒 |
+| `sync-public-cache.mjs` | 把有变化的公开赛事数据推到腾讯云开发上海环境（`publicSync` 云函数），小程序浏览赛事先读上海那份；没变化不发请求，每天整体核对一次。2026-10-01 起，原因：国内手机跨境访问美国服务器又慢又时常连不上 |
 
 ### 每天凌晨
 
@@ -132,6 +133,7 @@ systemctl restart daily-contest-api
 | `.admin-token` | 管理后台口令，脚本调 adminData 用 |
 | `.ai-key` | Kimi，AI 审核 |
 | `.extract-key` | DeepSeek，抽字段 |
+| `.sync-endpoint`、`.sync-secret` | 推送公开数据到上海 `publicSync` 云函数的地址和密钥（密钥同时配在该云函数的环境变量 SYNC_SECRET 里） |
 | `.openrouter-key` | AI 前置筛选用的模型 |
 | `.baidu-search-key` | 百度搜索接口 |
 | `.wechat-appsecret` | 微信小程序 |

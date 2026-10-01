@@ -1,0 +1,11 @@
+[Unit]
+Description=竞赛雷达公开赛事数据同步到腾讯云开发上海（小程序从国内读，见 sync-public-cache.mjs）
+After=daily-contest-api.service
+
+[Service]
+Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/sync-public-cache.mjs
+StandardOutput=append:/var/log/daily-contest-public-sync.log
+StandardError=append:/var/log/daily-contest-public-sync.log
