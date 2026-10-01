@@ -30,6 +30,12 @@ function currentRegistrationStatus(item, now = new Date()) {
 }
 
 
+// 已截止、已归档的一律排在后面，各自内部保持原来的排序（2026-10-01 用户要求：可以查到，但排序在后面）
+const isClosed = item => item.registration_status === '已截止' || item.data_status === 'archived';
+function closedLast(items) {
+  return [...items.filter(item => !isClosed(item)), ...items.filter(isClosed)];
+}
+
 function filterPublicRecords(records, query = {}, now = new Date()) {
   const keyword = String(query.keyword || '').trim().toLowerCase().slice(0, 100);
   const withinDays = Object.prototype.hasOwnProperty.call(REGISTRATION_WITHIN_DAYS, query.registrationWithin)
@@ -53,14 +59,12 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
       // 这正是已归档赛事（凭推算的下一届时间）能被看到的唯一入口。
       const days = daysUntilNextRegistration(item, now);
       if (days === null || days > withinDays) return false;
-    } else if (!query.registrationStatus && item.registration_status === '已截止') {
-      // 已截止是硬过滤而不是降权：报不上名的赛事排在第 50 位依然是噪声。
-      // 已归档记录的 registration_status 也会算成"已截止"，同样被挡在默认视图外。
-      return false;
     }
+    // 2026-10-01 起：已截止、已归档的不再从默认列表和搜索结果里隐藏（原先是硬过滤），
+    // 学生能查到往届比赛，但一律排在所有还能报名的后面（见下面的 closedLast）。
     return true;
   });
-  const ranked = rankRecords(filtered, query, now);
+  const ranked = closedLast(rankRecords(filtered, query, now));
   const page = Math.max(1, Math.min(100, Number.isInteger(query.page) ? query.page : 1));
   const pageSize = Math.max(1, Math.min(100, Number.isInteger(query.pageSize) ? query.pageSize : 8));
   const visible = Math.min(ranked.length, page * pageSize);

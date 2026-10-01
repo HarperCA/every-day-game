@@ -201,11 +201,12 @@ describe('distance to next registration (filter + sort)', () => {
   });
 });
 
-describe('closed and defunct contests are filtered, not demoted', () => {
-  it('removes a closed registration from the default list', () => {
-    const closed = record({ id:'closed', registration_start:days(-60), registration_end:days(-1) });
-    expect(filterPublicRecords([closed], {}, now).items).toHaveLength(0);
-    // 明确筛选「已截止」时仍然可以查到。
+describe('closed contests stay visible but always rank last (2026-10-01)', () => {
+  it('lists a closed registration after every open one, even a weaker open one', () => {
+    const closed = record({ id:'closed', recommendation:'强烈推荐', registration_start:days(-60), registration_end:days(-1) });
+    const open = record({ id:'open', recommendation:'谨慎报名' });
+    expect(filterPublicRecords([closed, open], {}, now).items.map(item => item.id)).toEqual(['open', 'closed']);
+    // 明确筛选「已截止」时同样可以查到。
     expect(filterPublicRecords([closed], { registrationStatus:'已截止' }, now).items).toHaveLength(1);
   });
 });

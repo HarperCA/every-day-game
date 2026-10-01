@@ -35,9 +35,10 @@ describe('public competition query', () => {
     expect(currentRegistrationStatus({ registration_end:'2026-10-10T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('时间待公布');
   });
 
-  it('hides an archived record by default, same as anything past its deadline', () => {
+  it('shows an archived record by default, ranked after everything still open (2026-10-01)', () => {
     const archived = { ...base, id:'gone', data_status:'archived', registration_start:'2025-08-01T00:00:00Z', registration_end:'2025-08-20T00:00:00Z', next_edition_estimate:'2026-08-01T00:00:00Z', search_text:'x' };
-    expect(filterPublicRecords([archived], {}, new Date('2026-01-01T00:00:00Z')).items).toHaveLength(0);
+    const open = { ...base, id:'open', data_status:'published', registration_start:'2025-12-01T00:00:00Z', registration_end:'2026-03-01T00:00:00Z', search_text:'x' };
+    expect(filterPublicRecords([archived, open], {}, new Date('2026-01-01T00:00:00Z')).items.map(i => i.id)).toEqual(['open', 'gone']);
   });
 
   it('surfaces an archived record once the "距离报名时间" filter is on and its estimate falls inside the window', () => {

@@ -145,7 +145,11 @@ async function applyIntakeDecision(record, existingRecords, now = new Date()) {
         dataStatus:'archived',
         archivedAt:now.toISOString(),
         archivedReason:'discovered_already_closed',
+        // 下一届的粗估（intakeSchedule.js 的 estimateNextEditionFromClosed），只给管理员参考
         nextEditionEstimate:classification.nextEditionEstimate || null,
+        nextEditionEndEstimate:classification.nextEditionEndEstimate || null,
+        nextEditionBasis:classification.nextEditionBasis || '',
+        qualityIssues:[...record.qualityIssues, `发现时报名已截止，已归档；下一届估算：${classification.nextEditionBasis || '无法估算'}`],
       },
       label:'archive',
     };
@@ -349,10 +353,9 @@ async function main() {
       const outcome = await applyIntakeDecision(record, next, now);
       record = outcome.record;
       label = outcome.label;
-      if (label === 'archive') {
-        skipped.push([candidate.name, '发现时已过报名截止时间，不新增过期赛事']);
-        continue;
-      }
+      // 2026-09-30 起：发现时已截止、但其余都符合要求的，不再丢弃，收进库里作为已归档，并估算下一届。
+      // 归档记录没经过人工审核，公开缓存不会收它（要求系统验证和人工审核都通过），小程序看不到。
+      if (label === 'archive') record = await fillDraftProfessions(record);
       if (['hold','review'].includes(label) && !record.aiFieldVerification
         && !record.qualityIssues.some(issue => issue.startsWith('三项核验调用失败'))) {
         record = await fillDraftProfessions(record);
