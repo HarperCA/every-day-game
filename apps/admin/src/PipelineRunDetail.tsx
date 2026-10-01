@@ -115,11 +115,11 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
       </div>
       <p className="pipeline-count">显示 {rows.length} / {detail.rows.length} 条</p>
       <div className="table-wrap"><table className="pipeline-rows">
-        <thead><tr><th>#</th><th>标题 / 网址</th>{contextHead && <th>{contextHead}</th>}<th>来源</th><th>判重</th><th>前置筛选</th><th>分类与理由</th><th>最终去向</th><th>来自哪条查询</th></tr></thead>
+        <thead><tr><th>编号</th><th>标题 / 网址</th>{contextHead && <th>{contextHead}</th>}<th>来源</th><th>判重</th><th>前置筛选</th><th>分类与理由</th><th>最终去向</th><th>来自哪条查询</th></tr></thead>
         <tbody>{rows.map((row, index) => {
           const context = contextHead ? contextOf(row) : null;
           return <tr key={`${row.url}-${index}`}>
-            <td className="muted">{index + 1}</td>
+            <td className={`row-no level-${(row.no || '').split('.').length}`}>{row.no || '—'}</td>
             <td className="title-cell">{row.url ? <a href={row.url} target="_blank" rel="noreferrer"><b>{row.title || '（无标题）'}</b><small>{shortUrl(row.url)}</small></a> : <b>{row.title}</b>}{row.intro && <small className="intro">{row.intro}</small>}</td>
             {context && <td className="flow-context">{context.head && <b>{context.head}</b>}{context.note && <small>{context.note}</small>}</td>}
             <td className="muted">{row.source}</td>
@@ -136,16 +136,16 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
     {detail.notices.length > 0 && <section className="panel"><h2>转入通知追溯的正式通知</h2>
       {detail.searchEngines && detail.searchEngines.length > 0 && <p className="pipeline-note">本轮搜索引擎（百度用完换 Kimi，再不够用 DeepSeek）：{detail.searchEngines.map(item =>
         `${item.label} 用了 ${item.used} 次、剩 ${item.left} 次${item.configured ? '' : '（没配密钥）'}${item.disabled ? '（连续失败，已停用）' : ''}`).join('；')}。</p>}
-      <div className="table-wrap"><table><thead><tr><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>搜索用了哪个，返回了什么</th><th>找到的待核验页面</th></tr></thead>
-        <tbody>{detail.notices.map(notice => <tr key={notice.url}><td><a href={notice.url} target="_blank" rel="noreferrer">{notice.title}</a></td><td>{notice.name}</td><td className="muted">{notice.query}</td>
+      <div className="table-wrap"><table><thead><tr><th>编号</th><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>搜索用了哪个，返回了什么</th><th>找到的待核验页面</th></tr></thead>
+        <tbody>{detail.notices.map(notice => <tr key={notice.url}><td className="row-no">{notice.no || '—'}</td><td><a href={notice.url} target="_blank" rel="noreferrer">{notice.title}</a></td><td>{notice.name}</td><td className="muted">{notice.query}</td>
           <td className="search-cell">{notice.search
             ? <details><summary><span className={`chip engine-${notice.search.engine}`}>{notice.search.label}</span> 返回 {notice.search.returned} 条，保留 {notice.search.kept} 条</summary>
               {notice.search.attempts.some(attempt => !attempt.ok) && <p className="muted">{notice.search.attempts.map(attempt => `${attempt.label}${attempt.ok ? ` 成功（${attempt.returned} 条）` : ` 失败（${attempt.error}）`}`).join(' → ')}</p>}
               {notice.search.attempts.some(attempt => attempt.usage) && <p className="muted">{notice.search.attempts.filter(attempt => attempt.usage).map(attempt => `${attempt.label}：输入 ${attempt.usage?.inputTokens} token，输出 ${attempt.usage?.outputTokens} token`).join('；')}</p>}
-              <ol>{notice.search.results.map(result => <li key={result.url} className={result.kept ? 'kept' : 'dropped'}><a href={result.url} target="_blank" rel="noreferrer">{result.title || result.url}</a><small>{result.kept ? '保留' : '筛掉'}</small></li>)}</ol></details>
+              <ol>{notice.search.results.map(result => <li key={result.url} className={result.kept ? 'kept' : 'dropped'}><a href={result.url} target="_blank" rel="noreferrer">{result.title || result.url}</a><small>{result.kept ? `保留${result.no ? `，编号 ${result.no}` : ''}` : '筛掉'}</small></li>)}</ol></details>
             : notice.error ? <small className="muted">搜索失败：{notice.error}</small>
               : notice.query ? <small className="muted">已搜索，没有返回记录</small> : <small className="muted">{notice.leads.length ? '没搜（通知正文里写出了网址）' : '没搜（额度用完或名字不成立）'}</small>}</td>
-          <td>{notice.leads.length ? notice.leads.map(lead => <div key={lead.url}><a href={lead.url} target="_blank" rel="noreferrer">{lead.title || lead.url}</a></div>) : <small className="muted">没有找到</small>}</td></tr>)}</tbody></table></div></section>}
+          <td>{notice.leads.length ? notice.leads.map(lead => <div key={lead.url}>{lead.no && <b className="row-no">{lead.no}</b>} <a href={lead.url} target="_blank" rel="noreferrer">{lead.title || lead.url}</a></div>) : <small className="muted">没有找到</small>}</td></tr>)}</tbody></table></div></section>}
 
     {detail.perQuery.length > 0 && <section className="panel"><h2>每条查询的结果去向</h2>
       <div className="table-wrap"><table><thead><tr><th>查询</th><th>路线</th><th>返回</th><th>不在收录范围</th><th>与竞赛不相关</th><th>同轮重复</th><th>成为候选</th></tr></thead>

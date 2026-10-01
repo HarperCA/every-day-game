@@ -205,13 +205,36 @@ function composeRunDetail(runId, files) {
     }
   }
 
+  // 编号（2026-10-01，用户要求）：最开始的每一条信息源（含搜索时就丢弃的）依次编一级编号 1、2、3……；
+  // 通知追溯搜到的页面挂在发起追溯的那条通知下面：12 → 12.1、12.2；再往下追溯的，以此类推：12.1 → 12.1.1。
+  // 同一场比赛的多篇通知只搜一次，追溯结果挂在这一组里排第一的那篇下面，同组其他通知的路径里指向它。
+  rows.forEach((row, index) => { row.no = String(index + 1); });
+  const noOfUrl = new Map(rows.filter(row => row.url).map(row => [row.url, row.no]));
+  const leadNo = new Map();            // 追溯到的页面网址 → 编号
+  const groupNo = new Map();           // 通知网址 → { parent:一级编号, leads:[{url, no}] }
+  for (const result of leads) {
+    const parent = noOfUrl.get(result.noticeUrl);
+    if (!parent) continue;
+    const numbered = (result.leads || []).map((lead, i) => ({ url:lead.url, no:`${parent}.${i + 1}` }));
+    for (const item of numbered) if (!leadNo.has(item.url)) leadNo.set(item.url, item.no);
+    for (const notice of [{ url:result.noticeUrl }, ...(result.notices || [])]) if (!groupNo.has(notice.url)) groupNo.set(notice.url, { parent, leads:numbered });
+  }
+  // 通知这条在“通知追溯”环节的说明里写上追溯结果的编号
+  for (const row of rows) {
+    const traceStep = (row.trail || []).find(item => item.n === 'trace' && !item.virtual);
+    const group = traceStep && groupNo.get(row.url);
+    if (!group) continue;
+    if (row.no === group.parent) { if (group.leads.length) traceStep.note = clip(`${traceStep.note}；追溯结果编号：${group.leads.map(item => item.no).join('、')}`, 400); }
+    else traceStep.note = clip(`${traceStep.note}；同一场比赛的追溯结果挂在 #${group.parent} 下`, 400);
+  }
+
   // 通知追溯找到的页面：原先不在表里，但“读了详情页”的数字算了它们，点进去对不上
   const followup = files['notice-followup-filter-report.json'] || {};
   const listedUrls = new Set(rows.map(row => row.url));
   for (const decision of followup.decisions || []) {
     if (!decision?.url || listedUrls.has(decision.url)) continue;
     listedUrls.add(decision.url);
-    const row = { source:'通知追溯', query:'', route:'通知追溯', title:clip(decision.title || decision.proposedName, 150), url:decision.url,
+    const row = { no:leadNo.get(decision.url) || '', source:'通知追溯', query:'', route:'通知追溯', title:clip(decision.title || decision.proposedName, 150), url:decision.url,
       intro:clip(decision.proposedName ? `追溯的上级赛事：${decision.proposedName}` : '', 160), dup:'', filter:ACTION[decision.action] || decision.action || '',
       kind:KIND[decision.kind] || decision.kind || '', reason:decision.reason || '', confidence:Number.isFinite(decision.confidence) ? decision.confidence : null,
       final:'', stage:3 };
@@ -235,6 +258,9 @@ function composeRunDetail(runId, files) {
     rows.push(row);
   }
 
+  // 按编号排序（1、2、2.1、2.2、3……），追溯结果紧跟在发起追溯的那条后面；没有编号的排最后
+  const noKey = no => String(no || '').split('.').map(part => part.padStart(6, '0')).join('.');
+  rows.sort((a, b) => (a.no ? 0 : 1) - (b.no ? 0 : 1) || noKey(a.no).localeCompare(noKey(b.no)));
   const count = map => Object.fromEntries(Object.entries(map));
   const actions = {};
   for (const item of jev.decisions || []) actions[item.action] = (actions[item.action] || 0) + 1;
@@ -251,11 +277,11 @@ function composeRunDetail(runId, files) {
       added:ingest.added ?? null, failureReasons:ingest.failureReasons || {},
     },
     rows,
-    notices:leads.map(item => ({ title:clip(item.noticeTitle, 150), url:item.noticeUrl, name:item.proposedName || '', query:item.followupQuery || '',
-      leads:(item.leads || []).map(lead => ({ title:clip(lead.title, 120), url:lead.url })),
+    notices:leads.map(item => ({ no:noOfUrl.get(item.noticeUrl) || '', title:clip(item.noticeTitle, 150), url:item.noticeUrl, name:item.proposedName || '', query:item.followupQuery || '',
+      leads:(item.leads || []).map(lead => ({ no:leadNo.get(lead.url) || '', title:clip(lead.title, 120), url:lead.url })),
       // 这一组搜了没有：用的哪个引擎、返回了什么、保留了哪几条；换过引擎或失败的，带上每次尝试
       search:item.search ? { engine:item.search.engine, label:item.search.label, returned:item.search.returned, kept:item.search.kept,
-        results:(item.search.results || []).map(result => ({ title:clip(result.title, 120), url:result.url, kept:Boolean(result.kept) })),
+        results:(item.search.results || []).map(result => ({ no:result.kept ? (leadNo.get(result.url) || '') : '', title:clip(result.title, 120), url:result.url, kept:Boolean(result.kept) })),
         attempts:(item.searchAttempts || item.search.attempts || []).map(attempt => ({ label:attempt.label, ok:attempt.ok, returned:attempt.returned ?? null, error:attempt.error || '', usage:attempt.usage || null })) } : null,
       error:item.error || '' })),
     // 本轮各搜索引擎用了多少次、有没有被停用

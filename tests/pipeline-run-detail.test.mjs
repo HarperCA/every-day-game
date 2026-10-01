@@ -203,8 +203,54 @@ describe('通知追溯：搜索用了哪个引擎、返回了什么', () => {
   it('通知表格带上搜索详情：返回的每一条和是否保留，换过引擎的带上失败记录', () => {
     const [first, second] = detail.notices;
     expect(first.search).toMatchObject({ label:'百度', returned:10, kept:1 });
-    expect(first.search.results).toEqual([{ title:'官网', url:'https://o/1', kept:true }, { title:'别的', url:'https://o/2', kept:false }]);
+    expect(first.search.results).toEqual([{ no:'1.1', title:'官网', url:'https://o/1', kept:true }, { no:'', title:'别的', url:'https://o/2', kept:false }]);
     expect(second.search.attempts.map(item => `${item.label}:${item.ok}`)).toEqual(['百度:false', 'Kimi:true']);
     expect(detail.searchEngines.map(item => item.label)).toEqual(['百度', 'Kimi']);
+  });
+});
+
+describe('编号：最初的信息源逐条编号，追溯结果挂在发起追溯的那条下面', () => {
+  const cand = (url, name) => ({ name, detailUrl:url, introduction:'', discovery:{} });
+  const nfiles = {
+    'baidu-candidates.json':{ dropped:[{ title:'搜索时丢弃', url:'https://d/0', reason:'out_of_scope', reasonText:'不在收录范围' }],
+      candidates:[cand('https://n/1', '甲通知'), cand('https://n/2', '乙通知'), cand('https://n/3', '甲通知转发')] },
+    'tianchi-candidates.json':{ candidates:[{ name:'天池赛', detailUrl:'https://t/1' }] },
+    'formal-notices.json':{ candidates:[cand('https://n/1', '甲通知'), cand('https://n/2', '乙通知'), cand('https://n/3', '甲通知转发')] },
+    'jev-filter-report.json':{ decisions:['1', '2', '3'].map(i => ({ url:`https://n/${i}`, action:'trace', kind:'news_or_result', confidence:1, reason:'' })) },
+    'notice-resolution-leads.json':{ results:[
+      { noticeUrl:'https://n/1', noticeTitle:'甲通知', proposedName:'甲赛', followupQuery:'甲赛 官网', notices:[{ url:'https://n/1' }, { url:'https://n/3' }],
+        leads:[{ title:'官网A', url:'https://o/a' }, { title:'官网B', url:'https://o/b' }], search:{ engine:'baidu', label:'百度', returned:2, kept:2, results:[{ title:'官网A', url:'https://o/a', kept:true }, { title:'筛掉的', url:'https://o/x', kept:false }] } },
+      { noticeUrl:'https://n/2', noticeTitle:'乙通知', proposedName:'乙赛', followupQuery:'乙赛 官网', notices:[{ url:'https://n/2' }], leads:[{ title:'官网C', url:'https://o/c' }] },
+    ] },
+    'notice-followup-filter-report.json':{ decisions:[
+      { url:'https://o/b', title:'官网B', action:'review', kind:'competition_site', lowConfidence:true, reason:'低' },
+      { url:'https://o/a', title:'官网A', action:'fetch', kind:'competition_site', confidence:0.9, reason:'' },
+      { url:'https://o/c', title:'官网C', action:'fetch', kind:'competition_site', confidence:0.9, reason:'' },
+    ] },
+  };
+  const detail = composeRunDetail('2026-09-28T17-00-00-614Z', nfiles);
+  const no = url => detail.rows.find(row => row.url === url)?.no;
+  it('最初的每一条信息源（含搜索时丢弃的）依次编一级编号', () => {
+    expect(['https://d/0', 'https://n/1', 'https://n/2', 'https://n/3', 'https://t/1'].map(no)).toEqual(['1', '2', '3', '4', '5']);
+  });
+  it('追溯搜到的页面挂在发起追溯的那条下面：3.1、3.2；另一组 3 的下一条是 4.x 不会混', () => {
+    // 甲通知是 2 号，乙通知是 3 号；同组的转发（4 号）不另搜，结果挂在 2 号下
+    expect(no('https://o/a')).toBe('2.1');
+    expect(no('https://o/b')).toBe('2.2');
+    expect(no('https://o/c')).toBe('3.1');
+  });
+  it('表格按编号排：追溯结果紧跟在发起追溯的那条后面', () => {
+    expect(detail.rows.map(row => row.no).filter(Boolean)).toEqual(['1', '2', '2.1', '2.2', '3', '3.1', '4', '5']);
+  });
+  it('通知这条的说明里写着追溯结果的编号，同组其他通知指向它', () => {
+    const note = url => detail.rows.find(row => row.url === url).trail.find(item => item.n === 'trace').note;
+    expect(note('https://n/1')).toContain('追溯结果编号：2.1、2.2');
+    expect(note('https://n/3')).toContain('挂在 #2 下');
+  });
+  it('通知表和搜索结果里也带编号，保留的结果标出对应的追溯编号', () => {
+    const first = detail.notices[0];
+    expect(first.no).toBe('2');
+    expect(first.leads.map(lead => lead.no)).toEqual(['2.1', '2.2']);
+    expect(first.search.results.map(result => result.no)).toEqual(['2.1', '']);
   });
 });

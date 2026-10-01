@@ -235,6 +235,7 @@ export const listPipelineRuns = () => callAdmin<{runs:PipelineRun[]}>('listPipel
 
 // 单轮抓取明细（adminData/pipelineRunDetail.js）
 export interface PipelineRunRow {
+  no?:string; // 编号：最初的信息源 1、2、3……；追溯搜到的挂在发起追溯的那条下面（12.1、12.2，再往下 12.1.1）
   source:string; query:string; route:string; title:string; url:string; intro:string;
   dup:string; filter:string; kind:string; reason:string; confidence:number | null; final:string; stage:number;
   thinking?:string; // 读详情时 AI 的思考过程
@@ -251,8 +252,8 @@ export interface PipelineRunDetail {
   summary:{ searchResults:number | null; queries:number; dropped:number; candidates:number; newCandidates:number; filter:Record<string, number>;
     formalNotices:number; detailRead:number; extractOk:number; added:number | null; failureReasons:Record<string, number> };
   rows:PipelineRunRow[];
-  notices:Array<{ title:string; url:string; name:string; query:string; leads:Array<{ title:string; url:string }>; error?:string;
-    search?:{ engine:string; label:string; returned:number; kept:number; results:Array<{ title:string; url:string; kept:boolean }>;
+  notices:Array<{ no?:string; title:string; url:string; name:string; query:string; leads:Array<{ no?:string; title:string; url:string }>; error?:string;
+    search?:{ engine:string; label:string; returned:number; kept:number; results:Array<{ no?:string; title:string; url:string; kept:boolean }>;
       attempts:Array<{ label:string; ok:boolean; returned:number | null; error:string; usage:{ inputTokens?:number; outputTokens?:number } | null }> } | null }>;
   searchEngines?:Array<{ engine:string; label:string; used:number; left:number; disabled:boolean; configured:boolean }>;
   perQuery:Array<{ query:string; route:string; results:number; outOfScope:number; irrelevant:number; duplicate:number; candidates:number }>;

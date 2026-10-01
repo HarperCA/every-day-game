@@ -47,3 +47,9 @@
 .chip.engine-baidu { background:#e0f2fe; color:#0369a1; }
 .chip.engine-kimi { background:#ede9fe; color:#6d28d9; }
 .chip.engine-deepseek { background:#dcfce7; color:#15803d; }
+
+/* 编号：一级 1、2、3；追溯结果 12.1；再往下 12.1.1（缩进随层级加深） */
+.row-no { font-variant-numeric:tabular-nums; font-weight:600; color:#334155; white-space:nowrap; }
+.row-no.level-2 { padding-left:14px; color:#0369a1; }
+.row-no.level-3 { padding-left:28px; color:#6d28d9; }
+.row-no.level-4 { padding-left:42px; color:#15803d; }
