@@ -1,68 +1,135 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import { describeCloudError, getPipelineRunDetail, type PipelineRunDetail as Detail } from './adminCloud';
-// 流程图库（React Flow）有近 200KB，只在打开明细页时才加载
-const PipelineFlow = lazy(() => import('./PipelineFlow'));
+import { useEffect, useMemo, useState } from 'react';
+import { describeCloudError, getPipelineRunDetail, type PipelineRunDetail as Detail, type PipelineRunRow } from './adminCloud';
+import PipelineFlow, { kindName, plain } from './PipelineFlow';
 
-// 单轮抓取明细：每一条候选从哪来、前置筛选怎么判、最后去了哪。点标题在新标签页打开原网页。
+// 单轮抓取明细：上面是数据流图，下面是逐条明细表，两者合在一块：
+// 点流程图的方框、连线或连线上的数字，明细表就只显示对应的那批比赛，并多一列“在这个环节的结果”。
+// 点标题在新标签页打开原网页。
 const STAGE_CLASS = ['stage-dropped', 'stage-dup', 'stage-filtered', 'stage-traced', 'stage-read'];
 const FILTER_LABEL: Record<string, string> = { fetch:'放行读正文', review:'低置信度只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃' };
 const shortUrl = (url:string) => url.length > 80 ? `${url.slice(0, 80)}…` : url;
 const finalGroup = (text:string) => text.replace(/（.*|：.*/, '');
+
+// 选中的是一个环节（可再按处理结果细分），或者一条连线；都没选就显示全部
+type Selection = { kind:'node'; id:string; outcome:string } | { kind:'edge'; id:string } | null;
+
+const entryOf = (row:PipelineRunRow, nodeId:string) => (row.trail || []).find(entry => entry.n === nodeId && !entry.virtual);
+const onEdge = (row:PipelineRunRow, from:string, to:string) => (row.trail || []).some((entry, index) => entry.n === from && row.trail![index + 1]?.n === to);
+
 export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBack:()=>void }) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState('');
+  useEffect(() => {
+    getPipelineRunDetail(runId).then(setDetail).catch(caught => setError(describeCloudError(caught)));
+  }, [runId]);
+  if (error) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p role="alert" className="pipeline-error">读取失败：{error === 'run_not_found' ? '服务器上找不到这一轮的运行记录（可能是很早的运行，当时还没有逐条留档）' : error}</p></div>;
+  if (!detail) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p>正在读取明细…</p></div>;
+  return <PipelineRunView detail={detail} onBack={onBack}/>;
+}
+
+export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>void }) {
   const [keyword, setKeyword] = useState('');
   const [stage, setStage] = useState('');
   const [kind, setKind] = useState('');
   const [query, setQuery] = useState('');
-  const [flowNode, setFlowNode] = useState(''); // 流程图里选中的环节，下面的明细表只看经过它的
-  useEffect(() => {
-    getPipelineRunDetail(runId).then(setDetail).catch(caught => setError(describeCloudError(caught)));
-  }, [runId]);
+  const [selection, setSelection] = useState<Selection>(null);
+
+  const flow = detail.flow;
+  const nodeById = useMemo(() => new Map((flow?.nodes || []).map(node => [node.id, node])), [flow]);
+  const selectedNode = selection?.kind === 'node' ? nodeById.get(selection.id) : undefined;
+  const selectedEdge = selection?.kind === 'edge' ? selection.id.split('>') : null;
 
   const options = useMemo(() => {
-    const rows = detail?.rows || [];
     const uniq = (values:string[]) => [...new Set(values.filter(Boolean))].sort();
-    return { stages:uniq(rows.map(row => finalGroup(row.final))), kinds:uniq(rows.map(row => row.kind)), queries:uniq(rows.map(row => row.query)) };
+    return { stages:uniq(detail.rows.map(row => finalGroup(row.final))), kinds:uniq(detail.rows.map(row => row.kind)), queries:uniq(detail.rows.map(row => row.query)) };
   }, [detail]);
-  const rows = useMemo(() => (detail?.rows || []).filter(row =>
-    (!keyword || `${row.title} ${row.url} ${row.reason} ${row.intro}`.toLowerCase().includes(keyword.toLowerCase()))
-    && (!stage || finalGroup(row.final) === stage) && (!kind || row.kind === kind) && (!query || row.query === query)
-    && (!flowNode || (row.trail || []).some(entry => entry.n === flowNode && !entry.virtual))), [detail, keyword, stage, kind, query, flowNode]);
 
-  if (error) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p role="alert" className="pipeline-error">读取失败：{error === 'run_not_found' ? '服务器上找不到这一轮的运行记录（可能是很早的运行，当时还没有逐条留档）' : error}</p></div>;
-  if (!detail) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p>正在读取明细…</p></div>;
+  // 流程图选中的那批比赛（再叠加下面的搜索和下拉筛选）
+  const selectedRows = useMemo(() => detail.rows.filter(row => {
+    if (!selection) return true;
+    if (selection.kind === 'edge') { const [from, to] = selection.id.split('>'); return onEdge(row, from, to); }
+    const entry = entryOf(row, selection.id);
+    return Boolean(entry) && (!selection.outcome || entry!.o === selection.outcome);
+  }), [detail, selection]);
+  const rows = useMemo(() => selectedRows.filter(row =>
+    (!keyword || `${row.title} ${row.url} ${row.reason} ${row.intro}`.toLowerCase().includes(keyword.toLowerCase()))
+    && (!stage || finalGroup(row.final) === stage) && (!kind || row.kind === kind) && (!query || row.query === query)), [selectedRows, keyword, stage, kind, query]);
+
+  // “在这个环节的结果”那一列：选中环节时是该环节对这条的处理结果和说明；选中连线时是出发环节的说明
+  const contextOf = (row:PipelineRunRow) => {
+    if (selection?.kind === 'node' && selectedNode) {
+      const entry = entryOf(row, selection.id);
+      if (selectedNode.kind === 'end') return { head:'', note:row.final };
+      const outcome = selectedNode.outcomes.find(item => item.id === entry?.o);
+      return { head:outcome?.label || '', note:entry?.note || '' };
+    }
+    if (selectedEdge) {
+      const from = nodeById.get(selectedEdge[0]);
+      const entry = entryOf(row, selectedEdge[0]);
+      const outcome = from?.outcomes.find(item => item.id === entry?.o);
+      return { head:outcome?.label || '', note:entry?.note || '' };
+    }
+    return { head:'', note:'' };
+  };
+  const choose = (next:Selection) => { setSelection(next); };
+
   const s = detail.summary;
+  const contextHead = selectedNode ? `在「${plain(selectedNode.label)}」的结果` : selectedEdge ? `走「${plain(nodeById.get(selectedEdge[0])?.label || '')} → ${plain(nodeById.get(selectedEdge[1])?.label || '')}」的原因` : '';
   return <div className="pipeline-detail-page">
     <header><div><button onClick={onBack}>‹ 返回结果账</button><h1>本轮明细 · {new Date(runIdToIso(detail.id)).toLocaleString('zh-CN', { timeZone:'Asia/Shanghai', hour12:false })}</h1>
-      <p>每一条候选的去向。点标题在新标签页打开原网页。</p></div></header>
-    {detail.flow
-      ? <Suspense fallback={<p className="pipeline-count">正在加载流程图…</p>}><PipelineFlow nodes={detail.flow.nodes} edges={detail.flow.edges} rows={detail.rows} onSelect={setFlowNode}/></Suspense>
-      : <p className="pipeline-count">这一轮没有数据流图（运行记录太早，缺少逐条路径）。</p>}
+      <p>上面是这一轮的数据流图，下面是每一条候选的去向。点流程图的方框、连线或连线上的数字，明细表就只显示对应的比赛。</p></div></header>
     <p className="pipeline-note">搜索时丢弃 {s.dropped} 条；前置筛选：{Object.entries(s.filter).map(([key, value]) => `${FILTER_LABEL[key] || key} ${value}`).join('、')}；
       其中 {s.formalNotices} 条正式通知转去追溯赛事官网。{Object.keys(s.failureReasons).length ? `读了详情页但未入库的原因：${Object.entries(s.failureReasons).map(([key, value]) => `${key}（${value}）`).join('；')}。` : ''}</p>
 
-    <section className="panel">
+    <section className="panel pipeline-flow">
+      {flow ? <>
+        <div className="flow-legend"><span className="flow-dot system">系统</span>固定规则，每次结果一样，不花钱　<span className="flow-dot ai">AI</span>用了模型判断　<span className="flow-dot end">结束</span>不再往下走　· 方框右上角是流入场数，连线上的数字是走这条线的场数</div>
+        <PipelineFlow nodes={flow.nodes} edges={flow.edges} selectedNode={selection?.kind === 'node' ? selection.id : ''} selectedEdge={selection?.kind === 'edge' ? selection.id : ''}
+          onNode={id => choose(selection?.kind === 'node' && selection.id === id ? null : { kind:'node', id, outcome:'' })}
+          onEdge={id => choose(selection?.kind === 'edge' && selection.id === id ? null : { kind:'edge', id })}
+          onClear={() => choose(null)}/>
+      </> : <p className="pipeline-count">这一轮没有数据流图（运行记录太早，缺少逐条路径）。</p>}
+
+      {flow && (selection
+        ? <div className="flow-selection">
+          <div className="flow-selection-head">
+            {selectedNode && <><span className={`flow-dot ${selectedNode.kind}`}>{kindName(selectedNode.kind)}</span><b>{plain(selectedNode.label)}</b><span>流入 {selectedNode.in} 场</span></>}
+            {selectedEdge && <><b>{plain(nodeById.get(selectedEdge[0])?.label || selectedEdge[0])} → {plain(nodeById.get(selectedEdge[1])?.label || selectedEdge[1])}</b><span>共 {selectedRows.length} 场</span></>}
+            <button type="button" className="flow-clear" onClick={() => choose(null)}>清除选择，看全部</button>
+          </div>
+          {selectedNode?.who && <p className="flow-who">{selectedNode.who}</p>}
+          {selectedNode?.desc && <p className="flow-desc">{selectedNode.desc}</p>}
+          {selectedNode && selectedNode.kind !== 'end' && <div className="flow-chips">
+            <button type="button" className={`flow-chip${selection.kind === 'node' && !selection.outcome ? ' on' : ''}`} onClick={() => choose({ kind:'node', id:selectedNode.id, outcome:'' })}>全部<b>{selectedNode.in}</b></button>
+            {selectedNode.outcomes.filter(outcome => outcome.count > 0).map(outcome => <button type="button" key={outcome.id} className={`flow-chip${selection.kind === 'node' && selection.outcome === outcome.id ? ' on' : ''}`}
+              onClick={() => choose({ kind:'node', id:selectedNode.id, outcome:selection.kind === 'node' && selection.outcome === outcome.id ? '' : outcome.id })}>{outcome.label}<b>{outcome.count}</b>{nodeById.get(outcome.to) && <small>→ {plain(nodeById.get(outcome.to)!.label)}</small>}</button>)}
+          </div>}
+        </div>
+        : <div className="flow-selection idle">点上面流程图的任意方框、连线或连线上的数字，下面的明细表会只显示对应的比赛，以及它们在这个环节的处理结果。现在显示的是全部明细。</div>)}
+
       <div className="pipeline-filters">
         <input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="搜标题、网址或理由"/>
-        {detail.flow && <select value={flowNode} onChange={event => setFlowNode(event.target.value)}><option value="">全部环节</option>{detail.flow.nodes.filter(node => node.in > 0).map(node => <option key={node.id} value={node.id}>经过「{node.label.replace(/\n/g, ' ')}」（{node.in}）</option>)}</select>}
         <select value={stage} onChange={event => setStage(event.target.value)}><option value="">全部去向</option>{options.stages.map(value => <option key={value}>{value}</option>)}</select>
         <select value={kind} onChange={event => setKind(event.target.value)}><option value="">全部分类</option>{options.kinds.map(value => <option key={value}>{value}</option>)}</select>
         <select value={query} onChange={event => setQuery(event.target.value)}><option value="">全部查询</option>{options.queries.map(value => <option key={value}>{value}</option>)}</select>
       </div>
       <p className="pipeline-count">显示 {rows.length} / {detail.rows.length} 条</p>
       <div className="table-wrap"><table className="pipeline-rows">
-        <thead><tr><th>#</th><th>标题 / 网址</th><th>来源</th><th>判重</th><th>前置筛选</th><th>分类与理由</th><th>最终去向</th><th>来自哪条查询</th></tr></thead>
-        <tbody>{rows.map((row, index) => <tr key={`${row.url}-${index}`}>
-          <td className="muted">{index + 1}</td>
-          <td className="title-cell">{row.url ? <a href={row.url} target="_blank" rel="noreferrer"><b>{row.title || '（无标题）'}</b><small>{shortUrl(row.url)}</small></a> : <b>{row.title}</b>}{row.intro && <small className="intro">{row.intro}</small>}</td>
-          <td className="muted">{row.source}</td>
-          <td>{row.dup === '新' ? <span className="chip">新</span> : <small className="muted">{row.dup}</small>}</td>
-          <td>{row.filter}{row.confidence != null && <small className="muted">把握 {Math.round(row.confidence * 100)}%</small>}</td>
-          <td>{row.kind && <span className="chip">{row.kind}</span>}<small className="muted">{row.reason}</small></td>
-          <td className={STAGE_CLASS[row.stage]}>{row.final}{row.thinking && <details className="ai-thinking"><summary>AI 思考过程（{row.thinking.length} 字）</summary><pre>{row.thinking}</pre></details>}</td>
-          <td className="muted">{row.query}</td>
-        </tr>)}</tbody>
+        <thead><tr><th>#</th><th>标题 / 网址</th>{contextHead && <th>{contextHead}</th>}<th>来源</th><th>判重</th><th>前置筛选</th><th>分类与理由</th><th>最终去向</th><th>来自哪条查询</th></tr></thead>
+        <tbody>{rows.map((row, index) => {
+          const context = contextHead ? contextOf(row) : null;
+          return <tr key={`${row.url}-${index}`}>
+            <td className="muted">{index + 1}</td>
+            <td className="title-cell">{row.url ? <a href={row.url} target="_blank" rel="noreferrer"><b>{row.title || '（无标题）'}</b><small>{shortUrl(row.url)}</small></a> : <b>{row.title}</b>}{row.intro && <small className="intro">{row.intro}</small>}</td>
+            {context && <td className="flow-context">{context.head && <b>{context.head}</b>}{context.note && <small>{context.note}</small>}</td>}
+            <td className="muted">{row.source}</td>
+            <td>{row.dup === '新' ? <span className="chip">新</span> : <small className="muted">{row.dup}</small>}</td>
+            <td>{row.filter}{row.confidence != null && <small className="muted">把握 {Math.round(row.confidence * 100)}%</small>}</td>
+            <td>{row.kind && <span className="chip">{row.kind}</span>}<small className="muted">{row.reason}</small></td>
+            <td className={STAGE_CLASS[row.stage]}>{row.final}{row.thinking && <details className="ai-thinking"><summary>AI 思考过程（{row.thinking.length} 字）</summary><pre>{row.thinking}</pre></details>}</td>
+            <td className="muted">{row.query}</td>
+          </tr>;
+        })}</tbody>
       </table></div>
     </section>
 
