@@ -164,7 +164,8 @@ function readJson(file) {
 }
 
 export function loadRuns(runsDir, plansDir = null) {
-  const runs = !fs.existsSync(runsDir) ? [] : fs.readdirSync(runsDir).map(name => ({
+  // 重跑的轮次（有 replay.json）不算：它用的是原来那一轮的搜索结果，算进去会重复计数
+  const runs = !fs.existsSync(runsDir) ? [] : fs.readdirSync(runsDir).filter(name => !fs.existsSync(path.join(runsDir, name, 'replay.json'))).map(name => ({
     time:runDirTime(name),
     baidu:readJson(path.join(runsDir, name, 'baidu-candidates.json')),
     noticeLeads:readJson(path.join(runsDir, name, 'notice-resolution-leads.json')),

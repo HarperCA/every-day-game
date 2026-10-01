@@ -21,6 +21,9 @@
 // 的策略一致。
 //
 // 用法：node run-crawl-pipeline.mjs [--sources tianchi,upln] [--dry-run] [--pages 5]
+// 重跑某一轮（不重新搜索，用那一轮已经抓到的候选按现在的规则走完整个流程）：
+//   node run-crawl-pipeline.mjs --sources baidu --from-run 2026-09-30T17-00-15-235Z --ignore-memory
+//   --ignore-memory：不跳过“近 30 天被拒过的网址”（那一轮按旧规则被拒的，要按新规则重新判）
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,13 +68,15 @@ const SOURCE_CONFIG = {
 };
 
 function parseArgs(argv) {
-  const args = { sources: ['tianchi', 'upln', 'baidu'], sourcesGiven: false, dryRun: false, filterOnly:false, pages: 0, queries:0 };
+  const args = { sources: ['tianchi', 'upln', 'baidu'], sourcesGiven: false, dryRun: false, filterOnly:false, pages: 0, queries:0, fromRun:'', ignoreMemory:false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--sources') { args.sources = argv[i + 1].split(',').map(s => s.trim()).filter(Boolean); args.sourcesGiven = true; }
     if (argv[i] === '--dry-run') args.dryRun = true;
     if (argv[i] === '--filter-only') args.filterOnly = true;
     if (argv[i] === '--pages') args.pages = Number(argv[i + 1]) || 0;
     if (argv[i] === '--queries') args.queries = Number(argv[i + 1]) || 0;
+    if (argv[i] === '--from-run') args.fromRun = String(argv[i + 1] || '');
+    if (argv[i] === '--ignore-memory') args.ignoreMemory = true;
   }
   return args;
 }
@@ -101,9 +106,12 @@ function run(cmd, args) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  runOptions = { dryRun:args.dryRun, filterOnly:args.filterOnly };
+  if (args.fromRun && !/^\d{4}-\d{2}-\d{2}T[\d-]+Z$/.test(args.fromRun)) throw new Error(`--from-run 不是运行编号：${args.fromRun}`);
+  runOptions = { dryRun:args.dryRun, filterOnly:args.filterOnly, ...(args.fromRun ? { replayOf:args.fromRun } : {}) };
   const adminToken = readAdminToken();
   fs.mkdirSync(RUN_DIR, { recursive: true });
+  // 重跑的标记：路线台账（route-ledger.mjs）据此不重复计算那一轮的搜索
+  if (args.fromRun) fs.writeFileSync(path.join(RUN_DIR, 'replay.json'), JSON.stringify({ replayOf:args.fromRun, at:new Date().toISOString(), sources:args.sources, ignoreMemory:args.ignoreMemory }, null, 2));
 
   console.log(`=== 发现新赛事流水线 ${new Date().toISOString()} ===`);
   console.log(`来源: ${args.sources.join(', ')}${args.dryRun || args.filterOnly ? '（不会写库）' : ''}`);
@@ -153,8 +161,15 @@ async function main() {
     // 当天有次日搜索计划（search-plan.mjs，北京时间 00:50 生成）就按计划搜。
     const planFile = path.join(HERE, 'plans', `search-plan-${new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)}.json`);
     if (source === 'baidu' && fs.existsSync(planFile)) crawlArgs.push('--plan', planFile);
-    console.log(`--- 抓取 ${source} ---`);
-    run(config.command || 'node', crawlArgs);
+    if (args.fromRun) {
+      const previous = path.join(HERE, 'runs', args.fromRun, `${source}-candidates.json`);
+      if (!fs.existsSync(previous)) { console.log(`--- ${source}：${args.fromRun} 那一轮没有这个来源的候选，跳过 ---\n`); continue; }
+      fs.copyFileSync(previous, outFile);
+      console.log(`--- ${source}：用 ${args.fromRun} 那一轮已经抓到的候选重跑（不重新搜索） ---`);
+    } else {
+      console.log(`--- 抓取 ${source} ---`);
+      run(config.command || 'node', crawlArgs);
+    }
 
     const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
     if (config.everyDays && !args.dryRun && !args.sourcesGiven) { schedule = markCrawled(schedule, source, RUN_ID); saveSchedule(scheduleFile, schedule); }
@@ -203,7 +218,8 @@ async function main() {
   const memoryFile = path.join(HERE, 'plans', 'rejected-urls.json');
   const memory = loadMemory(memoryFile);
   const beforeMemory = allNew.length;
-  allNew.splice(0, allNew.length, ...allNew.filter(candidate => !recentlyRejected(memory, candidate.detailUrl)));
+  if (args.ignoreMemory) console.log('--ignore-memory：不跳过近 30 天被拒过的网址，全部按现在的规则重新判');
+  allNew.splice(0, allNew.length, ...allNew.filter(candidate => args.ignoreMemory || !recentlyRejected(memory, candidate.detailUrl)));
   if (beforeMemory !== allNew.length) console.log(`近 30 天已被拒过的 ${beforeMemory - allNew.length} 条跳过（被拒网址记忆）
 `);
   if (!allNew.length) {
