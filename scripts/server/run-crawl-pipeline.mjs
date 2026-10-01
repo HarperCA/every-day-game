@@ -33,6 +33,7 @@ import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
 import { followupCandidatesFromReport, splitTrustedFollowups } from './resolve-notice-leads.mjs';
 import { stampDiscovery } from './discovery.mjs';
 import { buildPipelineLedger } from './pipeline-ledger.mjs';
+import { selectAmbiguous } from './arbitrate-dedupe.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN_FILE = path.join(HERE, '.admin-token');
@@ -145,9 +146,14 @@ async function main() {
     const buckets = classifyCandidates(candidates, masters);
     collectMentions([buckets], masters, recordsById, mentionGroups);
     const newCandidates = [...buckets.new, ...(config.uniqueUrls ? buckets.uncertain : [])].map(({ candidate }) => candidate);
+    // 规则判不好的（名字像但说不清是不是同一场；库里只有往届旧记录、页面可能是新一届），把情况讲清楚交给 AI 裁决：
+    // 不是同一场、或是新一届的继续走流水线（新的替代旧的），同一届、下级通知、看不出的仍然跳过
+    const arbitration = await arbitrateAmbiguous(source, selectAmbiguous(buckets, masters, recordsById, { includeUncertain:!config.uniqueUrls }), [buckets.uncertain, buckets.likely_duplicate, buckets.duplicate]);
+    for (const candidate of arbitration.promoted) if (!newCandidates.includes(candidate)) newCandidates.push(candidate);
     console.log(`${source}: 抓到 ${candidates.length} 条，new ${newCandidates.length}，`
       + `duplicate ${buckets.duplicate.length}，likely_duplicate ${buckets.likely_duplicate.length}，`
-      + `uncertain ${buckets.uncertain.length}（命中已有赛事的整理进追溯清单，拿不准的跳过）\n`);
+      + `uncertain ${buckets.uncertain.length}（命中已有赛事的整理进追溯清单，拿不准的跳过）`
+      + (arbitration.asked ? `；其中 ${arbitration.asked} 条交 AI 裁决，${arbitration.promoted.length} 条继续往下走` : '') + '\n');
 
     for (const candidate of newCandidates) {
       masters.push({
@@ -162,6 +168,7 @@ async function main() {
     summary.push({
       source, fetched: candidates.length, new: newCandidates.length,
       duplicate: buckets.duplicate.length, likely_duplicate: buckets.likely_duplicate.length, uncertain: buckets.uncertain.length,
+      ...(arbitration.asked ? { arbitrated:arbitration.asked, arbitratedPromoted:arbitration.promoted.length } : {}),
     });
   }
 
@@ -317,6 +324,35 @@ async function main() {
 // 进程还在，pipeline.log 也没追加最后一行。cron 场景下这会让每次调用都挂着
 // 不退出，所以显式退出。
 
+
+// 把判重拿不准的候选交给 AI（arbitrate-dedupe.mjs），返回被裁决为“继续往下走”的候选。
+// 裁决结果（含 AI 的理由和思考过程）写在运行目录的 dedupe-arbitration-<来源>.json，后台运行详情据此显示。
+// AI 不可用时一律保持原样（跳过），不影响流水线。
+async function arbitrateAmbiguous(source, items, bucketLists) {
+  const none = { asked:0, promoted:[] };
+  if (!items.length) return none;
+  const inFile = path.join(RUN_DIR, `dedupe-arbitration-${source}-input.json`);
+  const outFile = path.join(RUN_DIR, `dedupe-arbitration-${source}.json`);
+  fs.writeFileSync(inFile, JSON.stringify({ items }, null, 2), 'utf8');
+  try {
+    console.log(`--- 判重裁决 ${source}：${items.length} 条拿不准的交给 AI ---`);
+    run('node', ['arbitrate-dedupe.mjs', inFile, outFile]);
+  } catch (error) {
+    console.log(`判重裁决失败，拿不准的仍然跳过：${String(error?.message || error).slice(0, 160)}`);
+    return { asked:items.length, promoted:[] };
+  }
+  const decisions = JSON.parse(fs.readFileSync(outFile, 'utf8')).decisions || {};
+  const byUrl = new Map(bucketLists.flat().map(entry => [entry.candidate.detailUrl, entry.candidate]));
+  const promoted = [];
+  for (const item of items) {
+    const decision = decisions[item.key];
+    const candidate = byUrl.get(item.key);
+    if (!decision?.promote || !candidate) continue;
+    candidate.dedupeArbitration = { relation:decision.relation, reason:decision.reason, supersedes:decision.supersedes || [], matched:decision.matched, candidateEdition:decision.candidate_edition || '' };
+    promoted.push(candidate);
+  }
+  return { asked:items.length, promoted };
+}
 
 function planFileFor() {
   return path.join(HERE, 'plans', `search-plan-${new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)}.json`);

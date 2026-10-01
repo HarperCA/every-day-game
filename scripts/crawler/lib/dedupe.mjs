@@ -48,6 +48,47 @@ export function nameSimilarity(a, b) {
   return (2 * shared) / (left.size + right.size);
 }
 
+// —— 名字里的地区、层级对不上，就是不同的比赛（2026-10-01）——
+// 只看字面相似度会把“湖南省大学生化工设计竞赛”和“福建省大学生化工设计竞赛”当成同一场（差两个字），
+// 也会把“国际大学生建筑设计竞赛”和“国际大学生程序设计竞赛”当成一场（都有“国际大学生”）。
+// 这里只在“相似度这条路”上用：名字规范化后完全一致、标题完整包含库里赛事名的，仍按原规则判重。
+const REGION_WORDS = ['内蒙古', '黑龙江', '东北三省', '粤港澳', '京津冀', '长三角', '闽台', '北京', '天津', '上海', '重庆', '河北', '山西', '辽宁', '吉林', '江苏', '浙江', '安徽', '福建',
+  '江西', '山东', '河南', '湖北', '湖南', '广东', '广西', '海南', '四川', '贵州', '云南', '陕西', '甘肃', '青海', '宁夏', '新疆', '西藏', '香港', '澳门', '台湾'];
+const NATIONAL = /全国|中国|全球|国际/;
+// 抹掉年份、届次、地区词、层级词、泛称之后剩下的“核心名称”，用来比较两场比赛到底是不是一个题目
+const GENERIC = /(全国|中国|国际|全球|大学生|研究生|本科生|高职高专|高校|青年|省|市|赛区|竞赛|大赛|挑战赛|邀请赛|比赛|联赛|锦标赛|选拔赛|决赛|初赛|复赛|通知|公告|关于|举办|组织|报名|的)/g;
+
+export function regionsOf(name) {
+  const text = String(name || '');
+  const found = new Set();
+  for (const word of REGION_WORDS) if (text.includes(word)) found.add(word);
+  // “内蒙古”里有“蒙”不在词表，“东北三省”不含单个省名，所以不会重复计入；“山西”“陕西”等互不包含
+  return found;
+}
+
+export function coreOf(name) {
+  let core = String(name || '').normalize('NFKC').replace(/[（(][^）)]*[）)]/g, '').replace(ORDINAL, '').replace(YEAR, '').replace(QUOTES, '').replace(SPACES, '').toLowerCase();
+  for (const word of REGION_WORDS) core = core.split(word).join('');
+  return core.replace(GENERIC, '');
+}
+
+// 两个名字能确定是不同的比赛时返回原因，否则返回 null（交给相似度和 AI 去判）
+export function nameConflict(a, b) {
+  const regionsA = regionsOf(a), regionsB = regionsOf(b);
+  const subset = (x, y) => [...x].every(item => y.has(item));
+  if (regionsA.size && regionsB.size && !subset(regionsA, regionsB) && !subset(regionsB, regionsA)) {
+    return `地区不同（${[...regionsA].join('、')} ≠ ${[...regionsB].join('、')}）`;
+  }
+  // 一边是全国/国际级、没写地区，另一边明确是某个省的。括号里的话（如“辽宁高校商业精英挑战赛（……国际贸易竞赛等）”）不算层级
+  const bare = text => String(text || '').replace(/[（(][^）)]*[）)]/g, '');
+  const nationalA = NATIONAL.test(bare(a)), nationalB = NATIONAL.test(bare(b));
+  if (nationalA && !regionsA.size && regionsB.size && !nationalB) return `层级不同（全国/国际级 ≠ ${[...regionsB].join('、')}）`;
+  if (nationalB && !regionsB.size && regionsA.size && !nationalA) return `层级不同（${[...regionsA].join('、')} ≠ 全国/国际级）`;
+  const coreA = coreOf(a), coreB = coreOf(b);
+  if (coreA.length >= 3 && coreB.length >= 3 && nameSimilarity(coreA, coreB) < 0.55) return `核心名称不同（${coreA} ≠ ${coreB}）`;
+  return null;
+}
+
 // 同一个比赛常常同时存在校赛、省赛、国赛：名字几乎一样，
 // 但报名时间、评分标准、进入难度、含金量都不同。
 // 这三种既不能合并成一条（用户报的是他那一层），也不是三个不同的赛事。
@@ -155,6 +196,8 @@ export function matchCandidate(candidate, masters = []) {
 
   const normalizedCandidate = normalizeName(candidateName);
   let best = { master:null, score:0, reason:'' };
+  // 字面上像、但地区/层级/核心名称对不上的（见 nameConflict）：记下来，最后说明为什么判成新的
+  let conflicted = { score:0, name:'', reason:'' };
   // 赛事名被长标题包住的情况：新闻标题「XX大赛决赛在YY大学成功举办」里嵌着完整赛事名，
   // 但前后文本会把相似度稀释到阈值以下。这类必须靠包含匹配，不能靠相似度。
   let contained = { master:null, name:'', length:0 };
@@ -182,6 +225,13 @@ export function matchCandidate(candidate, masters = []) {
         contained = { master, name, length:normalizedName.length };
       }
       const score = nameSimilarity(name, candidateName);
+      if (score >= UNCERTAIN_THRESHOLD) {
+        const conflict = nameConflict(candidateName, name);
+        if (conflict) {
+          if (score > conflicted.score) conflicted = { score, name, reason:conflict };
+          continue;
+        }
+      }
       if (score > best.score) best = { master, score, reason:`与「${name}」相似度 ${score.toFixed(2)}` };
     }
   }
@@ -225,7 +275,9 @@ export function matchCandidate(candidate, masters = []) {
     verdict:'new',
     matchedId:null,
     confidence:1 - best.score,
-    reason:best.master ? `最接近的是${best.reason}，低于判重阈值` : '库中没有相近名称',
+    reason:best.master ? `最接近的是${best.reason}，低于判重阈值`
+      : conflicted.name ? `字面上像「${conflicted.name}」（相似度 ${conflicted.score.toFixed(2)}），但${conflicted.reason}，判为不同的比赛`
+        : '库中没有相近名称',
   };
 }
 

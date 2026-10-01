@@ -109,3 +109,27 @@ describe('每条比赛的路径与流程图', () => {
     expect(old.rows.every(row => Array.isArray(row.trail))).toBe(true);
   });
 });
+
+describe('判重交给 AI 裁决后的明细', () => {
+  const arbFiles = {
+    ...files,
+    'dedupe-arbitration-baidu.json':{ decisions:{
+      'https://a/1':{ relation:'same_edition', promote:false, label:'同一场比赛的同一届（重复）', reason:'库里已有当前这一届', thinking:'比较了届次……' },
+      'https://a/4':{ relation:'new_edition', promote:true, label:'同一场比赛的新一届（新的替代旧的）', reason:'2026 比库里 2025 新' },
+    } },
+    'dedupe-arbitration-baidu-input.json':{ items:[] },
+  };
+  const detail = composeRunDetail('2026-09-28T17-00-00-614Z', arbFiles);
+  const byUrl = Object.fromEntries(detail.rows.map(row => [row.url, row]));
+  it('AI 判为重复的，写明 AI 的理由，路径走“AI 判重跳过”', () => {
+    expect(byUrl['https://a/1'].final).toContain('AI 裁决');
+    expect(byUrl['https://a/1'].final).toContain('库里已有当前这一届');
+    expect(byUrl['https://a/1'].thinking).toBe('比较了届次……');
+    expect(byUrl['https://a/1'].trail.map(item => `${item.n}:${item.o}`)).toContain('dedupe:ai_skip');
+  });
+  it('AI 判为新一届的，路径走“AI 判为不同或新一届”继续往下', () => {
+    expect(byUrl['https://a/4'].dup).toContain('AI 裁决');
+    expect(byUrl['https://a/4'].trail.map(item => `${item.n}:${item.o}`)).toContain('dedupe:ai_new');
+    expect(detail.flow.nodes.find(node => node.id === 'dedupe')).toBeTruthy();
+  });
+});

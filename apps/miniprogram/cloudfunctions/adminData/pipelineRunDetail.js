@@ -35,6 +35,12 @@ function composeRunDetail(runId, files) {
   const ingest = files['ingest-report.json'] || {};
   const held = files['combined-candidates.json.scope-review.json']?.held || [];
 
+  // 判重时规则拿不准、交给 AI 裁决的（dedupe-arbitration-<来源>.json，逐条带理由和思考过程）
+  const arbitrationByUrl = new Map();
+  for (const [name, file] of Object.entries(files)) {
+    if (/^dedupe-arbitration-.+\.json$/.test(name) && !/-input\.json$/.test(name)) for (const [url, decision] of Object.entries(file?.decisions || {})) arbitrationByUrl.set(url, decision);
+  }
+
   const decisionByUrl = new Map((jev.decisions || []).map(item => [item.url, item]));
   const formalUrls = new Set(formal.map(item => item.detailUrl));
   const combinedUrls = new Set(combined.map(item => item.detailUrl));
@@ -152,9 +158,18 @@ function composeRunDetail(runId, files) {
       const row = { source:SOURCE[key] || key, query:candidate.matchedQuery || '', route:candidate.discovery?.route || '', title:clip(candidate.name, 150), url:url || '',
         intro:clip(candidate.introduction, 160), dup:'', filter:'', kind:'', reason:'', confidence:null, final:'', stage:1 };
       const trail = [step(key === 'baidu' ? 'search' : 'platforms', 'ok')];
+      const arbitration = arbitrationByUrl.get(url);
+      if (arbitration?.thinking) row.thinking = String(arbitration.thinking);
       if (!decision) {
-        Object.assign(row, { dup:'已在库或疑似重复', reason:'判重时与库里已有赛事重名或疑似重名，本轮跳过', final:'判重跳过', stage:1 });
-        trail.push(step('dedupe', 'skip', row.reason));
+        if (arbitration && !arbitration.promote) {
+          // 规则拿不准、AI 裁决后仍然跳过（同一届重复、下级通知、看不出，或 AI 调用失败）
+          const why = arbitration.error ? `AI 裁决失败（${arbitration.error}），保守跳过` : `AI 裁决：${arbitration.label || arbitration.relation}｜${arbitration.reason || ''}`;
+          Object.assign(row, { dup:'已在库或疑似重复（AI 裁决）', reason:why, final:`判重跳过：${why}`, stage:1 });
+          trail.push(step('dedupe', 'ai_skip', why));
+        } else {
+          Object.assign(row, { dup:'已在库或疑似重复', reason:'判重时与库里已有赛事重名或疑似重名，本轮跳过', final:'判重跳过', stage:1 });
+          trail.push(step('dedupe', 'skip', row.reason));
+        }
       } else {
         Object.assign(row, { dup:'新', filter:ACTION[decision.action] || decision.action, kind:KIND[decision.kind] || decision.kind || '',
           reason:decision.reason || '', confidence:Number.isFinite(decision.confidence) ? decision.confidence : null });
@@ -164,7 +179,8 @@ function composeRunDetail(runId, files) {
           afterFilter(row, url, decision, trail);
           row.filter = '平台条目，直接读详情';
         } else {
-          trail.push(step('dedupe', 'new'));
+          trail.push(arbitration?.promote ? step('dedupe', 'ai_new', `AI 裁决：${arbitration.label || arbitration.relation}｜${arbitration.reason || ''}`) : step('dedupe', 'new'));
+          if (arbitration?.promote) row.dup = `新（AI 裁决：${arbitration.label || arbitration.relation}）`;
           const note = `${KIND[decision.kind] || decision.kind || ''}${Number.isFinite(decision.confidence) ? ` ${Math.round(decision.confidence * 100)}%` : ''}：${decision.reason || ''}`;
           const outcome = decision.action === 'review' ? 'lead' : decision.action;
           if (decision.source === 'rule') {

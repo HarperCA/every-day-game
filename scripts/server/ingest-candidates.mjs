@@ -269,6 +269,7 @@ async function main() {
   const updated = [];
   const skipped = [];
   const scopeHeld = [];
+  const superseded = []; // 被新一届替代的往届记录
   const admittedCandidates = []; // 用于"可复用信源资产"：只记真正收录的那些来自哪个网站
   let eligibleDiscovered = 0;
 
@@ -286,7 +287,9 @@ async function main() {
     // 平台登记的赛事（天池、辽宁平台）按网址判重，不在这里按名字拦：同名往往是不同届。
     if (!PLATFORM_SOURCES.has(candidate.discovery?.source)) {
       const same = findSameNameRecord(candidate.name, next);
-      if (same) {
+      // AI 判重裁决认定这是同一场比赛的新一届、库里同名的只是往届已归档记录：新的替代旧的，不能再当成“同名已有”挡掉
+      const newEdition = rawCandidate.dedupeArbitration?.relation === 'new_edition' && same?.dataStatus === 'archived';
+      if (same && !newEdition) {
         if (same.dataStatus === 'quarantined') {
           skipped.push([candidate.name, `库里已有同名记录「${same.name}」（已隔离），不新增`]);
           continue;
@@ -386,17 +389,26 @@ async function main() {
       next.push(record);
       added.push([candidate.name, label, verdict, record.id]);
       admittedCandidates.push(candidate);
-      continue;
+    } else {
+      next[next.indexOf(current)] = record;
+      updated.push([candidate.name, label, record.id]);
+      admittedCandidates.push(candidate);
     }
-    next[next.indexOf(current)] = record;
-    updated.push([candidate.name, label, record.id]);
-    admittedCandidates.push(candidate);
+    // 新一届入库后，库里被它替代的已归档往届记录标上 supersededBy：新一届公开之后，旧的不再在小程序里单独出现（publicCache.js）
+    for (const oldId of rawCandidate.dedupeArbitration?.supersedes || []) {
+      const old = next.find(item => item.id === oldId);
+      if (old && old.dataStatus === 'archived' && old.id !== record.id && !old.supersededBy) {
+        next[next.indexOf(old)] = { ...old, supersededBy:record.id, supersededAt:now.toISOString() };
+        superseded.push([old.name, record.id, old.id]);
+      }
+    }
   }
 
   console.log(`\n新增 ${added.length}｜更新草稿 ${updated.length}｜跳过 ${skipped.length}`);
   const scopeReport = path.resolve(HERE, args.candidates) + '.scope-review.json';
   await fsp.writeFile(scopeReport, JSON.stringify({ createdAt:now.toISOString(), held:scopeHeld }, null, 2));
   console.log(`范围未通过 ${scopeHeld.length} 条，线索报告：${scopeReport}`);
+  for (const [name, newId, oldId] of superseded) console.log(`  ↻ 新一届替代往届 ${oldId} → ${newId}  ${name.slice(0, 30)}`);
   for (const [name, why] of added) console.log(`  + ${why.padEnd(7)} ${name.slice(0, 34)}`);
   for (const [name, why] of updated) console.log(`  ~ ${why.padEnd(7)} ${name.slice(0, 34)}`);
   for (const [name, why] of skipped) console.log(`  - ${String(why).padEnd(24)} ${name.slice(0, 30)}`);
@@ -429,6 +441,7 @@ async function main() {
       // 逐条写入了什么（后台数据流图据此区分新增草稿 / 自动发布 / 归档 / 补来源）
       addedList:added.map(([name, label, verdict, id]) => ({ name, label, verdict, id })),
       updatedList:updated.map(([name, label, id]) => ({ name, label, id })),
+      supersededList:superseded.map(([name, newId, oldId]) => ({ name, newId, oldId })),
       addedIds:persisted ? next.filter(record => !byId.has(record.id)).map(record => record.id) : [],
       publishedIds:persisted ? next.filter(record => record.dataStatus === 'published' &&
         (!byId.has(record.id) || byId.get(record.id).dataStatus !== 'published')).map(record => record.id) : [],

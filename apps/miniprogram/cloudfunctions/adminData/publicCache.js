@@ -108,17 +108,26 @@ function toPublicCache(record, now = new Date()) {
   };
 }
 
+// 是否进公开缓存：已发布、已归档的进；但“被新一届替代”的已归档旧记录（supersededBy，见 ingest-candidates.mjs），
+// 要等新一届本身公开（发布或归档）之后才隐藏——新的还在审核时，旧的继续显示，不让小程序里这场比赛凭空消失。
+function isPublicNow(record, byId) {
+  if (record?.dataStatus === 'published') return true;
+  if (record?.dataStatus !== 'archived') return false;
+  const successor = record.supersededBy ? byId.get(record.supersededBy) : null;
+  return !(successor && successor.id !== record.id && ['published', 'archived'].includes(successor.dataStatus) && !successor.supersededBy);
+}
+
 async function syncPublicCache(transaction, previousRecords, nextRecords, now = new Date()) {
-  const isCacheable = status => status === 'published' || status === 'archived';
-  const previousCached = new Set(previousRecords.filter(item => isCacheable(item?.dataStatus)).map(item => item.id));
   const previousById = new Map(previousRecords.map(item => [item?.id, item]));
+  const nextById = new Map(nextRecords.map(item => [item?.id, item]));
+  const previousCached = new Set(previousRecords.filter(item => isPublicNow(item, previousById)).map(item => item.id));
   const nextIds = new Set(nextRecords.map(item => item?.id).filter(Boolean));
   let published = 0;
   let removed = 0;
   for (const record of nextRecords) {
-    if (isCacheable(record?.dataStatus)) {
+    if (isPublicNow(record, nextById)) {
       const previous = previousById.get(record.id);
-      if (!previous || previous.dataStatus !== record.dataStatus || JSON.stringify(previous) !== JSON.stringify(record)) {
+      if (!previousCached.has(record.id) || !previous || previous.dataStatus !== record.dataStatus || JSON.stringify(previous) !== JSON.stringify(record)) {
         await transaction.collection('event_edition_public_cache').doc(record.id).set({ data:toPublicCache(record, now) });
         published += 1;
       }

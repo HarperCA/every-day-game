@@ -174,7 +174,7 @@ describe('只按网址判重', () => {
   ];
   it('名字再像，网址不同就不是重复：名字相似度 0.62 的两场不同比赛', () => {
     const candidate = { name:'中国大学生材料热处理创新创业大赛', detailUrl:'http://www.dasai.chts.org.cn/' };
-    expect(matchCandidate(candidate, masters).verdict).toBe('uncertain'); // 原来的名字判重会把它拦下
+    expect(matchCandidate(candidate, masters).verdict).toBe('new'); // 原来相似度 0.62 判“拿不准”被拦下；现在核心名称不同（材料热处理 ≠ 服务外包），直接判新
     expect(matchByUrlOnly(candidate, masters)).toBeNull();
   });
   it('网址完全相同才算：不分 http/https、www、结尾斜杠', () => {
@@ -183,5 +183,41 @@ describe('只按网址判重', () => {
   });
   it('没有网址就当不重复', () => {
     expect(matchByUrlOnly({ detailUrl:'' }, masters)).toBeNull();
+  });
+});
+
+// 2026-10-01：名字里的地区、层级、核心名称对不上，就是不同的比赛（9/30 那轮被误判成“拿不准”的真实例子）
+import { nameConflict, regionsOf } from '../scripts/crawler/lib/dedupe.mjs';
+describe('名字冲突：不同的比赛', () => {
+  const master = (name, id = 'm') => ({ id, standard_name:name, aliases:[], website_url:'https://lib.example.org/' + id });
+  const verdictOf = (candidate, library) => matchCandidate({ name:candidate, detailUrl:'https://new.example.org/x' }, library.map((name, index) => master(name, `m${index}`))).verdict;
+  it.each([
+    ['第十一届湖南省大学生化工设计竞赛(初赛)通知', '福建省大学生化工设计竞赛'],
+    ['关于举办2026年海南科技小院研究生创新大赛的通知', '福建省科技小院研究生创新大赛'],
+    ['第十届全国大学生生物医学工程创新设计竞赛报名通知', '江苏省大学生生物医学工程创新设计竞赛'],
+    ['第五届广东省大学生生物医学工程创新创业设计竞赛', '江苏省大学生生物医学工程创新设计竞赛'],
+    ['第五届云南省大学生节能减排社会实践与科技竞赛决赛在楚雄师范学院举办', '湖南省大学生节能减排社会实践与科技竞赛'],
+    ['全国高校商业精英挑战赛', '辽宁高校商业精英挑战赛'],
+    ['全国高校商业精英挑战赛', '辽宁高校商业精英挑战赛（品牌策划竞赛、文旅与会展创新创业实践竞赛、国际贸易竞赛等）'],
+    ['关于举办第九届(2026)全国大学生数字编辑创新大赛(湖北赛区)的通知', '全国大学生数字编辑创新大赛闽台赛区'],
+    ['2023第七届“中联杯”·国际大学生建筑设计竞赛', '国际大学生程序设计竞赛（ICPC）'],
+    ['湖南省第二届大学生化学化工虚拟仿真竞赛(初赛)通知', '湖南省大学生化学化工学科竞赛'],
+  ])('%s ≠ %s', (candidate, library) => {
+    expect(nameConflict(candidate, library)).toBeTruthy();
+    expect(verdictOf(candidate, [library])).toBe('new');
+  });
+  it('真正同一场比赛不会被误伤：学校通知、写法略有差别、一边没写地区', () => {
+    expect(nameConflict('上海海事大学2026“外研社•国才杯”“理解当代中国”全国大学生外语能力大赛英语组笔译赛', '“外研社·国才杯”“理解当代中国”全国大学生外语能力大赛')).toBeNull();
+    expect(nameConflict('全国大学生数学建模竞赛', '全国大学生数学建模竞赛')).toBeNull();
+    expect(nameConflict('2026年第六届大学生英语词汇竞赛', '大学生英语词汇竞赛')).toBeNull();
+    expect(nameConflict('湖南省大学生化工设计竞赛', '湖南省大学生化工设计竞赛（初赛）')).toBeNull();
+  });
+  it('名字规范化后完全一致、标题完整包含库里赛事名的，仍按原规则判重（不受这条影响）', () => {
+    expect(verdictOf('关于举办2026年全国大学生数字媒体科技作品及创意竞赛校级选拔赛的通知', ['全国大学生数字媒体科技作品及创意竞赛'])).toBe('duplicate');
+    expect(verdictOf('2025年第六届辽宁省大学生BIM应用技能大赛', ['辽宁省大学生BIM应用技能大赛'])).toBe('duplicate');
+  });
+  it('地区词提取：省名、赛区名；不含学校名里的泛称', () => {
+    expect([...regionsOf('第九届全国大学生数字编辑创新大赛(湖北赛区)')]).toEqual(['湖北']);
+    expect([...regionsOf('全国大学生数学建模竞赛')]).toEqual([]);
   });
 });
