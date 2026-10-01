@@ -182,4 +182,4 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
   };
 }
 
-module.exports = { buildReviewNotes, candidateToRecord, toSafeId, withVerifiedName };
+module.exports = { PLATFORM_SOURCES, buildReviewNotes, candidateToRecord, toSafeId, withVerifiedName };

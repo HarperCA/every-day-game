@@ -29,6 +29,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { extractChannelEntries, mergeDiscoveredChannels } from './crawler/lib/discoveredChannels.mjs';
+import { findSameNameRecord, supplementSource } from './same-name-supplement.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CJS_DIR = path.join(HERE, 'cjs');
@@ -69,7 +70,7 @@ function primeExtractAiEnv() {
 const extractAiConfigured = primeExtractAiEnv();
 
 const require = createRequire(import.meta.url);
-const { candidateToRecord, withVerifiedName } = require(path.join(CJS_DIR, 'candidateToRecord.js'));
+const { candidateToRecord, withVerifiedName, PLATFORM_SOURCES } = require(path.join(CJS_DIR, 'candidateToRecord.js'));
 const { blockedTitleReason, isNoticeTitle, isNonEventTitle } = require(path.join(CJS_DIR, 'noticeResolution.js'));
 const { isClearlyOutOfScope, classifyCompetitionScope, assessIntakeRecord } = require(path.join(CJS_DIR, 'competitionScope.js'));
 const { assessAdmission } = require(path.join(CJS_DIR, 'competitionAdmission.js'));
@@ -280,6 +281,25 @@ async function main() {
     if (titleBlock || isNoticeTitle(candidate.name) || isNoticeTitle(candidate.seriesName)) {
       skipped.push([candidate.name, titleBlock || '通知或公告标题仅作发现线索，不予入库']);
       continue;
+    }
+    // 读完详情、拿到真实比赛名之后，再和库里比一次：名字规范化后完全一致的，不再新增，给已有那条补来源（same-name-supplement.mjs）。
+    // 平台登记的赛事（天池、辽宁平台）按网址判重，不在这里按名字拦：同名往往是不同届。
+    if (!PLATFORM_SOURCES.has(candidate.discovery?.source)) {
+      const same = findSameNameRecord(candidate.name, next);
+      if (same) {
+        if (same.dataStatus === 'quarantined') {
+          skipped.push([candidate.name, `库里已有同名记录「${same.name}」（已隔离），不新增`]);
+          continue;
+        }
+        const supplemented = supplementSource(same, { url:candidate.detailUrl, foundName:candidate.name, now });
+        if (supplemented === same) {
+          skipped.push([candidate.name, `库里已有同名赛事「${same.name}」，来源已存在，不新增`]);
+        } else {
+          next[next.indexOf(same)] = supplemented;
+          updated.push([candidate.name, '补来源']);
+        }
+        continue;
+      }
     }
     const merged = withExtraction(candidate, extraction);
     // 百度只给标题、网址和正文片段；资格等字段必须等详情页抽取完成后
