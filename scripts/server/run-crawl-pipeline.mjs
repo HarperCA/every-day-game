@@ -30,10 +30,12 @@ import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
 import { collectMentions } from './known-event-mentions.mjs';
 import { loadMemory, recentlyRejected, remember, saveMemory } from './rejected-memory.mjs';
 import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
-import { followupCandidatesFromReport, splitTrustedFollowups } from './resolve-notice-leads.mjs';
+import { followupCandidatesFromReport, splitTrustedFollowups, withTraceName } from './resolve-notice-leads.mjs';
+import { isUnreadableHost } from './unreadable-hosts.mjs';
 import { stampDiscovery } from './discovery.mjs';
 import { buildPipelineLedger } from './pipeline-ledger.mjs';
 import { selectAmbiguous } from './arbitrate-dedupe.mjs';
+import { FIXED_SOURCE_INTERVAL_DAYS, checkDue, loadSchedule, markCrawled, saveSchedule } from './source-schedule.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN_FILE = path.join(HERE, '.admin-token');
@@ -53,18 +55,19 @@ let lastRunEntry = {};
 // 名字像不像不说明问题（辽宁的赛事都叫“辽宁省大学生××大赛”，字面相似度 0.6~0.7），
 // 所以名字相似但网址不同的“拿不准”按新候选处理。搜索来的候选仍按原规则。
 const SOURCE_CONFIG = {
-  tianchi: { script: 'crawler/crawl-tianchi.mjs', volumeFlag: '--pages', uniqueUrls: true },
+  // everyDays：固定来源（不是百度搜索的）每 7 天才抓一次，见 source-schedule.mjs；百度搜索每晚都跑
+  tianchi: { script: 'crawler/crawl-tianchi.mjs', volumeFlag: '--pages', uniqueUrls: true, everyDays: FIXED_SOURCE_INTERVAL_DAYS },
   // DataFountain 已于 2026-09-30 停用：平台的“可报名”标记不可靠，每晚交来的 32 场全是已截止的旧比赛
   // 或 2099 年截止的练习题，还把一个大赛的每道赛题各列一条。用户决定整个来源不要了。
   baidu: { script: 'search-baidu.mjs', volumeFlag: '--queries' },
   // 辽宁省大学生创新创业管理共享平台：公开数据接口，经上海网页中转读取（platforms/upln.py）
-  upln: { command: 'python3', script: 'platforms/upln.py', uniqueUrls: true },
+  upln: { command: 'python3', script: 'platforms/upln.py', uniqueUrls: true, everyDays: FIXED_SOURCE_INTERVAL_DAYS },
 };
 
 function parseArgs(argv) {
-  const args = { sources: ['tianchi', 'upln', 'baidu'], dryRun: false, filterOnly:false, pages: 0, queries:0 };
+  const args = { sources: ['tianchi', 'upln', 'baidu'], sourcesGiven: false, dryRun: false, filterOnly:false, pages: 0, queries:0 };
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--sources') args.sources = argv[i + 1].split(',').map(s => s.trim()).filter(Boolean);
+    if (argv[i] === '--sources') { args.sources = argv[i + 1].split(',').map(s => s.trim()).filter(Boolean); args.sourcesGiven = true; }
     if (argv[i] === '--dry-run') args.dryRun = true;
     if (argv[i] === '--filter-only') args.filterOnly = true;
     if (argv[i] === '--pages') args.pages = Number(argv[i + 1]) || 0;
@@ -122,10 +125,21 @@ async function main() {
   // 判重命中库里已有赛事的通知不再丢掉：整理成清单，02:15 记录追溯据此找官方来源（known-event-mentions.mjs）
   const recordsById = new Map(records.map(record => [record.id, record]));
   const mentionGroups = new Map();
+  // 固定来源每 7 天才抓一次；手动指定了 --sources 的运行不受限制，也不更新记录
+  const scheduleFile = path.join(HERE, 'plans', 'source-schedule.json');
+  let schedule = loadSchedule(scheduleFile);
+  const scheduleReport = [];
   for (const source of args.sources) {
     const config = SOURCE_CONFIG[source];
     if (!config || !fs.existsSync(path.join(HERE, config.script))) {
       console.log(`跳过未知来源: ${source}`);
+      continue;
+    }
+    const due = args.sourcesGiven ? { run:true, everyDays:config.everyDays || 0, reason:'手动指定来源，不受频率限制' } : checkDue(schedule, source, config.everyDays);
+    scheduleReport.push({ source, ran:due.run, everyDays:due.everyDays || 0, lastCrawledAt:due.lastCrawledAt ?? schedule[source]?.lastCrawledAt ?? null, nextDueAt:due.nextDueAt || null, reason:due.reason });
+    if (!due.run) {
+      console.log(`--- ${source}：${due.reason}（下次约 ${due.nextDueAt?.slice(0, 10)}）---\n`);
+      summary.push({ source, fetched:0, new:0, duplicate:0, likely_duplicate:0, uncertain:0, skippedBySchedule:true });
       continue;
     }
     const outFile = path.join(RUN_DIR, `${source}-candidates.json`);
@@ -143,6 +157,7 @@ async function main() {
     run(config.command || 'node', crawlArgs);
 
     const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
+    if (config.everyDays && !args.dryRun && !args.sourcesGiven) { schedule = markCrawled(schedule, source, RUN_ID); saveSchedule(scheduleFile, schedule); }
     const buckets = classifyCandidates(candidates, masters);
     collectMentions([buckets], masters, recordsById, mentionGroups);
     const newCandidates = [...buckets.new, ...(config.uniqueUrls ? buckets.uncertain : [])].map(({ candidate }) => candidate);
@@ -172,6 +187,7 @@ async function main() {
     });
   }
 
+  fs.writeFileSync(path.join(RUN_DIR, 'source-schedule.json'), JSON.stringify({ createdAt:new Date().toISOString(), sources:scheduleReport }, null, 2), 'utf8');
   const mentionsFile = path.join(RUN_DIR, 'known-event-mentions.json');
   fs.writeFileSync(mentionsFile, JSON.stringify({ createdAt:new Date().toISOString(), groups:[...mentionGroups.values()] }, null, 2), 'utf8');
   console.log(`提到库里已有赛事的通知：涉及 ${mentionGroups.size} 场赛事，清单 ${mentionsFile}
@@ -209,6 +225,20 @@ async function main() {
     jevResult.decisions.push({ candidate, action:'fetch', kind:'platform_entry', confidence:1, source:'platform', reason:'平台登记的赛事条目，跳过前置筛选直接读详情', probabilities:null, cost:0 });
     jevResult.fetch.push(candidate);
   }
+  // 已知读不了的站（微信公众号等，robots 不让抓）：放行了也读不到，不去读，改成转进通知追溯，用标题或摘要里的赛事名去搜官网
+  const unreadableSet = new Set();
+  for (const decision of jevResult.decisions) {
+    if (decision.action !== 'fetch' || isPlatform(decision.candidate) || !isUnreadableHost(decision.candidate.detailUrl)) continue;
+    decision.action = 'trace';
+    decision.unreadable = true;
+    decision.reason = `${decision.reason}；但这个网站读不了（robots 不允许抓取），不读详情，转去通知追溯`;
+    unreadableSet.add(decision.candidate);
+  }
+  if (unreadableSet.size) {
+    jevResult.fetch = jevResult.fetch.filter(candidate => !unreadableSet.has(candidate));
+    jevResult.trace = [...(jevResult.trace || []), ...unreadableSet];
+    console.log(`读不了的网站 ${unreadableSet.size} 条（微信公众号等）：不读详情，转去通知追溯`);
+  }
   const jevReport = path.join(RUN_DIR, 'jev-filter-report.json');
   fs.writeFileSync(jevReport, JSON.stringify({
     createdAt:new Date().toISOString(), model:'typesafe/jev-1.13', confidenceThreshold:0.8,
@@ -228,7 +258,8 @@ async function main() {
   // 不再只取前 10 条；resolve-notice-leads 按上级赛事分组、按重要程度分配搜索额度。
   const formalNotices = jevResult.decisions
     .filter(item => item.action === 'trace' || (/通知|公告|通告/.test(item.candidate.name || '') && item.kind !== 'unrelated' && item.action !== 'reject'))
-    .map(item => item.candidate);
+    // 标题没有信息量（只有日期时间地名）或读不了的页面：赛事名换成摘要里提取的；同一场比赛的会在追溯里按赛事名归成一组，只搜一次
+    .map(item => withTraceName(item.candidate, { replaceTitle:item.kind === 'title_no_info' || item.unreadable === true }));
   const noticeBudget = (() => {
     try { return Number(JSON.parse(fs.readFileSync(planFileFor(), 'utf8')).trace?.noticeFollowups) || 10; } catch { return 10; }
   })();
@@ -241,7 +272,7 @@ async function main() {
       run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile, '--budget', String(noticeBudget)]);
       // 已经搜索追溯过的通知记 30 天，避免同一篇通知每晚重复搜（额度不够没轮上的不记，下次还有机会）
       if (!args.dryRun) {
-        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => item.followupQuery && !item.error)
+        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => (item.followupQuery || item.pageVisit?.found) && !item.error)
           .flatMap(item => (item.notices || [{ url:item.noticeUrl }]).map(notice => ({ url:notice.url, reason:`已追溯上级赛事：${item.proposedName}`, stage:'通知追溯' })));
         saveMemory(memoryFile, remember(loadMemory(memoryFile), traced));
       }

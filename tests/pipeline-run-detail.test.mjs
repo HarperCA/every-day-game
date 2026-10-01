@@ -254,3 +254,43 @@ describe('编号：最初的信息源逐条编号，追溯结果挂在发起追�
     expect(first.search.results.map(result => result.no)).toEqual(['2.1', '']);
   });
 });
+
+describe('固定来源抓取频率在明细里的说明', () => {
+  it('这一轮没抓的固定来源：写明上次和下次的时间', () => {
+    const detail = composeRunDetail('2026-09-28T17-00-00-614Z', { 'baidu-candidates.json':{ candidates:[] }, 'source-schedule.json':{ sources:[
+      { source:'tianchi', ran:false, everyDays:7, lastCrawledAt:'2026-09-30T17:00:15Z', nextDueAt:'2026-10-07T17:00:15.000Z', reason:'本轮跳过' },
+      { source:'baidu', ran:true, everyDays:0, reason:'每晚抓取' }] } });
+    expect(detail.sourceSchedule).toEqual([
+      { source:'天池', ran:false, everyDays:7, lastCrawledAt:'2026-09-30T17:00:15Z', nextDueAt:'2026-10-07T17:00:15.000Z', reason:'本轮跳过' },
+      { source:'百度搜索', ran:true, everyDays:0, lastCrawledAt:null, nextDueAt:null, reason:'每晚抓取' },
+    ]);
+  });
+  it('老的运行没有这个文件，也不报错', () => {
+    expect(composeRunDetail('2026-09-28T17-00-00-614Z', { 'baidu-candidates.json':{ candidates:[] } }).sourceSchedule).toEqual([]);
+  });
+});
+
+describe('读不了的站转追溯、标题没有信息量的路径', () => {
+  const sfiles = {
+    'baidu-candidates.json':{ candidates:[
+      { name:'2026年9月27日 09:54广东', detailUrl:'https://mp.weixin.qq.com/s?mid=1', introduction:'举办2026年“强国杯”英语能力大赛。', discovery:{} },
+      { name:'2026年9月25日 09:06广东', detailUrl:'https://mp.weixin.qq.com/s?mid=2', introduction:'x', discovery:{} },
+    ] },
+    'formal-notices.json':{ candidates:[{ name:'2026年“强国杯”英语能力大赛', detailUrl:'https://mp.weixin.qq.com/s?mid=1', introduction:'', discovery:{} }, { name:'2026年9月25日 09:06广东', detailUrl:'https://mp.weixin.qq.com/s?mid=2', introduction:'x', discovery:{} }] },
+    'jev-filter-report.json':{ decisions:[
+      { url:'https://mp.weixin.qq.com/s?mid=1', action:'trace', kind:'organizer_notice', unreadable:true, confidence:0.89, source:'jev', reason:'读不了' },
+      { url:'https://mp.weixin.qq.com/s?mid=2', action:'trace', kind:'title_no_info', confidence:1, source:'rule', reason:'标题没有信息量' },
+    ] },
+    'notice-resolution-leads.json':{ results:[{ noticeUrl:'https://mp.weixin.qq.com/s?mid=1', noticeTitle:'x', proposedName:'强国杯英语能力大赛', followupQuery:'q', notices:[{ url:'https://mp.weixin.qq.com/s?mid=1' }], leads:[] }] },
+  };
+  const detail = composeRunDetail('2026-09-28T17-00-00-614Z', sfiles);
+  const trail = url => detail.rows.find(row => row.url === url).trail.map(item => `${item.n}:${item.o}`);
+  it('读不了的站：Jev 放行后转去追溯，不进读详情', () => {
+    expect(trail('https://mp.weixin.qq.com/s?mid=1')).toEqual(expect.arrayContaining(['jev:unreadable', 'trace:none']));
+    expect(trail('https://mp.weixin.qq.com/s?mid=1').some(item => item.startsWith('read:'))).toBe(false);
+  });
+  it('标题没有信息量：规则一步判成追溯线索，提不出赛事名的记为“没搜”', () => {
+    expect(trail('https://mp.weixin.qq.com/s?mid=2')).toEqual(expect.arrayContaining(['rule:trace', 'trace:noname']));
+    expect(detail.rows.find(row => row.url === 'https://mp.weixin.qq.com/s?mid=2').kind).toBe('标题没有信息量');
+  });
+});

@@ -13,7 +13,7 @@ const RUN_ID = /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/;
 
 const KIND = {
   repost_or_school_selection:'转载或校内选拔', news_or_result:'新闻或赛果', unrelated:'与赛事无关',
-  organizer_notice:'主办方通知', competition_site:'赛事官网', registration_entry:'报名入口', directory_lead:'目录清单',
+  organizer_notice:'主办方通知', competition_site:'赛事官网', registration_entry:'报名入口', directory_lead:'目录清单', title_no_info:'标题没有信息量',
 };
 const ACTION = { fetch:'放行读正文', review:'低置信度，只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃（与赛事无关）' };
 const SOURCE = { baidu:'百度搜索', tianchi:'天池', upln:'辽宁平台', datafountain:'DataFountain' };
@@ -127,7 +127,8 @@ function composeRunDetail(runId, files) {
       const outcomeTrace = pages ? 'found' : found?.followupQuery ? 'none' : found ? 'noquota' : 'noname';
       // 用了哪个搜索引擎、返回几条、保留几条（2026-10-01 起百度 → Kimi → DeepSeek 依次补位）
       const searched = found?.search;
-      const searchNote = searched ? `用${searched.label}搜索，返回 ${searched.returned} 条，保留 ${searched.kept} 条` : found?.error ? `搜索失败：${found.error}` : '';
+      const visitNote = found?.pageVisit?.found ? `访问通知页面，提取到 ${found.pageVisit.found} 个网址` : '';
+      const searchNote = [visitNote, searched ? `用${searched.label}搜索，返回 ${searched.returned} 条，保留 ${searched.kept} 条` : found?.error ? `搜索失败：${found.error}` : ''].filter(Boolean).join('；');
       const noteTrace = { found:pages ? `${searchNote ? `${searchNote}；` : ''}找到 ${pages} 个待核验页面${searched ? '' : '（通知正文里写出的网址）'}` : '', none:searchNote ? `${searchNote}，没有可用的页面` : (found?.error ? searchNote : '搜索后没找到'),
         noquota:'提得出赛事名，但本晚三个搜索引擎的额度都用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
       trail.push(step('trace', outcomeTrace, noteTrace));
@@ -191,7 +192,7 @@ function composeRunDetail(runId, files) {
           else trail.push(step('dedupe', 'new'));
           if (arbitration?.promote) row.dup = `新（AI 裁决：${arbitration.label || arbitration.relation}）`;
           const note = `${KIND[decision.kind] || decision.kind || ''}${Number.isFinite(decision.confidence) ? ` ${Math.round(decision.confidence * 100)}%` : ''}：${decision.reason || ''}`;
-          const outcome = decision.action === 'review' ? 'lead' : decision.action;
+          const outcome = decision.unreadable ? 'unreadable' : decision.action === 'review' ? 'lead' : decision.action;
           if (decision.source === 'rule') {
             trail.push(step('rule', outcome, note));
           } else {
@@ -277,13 +278,19 @@ function composeRunDetail(runId, files) {
       added:ingest.added ?? null, failureReasons:ingest.failureReasons || {},
     },
     rows,
+    // 固定来源（天池、辽宁平台）每 7 天才抓一次：这一轮抓了没有、上次什么时候、下次什么时候
+    sourceSchedule:(files['source-schedule.json']?.sources || []).map(item => ({ source:SOURCE[item.source] || item.source, ran:Boolean(item.ran), everyDays:item.everyDays || 0,
+      lastCrawledAt:item.lastCrawledAt || null, nextDueAt:item.nextDueAt || null, reason:item.reason || '' })),
     notices:leads.map(item => ({ no:noOfUrl.get(item.noticeUrl) || '', title:clip(item.noticeTitle, 150), url:item.noticeUrl, name:item.proposedName || '', query:item.followupQuery || '',
       leads:(item.leads || []).map(lead => ({ no:leadNo.get(lead.url) || '', title:clip(lead.title, 120), url:lead.url })),
       // 这一组搜了没有：用的哪个引擎、返回了什么、保留了哪几条；换过引擎或失败的，带上每次尝试
       search:item.search ? { engine:item.search.engine, label:item.search.label, returned:item.search.returned, kept:item.search.kept,
         results:(item.search.results || []).map(result => ({ no:result.kept ? (leadNo.get(result.url) || '') : '', title:clip(result.title, 120), url:result.url, kept:Boolean(result.kept) })),
         attempts:(item.searchAttempts || item.search.attempts || []).map(attempt => ({ label:attempt.label, ok:attempt.ok, returned:attempt.returned ?? null, error:attempt.error || '', usage:attempt.usage || null })) } : null,
-      error:item.error || '' })),
+      error:item.error || '',
+      // 第一种办法：访问通知页面提取网址（读了哪几篇、各提取到几个）；提取到了就不再搜索
+      pageVisit:item.pageVisit ? { found:item.pageVisit.found || 0, visits:(item.pageVisit.visits || []).map(visit => ({ url:visit.url, status:visit.status, found:visit.found || 0 })) } : null,
+      searchSkipped:item.searchSkipped || '' })),
     // 本轮各搜索引擎用了多少次、有没有被停用
     searchEngines:Array.isArray(files['notice-resolution-leads.json']?.engines) ? files['notice-resolution-leads.json'].engines : [],
     perQuery:(baidu.perQuery || []).map(item => ({ query:item.query, route:item.route || '', results:item.references, outOfScope:item.outOfScope,

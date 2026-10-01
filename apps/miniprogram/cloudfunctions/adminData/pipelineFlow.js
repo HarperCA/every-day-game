@@ -14,7 +14,7 @@ const NODES = {
     desc:'按当晚的搜索计划搜出候选；搜索脚本自己会先丢掉不在收录范围、与竞赛无关、同轮重复的。',
     outcomes:{ ok:{ label:'成为候选', to:'dedupe' }, dropped:{ label:'搜索时丢弃', to:'end_dropped' } } },
   platforms:{ label:'平台抓取', kind:'system', who:'天池、辽宁平台（读平台接口）',
-    desc:'平台上登记的赛事本身就是结构化条目，直接读接口，不用 AI 判断“这是什么网页”。',
+    desc:'平台上登记的赛事本身就是结构化条目，直接读接口，不用 AI 判断“这是什么网页”。固定来源（天池、辽宁平台）每 7 天才抓一次，其余晚上不抓；百度搜索每晚都跑。',
     outcomes:{ ok:{ label:'成为候选', to:'dedupe' } } },
   dedupe:{ label:'判重\n近期被拒记忆', kind:'system', who:'系统规则',
     desc:'和库里全部赛事比对（网址完全一致、名字规范化后一致或相似）；名字里地区、层级不同的判为不同比赛；30 天内被拒过的网址也在这里跳过。平台条目只按网址判重。'
@@ -27,17 +27,20 @@ const NODES = {
       + '不是同一场、或是同一场的新一届，继续往下走；新一届入库后替代库里已归档的往届记录。同一届重复、下级通知、看不出的跳过。',
     outcomes:{ new:{ label:'不是同一场或是新一届，进前置筛选', to:'rule' }, skip:{ label:'同一届重复、下级通知或看不出，跳过', to:'end_ai_dup' } } },
   rule:{ label:'前置筛选\n标题规则', kind:'system', who:'系统规则（看标题）',
-    desc:'标题特征明显的先处理：目录清单、校赛校选、赛事新闻、栏目页、只有机构名。没命中的交给下一环节的 AI。',
+    desc:'标题特征明显的先处理：目录清单、校赛校选、赛事新闻、栏目页、只有机构名；标题只有日期、时间、地名的（没有信息量）不读详情，只当追溯线索。没命中的交给下一环节的 AI。',
     outcomes:{ pass:{ label:'没命中，交给 AI', to:'jev' }, trace:{ label:'追溯上级赛事', to:'trace' },
       notice:{ label:'标题是通知，转去追溯', to:'trace' }, lead:{ label:'目录/栏目，只留线索', to:'end_lead' }, reject:{ label:'丢弃', to:'end_rejected' } } },
   jev:{ label:'前置筛选\nJev 分类', kind:'ai', who:'Jev（OpenRouter 上的小分类模型），只看标题、摘要、网址，不读网页',
     desc:'Jev 给出每一类的概率。先看“与赛事无关”：> 50% 丢弃，20%～50% 只留线索；其余当作赛事相关页面：官网、报名入口、主办方通知合计更高的读详情，学校转载、新闻合计更高的追溯上级赛事，目录清单最高的只留线索。',
     outcomes:{ fetch:{ label:'放行读详情', to:'read' }, notice:{ label:'放行，但标题是通知，转去追溯', to:'trace' },
+      unreadable:{ label:'放行，但网站读不了（微信等），转去追溯', to:'trace' },
       fetch_unread:{ label:'放行但本轮没读', to:'end_lead' }, trace:{ label:'转载/新闻，追溯上级赛事', to:'trace' },
       lead:{ label:'拿不准或目录，只留线索', to:'end_lead' }, reject:{ label:'与赛事无关，丢弃', to:'end_rejected' } } },
-  trace:{ label:'通知追溯', kind:'ai', who:'系统按上级赛事分组 + 联网搜索官网（百度 → Kimi → DeepSeek 依次补位）',
-    desc:'通知、转载、新闻里都写着上级赛事的名字。按赛事分组，通知正文里写出的网址直接作为线索，再搜索官网和当届官方通知。'
-      + '搜索先用百度（每晚 10 次），用完换 Kimi 会员通道自带的搜索（15 次），再不够用 DeepSeek 的联网搜索（15 次，只返回标题和网址）。每次搜索用了哪个、返回了什么，都记在明细里。',
+  trace:{ label:'通知追溯', kind:'ai', who:'系统按上级赛事分组；①访问通知页面提取网址 ②用“比赛名 报名入口”联网搜索（百度 → Kimi → DeepSeek 依次补位）',
+    desc:'通知、转载、新闻里都写着上级赛事的名字，按赛事名分组（同一场比赛的几篇只处理一次）。追溯分两种：'
+      + '①页面能读的，直接访问通知页面，提取页面里写出的官网、报名网址，不花搜索额度；'
+      + '②页面读不了（微信公众号等）或页面里没写网址的，用“比赛名 报名入口”搜索最新的官网：先用百度（每晚 10 次），用完换 Kimi（15 次），再不够用 DeepSeek（15 次，只返回标题和网址）。'
+      + '每一组用了哪种办法、搜索返回了什么，都记在明细里。',
     outcomes:{ found:{ label:'找到待核验页面', to:'followup' }, none:{ label:'搜了但没找到页面', to:'end_trace_none' },
       noquota:{ label:'提得出赛事名，但没轮上搜索额度', to:'end_trace_none' }, noname:{ label:'提不出合法赛事名，没搜', to:'end_trace_none' } } },
   followup:{ label:'追溯页面\n筛选', kind:'ai', who:'通知正文里写出的网址直接放行；搜索搜到的由 Jev 判',

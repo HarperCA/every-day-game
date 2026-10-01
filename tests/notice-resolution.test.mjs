@@ -8,7 +8,7 @@ describe('通知追溯', () => {
   it('从高校通知中提取赛事名并搜索官网', () => {
     const title = '关于荣成学院举办“2026年全国高校商业精英挑战赛跨境电商赛道”的通知';
     expect(competitionNameFromNotice(title)).toBe('2026年全国高校商业精英挑战赛跨境电商赛道');
-    expect(followupQuery(title)).toContain('主办方 赛事官网 官方报名');
+    expect(followupQuery(title)).toMatch(/ 报名入口$/);
   });
 
   it('排除原通知页、公众号和百科；http 的官网也收（2026-09-29 起），结果仅作待核验线索', () => {

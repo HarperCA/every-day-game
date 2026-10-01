@@ -1,5 +1,7 @@
 // 对通知标题定向寻找赛事官网线索；搜索结果只供核验，不能自动称为官方来源。
 import { baiduEngine, createSearcher, deepseekEngine, kimiEngine } from './search-engines.mjs';
+import { linksFromNoticePage } from './notice-page-links.mjs';
+import { isUnreadableHost } from './unreadable-hosts.mjs';
 import fs from 'node:fs/promises';
 import { setDefaultResultOrder } from 'node:dns';
 import path from 'node:path';
@@ -22,8 +24,28 @@ export function competitionNameFromNotice(title) {
   return /(?:竞赛|大赛|挑战赛|比赛)$/.test(lastSegment) ? lastSegment : name;
 }
 
+// 标题没有信息量、或页面读不了（微信公众号）时，赛事名只能从摘要里找：“……举办 2026 年‘强国杯’英语能力大赛……”。
+// 只认“举办/开展/组织/主办/承办/举行/启动/征集/参加”这类动词后面跟着的、以“大赛/竞赛/挑战赛/比赛/联赛/锦标赛”结尾的名字，
+// 找不到就不猜（宁可不追溯，也不拿一段不是赛事名的话去搜）。
+const SNIPPET_NAME = /(?:举办|主办|承办|开展|组织|举行|启动|征集|参加)了?(?:第[一二三四五六七八九十百\d]+届)?((?:(?:19|20)\d{2}\s*年?)?[“"「『]?[一-龥A-Za-z0-9“”"「」『』·+&（）()\-]{2,30}?(?:大赛|竞赛|挑战赛|比赛|联赛|锦标赛))/;
+export function contestNameFromSnippet(text) {
+  const match = String(text || '').replace(/\s+/g, '').match(SNIPPET_NAME);
+  if (!match) return '';
+  const name = parentCompetitionName(match[1]);
+  return VALID_NAME(name.replace(/(?:19|20)\d{2}\s*年?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '')) ? name : '';
+}
+
+// 追溯用的候选：标题没有信息量、或页面读不了的，赛事名换成摘要里提取的（原标题留在 originalTitle）；提取不到的原样返回，后面按“提不出赛事名”处理
+export function withTraceName(candidate, { replaceTitle = false } = {}) {
+  if (!replaceTitle) return candidate;
+  const name = contestNameFromSnippet(candidate.introduction || candidate.description || '');
+  return name ? { ...candidate, name, originalTitle:candidate.name, nameFromSnippet:true } : candidate;
+}
+
+// 已经知道比赛名：直接“比赛名 报名入口”去搜，找最新的官网（2026-10-01，用户定；
+// 实测“全国大学生生命科学竞赛报名入口”百度第 1 条就是官网 culsc.cn）
 export function followupQuery(title) {
-  return `${competitionNameFromNotice(title)} 主办方 赛事官网 官方报名`;
+  return `${competitionNameFromNotice(title)} 报名入口`;
 }
 
 // 页面文字里是不是在说这场比赛：赛事名核心词的相邻两字组（“热处”“处理”……）大部分对得上就算（2026-10-01）。
@@ -169,8 +191,12 @@ async function main() {
   const { candidates = [] } = JSON.parse(await fs.readFile(path.resolve(HERE, input), 'utf8'));
   const groups = groupNotices(candidates).sort((a, b) => noticeImportance(b) - noticeImportance(a));
   const searcher = createSearcher([{ engine:baiduEngine(), budget }, { engine:kimiEngine(), budget:kimiBudget }, { engine:deepseekEngine(), budget:deepseekBudget }]);
+  // 访问通知页面用的抓取器（遵守 robots、同一网站间隔 1.5 秒）；服务器上在 ./crawler/lib/，仓库里在 ../crawler/lib/
+  const { Fetcher } = await import('./crawler/lib/fetcher.mjs').catch(() => import('../crawler/lib/fetcher.mjs'));
+  const fetcher = new Fetcher({ perHostDelayMs:1500 });
   const results = [];
   let searched = 0;
+  let visitedWithLinks = 0;
   for (const group of groups) {
     const first = group.notices[0];
     // 标题用网站域名：原先把来源通知标题放进标题，追溯阶段“标题含通知就跳过”的规则把这些官网全拦了（2026-09-30）
@@ -178,8 +204,29 @@ async function main() {
     const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:hostOf(url), url, summary:`通知摘要里写出的网址，来自：${notice.title.slice(0, 60)}`, status:'待核验', fromNoticeText:true })));
     const result = { noticeUrl:first.url, noticeTitle:first.title, noticeDiscovery:first.discovery, notices:group.notices.map(({ discovery, ...notice }) => notice),
       proposedName:group.proposedName, importance:noticeImportance(group), leads:free };
+    // 追溯分两种（2026-10-01，用户定）：
+    // ① 页面能读：直接访问通知页面，提取页面里写出的官网、报名网址（不花搜索额度）；组里的通知按顺序试，读到一篇就停，最多试两篇
+    const visits = [];
+    for (const notice of group.notices) {
+      if (visits.some(visit => visit.status === 'ok') || visits.length >= 2) break;
+      if (isUnreadableHost(notice.url)) { visits.push({ url:notice.url, status:'unreadable_host', found:0 }); continue; }
+      const page = await fetcher.get(notice.url);
+      if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) { visits.push({ url:notice.url, status:page.status === 'ok' ? 'not_html' : page.status, found:0 }); continue; }
+      const links = linksFromNoticePage(page.text, page.finalUrl || notice.url);
+      const known = new Set(result.leads.map(lead => lead.url));
+      const fresh = links.filter(link => !known.has(link.url));
+      result.leads.push(...fresh.map(link => ({ title:link.label || hostOf(link.url), url:link.url, status:'待核验', fromNoticeText:true, fromPage:true,
+        summary:`通知页面里写出的网址${link.label ? `（${link.label}）` : ''}，来自：${notice.title.slice(0, 60)}` })));
+      visits.push({ url:notice.url, status:'ok', found:fresh.length });
+    }
+    const pageFound = visits.reduce((sum, visit) => sum + visit.found, 0);
+    result.pageVisit = { visits, found:pageFound };
+    if (pageFound) visitedWithLinks += 1;
+    // ② 已经知道比赛名、但页面读不了或页面里没写网址：用“比赛名 报名入口”搜索（百度 → Kimi → DeepSeek 依次补位）。
+    //    页面或摘要里已经写出网址的，不再花搜索额度
     const query = followupQuery(group.proposedName);
-    const outcome = await searcher.search(query);
+    const outcome = result.leads.length ? null : await searcher.search(query);
+    if (result.leads.length) result.searchSkipped = pageFound ? '通知页面里已经写出网址，不再搜索' : '通知摘要里已经写出网址，不再搜索';
     if (outcome) {
       // 有引擎接了这次搜索（成功，或者都失败了）：记下查询词；全都没额度才算“没轮上”，不带查询词
       result.followupQuery = query;
@@ -203,7 +250,7 @@ async function main() {
   }
   const engines = searcher.summary();
   await fs.writeFile(path.resolve(HERE, output), JSON.stringify({ engines, results }, null, 2), 'utf8');
-  console.log(`通知 ${candidates.length} 条 → 上级赛事 ${groups.length} 场；搜索 ${searched} 场（${engines.map(item => `${item.label} ${item.used}/${item.used + item.left}${item.disabled ? '，已停用' : ''}`).join('、')}）；找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
+  console.log(`通知 ${candidates.length} 条 → 上级赛事 ${groups.length} 场；访问通知页面提取到网址 ${visitedWithLinks} 场；搜索 ${searched} 场（${engines.map(item => `${item.label} ${item.used}/${item.used + item.left}${item.disabled ? '，已停用' : ''}`).join('、')}）；找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

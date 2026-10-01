@@ -81,6 +81,9 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
     <p className="pipeline-note">搜索时丢弃 {s.dropped} 条；前置筛选：{Object.entries(s.filter).map(([key, value]) => `${FILTER_LABEL[key] || key} ${value}`).join('、')}；
       其中 {s.formalNotices} 条正式通知转去追溯赛事官网。{Object.keys(s.failureReasons).length ? `读了详情页但未入库的原因：${Object.entries(s.failureReasons).map(([key, value]) => `${key}（${value}）`).join('；')}。` : ''}</p>
 
+    {detail.sourceSchedule && detail.sourceSchedule.some(item => item.everyDays > 0) && <p className="pipeline-note">固定来源每 {detail.sourceSchedule.find(item => item.everyDays > 0)?.everyDays} 天才抓一次：{detail.sourceSchedule.filter(item => item.everyDays > 0).map(item =>
+      `${item.source}${item.ran ? '本轮已抓取' : `本轮没抓（上次 ${item.lastCrawledAt ? new Date(item.lastCrawledAt).toLocaleDateString('zh-CN', { timeZone:'Asia/Shanghai' }) : '—'}，下次约 ${item.nextDueAt ? new Date(item.nextDueAt).toLocaleDateString('zh-CN', { timeZone:'Asia/Shanghai' }) : '—'}）`}`).join('；')}。百度搜索每晚都跑。</p>}
+
     <section className="panel pipeline-flow">
       {flow ? <>
         <div className="flow-legend"><span className="flow-dot system">系统</span>固定规则，每次结果一样，不花钱　<span className="flow-dot ai">AI</span>用了模型判断　<span className="flow-dot end">结束</span>不再往下走　· 方框右上角是流入场数，连线上的数字是走这条线的场数</div>
@@ -136,15 +139,18 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
     {detail.notices.length > 0 && <section className="panel"><h2>转入通知追溯的正式通知</h2>
       {detail.searchEngines && detail.searchEngines.length > 0 && <p className="pipeline-note">本轮搜索引擎（百度用完换 Kimi，再不够用 DeepSeek）：{detail.searchEngines.map(item =>
         `${item.label} 用了 ${item.used} 次、剩 ${item.left} 次${item.configured ? '' : '（没配密钥）'}${item.disabled ? '（连续失败，已停用）' : ''}`).join('；')}。</p>}
-      <div className="table-wrap"><table><thead><tr><th>编号</th><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>搜索用了哪个，返回了什么</th><th>找到的待核验页面</th></tr></thead>
+      <div className="table-wrap"><table><thead><tr><th>编号</th><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>用了哪种办法，返回了什么</th><th>找到的待核验页面</th></tr></thead>
         <tbody>{detail.notices.map(notice => <tr key={notice.url}><td className="row-no">{notice.no || '—'}</td><td><a href={notice.url} target="_blank" rel="noreferrer">{notice.title}</a></td><td>{notice.name}</td><td className="muted">{notice.query}</td>
-          <td className="search-cell">{notice.search
+          <td className="search-cell">{notice.pageVisit && notice.pageVisit.visits.length > 0 && <p className="muted">①访问通知页面：{notice.pageVisit.visits.map(visit =>
+            visit.status === 'ok' ? `读到，提取到 ${visit.found} 个网址` : visit.status === 'unreadable_host' ? '网站读不了（微信等）' : `没读到（${visit.status}）`).join('；')}</p>}
+            {notice.searchSkipped && <p className="muted">②{notice.searchSkipped}</p>}
+            {notice.search
             ? <details><summary><span className={`chip engine-${notice.search.engine}`}>{notice.search.label}</span> 返回 {notice.search.returned} 条，保留 {notice.search.kept} 条</summary>
               {notice.search.attempts.some(attempt => !attempt.ok) && <p className="muted">{notice.search.attempts.map(attempt => `${attempt.label}${attempt.ok ? ` 成功（${attempt.returned} 条）` : ` 失败（${attempt.error}）`}`).join(' → ')}</p>}
               {notice.search.attempts.some(attempt => attempt.usage) && <p className="muted">{notice.search.attempts.filter(attempt => attempt.usage).map(attempt => `${attempt.label}：输入 ${attempt.usage?.inputTokens} token，输出 ${attempt.usage?.outputTokens} token`).join('；')}</p>}
               <ol>{notice.search.results.map(result => <li key={result.url} className={result.kept ? 'kept' : 'dropped'}><a href={result.url} target="_blank" rel="noreferrer">{result.title || result.url}</a><small>{result.kept ? `保留${result.no ? `，编号 ${result.no}` : ''}` : '筛掉'}</small></li>)}</ol></details>
             : notice.error ? <small className="muted">搜索失败：{notice.error}</small>
-              : notice.query ? <small className="muted">已搜索，没有返回记录</small> : <small className="muted">{notice.leads.length ? '没搜（通知正文里写出了网址）' : '没搜（额度用完或名字不成立）'}</small>}</td>
+              : notice.query ? <small className="muted">已搜索，没有返回记录</small> : notice.searchSkipped ? null : <small className="muted">{notice.leads.length ? '没搜（通知正文里写出了网址）' : '没搜（额度用完或名字不成立）'}</small>}</td>
           <td>{notice.leads.length ? notice.leads.map(lead => <div key={lead.url}>{lead.no && <b className="row-no">{lead.no}</b>} <a href={lead.url} target="_blank" rel="noreferrer">{lead.title || lead.url}</a></div>) : <small className="muted">没有找到</small>}</td></tr>)}</tbody></table></div></section>}
 
     {detail.perQuery.length > 0 && <section className="panel"><h2>每条查询的结果去向</h2>

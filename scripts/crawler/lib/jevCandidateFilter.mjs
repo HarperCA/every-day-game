@@ -18,12 +18,28 @@ const RESULT_NEWS = /(?:获|荣获).{0,35}(?:奖|金牌|银牌|铜牌)|(?:一等
 const COLUMN = /^(?:大赛动态|国赛公告|通知公告|竞赛分类[:：]?)$|学术资讯速递/;
 const ORGANIZATION_ONLY = /^(?:中国|全国|[\u4e00-\u9fa5]{2,8}省|[\u4e00-\u9fa5]{2,8}市)?[\u4e00-\u9fa5]{2,25}(?:学会|协会|学院|研究院|教育厅|教育局)$/;
 
+// 标题只有日期、时间、地名（如微信推文的“2026年9月27日 09:54广东”）：标题本身没有任何信息量，
+// 不让它占读详情的名额，只当追溯线索——用摘要里写出的赛事名去搜官网（2026-10-01，用户定）。
+const TIME_WORDS = /(?:19|20)\d{2}\s*[年\-/.]\s*\d{1,2}\s*[月\-/.]\s*\d{1,2}\s*日?|\d{1,2}\s*月\s*\d{1,2}\s*日|\d{1,2}:\d{2}(?::\d{2})?|(?:周|星期)[一二三四五六日天]|[上下]午|凌晨|晚上|(?:19|20)\d{2}\s*年(?:\s*\d{1,2}\s*月)?|\d{1,2}\s*月/g;
+const PLACE_WORDS = ['内蒙古', '黑龙江', '北京', '天津', '上海', '重庆', '河北', '山西', '辽宁', '吉林', '江苏', '浙江', '安徽', '福建', '江西', '山东', '河南', '湖北', '湖南', '广东', '广西',
+  '海南', '四川', '贵州', '云南', '陕西', '甘肃', '青海', '宁夏', '新疆', '西藏', '香港', '澳门', '台湾', '全国'];
+export function titleHasNoInfo(title) {
+  const original = String(title || '').normalize('NFKC');
+  let rest = original.replace(TIME_WORDS, '');
+  for (const word of PLACE_WORDS) rest = rest.split(word).join('');
+  rest = rest.replace(/[\u4e00-\u9fa5]{1,4}[省市区县]/g, '');
+  // 至少要真的去掉了日期、时间或地名才算（单个字之类的标题不归这条规则管）
+  if (rest === original) return false;
+  return rest.replace(/[\s\p{P}\p{S}\d]/gu, '').length <= 1;
+}
+
 // 2026-09-29 起：只有“与赛事无关”的才丢弃。
 // 校内选拔、学校转发、赛事新闻里都写着上级赛事的名字，往往还有官网网址，是找新赛事最好的线索，
 // 改为 trace（追溯上级赛事的官网和当届官方通知），不再拦下丢掉；原先按标题含感叹号拦截的规则去掉。
 export function deterministicCandidateDecision(candidate = {}) {
   const title = String(candidate.name || candidate.title || '').normalize('NFKC').trim();
   if (!title) return { action:'reject', kind:'column_other', confidence:1, source:'rule', reason:'标题为空' };
+  if (titleHasNoInfo(title)) return { action:'trace', kind:'title_no_info', confidence:1, source:'rule', reason:'标题只有日期、时间或地名，没有信息量：不读详情，只当追溯线索（用摘要里的赛事名去搜官网）' };
   if (SCHOOL_SELECTION.test(title)) return { action:'trace', kind:'repost_or_school_selection', confidence:1, source:'rule', reason:'校级或校内选拔：不入库，追溯上级赛事的官网和官方通知' };
   if (DIRECTORY.test(title)) return { action:'lead', kind:'directory_lead', confidence:1, source:'rule', reason:'目录或清单仅保留为发现线索' };
   if (RESULT_NEWS.test(title)) return { action:'trace', kind:'news_or_result', confidence:1, source:'rule', reason:'赛事报道：不入库，追溯赛事的官网和当届官方通知' };
