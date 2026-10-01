@@ -769,3 +769,22 @@ describe('one signal, one line of evidence', () => {
     expect(expandBlock('一等奖（1 名）**：现金', prize)).toBe('- **一等奖（1 名）**：现金 ¥80,000 + 官方荣誉证书');
   });
 });
+
+// 2026-10-01：空壳页检查的两个漏洞——名字太短、正文里引号和名字对不上
+describe('looksLikeContestPage 不再误判真实页面', () => {
+  const { looksLikeContestPage } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+  it('名字只有三个字也能在正文里找到', () => {
+    const page = '首页 关于我们 园冶杯国际大学生风景园林竞赛是面向全球高校的……'.repeat(15);
+    expect(looksLikeContestPage(page, '园冶杯')).toBe(true);
+  });
+  it('正文里的引号、全半角括号不影响比对', () => {
+    const page = '关于组织参加“建行杯”浙江省国际大学生创新大赛（2026）的通知 各学院……'.repeat(10);
+    expect(looksLikeContestPage(page, '关于组织参加“建行杯”浙江省国际大学生创新大赛(2026)的通知')).toBe(true);
+  });
+  it('导航骨架、过短的正文仍然判空壳', () => {
+    const nav = '首页 天池大赛 数据集 排行榜 论坛 登录 注册 关于我们 联系我们 帮助中心 '.repeat(8);
+    expect(looksLikeContestPage(nav, '园冶杯')).toBe(false);
+    expect(looksLikeContestPage(nav, '欧莱雅美妆科技黑客松')).toBe(false);
+    expect(looksLikeContestPage('园冶杯', '园冶杯')).toBe(false);
+  });
+});

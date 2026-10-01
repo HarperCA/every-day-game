@@ -71,3 +71,22 @@ describe('formal notice routing', () => {
     expect(result.kind).toBe('organizer_notice');
   });
 });
+
+// 2026-10-01 方案 B：把握不够但最像官网/报名入口的放行去读，其他类别仍搁置
+describe('把握不够时的处理', () => {
+  const jev = (choice, confidence) => async () => new Response(JSON.stringify({
+    answers:{ item_0:{ choice, confidence }, kind:{ choice, confidence } }, usage:{ cost:0 },
+  }), { status:200 });
+  const candidate = { name:'生物制造大赛', detailUrl:'https://www.chinasme.cn/bioCompetition/home', introduction:'生物制造大赛官网' };
+  it.each([['competition_site', 'fetch'], ['registration_entry', 'fetch'], ['organizer_notice', 'review'], ['repost_or_school_selection', 'review'], ['news_or_result', 'review'], ['unrelated', 'review']])(
+    '低把握 %s → %s', async (kind, action) => {
+      const result = await filterCandidatesWithJev([candidate], { apiKey:'k', fetchImpl:jev(kind, 0.66) });
+      expect(result.decisions[0]).toMatchObject({ kind, action, lowConfidence:true });
+      expect(result.fetch.length).toBe(action === 'fetch' ? 1 : 0);
+    });
+  it('把握够的照旧按类别处理，不带低把握标记', async () => {
+    const result = await filterCandidatesWithJev([candidate], { apiKey:'k', fetchImpl:jev('competition_site', 0.93) });
+    expect(result.decisions[0]).toMatchObject({ action:'fetch' });
+    expect(result.decisions[0].lowConfidence).toBeUndefined();
+  });
+});

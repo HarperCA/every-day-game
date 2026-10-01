@@ -32,6 +32,22 @@ export function deterministicCandidateDecision(candidate = {}) {
   return null;
 }
 
+// 把握不到阈值的（原先一律 review：只进报告，之后没人看），但最倾向“赛事官网”或“报名入口”的放行去读：
+// 读详情后还有范围检查和三项核验把关，读错的代价只是多花一次抽取；漏掉的却是真比赛
+// （2026-09-30 那轮：生物制造大赛官网 66%、大学生英语翻译能力竞赛官网 40% 都因此没人读）。
+// 其他类别（通知、转载、新闻……）把握不够的仍然搁置。2026-10-01 用户确认，方案 B。
+export const LOW_CONFIDENCE_FETCH_KINDS = Object.freeze(['competition_site', 'registration_entry']);
+function lowConfidenceOutcome(kind, confidence, threshold) {
+  const fetchAnyway = LOW_CONFIDENCE_FETCH_KINDS.includes(kind);
+  return {
+    action:fetchAnyway ? 'fetch' : 'review',
+    reason:fetchAnyway
+      ? `Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}，但最像${kind === 'registration_entry' ? '报名入口' : '赛事官网'}，放行读详情，由后面的范围检查和核验把关`
+      : `Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}，仅进人工线索报告`,
+    lowConfidence:true,
+  };
+}
+
 function actionForKind(kind) {
   if (['competition_site','organizer_notice','registration_entry'].includes(kind)) return 'fetch';
   if (kind === 'directory_lead') return 'lead';
@@ -76,7 +92,8 @@ export async function classifyCandidateWithJev(candidate, options = {}) {
   const confidence = Number(answer.confidence);
   const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
   if (confidence < threshold) {
-    return { candidate, action:'review', kind:answer.choice, confidence, source:'jev', reason:`Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}，仅进人工线索报告`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
+    const low = lowConfidenceOutcome(answer.choice, confidence, threshold);
+    return { candidate, action:low.action, kind:answer.choice, confidence, source:'jev', reason:low.reason, lowConfidence:true, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
   }
   return { candidate, action:actionForKind(answer.choice), kind:answer.choice, confidence, source:'jev', reason:`Jev 分类为 ${answer.choice}`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
 }
@@ -115,8 +132,9 @@ export async function filterCandidatesWithJev(candidates = [], options = {}) {
         if (!answer?.choice || typeof answer.confidence !== 'number') throw new Error('jev_invalid_response');
         const confidence = Number(answer.confidence);
         const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
-        const action = confidence < threshold ? 'review' : actionForKind(answer.choice);
-        decisions[index] = { candidate, action, kind:answer.choice, confidence, source:'jev', reason:action === 'review' ? `Jev 置信度 ${confidence.toFixed(2)} 低于阈值 ${threshold.toFixed(2)}` : `Jev 分类为 ${answer.choice}`, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) / batch.length };
+        const low = confidence < threshold ? lowConfidenceOutcome(answer.choice, confidence, threshold) : null;
+        const action = low ? low.action : actionForKind(answer.choice);
+        decisions[index] = { candidate, action, kind:answer.choice, confidence, source:'jev', reason:low ? low.reason : `Jev 分类为 ${answer.choice}`, ...(low ? { lowConfidence:true } : {}), probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) / batch.length };
       }
     } catch (error) {
       for (const { index, candidate } of batch) decisions[index] = { candidate, action:'fetch', kind:'jev_error', confidence:0, source:'fallback', reason:`Jev 批量调用失败，保持旧流程继续核验：${String(error?.message || error).slice(0, 180)}`, probabilities:null, cost:0 };

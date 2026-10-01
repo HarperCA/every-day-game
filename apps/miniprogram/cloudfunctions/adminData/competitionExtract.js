@@ -468,15 +468,24 @@ function toFieldSuggestions(verified, sourceUrl) {
 // 这个下限只是兜底：正文不到两百字的页面，抽出来也没有复核价值。
 const BOILERPLATE_MIN_CHARS = 200;
 
+// 比对前把名字和正文抹成同一种写法：全半角统一、去掉空白和各种引号书名号。
+// 原先只去名字里的引号、不去正文里的：标题“关于组织参加“建行杯”浙江省…”原样就在正文里，却因为引号对不上被判成空壳页（2026-10-01）。
+const QUOTE_MARKS = /[\s　“”‘’"'「」『』《》【】]/g;
+const squash = text => String(text || '').normalize('NFKC').replace(QUOTE_MARKS, '');
+
 function looksLikeContestPage(text, contestName) {
   const value = String(text || '');
   if (value.length < BOILERPLATE_MIN_CHARS) return false;
   const name = String(contestName || '').trim();
   if (!name) return true; // 没给名称就无从判断，交由后续的引文回查兜底
   // 赛事名常被拆开写，取其中较长的片段做判断，避免整串精确匹配过于苛刻
-  const core = name.replace(/[（(][^）)]*[）)]/g, '').replace(/[\s　“”"']/g, '');
-  const probes = [core, core.slice(0, 8), core.slice(-8)].filter(item => item.length >= 4);
-  const normalized = value.replace(/[\s　]/g, '');
+  const core = squash(name.replace(/[（(][^）)]*[）)]/g, ''));
+  if (!core) return true;
+  let probes = [core, core.slice(0, 8), core.slice(-8)].filter(item => item.length >= 4);
+  // 名字本身很短（如“园冶杯”三个字）时拿不出 4 字以上的片段，原先因此一律判空壳；
+  // 改为用整个名字去找：页面里真有这个名字就放行，没有才算空壳。
+  if (!probes.length && core.length >= 2) probes = [core];
+  const normalized = squash(value);
   return probes.some(probe => normalized.includes(probe));
 }
 
