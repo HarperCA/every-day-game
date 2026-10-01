@@ -11,7 +11,7 @@ export const NODE_H = 66;
 // 方框左上角。主线（y=300）从左到右；所有“结束”排在上面（y=190、y=100）；通知追溯分支在下面。
 export const POS: Record<string, [number, number]> = {
   search:[0, 300], platforms:[0, 400],
-  dedupe:[140, 300], rule:[280, 300], jev:[420, 300], read:[560, 300], extract:[700, 300],
+  dedupe:[140, 300], arbitrate:[210, 440], end_ai_dup:[210, 560], rule:[280, 300], jev:[420, 300], read:[560, 300], extract:[700, 300],
   same_name:[840, 300], scope:[980, 300], gate:[1120, 300], end_written:[1260, 300],
   end_dropped:[0, 190], end_dup:[120, 190], end_rejected:[345, 190], end_readfail:[630, 190], end_scope:[980, 190],
   end_lead:[320, 100],
@@ -32,6 +32,9 @@ export const ROUTES: Record<string, Pt[]> = {
   // 判重
   'dedupe>rule':[[240, 333], [280, 333]],
   'dedupe>end_dup':[[160, 300], [160, 256]],
+  'dedupe>arbitrate':[[225, 366], [225, 440]],                              // 规则拿不准的：往下交给 AI 裁决
+  'arbitrate>rule':[[300, 440], [300, 366]],                                // AI 判为不同比赛或新一届：回到主线继续
+  'arbitrate>end_ai_dup':[[260, 506], [260, 560]],
   'dedupe>end_lead':[[240, 310], [260, 310], [260, 118], [320, 118]],
   'dedupe>read':[[190, 366], [190, 680], [640, 680], [640, 366]],       // 平台条目直通读详情：从最下面绕过去
   // 前置筛选 · 标题规则

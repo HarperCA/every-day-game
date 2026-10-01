@@ -121,15 +121,15 @@ describe('判重交给 AI 裁决后的明细', () => {
   };
   const detail = composeRunDetail('2026-09-28T17-00-00-614Z', arbFiles);
   const byUrl = Object.fromEntries(detail.rows.map(row => [row.url, row]));
-  it('AI 判为重复的，写明 AI 的理由，路径走“AI 判重跳过”', () => {
+  it('AI 判为重复的，写明 AI 的理由，路径走“判重裁决 → 跳过”', () => {
     expect(byUrl['https://a/1'].final).toContain('AI 裁决');
     expect(byUrl['https://a/1'].final).toContain('库里已有当前这一届');
     expect(byUrl['https://a/1'].thinking).toBe('比较了届次……');
-    expect(byUrl['https://a/1'].trail.map(item => `${item.n}:${item.o}`)).toContain('dedupe:ai_skip');
+    expect(byUrl['https://a/1'].trail.map(item => `${item.n}:${item.o}`)).toContain('arbitrate:skip');
   });
-  it('AI 判为新一届的，路径走“AI 判为不同或新一届”继续往下', () => {
+  it('AI 判为新一届的，路径走“判重裁决 → 继续”', () => {
     expect(byUrl['https://a/4'].dup).toContain('AI 裁决');
-    expect(byUrl['https://a/4'].trail.map(item => `${item.n}:${item.o}`)).toContain('dedupe:ai_new');
+    expect(byUrl['https://a/4'].trail.map(item => `${item.n}:${item.o}`)).toContain('arbitrate:new');
     expect(detail.flow.nodes.find(node => node.id === 'dedupe')).toBeTruthy();
   });
 });
