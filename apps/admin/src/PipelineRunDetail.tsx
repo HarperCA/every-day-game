@@ -45,7 +45,7 @@ export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBa
     <section className="panel">
       <div className="pipeline-filters">
         <input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="搜标题、网址或理由"/>
-        {detail.flow && <select value={flowNode} onChange={event => setFlowNode(event.target.value)}><option value="">全部环节</option>{detail.flow.nodes.filter(node => node.in > 0).map(node => <option key={node.id} value={node.id}>经过「{node.label}」（{node.in}）</option>)}</select>}
+        {detail.flow && <select value={flowNode} onChange={event => setFlowNode(event.target.value)}><option value="">全部环节</option>{detail.flow.nodes.filter(node => node.in > 0).map(node => <option key={node.id} value={node.id}>经过「{node.label.replace(/\n/g, ' ')}」（{node.in}）</option>)}</select>}
         <select value={stage} onChange={event => setStage(event.target.value)}><option value="">全部去向</option>{options.stages.map(value => <option key={value}>{value}</option>)}</select>
         <select value={kind} onChange={event => setKind(event.target.value)}><option value="">全部分类</option>{options.kinds.map(value => <option key={value}>{value}</option>)}</select>
         <select value={query} onChange={event => setQuery(event.target.value)}><option value="">全部查询</option>{options.queries.map(value => <option key={value}>{value}</option>)}</select>
