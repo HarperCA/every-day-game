@@ -125,7 +125,11 @@ function composeRunDetail(runId, files) {
       if (action !== 'trace' && last && (last.n === 'jev' || last.n === 'rule')) last.o = 'notice';
       // 没找到页面的三种情况：提不出合法赛事名（根本没分到组，没搜）/ 分到组了但没轮上额度 / 搜了没找到
       const outcomeTrace = pages ? 'found' : found?.followupQuery ? 'none' : found ? 'noquota' : 'noname';
-      const noteTrace = { found:`找到 ${pages} 个待核验页面`, none:'搜索后没找到', noquota:'提得出赛事名，但本晚搜索额度用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
+      // 用了哪个搜索引擎、返回几条、保留几条（2026-10-01 起百度 → Kimi → DeepSeek 依次补位）
+      const searched = found?.search;
+      const searchNote = searched ? `用${searched.label}搜索，返回 ${searched.returned} 条，保留 ${searched.kept} 条` : found?.error ? `搜索失败：${found.error}` : '';
+      const noteTrace = { found:pages ? `${searchNote ? `${searchNote}；` : ''}找到 ${pages} 个待核验页面${searched ? '' : '（通知正文里写出的网址）'}` : '', none:searchNote ? `${searchNote}，没有可用的页面` : (found?.error ? searchNote : '搜索后没找到'),
+        noquota:'提得出赛事名，但本晚三个搜索引擎的额度都用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
       trail.push(step('trace', outcomeTrace, noteTrace));
       Object.assign(row, { final:`转入通知追溯（找到 ${pages} 个待核验页面）`, stage:3 });
     } else if (combinedUrls.has(url)) {
@@ -248,7 +252,14 @@ function composeRunDetail(runId, files) {
     },
     rows,
     notices:leads.map(item => ({ title:clip(item.noticeTitle, 150), url:item.noticeUrl, name:item.proposedName || '', query:item.followupQuery || '',
-      leads:(item.leads || []).map(lead => ({ title:clip(lead.title, 120), url:lead.url })) })),
+      leads:(item.leads || []).map(lead => ({ title:clip(lead.title, 120), url:lead.url })),
+      // 这一组搜了没有：用的哪个引擎、返回了什么、保留了哪几条；换过引擎或失败的，带上每次尝试
+      search:item.search ? { engine:item.search.engine, label:item.search.label, returned:item.search.returned, kept:item.search.kept,
+        results:(item.search.results || []).map(result => ({ title:clip(result.title, 120), url:result.url, kept:Boolean(result.kept) })),
+        attempts:(item.searchAttempts || item.search.attempts || []).map(attempt => ({ label:attempt.label, ok:attempt.ok, returned:attempt.returned ?? null, error:attempt.error || '', usage:attempt.usage || null })) } : null,
+      error:item.error || '' })),
+    // 本轮各搜索引擎用了多少次、有没有被停用
+    searchEngines:Array.isArray(files['notice-resolution-leads.json']?.engines) ? files['notice-resolution-leads.json'].engines : [],
     perQuery:(baidu.perQuery || []).map(item => ({ query:item.query, route:item.route || '', results:item.references, outOfScope:item.outOfScope,
       irrelevant:item.irrelevant, duplicate:item.duplicate, candidates:item.candidates })),
   };

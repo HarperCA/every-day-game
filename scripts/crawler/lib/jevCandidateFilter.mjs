@@ -48,6 +48,30 @@ function lowConfidenceOutcome(kind, confidence, threshold) {
   };
 }
 
+// 2026-10-01 起：不再看“第一名的概率够不够 80%”，改看“是不是赛事相关页面”和“哪一组更像”。
+// 为什么：分类里的“主办方通知 / 学校转载 / 官网 / 报名入口”本来就互相重叠，一个页面常常同时符合几类，概率被分摊，
+// 第一名只有 0.4～0.6，却被一律搁置（近 5 晚 802 条里 61% 低于 0.8，其中 76% 的“与赛事无关”概率不到 0.2——其实都是赛事相关页面）。
+//   与赛事无关的概率 > 0.5：丢弃（招聘、招生、考博）；0.2～0.5：只留线索；< 0.2：当作赛事相关页面往下走：
+//     官网 + 报名入口 + 主办方通知的概率合计 ≥ 学校转载 + 新闻的合计：读详情；否则追溯上级赛事。
+//     目录清单的概率比这两组都高：只留线索。
+// 回测（近 5 晚）：没有一条原来被放行的降级成搁置；只留线索从每晚约 89 条降到 19 条。
+export const UNRELATED_REJECT = 0.5;
+export const UNRELATED_LEAD = 0.2;
+export function decideByProbabilities(probabilities = {}) {
+  const pct = value => `${Math.round(value * 100)}%`;
+  const unrelated = Number(probabilities.unrelated) || 0;
+  if (unrelated > UNRELATED_REJECT) return { action:'reject', reason:`Jev 认为与赛事无关的概率 ${pct(unrelated)}，丢弃` };
+  if (unrelated >= UNRELATED_LEAD) return { action:'lead', lowConfidence:true, reason:`Jev 认为与赛事无关的概率 ${pct(unrelated)}，拿不准，只留线索` };
+  const official = (Number(probabilities.competition_site) || 0) + (Number(probabilities.registration_entry) || 0) + (Number(probabilities.organizer_notice) || 0);
+  const repost = (Number(probabilities.repost_or_school_selection) || 0) + (Number(probabilities.news_or_result) || 0);
+  const directory = Number(probabilities.directory_lead) || 0;
+  const detail = `与赛事无关仅 ${pct(unrelated)}；官网/报名入口/主办方通知合计 ${pct(official)}，转载/新闻合计 ${pct(repost)}`;
+  if (directory > official && directory > repost) return { action:'lead', reason:`Jev：目录清单概率最高（${pct(directory)}），只留线索` };
+  return official >= repost
+    ? { action:'fetch', reason:`Jev：${detail}，读详情` }
+    : { action:'trace', reason:`Jev：${detail}，追溯上级赛事` };
+}
+
 function actionForKind(kind) {
   if (['competition_site','organizer_notice','registration_entry'].includes(kind)) return 'fetch';
   if (kind === 'directory_lead') return 'lead';
@@ -91,6 +115,10 @@ export async function classifyCandidateWithJev(candidate, options = {}) {
   if (!answer?.choice || typeof answer.confidence !== 'number') throw new Error('jev_invalid_response');
   const confidence = Number(answer.confidence);
   const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
+  if (answer.probabilities && typeof answer.probabilities === 'object') {
+    const decided = decideByProbabilities(answer.probabilities);
+    return { candidate, action:decided.action, kind:answer.choice, confidence, source:'jev', reason:decided.reason, ...(decided.lowConfidence ? { lowConfidence:true } : {}), probabilities:answer.probabilities, cost:Number(payload?.usage?.cost || 0) };
+  }
   if (confidence < threshold) {
     const low = lowConfidenceOutcome(answer.choice, confidence, threshold);
     return { candidate, action:low.action, kind:answer.choice, confidence, source:'jev', reason:low.reason, lowConfidence:true, probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) };
@@ -132,9 +160,16 @@ export async function filterCandidatesWithJev(candidates = [], options = {}) {
         if (!answer?.choice || typeof answer.confidence !== 'number') throw new Error('jev_invalid_response');
         const confidence = Number(answer.confidence);
         const threshold = options.minConfidence ?? DEFAULT_CONFIDENCE;
+        const cost = Number(payload?.usage?.cost || 0) / batch.length;
+        if (answer.probabilities && typeof answer.probabilities === 'object') {
+          const decided = decideByProbabilities(answer.probabilities);
+          decisions[index] = { candidate, action:decided.action, kind:answer.choice, confidence, source:'jev', reason:decided.reason, ...(decided.lowConfidence ? { lowConfidence:true } : {}), probabilities:answer.probabilities, cost };
+          continue;
+        }
+        // 没有概率分布时（接口没给）退回按第一名把握判断
         const low = confidence < threshold ? lowConfidenceOutcome(answer.choice, confidence, threshold) : null;
         const action = low ? low.action : actionForKind(answer.choice);
-        decisions[index] = { candidate, action, kind:answer.choice, confidence, source:'jev', reason:low ? low.reason : `Jev 分类为 ${answer.choice}`, ...(low ? { lowConfidence:true } : {}), probabilities:answer.probabilities || null, cost:Number(payload?.usage?.cost || 0) / batch.length };
+        decisions[index] = { candidate, action, kind:answer.choice, confidence, source:'jev', reason:low ? low.reason : `Jev 分类为 ${answer.choice}`, ...(low ? { lowConfidence:true } : {}), probabilities:null, cost };
       }
     } catch (error) {
       for (const { index, candidate } of batch) decisions[index] = { candidate, action:'fetch', kind:'jev_error', confidence:0, source:'fallback', reason:`Jev 批量调用失败，保持旧流程继续核验：${String(error?.message || error).slice(0, 180)}`, probabilities:null, cost:0 };

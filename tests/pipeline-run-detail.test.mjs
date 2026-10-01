@@ -172,3 +172,39 @@ describe('通知追溯没找到的几种原因、追溯页面没读的几种原�
     expect(Object.fromEntries(trace.outcomes.map(outcome => [outcome.id, outcome.count]))).toMatchObject({ found:2, none:1, noquota:1, noname:1 });
   });
 });
+
+describe('通知追溯：搜索用了哪个引擎、返回了什么', () => {
+  const notice = (url, name) => ({ name, detailUrl:url, introduction:'', discovery:{} });
+  const sfiles = {
+    'baidu-candidates.json':{ candidates:[notice('https://n/1', 'A'), notice('https://n/2', 'B'), notice('https://n/3', 'C')] },
+    'formal-notices.json':{ candidates:[notice('https://n/1', 'A'), notice('https://n/2', 'B'), notice('https://n/3', 'C')] },
+    'jev-filter-report.json':{ decisions:['1', '2', '3'].map(i => ({ url:`https://n/${i}`, action:'trace', kind:'news_or_result', confidence:1, reason:'' })) },
+    'notice-resolution-leads.json':{
+      engines:[{ engine:'baidu', label:'百度', used:1, left:0, disabled:false, configured:true }, { engine:'kimi', label:'Kimi', used:1, left:14, disabled:false, configured:true }],
+      results:[
+        { noticeUrl:'https://n/1', noticeTitle:'A', proposedName:'A赛', followupQuery:'A赛 官网', notices:[{ url:'https://n/1' }], leads:[{ title:'官网', url:'https://o/1' }],
+          search:{ engine:'baidu', label:'百度', query:'A赛 官网', returned:10, kept:1, results:[{ title:'官网', url:'https://o/1', kept:true }, { title:'别的', url:'https://o/2', kept:false }], attempts:[{ engine:'baidu', label:'百度', ok:true, returned:10 }] } },
+        { noticeUrl:'https://n/2', noticeTitle:'B', proposedName:'B赛', followupQuery:'B赛 官网', notices:[{ url:'https://n/2' }], leads:[],
+          search:{ engine:'kimi', label:'Kimi', query:'B赛 官网', returned:8, kept:0, results:[{ title:'x', url:'https://o/3', kept:false }], attempts:[{ engine:'baidu', label:'百度', ok:false, error:'http_429' }, { engine:'kimi', label:'Kimi', ok:true, returned:8 }] },
+          searchAttempts:[{ engine:'baidu', label:'百度', ok:false, error:'http_429' }, { engine:'kimi', label:'Kimi', ok:true, returned:8 }] },
+        { noticeUrl:'https://n/3', noticeTitle:'C', proposedName:'C赛', followupQuery:'C赛 官网', notices:[{ url:'https://n/3' }], leads:[], error:'百度：http_500；Kimi：http_500' },
+      ] },
+  };
+  const detail = composeRunDetail('2026-09-28T17-00-00-614Z', sfiles);
+  const traceStep = url => detail.rows.find(row => row.url === url).trail.find(item => item.n === 'trace');
+  it('路径上写明用了哪个引擎、返回几条、保留几条', () => {
+    expect(traceStep('https://n/1').note).toContain('用百度搜索，返回 10 条，保留 1 条');
+    expect(traceStep('https://n/2')).toMatchObject({ o:'none' });
+    expect(traceStep('https://n/2').note).toContain('用Kimi搜索，返回 8 条');
+  });
+  it('全部引擎失败时写明各自的错误，不当成“没找到”', () => {
+    expect(traceStep('https://n/3').note).toContain('搜索失败：百度：http_500；Kimi：http_500');
+  });
+  it('通知表格带上搜索详情：返回的每一条和是否保留，换过引擎的带上失败记录', () => {
+    const [first, second] = detail.notices;
+    expect(first.search).toMatchObject({ label:'百度', returned:10, kept:1 });
+    expect(first.search.results).toEqual([{ title:'官网', url:'https://o/1', kept:true }, { title:'别的', url:'https://o/2', kept:false }]);
+    expect(second.search.attempts.map(item => `${item.label}:${item.ok}`)).toEqual(['百度:false', 'Kimi:true']);
+    expect(detail.searchEngines.map(item => item.label)).toEqual(['百度', 'Kimi']);
+  });
+});

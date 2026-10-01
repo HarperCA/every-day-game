@@ -251,7 +251,10 @@ export interface PipelineRunDetail {
   summary:{ searchResults:number | null; queries:number; dropped:number; candidates:number; newCandidates:number; filter:Record<string, number>;
     formalNotices:number; detailRead:number; extractOk:number; added:number | null; failureReasons:Record<string, number> };
   rows:PipelineRunRow[];
-  notices:Array<{ title:string; url:string; name:string; query:string; leads:Array<{ title:string; url:string }> }>;
+  notices:Array<{ title:string; url:string; name:string; query:string; leads:Array<{ title:string; url:string }>; error?:string;
+    search?:{ engine:string; label:string; returned:number; kept:number; results:Array<{ title:string; url:string; kept:boolean }>;
+      attempts:Array<{ label:string; ok:boolean; returned:number | null; error:string; usage:{ inputTokens?:number; outputTokens?:number } | null }> } | null }>;
+  searchEngines?:Array<{ engine:string; label:string; used:number; left:number; disabled:boolean; configured:boolean }>;
   perQuery:Array<{ query:string; route:string; results:number; outOfScope:number; irrelevant:number; duplicate:number; candidates:number }>;
 }
 export const getPipelineRunDetail = (runId:string) => callAdmin<PipelineRunDetail>('pipelineRunDetail', { runId });

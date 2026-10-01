@@ -1,4 +1,5 @@
 // 对通知标题定向寻找赛事官网线索；搜索结果只供核验，不能自动称为官方来源。
+import { baiduEngine, createSearcher, deepseekEngine, kimiEngine } from './search-engines.mjs';
 import fs from 'node:fs/promises';
 import { setDefaultResultOrder } from 'node:dns';
 import path from 'node:path';
@@ -9,7 +10,6 @@ import { urlsInText } from './known-event-mentions.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 setDefaultResultOrder('ipv4first');
-const SEARCH_URL = 'https://qianfan.baidubce.com/v2/ai_search/web_search';
 
 export function competitionNameFromNotice(title) {
   const name = String(title || '').replace(/^(?:【?通知】?|赛事通知[：:]|转发)/, '')
@@ -152,58 +152,58 @@ export function noticeImportance(group, year = new Date().getFullYear()) {
   return group.notices.length * 2 + recent + level + free;
 }
 
-async function searchOnce(key, query) {
-  const request = () => fetch(SEARCH_URL, {
-    method:'POST', headers:{ 'X-Appbuilder-Authorization':`Bearer ${key}`, 'Content-Type':'application/json' },
-    body:JSON.stringify({ messages:[{ content:query, role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:10 }] }),
-    signal:AbortSignal.timeout(20000),
-  });
-  let response;
-  try { response = await request(); }
-  catch {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    response = await request();
-  }
-  if (!response.ok) throw new Error(`http_${response.status}`);
-  return (await response.json()).references || [];
-}
-
-// 用法: node resolve-notice-leads.mjs <候选文件> <结果文件> [--budget 10]
+// 用法: node resolve-notice-leads.mjs <候选文件> <结果文件> [--budget 10] [--kimi-budget 15] [--deepseek-budget 15]
+// 搜索引擎依次补位：百度（--budget 次）→ Kimi（--kimi-budget 次）→ DeepSeek（--deepseek-budget 次），见 search-engines.mjs。
+// 每个赛事组留下“用了哪个引擎、返回了什么、保留了哪几条”（result.search），后台明细据此显示。
 // 2026-09-29 起：所有通知（含校内选拔、学校转发、赛事报道）都能追溯；按上级赛事分组，
 // 搜索额度按重要程度分配，摘要里写出的网址不花额度直接作为线索。
 async function main() {
   const argv = process.argv.slice(2);
   const input = argv[0];
   const output = argv[1];
-  const budget = argv.includes('--budget') ? Math.max(0, Number(argv[argv.indexOf('--budget') + 1]) || 0) : 10;
+  const numberFlag = (flag, fallback) => (argv.includes(flag) ? Math.max(0, Number(argv[argv.indexOf(flag) + 1]) || 0) : fallback);
+  const budget = numberFlag('--budget', 10);
+  const kimiBudget = numberFlag('--kimi-budget', 15);
+  const deepseekBudget = numberFlag('--deepseek-budget', 15);
   if (!input || !output) throw new Error('用法: node resolve-notice-leads.mjs <候选文件> <结果文件> [--budget 10]');
   const { candidates = [] } = JSON.parse(await fs.readFile(path.resolve(HERE, input), 'utf8'));
   const groups = groupNotices(candidates).sort((a, b) => noticeImportance(b) - noticeImportance(a));
-  const key = (await fs.readFile(path.join(HERE, '.baidu-search-key'), 'utf8')).trim();
+  const searcher = createSearcher([{ engine:baiduEngine(), budget }, { engine:kimiEngine(), budget:kimiBudget }, { engine:deepseekEngine(), budget:deepseekBudget }]);
   const results = [];
   let searched = 0;
-  for (const [index, group] of groups.entries()) {
+  for (const group of groups) {
     const first = group.notices[0];
     // 标题用网站域名：原先把来源通知标题放进标题，追溯阶段“标题含通知就跳过”的规则把这些官网全拦了（2026-09-30）
     const hostOf = url => { try { return new URL(url).hostname; } catch { return url; } };
     const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:hostOf(url), url, summary:`通知摘要里写出的网址，来自：${notice.title.slice(0, 60)}`, status:'待核验', fromNoticeText:true })));
     const result = { noticeUrl:first.url, noticeTitle:first.title, noticeDiscovery:first.discovery, notices:group.notices.map(({ discovery, ...notice }) => notice),
       proposedName:group.proposedName, importance:noticeImportance(group), leads:free };
-    if (index < budget) {
-      result.followupQuery = followupQuery(group.proposedName);
-      try {
-        const references = await searchOnce(key, result.followupQuery);
+    const query = followupQuery(group.proposedName);
+    const outcome = await searcher.search(query);
+    if (outcome) {
+      // 有引擎接了这次搜索（成功，或者都失败了）：记下查询词；全都没额度才算“没轮上”，不带查询词
+      result.followupQuery = query;
+      if (outcome.failed) {
+        result.error = outcome.attempts.map(item => `${item.label}：${item.error}`).join('；');
+      } else {
         const seen = new Set(free.map(lead => lead.url));
-        result.leads.push(...selectLeads(references, first.url, group.proposedName).filter(lead => !seen.has(lead.url)));
+        const kept = selectLeads(outcome.references, first.url, group.proposedName).filter(lead => !seen.has(lead.url));
+        result.leads.push(...kept);
         searched += 1;
-      } catch (error) {
-        result.error = String(error?.message || error);
+        const keptUrls = new Set(kept.map(lead => lead.url));
+        result.search = {
+          engine:outcome.engine, label:outcome.label, query, returned:outcome.references.length, kept:kept.length,
+          results:outcome.references.map(item => ({ title:item.title.slice(0, 120), url:item.url, kept:keptUrls.has(item.url) })),
+          attempts:outcome.attempts,
+        };
       }
+      if (outcome.attempts.length > 1 || outcome.failed) result.searchAttempts = outcome.attempts;
     }
     results.push(result);
   }
-  await fs.writeFile(path.resolve(HERE, output), JSON.stringify({ results }, null, 2), 'utf8');
-  console.log(`通知 ${candidates.length} 条 → 上级赛事 ${groups.length} 场；搜索 ${searched} 场（额度 ${budget}）；找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
+  const engines = searcher.summary();
+  await fs.writeFile(path.resolve(HERE, output), JSON.stringify({ engines, results }, null, 2), 'utf8');
+  console.log(`通知 ${candidates.length} 条 → 上级赛事 ${groups.length} 场；搜索 ${searched} 场（${engines.map(item => `${item.label} ${item.used}/${item.used + item.left}${item.disabled ? '，已停用' : ''}`).join('、')}）；找到待核验页面 ${results.reduce((sum, item) => sum + item.leads.length, 0)} 条`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

@@ -36,3 +36,14 @@
 .flow-chip small{margin-left:6px;color:#6b7280}.flow-chip.on small{color:#dbeafe}
 .pipeline-rows .flow-context{background:#f8fbff}
 .pipeline-rows .flow-context small{display:block;color:#475569;margin-top:2px}
+
+/* 通知追溯：搜索用了哪个引擎、返回了什么 */
+.search-cell details summary { cursor:pointer; font-size:13px; }
+.search-cell ol { margin:6px 0 0; padding-left:20px; font-size:12px; line-height:1.7; }
+.search-cell li.dropped { color:#94a3b8; }
+.search-cell li.dropped a { color:#94a3b8; }
+.search-cell li small { margin-left:6px; color:#64748b; }
+.search-cell li.kept small { color:#0f766e; }
+.chip.engine-baidu { background:#e0f2fe; color:#0369a1; }
+.chip.engine-kimi { background:#ede9fe; color:#6d28d9; }
+.chip.engine-deepseek { background:#dcfce7; color:#15803d; }

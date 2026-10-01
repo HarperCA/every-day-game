@@ -241,7 +241,7 @@ async function main() {
       run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile, '--budget', String(noticeBudget)]);
       // 已经搜索追溯过的通知记 30 天，避免同一篇通知每晚重复搜（额度不够没轮上的不记，下次还有机会）
       if (!args.dryRun) {
-        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => item.followupQuery)
+        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => item.followupQuery && !item.error)
           .flatMap(item => (item.notices || [{ url:item.noticeUrl }]).map(notice => ({ url:notice.url, reason:`已追溯上级赛事：${item.proposedName}`, stage:'通知追溯' })));
         saveMemory(memoryFile, remember(loadMemory(memoryFile), traced));
       }

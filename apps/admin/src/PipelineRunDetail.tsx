@@ -134,8 +134,17 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
     </section>
 
     {detail.notices.length > 0 && <section className="panel"><h2>转入通知追溯的正式通知</h2>
-      <div className="table-wrap"><table><thead><tr><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>找到的待核验页面</th></tr></thead>
+      {detail.searchEngines && detail.searchEngines.length > 0 && <p className="pipeline-note">本轮搜索引擎（百度用完换 Kimi，再不够用 DeepSeek）：{detail.searchEngines.map(item =>
+        `${item.label} 用了 ${item.used} 次、剩 ${item.left} 次${item.configured ? '' : '（没配密钥）'}${item.disabled ? '（连续失败，已停用）' : ''}`).join('；')}。</p>}
+      <div className="table-wrap"><table><thead><tr><th>通知</th><th>推出的赛事名</th><th>追溯查询</th><th>搜索用了哪个，返回了什么</th><th>找到的待核验页面</th></tr></thead>
         <tbody>{detail.notices.map(notice => <tr key={notice.url}><td><a href={notice.url} target="_blank" rel="noreferrer">{notice.title}</a></td><td>{notice.name}</td><td className="muted">{notice.query}</td>
+          <td className="search-cell">{notice.search
+            ? <details><summary><span className={`chip engine-${notice.search.engine}`}>{notice.search.label}</span> 返回 {notice.search.returned} 条，保留 {notice.search.kept} 条</summary>
+              {notice.search.attempts.some(attempt => !attempt.ok) && <p className="muted">{notice.search.attempts.map(attempt => `${attempt.label}${attempt.ok ? ` 成功（${attempt.returned} 条）` : ` 失败（${attempt.error}）`}`).join(' → ')}</p>}
+              {notice.search.attempts.some(attempt => attempt.usage) && <p className="muted">{notice.search.attempts.filter(attempt => attempt.usage).map(attempt => `${attempt.label}：输入 ${attempt.usage?.inputTokens} token，输出 ${attempt.usage?.outputTokens} token`).join('；')}</p>}
+              <ol>{notice.search.results.map(result => <li key={result.url} className={result.kept ? 'kept' : 'dropped'}><a href={result.url} target="_blank" rel="noreferrer">{result.title || result.url}</a><small>{result.kept ? '保留' : '筛掉'}</small></li>)}</ol></details>
+            : notice.error ? <small className="muted">搜索失败：{notice.error}</small>
+              : notice.query ? <small className="muted">已搜索，没有返回记录</small> : <small className="muted">{notice.leads.length ? '没搜（通知正文里写出了网址）' : '没搜（额度用完或名字不成立）'}</small>}</td>
           <td>{notice.leads.length ? notice.leads.map(lead => <div key={lead.url}><a href={lead.url} target="_blank" rel="noreferrer">{lead.title || lead.url}</a></div>) : <small className="muted">没有找到</small>}</td></tr>)}</tbody></table></div></section>}
 
     {detail.perQuery.length > 0 && <section className="panel"><h2>每条查询的结果去向</h2>
