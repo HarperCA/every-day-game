@@ -1,5 +1,6 @@
 // 价值评分与排序算法都与 adminData 共用同一份实现（内容必须逐字一致，由测试守护）。
 const { daysUntilNextRegistration, rankRecords } = require('./competitionRanking.js');
+const { majorCategories } = require('./majorKeywords.js');
 
 const MAX_PUBLIC_RECORDS = 500;
 const PUBLIC_DATA_STATUSES = new Set(['published', 'archived']);
@@ -40,9 +41,14 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
   const keyword = String(query.keyword || '').trim().toLowerCase().slice(0, 100);
   const withinDays = Object.prototype.hasOwnProperty.call(REGISTRATION_WITHIN_DAYS, query.registrationWithin)
     ? REGISTRATION_WITHIN_DAYS[query.registrationWithin] : null;
+  // 搜索词如果像一个专业名（“计算机”“土木工程专业”“临床医学”），除了名称、主办方里含这个词的，
+  // 专业大类对得上的比赛也算搜到了（2026-10-01）。名称里直接命中的排在前面，只是专业对得上的排在后面。
+  const majors = keyword ? majorCategories(keyword) : [];
+  const nameHit = item => String(item.search_text || '').includes(keyword);
+  const majorHit = item => majors.length > 0 && (item.professions || []).some(profession => majors.includes(profession));
   const filtered = records.map(item => ({ ...item, registration_status:currentRegistrationStatus(item, now) })).filter(item => {
     if (!PUBLIC_DATA_STATUSES.has(item?.data_status) || item.system_validation !== 'passed' || item.manual_review !== 'passed') return false;
-    if (keyword && !String(item.search_text || '').includes(keyword)) return false;
+    if (keyword && !nameHit(item) && !majorHit(item)) return false;
     if (query.registrationStatus && item.registration_status !== query.registrationStatus) return false;
     if (query.eventLevel && item.event_level !== query.eventLevel) return false;
     if (query.profession && !(item.professions || []).includes(query.profession)) return false;
@@ -64,7 +70,9 @@ function filterPublicRecords(records, query = {}, now = new Date()) {
     // 学生能查到往届比赛，但一律排在所有还能报名的后面（见下面的 closedLast）。
     return true;
   });
-  const ranked = closedLast(rankRecords(filtered, query, now));
+  // 搜索词对上专业时：名称里直接命中的先排（各自内部保持原来的推荐排序），再是只有专业对得上的
+  const ranked0 = rankRecords(filtered, query, now);
+  const ranked = closedLast(majors.length ? [...ranked0.filter(nameHit), ...ranked0.filter(item => !nameHit(item))] : ranked0);
   const page = Math.max(1, Math.min(100, Number.isInteger(query.page) ? query.page : 1));
   const pageSize = Math.max(1, Math.min(100, Number.isInteger(query.pageSize) ? query.pageSize : 8));
   const visible = Math.min(ranked.length, page * pageSize);

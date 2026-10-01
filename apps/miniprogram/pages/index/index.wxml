@@ -2,7 +2,7 @@
 <view class="page">
   <view class="hero">
     <view class="search-row">
-      <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事、别名、主办单位或关键词" />
+      <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事名称、主办单位或专业（如：计算机、土木工程）" />
       <button bindtap="onSearch" size="mini">搜索</button>
     </view>
   </view>

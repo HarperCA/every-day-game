@@ -75,3 +75,53 @@ describe('public competition query', () => {
     expect(isMissingCollection(new Error('network timeout'))).toBe(false);
   });
 });
+
+// 2026-10-01：搜索框输入专业名，也能找到对应专业大类的比赛
+describe('按专业搜索', () => {
+  const rec = (id, name, professions, extra = {}) => ({ ...base, id, name, professions, search_text:name.toLowerCase(), ...extra });
+  const records = [
+    rec('cs', '全国大学生软件创新大赛', ['计算机与AI']),
+    rec('cs2', '某某数据竞赛', ['计算机与AI']),
+    rec('civil', '全国大学生结构设计竞赛', ['建筑与土木']),
+    rec('named', '计算机应用能力大赛', ['电子信息']),         // 名称里就有“计算机”，专业分类却不是计算机类
+    rec('med', '全国大学生生命科学竞赛', ['生物与医药']),
+    rec('closed', '往届计算机类竞赛', ['计算机与AI'], { registration_status:'已截止', data_status:'archived' }),
+  ];
+  const ids = query => filterPublicRecords(records, query, new Date('2026-10-01T00:00:00Z')).items.map(item => item.id);
+
+  it('搜具体专业名：专业大类对得上的都出来，名称里直接命中的排在前面', () => {
+    const result = ids({ keyword:'计算机' });
+    expect(result).toContain('cs'); expect(result).toContain('cs2'); expect(result).toContain('named');
+    expect(result).not.toContain('civil'); expect(result).not.toContain('med');
+    expect(result[0]).toBe('named');                         // 名称里有“计算机”的先排
+    expect(result[result.length - 1]).toBe('closed');         // 已截止/已归档的仍然排在最后
+  });
+  it('带“专业”后缀、写全称、写成句子都行', () => {
+    expect(ids({ keyword:'计算机科学与技术专业' })).toEqual(expect.arrayContaining(['cs', 'cs2']));
+    expect(ids({ keyword:'土木工程' })).toEqual(['civil']);
+    expect(ids({ keyword:'临床医学' })).toEqual(['med']);
+  });
+  it('不像专业名的词，行为和原来一样（只搜名称、主办方）', () => {
+    expect(ids({ keyword:'结构设计' })).toEqual(['civil']);
+    expect(ids({ keyword:'不存在的词' })).toEqual([]);
+  });
+  it('单个字不当专业名，避免乱匹配', () => {
+    expect(ids({ keyword:'法' })).toEqual([]);
+  });
+});
+
+describe('专业词表', () => {
+  const { majorCategories } = require('../apps/miniprogram/cloudfunctions/publicData/majorKeywords.js');
+  const taxonomy = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js').PROFESSION_TAXONOMY;
+  it('词表里每个大类都是库里真实存在的十三类之一', () => {
+    const { MAJOR_TERMS } = require('../apps/miniprogram/cloudfunctions/publicData/majorKeywords.js');
+    for (const category of Object.keys(MAJOR_TERMS)) expect(taxonomy).toContain(category);
+  });
+  it('两个字的词只按开头匹配、更长的词才能包含词表词，避免串类', () => {
+    expect(majorCategories('设计')).toEqual(['设计与艺术']);
+    expect(majorCategories('程序设计')).toEqual(['计算机与AI']);
+    expect(majorCategories('机械设计')).toEqual(['机械与自动化']);
+    expect(majorCategories('不限专业')).toEqual(['综合/不限专业']);
+    expect(majorCategories('ai')).toEqual(['计算机与AI']);
+  });
+});
