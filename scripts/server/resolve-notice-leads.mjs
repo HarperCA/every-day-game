@@ -42,6 +42,20 @@ export function selectLeads(references, noticeUrl, proposedName = '') {
   }).slice(0, 5).map(item => ({ title:String(item.title || '').slice(0, 150), url:item.url, summary:String(item.content || '').slice(0, 300), status:'待核验' }));
 }
 
+// 通知正文里亲口写出的网址（报名网址、官网），可靠性远高于搜索搜到的：直接放行去读，
+// 不再让 Jev 只看域名（标题是域名、介绍是一句来源说明）再判一次——那样判出来几乎都是“拿不准”，
+// 2026-09-29 那轮 15 个追溯页面里的官网全因此没人读（2026-10-01 起）。
+// 仍然要过主流水线的判重、读详情后的范围检查和三项核验，不会因此免审。
+export function splitTrustedFollowups(followups = []) {
+  const trusted = followups.filter(candidate => candidate.fromNoticeText);
+  const others = followups.filter(candidate => !candidate.fromNoticeText);
+  const decisions = trusted.map(candidate => ({
+    candidate, action:'fetch', kind:'competition_site', confidence:1, source:'notice_text',
+    reason:'通知正文里写出的网址，直接读取', probabilities:null, cost:0,
+  }));
+  return { trusted, others, decisions };
+}
+
 // 通知只是来源线索。追溯到的页面必须在主流水线再次判重、分类、抓正文和核验；
 // 这里绝不把通知标题本身转换成赛事记录。
 export function followupCandidatesFromReport(report = {}) {
@@ -62,6 +76,8 @@ export function followupCandidatesFromReport(report = {}) {
         detailUrl:url,
         introduction:`通知提出的待核验比赛名：${proposedName}。搜索摘要：${String(lead.summary || '')}`.slice(0, 2000),
         discoveryNoticeUrl:String(result.noticeUrl || ''),
+        // 网址是通知正文里自己写出来的（不是搜索搜到的），前置筛选不再复判（见 trustedFollowupDecisions）
+        fromNoticeText:Boolean(lead.fromNoticeText),
         tags:[],
         source:'通知追溯',
         discovery:{
@@ -154,7 +170,7 @@ async function main() {
     const first = group.notices[0];
     // 标题用网站域名：原先把来源通知标题放进标题，追溯阶段“标题含通知就跳过”的规则把这些官网全拦了（2026-09-30）
     const hostOf = url => { try { return new URL(url).hostname; } catch { return url; } };
-    const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:hostOf(url), url, summary:`通知摘要里写出的网址，来自：${notice.title.slice(0, 60)}`, status:'待核验' })));
+    const free = group.notices.flatMap(notice => notice.urls.map(url => ({ title:hostOf(url), url, summary:`通知摘要里写出的网址，来自：${notice.title.slice(0, 60)}`, status:'待核验', fromNoticeText:true })));
     const result = { noticeUrl:first.url, noticeTitle:first.title, noticeDiscovery:first.discovery, notices:group.notices.map(({ discovery, ...notice }) => notice),
       proposedName:group.proposedName, importance:noticeImportance(group), leads:free };
     if (index < budget) {

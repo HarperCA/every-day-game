@@ -44,3 +44,25 @@ describe('所有通知都能追溯：按上级赛事分组、按重要程度分�
     expect(noticeImportance(concrete, 2026)).toBeGreaterThan(noticeImportance(hunan, 2026));
   });
 });
+
+// 2026-10-01：通知正文里写出的网址直接放行，不再让 Jev 只看域名复判
+import { followupCandidatesFromReport, splitTrustedFollowups } from '../scripts/server/resolve-notice-leads.mjs';
+describe('通知正文里写出的网址直接放行', () => {
+  const report = { results:[{
+    noticeUrl:'https://school.edu.cn/n/1', noticeTitle:'关于举办2026中国大学生材料热处理创新创业大赛的通知', proposedName:'中国大学生材料热处理创新创业大赛', followupQuery:'x',
+    leads:[
+      { title:'www.dasai.chts.org.cn', url:'http://www.dasai.chts.org.cn/', summary:'通知摘要里写出的网址，来自：关于举办…', status:'待核验', fromNoticeText:true },
+      { title:'某搜索结果页面', url:'https://search.example.org/p', summary:'搜索摘要', status:'待核验' },
+    ],
+  }] };
+  it('标记随候选一起带下来；搜索来的没有标记', () => {
+    const candidates = followupCandidatesFromReport(report);
+    expect(candidates.map(candidate => candidate.fromNoticeText)).toEqual([true, false]);
+  });
+  it('有标记的直接放行读详情（不花 Jev），其余仍交给 Jev', () => {
+    const { trusted, others, decisions } = splitTrustedFollowups(followupCandidatesFromReport(report));
+    expect(trusted.map(candidate => candidate.detailUrl)).toEqual(['http://www.dasai.chts.org.cn/']);
+    expect(others.map(candidate => candidate.detailUrl)).toEqual(['https://search.example.org/p']);
+    expect(decisions[0]).toMatchObject({ action:'fetch', kind:'competition_site', source:'notice_text', cost:0 });
+  });
+});

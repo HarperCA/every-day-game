@@ -30,7 +30,7 @@ import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
 import { collectMentions } from './known-event-mentions.mjs';
 import { loadMemory, recentlyRejected, remember, saveMemory } from './rejected-memory.mjs';
 import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
-import { followupCandidatesFromReport } from './resolve-notice-leads.mjs';
+import { followupCandidatesFromReport, splitTrustedFollowups } from './resolve-notice-leads.mjs';
 import { stampDiscovery } from './discovery.mjs';
 import { buildPipelineLedger } from './pipeline-ledger.mjs';
 
@@ -241,7 +241,10 @@ async function main() {
       console.log(`正式通知 ${formalNotices.length} 条，赛事官网追溯线索已保存：${leadsFile}`);
       const followups = followupCandidatesFromReport(JSON.parse(fs.readFileSync(leadsFile, 'utf8'))).map(candidate => stampDiscovery(candidate, '通知追溯', RUN_ID));
       const followupReport = path.join(RUN_DIR, 'notice-followup-filter-report.json');
-      const followupDecisions = await filterCandidatesWithJev(followups, { apiKey:readOpenRouterKey() });
+      // 通知正文里写出的网址直接放行，只有搜索搜到的才交给 Jev 判（resolve-notice-leads.mjs 的 splitTrustedFollowups）
+      const split = splitTrustedFollowups(followups);
+      const jevFollowups = await filterCandidatesWithJev(split.others, { apiKey:readOpenRouterKey() });
+      const followupDecisions = { ...jevFollowups, decisions:[...split.decisions, ...jevFollowups.decisions] };
       const followupMasters = buildMastersFromRecords(records);
       for (const original of jevResult.fetch) {
         if (/通知|公告|通告/.test(original.name || '')) continue;
