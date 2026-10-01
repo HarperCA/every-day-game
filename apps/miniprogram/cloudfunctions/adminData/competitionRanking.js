@@ -25,7 +25,9 @@ const WEIGHTS = {
   completeness:0.04,    // 信息完整度：资料不全的不该排在前面
 };
 
-const RECOMMENDATION_SCORE = { '强烈推荐':1, '值得参加':0.8, '适合练手':0.6, '高难挑战':0.5, '谨慎报名':0.2, '信息不足':0 };
+const RECOMMENDATION_SCORE = { '强烈推荐':1, '值得参加':0.8, '适合练手':0.6, '高难挑战':0.5, '谨慎报名':0.2 };
+// 没评过级（库里写着默认的“信息不足”或为空）按中间分：原先算 0 分，137 条公开比赛里 116 条因此全被排到后面（2026-10-01）
+const UNRATED_RECOMMENDATION_SCORE = 0.5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -143,7 +145,7 @@ function completenessScore(item) {
 function relevance(item, query = {}, now = new Date()) {
   const parts = {
     goalMatch:goalMatchScore(item, query),
-    recommendation:RECOMMENDATION_SCORE[item.recommendation] ?? 0,
+    recommendation:RECOMMENDATION_SCORE[item.recommendation] ?? UNRATED_RECOMMENDATION_SCORE,
     urgency:urgencyScore(item, now),
     opportunity:opportunityScore(item),
     professionMatch:professionMatchScore(item, query),

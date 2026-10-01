@@ -7,11 +7,26 @@
     </view>
   </view>
 
-  <view class="filters card">
-    <picker range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange"><view class="filter">{{statusOptions[statusIndex]}}⌄</view></picker>
-    <picker range="{{levelOptions}}" value="{{levelIndex}}" bindchange="onLevelChange"><view class="filter">{{levelOptions[levelIndex]}}⌄</view></picker>
-    <picker range="{{professionOptions}}" value="{{professionIndex}}" bindchange="onProfessionChange"><view class="filter">{{professionOptions[professionIndex]}}⌄</view></picker>
-    <view class="filter more-filter {{moreFilterCount ? 'filter-active' : ''}}" bindtap="openMoreFilters">{{moreFilterLabel}}</view>
+  <view class="filter-panel">
+    <scroll-view class="status-scroll" scroll-x scroll-into-view="{{statusScrollTarget}}" enhanced show-scrollbar="{{false}}">
+      <view id="status-tab-{{index}}" class="status-tab {{statusIndex === index ? 'status-tab-active' : ''}}" wx:for="{{statusOptions}}" wx:key="*this" data-index="{{index}}" bindtap="onStatusTap" role="button" aria-label="{{index === 0 ? '全部报名状态' : item}}">
+        {{index === 0 ? '全部' : item}}
+      </view>
+    </scroll-view>
+    <view class="quick-filter-row">
+      <scroll-view class="quick-filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <picker class="quick-picker" range="{{levelOptions}}" value="{{levelIndex}}" bindchange="onLevelChange">
+          <view class="quick-chip {{levelIndex ? 'quick-chip-active' : ''}}">{{levelIndex ? levelOptions[levelIndex] : '赛事级别'}}<text class="chip-arrow">⌄</text></view>
+        </picker>
+        <picker class="quick-picker" range="{{professionOptions}}" value="{{professionIndex}}" bindchange="onProfessionChange">
+          <view class="quick-chip {{professionIndex ? 'quick-chip-active' : ''}}">{{professionIndex ? professionOptions[professionIndex] : '适合专业'}}<text class="chip-arrow">⌄</text></view>
+        </picker>
+      </scroll-view>
+      <view class="filter-trigger {{moreFilterCount ? 'filter-trigger-active' : ''}}" bindtap="openMoreFilters" role="button" aria-label="更多筛选">
+        <image src="/assets/filter.svg" mode="aspectFit" aria-hidden="true" />
+        <text wx:if="{{moreFilterCount}}" class="filter-count">{{moreFilterCount}}</text>
+      </view>
+    </view>
   </view>
   <view class="selected-panel card" wx:if="{{selectedConditions.length}}">
     <view class="selected-head"><text>已选条件</text><text class="clear" bindtap="clearFilters">全部清空</text></view>
@@ -39,8 +54,8 @@
       </view>
       <view class="competition-name">{{item.name}}</view>
       <view class="tags"><text class="tag">{{item.eventLevel}}</text><text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text></view>
-      <view class="recommendation"><text>{{item.recommendationLevel}}</text><text class="reference">仅供参考</text></view>
-      <view class="reason">{{item.recommendationReasons[0]}}</view>
+      <view class="recommendation" wx:if="{{item.recommendationLevel}}"><text>{{item.recommendationLevel}}</text><text class="reference">仅供参考</text></view>
+      <view class="reason" wx:if="{{item.recommendationLevel && item.recommendationReasons.length}}">{{item.recommendationReasons[0]}}</view>
       <view class="deadline archived-hint" wx:if="{{item.dataStatus === 'archived'}}">
         <text wx:if="{{item.nextEditionEstimateDate}}">已归档 · 按上届节奏推算，下一届约 {{item.nextEditionEstimateDate}} 起报名（仅供参考）</text>
         <text wx:else>已归档 · 下一届时间暂无法推算</text>

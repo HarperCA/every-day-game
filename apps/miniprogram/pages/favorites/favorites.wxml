@@ -45,11 +45,11 @@
         <text class="tag">{{item.eventLevel}}</text>
         <text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text>
       </view>
-      <view class="recommendation">
+      <view class="recommendation" wx:if="{{item.recommendationLevel}}">
         <text>{{item.recommendationLevel}}</text>
         <text class="reference">仅供参考</text>
       </view>
-      <view class="reason">{{item.recommendationReasons[0]}}</view>
+      <view class="reason" wx:if="{{item.recommendationLevel && item.recommendationReasons.length}}">{{item.recommendationReasons[0]}}</view>
       <view class="card-footer">
         <view>
           <view class="deadline" wx:if="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}</view>
