@@ -788,3 +788,17 @@ describe('looksLikeContestPage 不再误判真实页面', () => {
     expect(looksLikeContestPage('园冶杯', '园冶杯')).toBe(false);
   });
 });
+
+describe('搜索标题是宣传语时，长正文不再误判空壳（2026-10-01 胶东网那条）', () => {
+  const { looksLikeContestPage } = require('../apps/miniprogram/cloudfunctions/adminData/competitionExtract.js');
+  it('正文上千字、多处在讲比赛：不是骨架', () => {
+    const page = '山东省第六届全民国家安全宣传教育创意作品大赛正式启动，面向高校学生征集作品，大赛设一二三等奖。本次比赛由……'.repeat(20);
+    expect(page.length).toBeGreaterThan(1000);
+    expect(looksLikeContestPage(page, '@所有人!万元奖金等你拿!山东省第六届全民国家安全宣传教育创')).toBe(true);
+  });
+  it('长的导航页（几乎不提比赛）仍然判空壳', () => {
+    const nav = '首页 新闻中心 通知公告 学院概况 师资队伍 招生就业 联系我们 校园生活 图书馆 '.repeat(30);
+    expect(nav.length).toBeGreaterThan(1000);
+    expect(looksLikeContestPage(nav, '某某大赛')).toBe(false);
+  });
+});

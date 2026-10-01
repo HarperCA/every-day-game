@@ -467,6 +467,7 @@ function toFieldSuggestions(verified, sourceUrl) {
 // 真正拦住天池的是下面的名称检查（它有 665 字，长度关过得去）；
 // 这个下限只是兜底：正文不到两百字的页面，抽出来也没有复核价值。
 const BOILERPLATE_MIN_CHARS = 200;
+const LONG_PAGE_CHARS = 1000;
 
 // 比对前把名字和正文抹成同一种写法：全半角统一、去掉空白和各种引号书名号。
 // 原先只去名字里的引号、不去正文里的：标题“关于组织参加“建行杯”浙江省…”原样就在正文里，却因为引号对不上被判成空壳页（2026-10-01）。
@@ -486,7 +487,10 @@ function looksLikeContestPage(text, contestName) {
   // 改为用整个名字去找：页面里真有这个名字就放行，没有才算空壳。
   if (!probes.length && core.length >= 2) probes = [core];
   const normalized = squash(value);
-  return probes.some(probe => normalized.includes(probe));
+  if (probes.some(probe => normalized.includes(probe))) return true;
+  // 搜索标题常常是宣传语（“@所有人!万元奖金等你拿!…”），正文里当然找不到。导航骨架都很短（实测 30～600 字），
+  // 正文上千字、而且多处在讲比赛的，就不是骨架——交给抽取，比赛真名由抽出的 competition_name 回原文核对（2026-10-01）。
+  return value.length >= LONG_PAGE_CHARS && (value.match(/大赛|竞赛|挑战赛|比赛/g) || []).length >= 3;
 }
 
 // text 可由调用方传入：前后端分离的站点需要走各自的接口取正文，

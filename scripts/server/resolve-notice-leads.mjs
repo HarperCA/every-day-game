@@ -27,12 +27,12 @@ export function competitionNameFromNotice(title) {
 // 标题没有信息量、或页面读不了（微信公众号）时，赛事名只能从摘要里找：“……举办 2026 年‘强国杯’英语能力大赛……”。
 // 只认“举办/开展/组织/主办/承办/举行/启动/征集/参加”这类动词后面跟着的、以“大赛/竞赛/挑战赛/比赛/联赛/锦标赛”结尾的名字，
 // 找不到就不猜（宁可不追溯，也不拿一段不是赛事名的话去搜）。
-const SNIPPET_NAME = /(?:举办|主办|承办|开展|组织|举行|启动|征集|参加)了?(?:第[一二三四五六七八九十百\d]+届)?((?:(?:19|20)\d{2}\s*年?)?[“"「『]?[一-龥A-Za-z0-9“”"「」『』·+&（）()\-]{2,30}?(?:大赛|竞赛|挑战赛|比赛|联赛|锦标赛))/;
+const SNIPPET_NAME = /(?:举办|主办|承办|开展|组织|举行|启动|征集|参加)了?(?:第[一二三四五六七八九十百\d]+届)?((?:(?:19|20)\d{2}\s*(?:年度|年)?)?[“"「『]?[一-龥A-Za-z0-9“”"「」『』·+&（）()\-]{2,30}?(?:大赛|竞赛|挑战赛|比赛|联赛|锦标赛))/;
 export function contestNameFromSnippet(text) {
   const match = String(text || '').replace(/\s+/g, '').match(SNIPPET_NAME);
   if (!match) return '';
   const name = parentCompetitionName(match[1]);
-  return VALID_NAME(name.replace(/(?:19|20)\d{2}\s*年?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '')) ? name : '';
+  return VALID_NAME(name.replace(/(?:19|20)\d{2}\s*(?:年度|年)?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '')) ? name : '';
 }
 
 // 追溯用的候选：标题没有信息量、或页面读不了的，赛事名换成摘要里提取的（原标题留在 originalTitle）；提取不到的原样返回，后面按“提不出赛事名”处理
@@ -156,7 +156,8 @@ export function groupNotices(candidates = []) {
     const proposedName = parentCompetitionName(candidate.name);
     if (!VALID_NAME(proposedName)) continue;
     // 分组和搜索都用去掉年份、届次、引号后的名字：同一场比赛不同届的通知归成一组
-    const key = proposedName.replace(/(?:19|20)\d{2}\s*年?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '');
+    // “2026年度吉林省……”：年份连同“年度”一起去掉，原先只去“年”，留下“度吉林省数字经济创新能力大赛”（2026-10-01）
+    const key = proposedName.replace(/(?:19|20)\d{2}\s*(?:年度|年)?|第[一二三四五六七八九十百\d]+届|[“”"「」\s]/g, '');
     if (!groups.has(key)) groups.set(key, { proposedName:key, notices:[] });
     groups.get(key).notices.push({ title:candidate.name, url:candidate.detailUrl, discovery:candidate.discovery || null,
       urls:urlsInText(candidate.introduction, candidate.detailUrl).filter(url => leadRank(url) < 9).slice(0, 5) });

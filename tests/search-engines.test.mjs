@@ -105,3 +105,19 @@ describe('Jev 新判法：先看“与赛事无关”，再比两组概率（来
     expect(decideByProbabilities({ directory_lead:0.6, repost_or_school_selection:0.2, organizer_notice:0.1 }).action).toBe('lead');
   });
 });
+
+describe('Kimi 读网页接口（重读空壳页）', () => {
+  it('返回执行脚本后的正文，图片去掉；记下用时', async () => {
+    const { kimiFetchPage } = await import('../scripts/server/search-engines.mjs');
+    const fetchImpl = vi.fn(async () => ok({ url:'https://www.bmedesign.cn', markdown:'第十一届全国大学生生物医学工程创新设计竞赛，由中国生物医学工程学会主办。\n\n\n\n![image1](https://img/x.png)\n报名延长通知' }));
+    const page = await kimiFetchPage('https://www.bmedesign.cn', { key:'k', fetchImpl });
+    expect(page.markdown).toBe('第十一届全国大学生生物医学工程创新设计竞赛，由中国生物医学工程学会主办。\n\n报名延长通知');
+    expect(fetchImpl.mock.calls[0][0]).toBe('https://api.kimi.com/coding/v1/fetch');
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ url:'https://www.bmedesign.cn' });
+  });
+  it('出错时抛错，由调用方保留原来的“空壳页”结果', async () => {
+    const { kimiFetchPage } = await import('../scripts/server/search-engines.mjs');
+    await expect(kimiFetchPage('https://a.cn', { key:'k', fetchImpl:async () => fail(500) })).rejects.toThrow('http_500');
+    await expect(kimiFetchPage('https://a.cn', { key:'' })).rejects.toThrow('kimi_key_not_configured');
+  });
+});

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { Fetcher } from './crawler/lib/fetcher.mjs';
 import { extractDocxText, extractPdfText, extractText } from './crawler/lib/extract.mjs';
 import { evidenceLinks, rankEvidenceLinks } from './crawler/lib/jevLinkRanker.mjs';
+import { kimiFetchPage } from './search-engines.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const KEY_FILE = path.join(HERE, '.extract-key');
@@ -47,6 +48,9 @@ const SERVER_BUDGET_MS = 300000;
 const PER_CALL_DELAY_MS = 1200;
 const USER_AGENT = 'competition-crawler/1.0 (+admin source verification; respects robots.txt)';
 const evidenceFetcher = new Fetcher({ perHostDelayMs:1500 });
+// 空壳页（前后端分离的官网，直接下载只有导航骨架）用 Kimi 读网页接口重读，每轮最多这么多条（2026-10-01，用户定）
+const MAX_RENDERED_REREADS = 20;
+let renderedRereads = 0;
 
 function readOpenRouterKey() {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY.trim();
@@ -177,6 +181,26 @@ async function main() {
     try { text = await sourceTextFor(candidate); }
     catch (error) { candidate.evidenceDiscoveryError = String(error?.message || error).slice(0, 180); }
     outcome = await runOnce(text);
+    // 空壳页：我们的抓取已经确认 robots 允许、但只拿到导航骨架。用 Kimi 读网页接口（服务端执行脚本）重读一次。
+    // 平台条目（天池、辽宁平台）走各自的接口，不在此列。重读到的正文同样要过引文回查，证据仍然可复核。
+    let rendered = null;
+    if (!outcome.ok && outcome.status === 'page_is_boilerplate' && candidate.evidence?.api !== true && !/tianchi\.aliyun\.com/.test(url)
+      && renderedRereads < MAX_RENDERED_REREADS) {
+      renderedRereads += 1;
+      try {
+        const page = await kimiFetchPage(url);
+        rendered = { via:'kimi_fetch', chars:page.markdown.length, ms:page.ms, before:outcome.sourceChars ?? null };
+        if (page.markdown.length >= 200) {
+          const second = await runOnce(`来源页面（原站内容由脚本加载，经 Kimi 读网页接口执行脚本后取得正文）：${url}\n${page.markdown}`);
+          rendered.status = second.ok ? 'ok' : second.status;
+          if (second.ok || second.status !== 'page_is_boilerplate') { outcome = second; text = page.markdown; }
+        } else {
+          rendered.status = 'too_short';
+        }
+      } catch (error) {
+        rendered = { via:'kimi_fetch', status:'error', error:String(error?.message || error).slice(0, 160) };
+      }
+    }
     // 抽取结果不稳定：实测「跨本体具身」这条批量跑时什么都没抽到，
     // 单独连跑两次却都正确抽出了主办单位和四条权威信号。同样的输入、不同的输出。
     // 一次调用只要一秒多、约一分钱，抽空了就重试一次远比让一个好赛事
@@ -188,12 +212,12 @@ async function main() {
       if (second.ok && !yieldedNothing(second)) outcome = second;
     }
     const elapsed = Date.now() - started;
-    results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...outcome });
+    results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...(rendered ? { rendered } : {}), ...outcome });
     const thought = outcome.reasoning?.chars ? ` 思考${outcome.reasoning.chars}字` : '';
     const suffix = (outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`
       : `失败 ${outcome.status}`) + thought;
-    const retryMark = retried ? ' (重试)' : '';
+    const retryMark = (retried ? ' (重试)' : '') + (rendered ? ` (空壳页经 Kimi 重读：${rendered.status}${rendered.chars ? `，${rendered.chars}字` : ''})` : '');
     console.log(`[${index + 1}/${candidates.length}] ${String(elapsed).padStart(6)}ms  ${suffix}${retryMark}  ${name.slice(0, 30)}`);
     if (index < candidates.length - 1) await sleep(PER_CALL_DELAY_MS);
   }

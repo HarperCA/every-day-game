@@ -68,10 +68,12 @@ function composeRunDetail(runId, files) {
     if (!result.ok) {
       const status = result.status || result.error || '未知';
       if (READ_FAIL.test(String(status))) trail.push(step('read', 'fail', String(status)));
-      else trail.push(step('read', 'ok'), step('extract', 'fail', String(status)));
+      else trail.push(step('read', 'ok', result.rendered?.via === 'kimi_fetch' ? `空壳页经 Kimi 重读：${result.rendered.status}` : ''), step('extract', 'fail', String(status)));
       return { final:`读详情页失败（${status}）`, trail };
     }
-    trail.push(step('read', 'ok'), step('extract', 'ok', result.extracted?.competition_name?.value ? `比赛名：${result.extracted.competition_name.value}` : ''));
+    // 空壳页经 Kimi 读网页接口重读的，在“读详情页”这一步写明
+    const renderedNote = result.rendered?.via === 'kimi_fetch' ? `直接下载只有导航骨架（${result.rendered.before ?? '?'}字），经 Kimi 读网页接口执行脚本后取得正文 ${result.rendered.chars} 字` : '';
+    trail.push(step('read', 'ok', renderedNote), step('extract', 'ok', result.extracted?.competition_name?.value ? `比赛名：${result.extracted.competition_name.value}` : ''));
     const candidate = candidateByUrl.get(url);
     const realName = result.extracted?.competition_name?.value;
     const names = [candidate?.name, realName].filter(Boolean);

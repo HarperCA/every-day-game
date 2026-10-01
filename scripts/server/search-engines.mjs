@@ -82,6 +82,27 @@ export function deepseekEngine({ key = readKey('.extract-key'), fetchImpl = glob
   };
 }
 
+// ---- Kimi 会员通道的读网页接口（kimi-cli 的 FetchURL 用的同一个接口） ----
+// 在服务端执行页面脚本后返回正文（markdown）。用来重读“空壳页”：很多赛事官网是前后端分离的，
+// 直接下载只拿到 30～600 字的导航骨架，内容要靠浏览器运行脚本才加载（2026-10-01 重跑：32 条读详情里 12 条如此）。
+// 只在我们自己的抓取已经确认 robots 允许、拿到了骨架之后才调用（robots 不允许的站，如微信，不会走到这里）。
+export async function kimiFetchPage(url, { key = readKey('.ai-key'), fetchImpl = globalThis.fetch, timeoutMs = 60000 } = {}) {
+  if (!key) throw new Error('kimi_key_not_configured');
+  const startedAt = Date.now();
+  const response = await fetchImpl('https://api.kimi.com/coding/v1/fetch', {
+    method:'POST', headers:{ 'content-type':'application/json', authorization:`Bearer ${key}`, 'X-Msh-Tool-Call-Id':crypto.randomUUID() },
+    body:JSON.stringify({ url }), signal:withTimeout(timeoutMs),
+  });
+  if (!response.ok) throw new Error(`http_${response.status}`);
+  const payload = await response.json();
+  const markdown = String(payload?.markdown || payload?.content || '')
+    // 页面里的图片换成占位，不占正文篇幅（图片地址是 Kimi 的图床，不是原站）
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  return { markdown, ms:Date.now() - startedAt };
+}
+
 // 依次补位的搜索器。engines：[{ engine, budget }]，按优先级排好。
 //   search(query)：用第一个“还有额度、没被停用”的引擎；它失败就记一笔、换下一个；全都用不了返回 null。
 //   额度只在成功时扣；一个引擎连续失败 DISABLE_AFTER_FAILURES 次，本轮不再用它。

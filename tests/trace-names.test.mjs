@@ -59,3 +59,10 @@ describe('从摘要里提取赛事名', () => {
     expect(groupNotices([withTraceName({ name:'2026年9月27日 09:54广东', detailUrl:'https://mp.weixin.qq.com/s?mid=9', introduction:'没有赛事名' }, { replaceTitle:true })])).toHaveLength(0);
   });
 });
+
+describe('“年度”不留下“度”字', () => {
+  it('“2026年度吉林省数字经济创新能力大赛”归组后是“吉林省数字经济创新能力大赛”', () => {
+    const groups = groupNotices([{ name:'关于举办2026年度吉林省数字经济创新能力大赛的通知', detailUrl:'https://a.edu.cn/1', introduction:'' }]);
+    expect(groups[0].proposedName).toBe('吉林省数字经济创新能力大赛');
+  });
+});
