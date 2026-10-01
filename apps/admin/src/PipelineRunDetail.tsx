@@ -6,6 +6,9 @@ const STAGE_CLASS = ['stage-dropped', 'stage-dup', 'stage-filtered', 'stage-trac
 const FILTER_LABEL: Record<string, string> = { fetch:'放行读正文', review:'低置信度只留线索', lead:'只留线索', trace:'追溯上级赛事', reject:'丢弃' };
 const shortUrl = (url:string) => url.length > 80 ? `${url.slice(0, 80)}…` : url;
 const finalGroup = (text:string) => text.replace(/（.*|：.*/, '');
+// 漏斗的每一步，和表里每条记录的 steps 对应（后端 pipelineRunDetail.js）
+const STEPS:Array<[string, string]> = [['search', '搜索结果'], ['candidate', '成为候选'], ['new', '判重后是新的'], ['passed', '前置筛选放行'],
+  ['read', '读了详情页'], ['extracted', '抽取成功'], ['added', '入库']];
 
 export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBack:()=>void }) {
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -14,6 +17,7 @@ export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBa
   const [stage, setStage] = useState('');
   const [kind, setKind] = useState('');
   const [query, setQuery] = useState('');
+  const [step, setStep] = useState('');
   useEffect(() => {
     getPipelineRunDetail(runId).then(setDetail).catch(caught => setError(describeCloudError(caught)));
   }, [runId]);
@@ -25,23 +29,30 @@ export default function PipelineRunDetail({ runId, onBack }:{ runId:string; onBa
   }, [detail]);
   const rows = useMemo(() => (detail?.rows || []).filter(row =>
     (!keyword || `${row.title} ${row.url} ${row.reason} ${row.intro}`.toLowerCase().includes(keyword.toLowerCase()))
-    && (!stage || finalGroup(row.final) === stage) && (!kind || row.kind === kind) && (!query || row.query === query)), [detail, keyword, stage, kind, query]);
+    && (!stage || finalGroup(row.final) === stage) && (!kind || row.kind === kind) && (!query || row.query === query)
+    && (!step || (row.steps || []).includes(step))), [detail, keyword, stage, kind, query, step]);
 
   if (error) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p role="alert" className="pipeline-error">读取失败：{error === 'run_not_found' ? '服务器上找不到这一轮的运行记录（可能是很早的运行，当时还没有逐条留档）' : error}</p></div>;
   if (!detail) return <div className="pipeline-detail-page"><button onClick={onBack}>‹ 返回结果账</button><p>正在读取明细…</p></div>;
   const s = detail.summary;
-  const funnel:Array<[number | null, string]> = [[s.searchResults, `搜索结果（${s.queries} 条查询）`], [s.candidates, '成为候选'], [s.newCandidates, '判重后是新的'],
-    [s.filter.fetch || 0, '前置筛选放行'], [s.detailRead, '读了详情页'], [s.extractOk, '抽取成功'], [s.added, '入库']];
+  // 漏斗数字按表里每条实际走到的步数算（老的运行没有 steps，退回原来的汇总数字），点一下就把下面的表筛成这一步的记录
+  const legacy:Record<string, number | null> = { search:s.searchResults, candidate:s.candidates, new:s.newCandidates, passed:s.filter.fetch || 0, read:s.detailRead, extracted:s.extractOk, added:s.added };
+  const funnel = STEPS.map(([key, label]) => ({ key, label:key === 'search' ? `搜索结果（${s.queries} 条查询）` : label, value:detail.steps ? detail.steps[key] : legacy[key] }));
+  const clickable = Boolean(detail.steps);
   return <div className="pipeline-detail-page">
     <header><div><button onClick={onBack}>‹ 返回结果账</button><h1>本轮明细 · {new Date(runIdToIso(detail.id)).toLocaleString('zh-CN', { timeZone:'Asia/Shanghai', hour12:false })}</h1>
       <p>每一条候选的去向。点标题在新标签页打开原网页。</p></div></header>
-    <div className="pipeline-funnel">{funnel.map(([value, label], index) => <div key={label}>{index > 0 && <span className="arrow">→</span>}<div className="step"><b>{value ?? '—'}</b><span>{label}</span></div></div>)}</div>
+    <div className="pipeline-funnel">{funnel.map((item, index) => <div key={item.key}>{index > 0 && <span className="arrow">→</span>}
+      {clickable ? <button type="button" className={`step step-button${step === item.key ? ' step-active' : ''}`} title="点击只看走到这一步的记录，再点一次取消" onClick={() => setStep(step === item.key ? '' : item.key)}><b>{item.value ?? '—'}</b><span>{item.label}</span></button>
+        : <div className="step"><b>{item.value ?? '—'}</b><span>{item.label}</span></div>}</div>)}</div>
+    {detail.steps && s.searchResults != null && s.searchResults !== detail.steps.search && <p className="pipeline-count">搜索引擎一共返回 {s.searchResults} 条结果，逐条留档的是 {detail.steps.search} 条（同轮重复的不单独列出）。</p>}
     <p className="pipeline-note">搜索时丢弃 {s.dropped} 条；前置筛选：{Object.entries(s.filter).map(([key, value]) => `${FILTER_LABEL[key] || key} ${value}`).join('、')}；
       其中 {s.formalNotices} 条正式通知转去追溯赛事官网。{Object.keys(s.failureReasons).length ? `读了详情页但未入库的原因：${Object.entries(s.failureReasons).map(([key, value]) => `${key}（${value}）`).join('；')}。` : ''}</p>
 
     <section className="panel">
       <div className="pipeline-filters">
         <input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="搜标题、网址或理由"/>
+        {clickable && <select value={step} onChange={event => setStep(event.target.value)}><option value="">全部流程环节</option>{funnel.map(item => <option key={item.key} value={item.key}>走到「{item.key === 'search' ? '搜索结果' : item.label}」（{item.value ?? 0}）</option>)}</select>}
         <select value={stage} onChange={event => setStage(event.target.value)}><option value="">全部去向</option>{options.stages.map(value => <option key={value}>{value}</option>)}</select>
         <select value={kind} onChange={event => setKind(event.target.value)}><option value="">全部分类</option>{options.kinds.map(value => <option key={value}>{value}</option>)}</select>
         <select value={query} onChange={event => setQuery(event.target.value)}><option value="">全部查询</option>{options.queries.map(value => <option key={value}>{value}</option>)}</select>

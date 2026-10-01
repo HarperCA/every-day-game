@@ -238,9 +238,11 @@ export interface PipelineRunRow {
   source:string; query:string; route:string; title:string; url:string; intro:string;
   dup:string; filter:string; kind:string; reason:string; confidence:number | null; final:string; stage:number;
   thinking?:string; // 读详情时 AI 的思考过程
+  steps?:string[];  // 走到了漏斗的哪几步：search/candidate/new/passed/read/extracted/added
 }
 export interface PipelineRunDetail {
   id:string;
+  steps?:Record<string, number>;
   summary:{ searchResults:number | null; queries:number; dropped:number; candidates:number; newCandidates:number; filter:Record<string, number>;
     formalNotices:number; detailRead:number; extractOk:number; added:number | null; failureReasons:Record<string, number> };
   rows:PipelineRunRow[];

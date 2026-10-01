@@ -16,3 +16,8 @@
 .stage-dropped{color:#6b7280}.stage-dup{color:#6b7280}.stage-filtered{color:#b91c1c}.stage-traced{color:#b45309}.stage-read{color:#15803d}
 .pipeline-detail-page a{overflow-wrap:anywhere}
 
+
+/* 漏斗可点击：点一步只看走到这一步的记录 */
+.pipeline-funnel .step-button{display:block;width:100%;text-align:left;font:inherit;cursor:pointer}
+.pipeline-funnel .step-button:hover{border-color:#9ec9ce}
+.pipeline-funnel .step-active{border-color:#087e8b;background:#e8f4f5;box-shadow:0 0 0 1px #087e8b inset}

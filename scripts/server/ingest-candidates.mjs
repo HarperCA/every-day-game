@@ -404,6 +404,8 @@ async function main() {
       enriched:persisted ? enrichedRecords.length : null,
       enrichedIds:persisted ? enrichedRecords.map(record => record.id) : [],
       skipped:skipped.length, failureReasons,
+      // 逐条跳过原因（后台“查看明细”按名字对上，2026-10-01 起）
+      skippedList:skipped.map(([name, reason]) => ({ name, reason })),
       addedIds:persisted ? next.filter(record => !byId.has(record.id)).map(record => record.id) : [],
       publishedIds:persisted ? next.filter(record => record.dataStatus === 'published' &&
         (!byId.has(record.id) || byId.get(record.id).dataStatus !== 'published')).map(record => record.id) : [],

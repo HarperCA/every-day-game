@@ -49,3 +49,27 @@ describe('单轮抓取明细', () => {
     expect(() => loadRunDetail('2026-01-01T00-00-00-000Z')).toThrow('run_not_found');
   });
 });
+
+// 2026-10-01：漏斗可以点，按每条走到的步数筛；“已写入后台”对照入库报告里真正写入的编号；追溯来的页面也列出来
+describe('漏斗各步与真实入库', () => {
+  const withIngest = {
+    ...files,
+    'combined-candidates.json':{ candidates:[{ detailUrl:'https://a/4', externalId:'search-a4' }, { detailUrl:'https://a/5' }, { detailUrl:'https://f/1', externalId:'trace-f1', name:'追溯来的大赛' }] },
+    'combined-extracted.json':{ results:[{ url:'https://a/4', ok:true }, { url:'https://a/5', ok:false, status:'blocked_by_robots' }, { url:'https://f/1', ok:true }] },
+    'combined-candidates.json.scope-review.json':{ held:[] },
+    'notice-followup-filter-report.json':{ decisions:[{ url:'https://f/1', title:'f.example.org', proposedName:'追溯来的大赛', action:'fetch', kind:'competition_site', confidence:0.9 }] },
+    'ingest-report.json':{ added:1, addedIds:['edition-search-a4'], updatedIds:[], skippedList:[{ name:'追溯来的大赛', reason:'发现时已过报名截止时间' }], failureReasons:{} },
+  };
+  const detail = composeRunDetail('2026-09-30T17-00-15-235Z', withIngest);
+  const byUrl = Object.fromEntries(detail.rows.map(row => [row.url, row]));
+  it('真正写入的才算入库；入库时跳过的显示跳过原因', () => {
+    expect(byUrl['https://a/4']).toMatchObject({ final:'读了详情页，已写入后台' });
+    expect(byUrl['https://a/4'].steps).toEqual(['search', 'candidate', 'new', 'passed', 'read', 'extracted', 'added']);
+    expect(byUrl['https://f/1']).toMatchObject({ source:'通知追溯', final:'读了详情页，未入库：发现时已过报名截止时间' });
+    expect(byUrl['https://f/1'].steps).toEqual(['read', 'extracted']);
+  });
+  it('漏斗数字按每条的步数算', () => {
+    expect(detail.steps).toMatchObject({ read:3, extracted:2, added:1 });
+    expect(detail.steps.search).toBe(detail.rows.filter(row => row.steps.includes('search')).length);
+  });
+});
