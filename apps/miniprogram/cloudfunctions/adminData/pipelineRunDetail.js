@@ -45,7 +45,8 @@ function composeRunDetail(runId, files) {
   const formalUrls = new Set(formal.map(item => item.detailUrl));
   const combinedUrls = new Set(combined.map(item => item.detailUrl));
   const extractByUrl = new Map(extracted.map(item => [item.url, item]));
-  const leadsByNotice = new Map(leads.map(item => [item.noticeUrl, item]));
+  // 同一场比赛的多篇通知归成一组、只搜一次：组里每一篇通知都要能对上这一组的结果（原先只认第一篇，其余的被误记成“没追溯”）
+  const leadsByNotice = new Map(leads.flatMap(item => [[item.noticeUrl, item], ...(item.notices || []).map(notice => [notice.url, item])]));
   const heldReason = new Map(held.map(item => [item.candidate?.detailUrl, item.reason || item.scope?.reason || item.decision?.reason || item.assessment?.reason || '']));
   const candidateByUrl = new Map(combined.map(item => [item.detailUrl, item]));
   // 入库报告里实际写入的记录编号（新增或更新）；老的运行没有这个字段，退回原来的判断
@@ -122,7 +123,10 @@ function composeRunDetail(runId, files) {
       // 前置筛选本来没判“追溯”，但标题是通知，流水线把它转去追溯了：路径上标出来
       const last = trail[trail.length - 1];
       if (action !== 'trace' && last && (last.n === 'jev' || last.n === 'rule')) last.o = 'notice';
-      trail.push(step('trace', pages ? 'found' : found?.followupQuery ? 'none' : 'skipped', pages ? `找到 ${pages} 个待核验页面` : found?.followupQuery ? '搜索后没找到' : '本晚搜索额度用完或名字不成立'));
+      // 没找到页面的三种情况：提不出合法赛事名（根本没分到组，没搜）/ 分到组了但没轮上额度 / 搜了没找到
+      const outcomeTrace = pages ? 'found' : found?.followupQuery ? 'none' : found ? 'noquota' : 'noname';
+      const noteTrace = { found:`找到 ${pages} 个待核验页面`, none:'搜索后没找到', noquota:'提得出赛事名，但本晚搜索额度用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
+      trail.push(step('trace', outcomeTrace, noteTrace));
       Object.assign(row, { final:`转入通知追溯（找到 ${pages} 个待核验页面）`, stage:3 });
     } else if (combinedUrls.has(url)) {
       const outcomeRead = analyzeRead(url);
@@ -216,8 +220,12 @@ function composeRunDetail(runId, files) {
       const result = extractByUrl.get(decision.url) || {};
       if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
     } else {
-      row.final = decision.action === 'fetch' ? '追溯页面：放行但判重未通过或标题含通知，未读' : `追溯页面：${ACTION[decision.action] || decision.action}，未读`;
-      trail.push(step('followup', 'skip', row.final));
+      // 没读的四种原因：把握低 / 通知类页面（标题含通知、选拔、喜报，或 Jev 判为通知）/ 转载新闻无关 / 判重已在库
+      const noticeLike = decision.action === 'fetch' && (!['competition_site', 'registration_entry'].includes(decision.kind) || /通知|公告|通告|校级|校内|选拔|获奖|喜报/.test(decision.title || ''));
+      const skip = decision.action === 'fetch' ? (noticeLike ? 'skip_notice' : 'skip_dup') : (decision.lowConfidence || decision.action === 'review') ? 'skip_low' : 'skip_news';
+      const skipText = { skip_notice:'追溯页面：通知类页面或标题含通知/选拔/喜报，不读', skip_dup:'追溯页面：放行但库里已有或同批重复，不读', skip_low:'追溯页面：Jev 把握低，只留线索，未读', skip_news:'追溯页面：转载、新闻或无关，不再往下追，未读' }[skip];
+      row.final = skipText;
+      trail.push(step('followup', skip, `${skipText}｜${decision.reason || ''}`));
     }
     row.trail = finalizeTrail(trail);
     rows.push(row);

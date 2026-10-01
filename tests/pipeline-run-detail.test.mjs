@@ -133,3 +133,42 @@ describe('判重交给 AI 裁决后的明细', () => {
     expect(detail.flow.nodes.find(node => node.id === 'dedupe')).toBeTruthy();
   });
 });
+
+describe('通知追溯没找到的几种原因、追溯页面没读的几种原因', () => {
+  const notice = (url, name) => ({ name, detailUrl:url, introduction:'', discovery:{} });
+  const tfiles = {
+    'baidu-candidates.json':{ candidates:[notice('https://n/1', 'A'), notice('https://n/2', 'A 第二篇'), notice('https://n/3', 'B'), notice('https://n/4', 'C'), notice('https://n/5', '教务处')] },
+    'formal-notices.json':{ candidates:[notice('https://n/1', 'A'), notice('https://n/2', 'A 第二篇'), notice('https://n/3', 'B'), notice('https://n/4', 'C'), notice('https://n/5', '教务处')] },
+    'jev-filter-report.json':{ decisions:['1', '2', '3', '4', '5'].map(i => ({ url:`https://n/${i}`, action:'trace', kind:'repost_or_school_selection', confidence:1, reason:'' })) },
+    'notice-resolution-leads.json':{ results:[
+      { noticeUrl:'https://n/1', followupQuery:'A 官网', notices:[{ url:'https://n/1' }, { url:'https://n/2' }], leads:[{ url:'https://o/1' }] },   // 同组的第二篇也要算“找到”
+      { noticeUrl:'https://n/3', followupQuery:'B 官网', notices:[{ url:'https://n/3' }], leads:[] },                                        // 搜了没找到
+      { noticeUrl:'https://n/4', notices:[{ url:'https://n/4' }], leads:[] },                                                               // 提得出名字但没轮上额度
+    ] },
+    'notice-followup-filter-report.json':{ decisions:[
+      { url:'https://o/1', title:'官网', action:'review', kind:'competition_site', lowConfidence:true, reason:'低' },
+      { url:'https://o/2', title:'关于举办2026某赛的通知', action:'fetch', kind:'organizer_notice', confidence:0.97, reason:'通知' },
+      { url:'https://o/3', title:'喜报', action:'trace', kind:'news_or_result', confidence:0.9, reason:'新闻' },
+      { url:'https://o/4', title:'某赛官网', action:'fetch', kind:'competition_site', confidence:0.9, reason:'重复' },
+    ] },
+  };
+  const detail = composeRunDetail('2026-09-28T17-00-00-614Z', tfiles);
+  const stepOf = (url, node) => detail.rows.find(row => row.url === url)?.trail.find(item => item.n === node)?.o;
+  it('通知追溯：找到（含同组第二篇）/ 搜了没找到 / 没轮上额度 / 提不出赛事名', () => {
+    expect(stepOf('https://n/1', 'trace')).toBe('found');
+    expect(stepOf('https://n/2', 'trace')).toBe('found');
+    expect(stepOf('https://n/3', 'trace')).toBe('none');
+    expect(stepOf('https://n/4', 'trace')).toBe('noquota');
+    expect(stepOf('https://n/5', 'trace')).toBe('noname');
+  });
+  it('追溯页面没读：把握低 / 通知类 / 新闻 / 重复，各有各的出口', () => {
+    expect(stepOf('https://o/1', 'followup')).toBe('skip_low');
+    expect(stepOf('https://o/2', 'followup')).toBe('skip_notice');
+    expect(stepOf('https://o/3', 'followup')).toBe('skip_news');
+    expect(stepOf('https://o/4', 'followup')).toBe('skip_dup');
+  });
+  it('图上各出口的数字对得上', () => {
+    const trace = detail.flow.nodes.find(node => node.id === 'trace');
+    expect(Object.fromEntries(trace.outcomes.map(outcome => [outcome.id, outcome.count]))).toMatchObject({ found:2, none:1, noquota:1, noname:1 });
+  });
+});

@@ -26,6 +26,22 @@ export function followupQuery(title) {
   return `${competitionNameFromNotice(title)} 主办方 赛事官网 官方报名`;
 }
 
+// 页面文字里是不是在说这场比赛：赛事名核心词的相邻两字组（“热处”“处理”……）大部分对得上就算（2026-10-01）。
+// 原先要求整串原样包含，通知里叫“材料热处理创新创业大赛”、官网自己写“材料热处理创新创业赛”，差一个“大”字，官网就被筛掉了。
+// 阈值 0.7：核心词有 10 组，7 组以上出现；别的比赛（“机械工程创新创意大赛”）只会碰上“创新”“大赛”两三组，不会误放。
+export const CORE_MATCH_RATIO = 0.7;
+const squash = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '');
+export function coreMatches(text, core, ratio = CORE_MATCH_RATIO) {
+  const target = squash(core);
+  if (!target) return true;
+  const haystack = squash(text);
+  if (haystack.includes(target)) return true;
+  if (target.length < 4) return false;
+  const grams = [];
+  for (let i = 0; i < target.length - 1; i += 1) grams.push(target.slice(i, i + 2));
+  return grams.filter(gram => haystack.includes(gram)).length / grams.length >= ratio;
+}
+
 export function selectLeads(references, noticeUrl, proposedName = '') {
   let noticeHost = '';
   try { noticeHost = new URL(noticeUrl).hostname; } catch {}
@@ -37,7 +53,7 @@ export function selectLeads(references, noticeUrl, proposedName = '') {
       const text = `${item.title || ''} ${item.content || ''}`;
       // http 的官网也收（如节能减排竞赛官网）；公众号、百科、问答不收
       return /^https?:$/.test(url.protocol) && url.hostname !== noticeHost && leadRank(item.url) < 9 && /赛事|竞赛|比赛|大赛|报名|组委会/.test(text)
-        && (!core || text.includes(core));
+        && coreMatches(text, core);
     } catch { return false; }
   }).slice(0, 5).map(item => ({ title:String(item.title || '').slice(0, 150), url:item.url, summary:String(item.content || '').slice(0, 300), status:'待核验' }));
 }

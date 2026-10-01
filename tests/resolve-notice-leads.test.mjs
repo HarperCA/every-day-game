@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { competitionNameFromNotice, selectLeads, followupCandidatesFromReport } from '../scripts/server/resolve-notice-leads.mjs';
+import { competitionNameFromNotice, coreMatches, selectLeads, followupCandidatesFromReport } from '../scripts/server/resolve-notice-leads.mjs';
 
 describe('formal notice leads', () => {
   it('extracts the actual contest name from a nested notice title', () => {
@@ -11,6 +11,23 @@ describe('formal notice leads', () => {
       { title:'山东省大学生结构设计竞赛章程', url:'https://official.example/rules', content:'赛事组织机构' },
     ];
     expect(selectLeads(refs, 'https://notice.example/article', '山东省大学生结构设计竞赛').map(item => item.url)).toEqual(['https://official.example/rules']);
+  });
+});
+
+describe('赛事名核心词匹配不要求整串包含', () => {
+  it('官网把“大赛”简写成“赛”、通知里写全称，仍然认得出（2026-10-01 百度第 1 条官网被误筛）', () => {
+    const refs = [{ title:'材料热处理创新创业赛', url:'http://www.dasai.chts.org.cn/', content:'MEICC 报名 官网' }];
+    expect(selectLeads(refs, '', '中国大学生材料热处理创新创业大赛')).toHaveLength(1);
+  });
+  it('大部分字对得上就算，别的比赛不算', () => {
+    expect(coreMatches('2026年材料热处理创新创业赛报名', '材料热处理创新创业大赛')).toBe(true);
+    expect(coreMatches('中国大学生机械工程创新创意大赛', '材料热处理创新创业大赛')).toBe(false);
+    expect(coreMatches('全国大学生绿色化妆品创新创意大赛', '山东省大学生结构设计竞赛')).toBe(false);
+  });
+  it('标点、空格、全半角不影响；没有核心词时不拦；太短的核心词必须整串包含', () => {
+    expect(coreMatches('“材料热处理” 创新创业 大赛', '材料热处理创新创业大赛')).toBe(true);
+    expect(coreMatches('任何内容', '')).toBe(true);
+    expect(coreMatches('码杯', '码蹄杯')).toBe(false);
   });
 });
 
