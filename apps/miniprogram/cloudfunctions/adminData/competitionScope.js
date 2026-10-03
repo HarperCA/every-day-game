@@ -63,8 +63,9 @@ function classifyCompetitionScope(record = {}) {
   // 「…目录(84项)」「…竞赛规程」这类不会因为含"赛"字被放进来。
   // 来自权威榜单（教育部认可目录、竞赛指数覆盖项目表等，record.curationList 记着是哪份）的赛事，
   // 名称以“奖”“展”“展示”结尾也算具体赛事：“时报金犊奖”“中华设计奖”“米兰设计周—中国高校设计学科师生优秀作品展”
-  // “全国大学生创新创业训练计划年会展示”都是榜单收录的正式项目（2026-10-03 用户确认，只对榜单来源放宽）。
-  const listedAward = Boolean(record.curationList) && /(?:奖|展|展示)[\s)）\]】]*$/.test(title);
+  // “全国大学生创新创业训练计划年会展示”“高教社杯……优秀短视频作品征集活动”都是榜单收录的正式项目
+  // （2026-10-03 用户确认，只对榜单来源放宽）。
+  const listedAward = Boolean(record.curationList) && /(?:奖|展|展示|活动)[\s)）\]】]*$/.test(title);
   if (!listedAward && !/竞赛|大赛|挑战赛|锦标赛|联赛|黑客松|奥林匹克|比赛|挑战|赛[\s)）\]】]*$|ICPC|CCSP|RoboMaster|ROBOCON/i.test(title)) return reject('标题不是一场具体比赛');
 
   // 以下两项：有证据就看证据，没证据才退回标题启发式。

@@ -94,15 +94,16 @@ describe('证据优先于标题猜测', () => {
   });
 });
 
-describe('榜单来源的“奖”“展”“展示”（2026-10-03 用户确认）', () => {
+describe('榜单来源的“奖”“展”“展示”“活动”（2026-10-03 用户确认）', () => {
   const evidence = { participants:'普通高校全日制在校大学生', professions:['设计与艺术'] };
   it('来自榜单的以“奖”“展”“展示”结尾的赛事算具体赛事', () => {
-    for (const name of ['时报金犊奖', '中华设计奖', '米兰设计周--中国高校设计学科师生优秀作品展', '全国大学生创新创业训练计划年会展示']) {
+    for (const name of ['时报金犊奖', '中华设计奖', '米兰设计周--中国高校设计学科师生优秀作品展', '全国大学生创新创业训练计划年会展示', '“高教社杯”高等学校（本科）“用外语讲中国故事”优秀短视频作品征集活动']) {
       expect(classifyCompetitionScope({ name, curationList:'2025年教育部认可的全国大学生学科竞赛目录', ...evidence }).decision, name).toBe('eligible');
     }
   });
   it('不是榜单来源的照旧拒收', () => {
     expect(classifyCompetitionScope({ name:'时报金犊奖', ...evidence }).reason).toBe('标题不是一场具体比赛');
     expect(classifyCompetitionScope({ name:'优秀作品展', ...evidence }).reason).toBe('标题不是一场具体比赛');
+    expect(classifyCompetitionScope({ name:'优秀短视频作品征集活动', ...evidence }).reason).toBe('标题不是一场具体比赛');
   });
 });
