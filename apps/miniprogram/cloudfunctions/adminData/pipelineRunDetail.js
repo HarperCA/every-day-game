@@ -73,7 +73,15 @@ function composeRunDetail(runId, files) {
     }
     // 空壳页经 Kimi 读网页接口重读的，在“读详情页”这一步写明
     const renderedNote = result.rendered?.via === 'kimi_fetch' ? `直接下载只有导航骨架（${result.rendered.before ?? '?'}字），经 Kimi 读网页接口执行脚本后取得正文 ${result.rendered.chars} 字` : '';
-    trail.push(step('read', 'ok', renderedNote), step('extract', 'ok', result.extracted?.competition_name?.value ? `比赛名：${result.extracted.competition_name.value}` : ''));
+    // 关键信息缺了的补读：官网正式通知、页面图片识别
+    const sup = result.supplement;
+    const supNote = sup ? [
+      `缺${(sup.missingBefore || []).join('、')}`,
+      sup.notice ? (sup.notice.used ? `按公告标题找到官网正式通知并补读（${sup.notice.engine}）` : `找正式通知《${String(sup.notice.title || '').slice(0, 30)}》：${{ not_on_official_site:'官网上没找到', no_search_quota:'搜索额度用完', found:'找到但没补到新内容' }[sup.notice.status] || sup.notice.status}`) : '页面里没有可找的公告标题',
+      sup.images ? (sup.images.used ? `图片识别补了${(sup.images.fields || []).join('、') || '若干项'}（转人工审核）` : `识别了 ${sup.images.recognized || 0} 张图，没补到`) : '',
+      (sup.missingAfter || []).length ? `仍缺${sup.missingAfter.join('、')}` : '已补齐',
+    ].filter(Boolean).join('；') : '';
+    trail.push(step('read', 'ok', [renderedNote, supNote].filter(Boolean).join('；')), step('extract', 'ok', result.extracted?.competition_name?.value ? `比赛名：${result.extracted.competition_name.value}` : ''));
     const candidate = candidateByUrl.get(url);
     const realName = result.extracted?.competition_name?.value;
     const names = [candidate?.name, realName].filter(Boolean);

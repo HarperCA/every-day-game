@@ -19,7 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { Fetcher } from './crawler/lib/fetcher.mjs';
 import { extractDocxText, extractPdfText, extractText } from './crawler/lib/extract.mjs';
 import { evidenceLinks, rankEvidenceLinks } from './crawler/lib/jevLinkRanker.mjs';
-import { kimiFetchPage } from './search-engines.mjs';
+import { baiduEngine, createSearcher, deepseekEngine, kimiEngine, kimiFetchPage } from './search-engines.mjs';
+import { fieldsFromImages, findNoticeTitles, imageCandidates, keyFieldCount, missingKeyFields, ocrImage, ocrRelevance, pickOfficialNotice } from './page-supplement.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const KEY_FILE = path.join(HERE, '.extract-key');
@@ -51,6 +52,22 @@ const evidenceFetcher = new Fetcher({ perHostDelayMs:1500 });
 // 空壳页（前后端分离的官网，直接下载只有导航骨架）用 Kimi 读网页接口重读，每轮最多这么多条（2026-10-01，用户定）
 const MAX_RENDERED_REREADS = 20;
 let renderedRereads = 0;
+// 关键信息（参赛对象、报名时间）还缺时的补读（page-supplement.mjs）：每轮最多补读这么多条；
+// 找正式通知用的搜索也按百度 → Kimi → DeepSeek 依次补位，额度单独算，不占通知追溯的
+const MAX_SUPPLEMENTS = 20;
+let supplements = 0;
+const noticeSearcher = createSearcher([{ engine:baiduEngine(), budget:5 }, { engine:kimiEngine(), budget:10 }, { engine:deepseekEngine(), budget:10 }]);
+const PAGE_LIMIT = 6000; // 抽取模块只看正文前 6000 字（competitionExtract.js 的 PAGE_TEXT_LIMIT）
+
+// 读一个网页的正文：先直接读（遵守 robots），只有骨架时再用 Kimi 读网页接口
+async function readPageText(url) {
+  const page = await evidenceFetcher.get(url);
+  if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) return { status:page.status, text:'' };
+  const text = extractText(page.text, { maxChars:8000 });
+  if (text.length >= 300) return { status:'ok', text, via:'direct' };
+  const rendered = await kimiFetchPage(url);
+  return { status:rendered.markdown.length >= 200 ? 'ok' : 'too_short', text:rendered.markdown, via:'kimi_fetch' };
+}
 
 function readOpenRouterKey() {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY.trim();
@@ -133,6 +150,7 @@ async function sourceTextFor(candidate) {
   // Fetcher 负责 robots、频率、大小与最终跳转；不把未经验证的链接标为官网。
   const page = await evidenceFetcher.get(url);
   if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) return '';
+  candidate.pageHtml = page.text;
   const links = evidenceLinks(page.text, page.finalUrl || url);
   const ranked = await rankEvidenceLinks(links, { apiKey:readOpenRouterKey(), contestName:String(candidate.name || '') });
   candidate.discoveredEvidence = ranked;
@@ -190,6 +208,7 @@ async function main() {
       try {
         const page = await kimiFetchPage(url);
         rendered = { via:'kimi_fetch', chars:page.markdown.length, ms:page.ms, before:outcome.sourceChars ?? null };
+        candidate.renderedImages = page.images || [];
         if (page.markdown.length >= 200) {
           const second = await runOnce(`来源页面（原站内容由脚本加载，经 Kimi 读网页接口执行脚本后取得正文）：${url}\n${page.markdown}`);
           rendered.status = second.ok ? 'ok' : second.status;
@@ -211,13 +230,66 @@ async function main() {
       const second = await runOnce(text);
       if (second.ok && !yieldedNothing(second)) outcome = second;
     }
+    // 关键信息（参赛对象、报名时间）还缺：① 按页面里的公告标题找官网正式通知（文字，可逐字核对，优先）；
+    // ② 仍缺的，识别页面上的大图。靠图片补出来的项记在 imageEvidenceFields，入库时整条转人工审核。
+    let supplement = null;
+    if (outcome.ok && text && missingKeyFields(outcome.extracted).length && supplements < MAX_SUPPLEMENTS && candidate.evidence?.api !== true) {
+      supplements += 1;
+      supplement = { missingBefore:missingKeyFields(outcome.extracted) };
+      const baseText = text.slice(0, PAGE_LIMIT);
+      let pageText = baseText;
+      try {
+        for (const title of findNoticeTitles(baseText, name)) {
+          const found = await noticeSearcher.search(title);
+          const notice = found && !found.failed ? pickOfficialNotice(found.references, url, title) : null;
+          supplement.notice = { title, engine:found?.label || '', returned:found?.references?.length ?? 0, url:notice?.url || '', status:notice ? 'found' : found ? 'not_on_official_site' : 'no_search_quota' };
+          if (!notice) continue;
+          const read = await readPageText(notice.url);
+          supplement.notice.read = read.status;
+          supplement.notice.via = read.via || '';
+          if (read.status !== 'ok') continue;
+          const combined = `来源：官网公告《${title}》 ${notice.url}\n${read.text.slice(0, 3800)}\n\n来源：官网页面 ${url}\n${baseText.slice(0, 2000)}`;
+          const second = await runOnce(combined);
+          if (second.ok && keyFieldCount(second.extracted) > keyFieldCount(outcome.extracted)) {
+            outcome = second; pageText = combined; supplement.notice.used = true;
+          }
+          break;
+        }
+      } catch (error) { supplement.noticeError = String(error?.message || error).slice(0, 160); }
+      if (missingKeyFields(outcome.extracted).length) {
+        try {
+          const images = imageCandidates({ html:candidate.pageHtml, pageUrl:url, renderedImages:candidate.renderedImages });
+          // 最多识别 8 张；识别出的文字按和“参赛对象、报名时间”的相关程度排序，广告横幅（福利、折扣、扫码）排后面、
+          // 不相关的不要——实测官网首页前几张是广告横幅，按顺序取会把报名卡片、日程图挤掉（2026-10-03）
+          const texts = [];
+          for (const imageUrl of images.slice(0, 8)) {
+            const ocr = await ocrImage(imageUrl);
+            if (ocr && ocrRelevance(ocr) > 0) texts.push({ imageUrl, text:ocr, score:ocrRelevance(ocr) });
+          }
+          texts.sort((a, b) => b.score - a.score);
+          supplement.images = { tried:Math.min(images.length, 8), recognized:texts.length };
+          if (texts.length) {
+            const ocrText = texts.map((item, i) => `图片${i + 1}：${item.text}`).join('\n').slice(0, 1800);
+            const combined = `${pageText.slice(0, PAGE_LIMIT - ocrText.length - 60)}\n\n【以下文字由官网页面上的图片识别得到，不是网页正文】\n${ocrText}`;
+            const third = await runOnce(combined);
+            if (third.ok && keyFieldCount(third.extracted) > keyFieldCount(outcome.extracted)) {
+              outcome = { ...third, imageEvidenceFields:fieldsFromImages(third.extracted, pageText, ocrText) };
+              supplement.images.used = true;
+              supplement.images.fields = outcome.imageEvidenceFields;
+            }
+          }
+        } catch (error) { supplement.imageError = String(error?.message || error).slice(0, 160); }
+      }
+      supplement.missingAfter = outcome.ok ? missingKeyFields(outcome.extracted) : supplement.missingBefore;
+    }
     const elapsed = Date.now() - started;
-    results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...(rendered ? { rendered } : {}), ...outcome });
+    results.push({ name, url, elapsedMs:elapsed, retried, discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...(rendered ? { rendered } : {}), ...(supplement ? { supplement } : {}), ...outcome });
     const thought = outcome.reasoning?.chars ? ` 思考${outcome.reasoning.chars}字` : '';
     const suffix = (outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`
       : `失败 ${outcome.status}`) + thought;
-    const retryMark = (retried ? ' (重试)' : '') + (rendered ? ` (空壳页经 Kimi 重读：${rendered.status}${rendered.chars ? `，${rendered.chars}字` : ''})` : '');
+    const retryMark = (retried ? ' (重试)' : '') + (rendered ? ` (空壳页经 Kimi 重读：${rendered.status}${rendered.chars ? `，${rendered.chars}字` : ''})` : '')
+      + (supplement ? ` (补读：缺${supplement.missingBefore.join('、')}${supplement.notice?.used ? '，正式通知已补' : ''}${supplement.images?.used ? `，图片识别补了${(supplement.images.fields || []).join('、') || '若干项'}` : ''}${supplement.missingAfter.length ? `，仍缺${supplement.missingAfter.join('、')}` : '，已补齐'})` : '');
     console.log(`[${index + 1}/${candidates.length}] ${String(elapsed).padStart(6)}ms  ${suffix}${retryMark}  ${name.slice(0, 30)}`);
     if (index < candidates.length - 1) await sleep(PER_CALL_DELAY_MS);
   }

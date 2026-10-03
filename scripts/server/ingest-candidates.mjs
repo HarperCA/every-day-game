@@ -344,6 +344,20 @@ async function main() {
       }
     }
 
+    // 有项的依据来自官网图片的文字识别（run-extract.mjs 的补读②）：识别出的文字没法逐字核对原网页，
+    // 整条不自动发布、不自动归档，转人工审核（2026-10-02，用户定）
+    const imageFields = extraction?.imageEvidenceFields || [];
+    if (imageFields.length) {
+      record.qualityIssues = [...(record.qualityIssues || []), `以下项的依据来自官网图片（文字识别），没法逐字核对原网页，需人工核对：${imageFields.join('、')}`];
+      if (verdict === 'admit') verdict = 'review';
+    }
+    // 补读到的官网正式通知（同一网站上的公告），记为待核验来源
+    const noticeUrl = extraction?.supplement?.notice?.used ? extraction.supplement.notice.url : '';
+    if (noticeUrl && !(record.sources || []).some(source => source.url === noticeUrl)) {
+      record.sources = [...(record.sources || []), { id:`source-${record.id}-notice-page`, edition_id:record.id, url:noticeUrl, source_type:'organizer_notice',
+        is_official:false, published_at:null, last_verified_at:now.toISOString(), validity_status:'unchecked' }];
+    }
+
     if (args.onlyAdmitted && verdict !== 'admit') { skipped.push([candidate.name, `门槛 ${verdict}`]); continue; }
 
     // admit 档稍后在 applyIntakeDecision 中进行 Kimi 三项核验并填写专业。

@@ -95,12 +95,15 @@ export async function kimiFetchPage(url, { key = readKey('.ai-key'), fetchImpl =
   });
   if (!response.ok) throw new Error(`http_${response.status}`);
   const payload = await response.json();
-  const markdown = String(payload?.markdown || payload?.content || '')
+  const raw = String(payload?.markdown || payload?.content || '');
+  // 页面里的图片（Kimi 转存到它自己的图床）：正文里去掉，地址留给“识别页面图片”用（page-supplement.mjs）
+  const images = [...new Set([...raw.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)].map(match => match[1]))];
+  const markdown = raw
     // 页面里的图片换成占位，不占正文篇幅（图片地址是 Kimi 的图床，不是原站）
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  return { markdown, ms:Date.now() - startedAt };
+  return { markdown, images, ms:Date.now() - startedAt };
 }
 
 // 依次补位的搜索器。engines：[{ engine, budget }]，按优先级排好。
