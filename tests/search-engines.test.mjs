@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { baiduEngine, createSearcher, deepseekEngine, kimiEngine } from '../scripts/server/search-engines.mjs';
 import { decideByProbabilities } from '../scripts/crawler/lib/jevCandidateFilter.mjs';
 
-const ok = body => ({ ok:true, status:200, json:async () => body });
-const fail = status => ({ ok:false, status, json:async () => ({}) });
+const ok = body => ({ ok:true, status:200, json:async () => body, text:async () => JSON.stringify(body) });
+const fail = status => ({ ok:false, status, json:async () => ({}), text:async () => '{}' });
 const fake = (name, impl) => ({ name, label:name, key:'k', search:vi.fn(impl) });
 const refs = n => ({ references:Array.from({ length:n }, (_, i) => ({ title:`t${i}`, url:`https://x/${i}`, content:'', date:'' })) });
 
@@ -119,5 +119,25 @@ describe('Kimi 读网页接口（重读空壳页）', () => {
     const { kimiFetchPage } = await import('../scripts/server/search-engines.mjs');
     await expect(kimiFetchPage('https://a.cn', { key:'k', fetchImpl:async () => fail(500) })).rejects.toThrow('http_500');
     await expect(kimiFetchPage('https://a.cn', { key:'' })).rejects.toThrow('kimi_key_not_configured');
+  });
+});
+
+describe('保存搜索接口的原始返回（SEARCH_RAW_FILE）', () => {
+  it('设了才保存：每次调用一行，带引擎、查询词、状态和原样正文', async () => {
+    const fs = await import('node:fs');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const file = path.join(os.tmpdir(), `raw-${Date.now()}.jsonl`);
+    const body = { search_results:[{ title:'官网', url:'https://k/1' }] };
+    const fetchImpl = async () => ({ ok:true, status:200, text:async () => JSON.stringify(body) });
+    await kimiEngine({ key:'k', fetchImpl }).search('不保存');
+    expect(fs.existsSync(file)).toBe(false);
+    process.env.SEARCH_RAW_FILE = file;
+    try {
+      const result = await kimiEngine({ key:'k', fetchImpl }).search('全国大学生生命科学竞赛报名入口');
+      expect(result.references[0].url).toBe('https://k/1');
+      const line = JSON.parse(fs.readFileSync(file, 'utf8').trim());
+      expect(line).toMatchObject({ engine:'kimi', query:'全国大学生生命科学竞赛报名入口', status:200, body:JSON.stringify(body) });
+    } finally { delete process.env.SEARCH_RAW_FILE; fs.rmSync(file, { force:true }); }
   });
 });

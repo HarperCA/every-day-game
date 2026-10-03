@@ -15,6 +15,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MAX_RESULTS = 10;
 const DISABLE_AFTER_FAILURES = 2; // 同一个引擎连续失败这么多次，本轮不再用它（避免额度用完后每个赛事组都白撞一次）
 
+// 保存搜索接口的原始返回（2026-10-03，用户要求：保存一次原始数据，用来测试流程）。
+// 设了环境变量 SEARCH_RAW_FILE 才保存：每次调用追加一行 JSON（引擎、查询词、HTTP 状态、接口原样返回的正文）。
+// 平时不设，不保存；由流水线按 plans/save-raw-once 标记打开（见 run-crawl-pipeline.mjs）。
+export function recordRawSearch(engine, query, status, body) {
+  const file = process.env.SEARCH_RAW_FILE;
+  if (!file) return;
+  try { fs.appendFileSync(file, `${JSON.stringify({ at:new Date().toISOString(), engine, query, status, body })}\n`, 'utf8'); } catch { /* 保存失败不影响搜索 */ }
+}
+
 const readKey = file => { try { return fs.readFileSync(path.join(HERE, file), 'utf8').trim().replace(/^[A-Z_]+=/, ''); } catch { return ''; } };
 const clipText = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
 const normalize = item => ({ title:clipText(item?.title, 200), url:String(item?.url || ''), content:clipText(item?.content || item?.snippet, 600), date:clipText(item?.date || item?.publishedAt, 20) });
@@ -32,8 +41,10 @@ export function baiduEngine({ key = readKey('.baidu-search-key'), fetchImpl = gl
       });
       let response;
       try { response = await request(); } catch { await new Promise(resolve => setTimeout(resolve, 500)); response = await request(); }
+      const raw = await response.text();
+      recordRawSearch('baidu', query, response.status, raw);
       if (!response.ok) throw new Error(`http_${response.status}`);
-      const payload = await response.json();
+      const payload = JSON.parse(raw);
       return { references:(payload.references || []).map(normalize).filter(item => item.url).slice(0, MAX_RESULTS) };
     },
   };
@@ -49,8 +60,10 @@ export function kimiEngine({ key = readKey('.ai-key'), fetchImpl = globalThis.fe
         body:JSON.stringify({ text_query:query, limit:MAX_RESULTS, enable_page_crawling:false, timeout_seconds:30 }),
         signal:withTimeout(40000),
       });
+      const raw = await response.text();
+      recordRawSearch('kimi', query, response.status, raw);
       if (!response.ok) throw new Error(`http_${response.status}`);
-      const payload = await response.json();
+      const payload = JSON.parse(raw);
       // 接口不一定遵守 limit（实测 limit=10 返回过 14 条），自己截断
       return { references:(payload.search_results || []).map(normalize).filter(item => item.url).slice(0, MAX_RESULTS) };
     },
@@ -69,8 +82,10 @@ export function deepseekEngine({ key = readKey('.extract-key'), fetchImpl = glob
           messages:[{ role:'user', content:`请只调用一次联网搜索工具，搜索词必须原样使用：${query}（不要改写）。搜索完不用总结，回复“完成”即可。` }] }),
         signal:withTimeout(90000),
       });
+      const raw = await response.text();
+      recordRawSearch('deepseek', query, response.status, raw);
       if (!response.ok) throw new Error(`http_${response.status}`);
-      const payload = await response.json();
+      const payload = JSON.parse(raw);
       if (payload.error) throw new Error(String(payload.error.message || payload.error.type || 'deepseek_error').slice(0, 120));
       const blocks = (payload.content || []).filter(block => block.type === 'web_search_tool_result');
       const failed = blocks.find(block => !Array.isArray(block.content));

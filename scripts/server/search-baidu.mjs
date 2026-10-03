@@ -19,6 +19,7 @@
 // URL，并且照样走 robots.txt 检查，不会因为「来自搜索结果」就绕开）。
 //
 // 用法：node search-baidu.mjs [--queries 4] [--out ../../reports/baidu-search-candidates.json]
+import { recordRawSearch } from './search-engines.mjs';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -224,11 +225,10 @@ async function searchOnce(apiKey, query) {
     await new Promise(resolve => setTimeout(resolve, 500));
     response = await request();
   }
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`http_${response.status}: ${text.slice(0, 200)}`);
-  }
-  const payload = await response.json();
+  const raw = await response.text().catch(() => '');
+  recordRawSearch('baidu-nightly', query, response.status, raw);
+  if (!response.ok) throw new Error(`http_${response.status}: ${raw.slice(0, 200)}`);
+  const payload = JSON.parse(raw);
   return Array.isArray(payload?.references) ? payload.references : [];
 }
 

@@ -110,6 +110,13 @@ async function main() {
   runOptions = { dryRun:args.dryRun, filterOnly:args.filterOnly, ...(args.fromRun ? { replayOf:args.fromRun } : {}) };
   const adminToken = readAdminToken();
   fs.mkdirSync(RUN_DIR, { recursive: true });
+  // 保存一次搜索接口的原始返回（plans/save-raw-once 标记存在时）：这一轮所有搜索（夜间百度搜索、通知追溯、补读找正式通知）
+  // 的原样返回逐条写进运行目录的 search-raw.jsonl。子进程继承环境变量。这一轮跑完删掉标记，所以只保存一次。
+  const rawMarker = path.join(HERE, 'plans', 'save-raw-once');
+  if (fs.existsSync(rawMarker) && !args.fromRun) {
+    process.env.SEARCH_RAW_FILE = path.join(RUN_DIR, 'search-raw.jsonl');
+    console.log(`本轮保存搜索接口的原始返回：${process.env.SEARCH_RAW_FILE}`);
+  }
   // 重跑的标记：路线台账（route-ledger.mjs）据此不重复计算那一轮的搜索
   if (args.fromRun) fs.writeFileSync(path.join(RUN_DIR, 'replay.json'), JSON.stringify({ replayOf:args.fromRun, at:new Date().toISOString(), sources:args.sources, ignoreMemory:args.ignoreMemory }, null, 2));
 
@@ -407,6 +414,8 @@ function planFileFor() {
 
 async function writeRunLog(entry) {
   lastRunEntry = { ...lastRunEntry, ...entry };
+  // 这一轮已经保存过原始返回：删掉标记，下一轮不再保存（只保存一次）
+  if (process.env.SEARCH_RAW_FILE) { try { fs.unlinkSync(path.join(HERE, 'plans', 'save-raw-once')); } catch { /* 已经删过 */ } }
   const logFile = path.join(HERE, 'pipeline.log');
   fs.appendFileSync(logFile, JSON.stringify({ at: new Date().toISOString(), ...entry }) + '\n', 'utf8');
   const ledger = buildPipelineLedger(RUN_DIR, { ...lastRunEntry, startedAt:STARTED_AT, ...runOptions });
