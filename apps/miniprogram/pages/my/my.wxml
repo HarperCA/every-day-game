@@ -1,21 +1,18 @@
 <brand-nav />
 <view class="page">
-  <view class="profile card">
-    <view class="avatar">微</view>
-    <view>
-      <view class="name">{{loginState === 'success' ? '微信用户' : '未登录'}}</view>
-      <view class="muted" wx:if="{{loginState === 'success'}}">微信身份已连接 · {{userIdDisplay}}</view>
-      <view class="muted" wx:elif="{{loginState === 'loading'}}">正在连接微信身份…</view>
+  <view class="profile card" bindtap="openProfile">
+    <view class="avatar"><image wx:if="{{avatarPath}}" src="{{avatarPath}}" mode="aspectFill" /><text wx:else>微</text></view>
+    <view class="profile-info">
+      <view class="name">{{loginState === 'success' ? profileName : '未登录'}}</view>
+      <view class="muted" wx:if="{{loginState === 'loading'}}">正在连接微信身份…</view>
       <view class="muted" wx:elif="{{loginState === 'failed'}}">微信登录失败：{{loginError}}</view>
-      <view class="muted" wx:else>登录后可跨设备同步收藏和提醒</view>
       <view class="muted" wx:if="{{loginState === 'success' && dataSyncState === 'loading'}}">正在同步收藏与提醒…</view>
-      <view class="muted" wx:if="{{loginState === 'success' && dataSyncState === 'success'}}">收藏与提醒已绑定到当前微信账号</view>
       <view class="muted sync-warning" wx:if="{{loginState === 'success' && dataSyncState === 'partial'}}">微信登录成功，但部分数据暂未同步：{{dataSyncError}}</view>
     </view>
-    <button wx:if="{{loginState === 'idle'}}" class="wechat-login" size="mini" bindtap="requestWechatLogin">微信登录</button>
-    <button wx:if="{{loginState === 'failed'}}" class="wechat-login" size="mini" bindtap="requestWechatLogin">重新登录</button>
+    <button wx:if="{{loginState === 'idle'}}" class="wechat-login" catchtap="requestWechatLogin">微信登录</button>
+    <button wx:if="{{loginState === 'failed'}}" class="wechat-login" catchtap="requestWechatLogin">重新登录</button>
+    <text wx:if="{{loginState === 'success'}}" class="profile-arrow">›</text>
   </view>
   <view class="menu card"><view bindtap="openFavorites">我的收藏<text>{{favoriteCount}} 场 ›</text></view><view bindtap="openReminders">我的提醒<text>{{reminderCount}} 项 ›</text></view><view bindtap="openFeedback">信息纠错<text>提交与进度 ›</text></view></view>
   <view class="menu card"><view bindtap="openRecommendationGuide">推荐等级说明<text>›</text></view><view bindtap="openPrivacyGuide">隐私说明<text>›</text></view><view bindtap="openAbout">关于<text>›</text></view></view>
-  <view class="privacy">只有点击“微信登录”并在弹窗中确认后，才会使用微信云开发身份同步收藏与提醒或提交信息纠错；不采集手机号、真实姓名、学校、学号、成绩或个人画像。</view>
 </view>

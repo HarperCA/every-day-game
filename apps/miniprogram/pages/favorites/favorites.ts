@@ -6,6 +6,7 @@ Page({
   data: {
     items: [] as any[],
     loading: true,
+    loginRequired: false,
     error: '',
   },
 
@@ -18,10 +19,15 @@ Page({
   },
 
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, loginRequired: false, error: '' });
     try {
-      const ready = getApp<any>().globalData.userDataReady;
+      const app = getApp<any>();
+      const ready = app.globalData.userDataReady;
       if (ready) await ready.catch(() => undefined);
+      if (app.globalData.loginState !== 'success') {
+        this.setData({ items: [], loading: false, loginRequired: true });
+        return;
+      }
       const records = getFavoriteRecords();
       const results = await Promise.all(records.map(async (record) => {
         try {
@@ -53,6 +59,12 @@ Page({
     this.load();
   },
 
+  async requestWechatLogin() {
+    try {
+      if (await getApp<any>().requestWechatLogin()) this.load();
+    } catch (_error) { /* 登录状态由 App 维护 */ }
+  },
+
   openDetail(event: any) {
     if (event.currentTarget.dataset.unavailable) return;
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` });
@@ -78,7 +90,7 @@ Page({
     wx.showModal({
       title: '取消收藏',
       content: '确定将这场赛事移出收藏吗？',
-      confirmColor: '#087e8b',
+      confirmColor: '#1765d9',
       success: (result: any) => {
         if (!result.confirm) return;
         removeFavorite(id);

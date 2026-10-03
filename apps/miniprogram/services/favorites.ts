@@ -1,8 +1,19 @@
-import { callUserData, isCloudSessionReady } from './cloudSession';
+import { callUserData, getCurrentUserId, isCloudSessionReady } from './cloudSession';
 
 const STORAGE_KEY = 'competition-favorites-v1';
 const DELETED_KEY = 'competition-favorite-deletions-v1';
 let favoriteCloudQueue: Promise<unknown> = Promise.resolve();
+
+function accountKey(base: string): string {
+  const userId = getCurrentUserId();
+  return isCloudSessionReady() && userId ? `${base}:${userId}` : '';
+}
+
+function requireAccountKey(base: string): string {
+  const key = accountKey(base);
+  if (!key) throw new Error('请先微信登录');
+  return key;
+}
 
 export interface FavoriteRecord {
   editionId: string;
@@ -10,8 +21,10 @@ export interface FavoriteRecord {
 }
 
 function readFavorites(): FavoriteRecord[] {
+  const key = accountKey(STORAGE_KEY);
+  if (!key) return [];
   try {
-    const value = wx.getStorageSync(STORAGE_KEY);
+    const value = wx.getStorageSync(key);
     if (!Array.isArray(value)) return [];
     return value.filter((item: any) => typeof item?.editionId === 'string' && typeof item?.createdAt === 'string');
   } catch (_error) {
@@ -20,18 +33,20 @@ function readFavorites(): FavoriteRecord[] {
 }
 
 function writeFavorites(records: FavoriteRecord[]) {
-  wx.setStorageSync(STORAGE_KEY, records);
+  wx.setStorageSync(requireAccountKey(STORAGE_KEY), records);
 }
 
 function readDeletedIds(): string[] {
+  const key = accountKey(DELETED_KEY);
+  if (!key) return [];
   try {
-    const value = wx.getStorageSync(DELETED_KEY);
+    const value = wx.getStorageSync(key);
     return Array.isArray(value) ? value.filter(item => typeof item === 'string' && item) : [];
   } catch (_error) { return []; }
 }
 
 function writeDeletedIds(ids: string[]) {
-  wx.setStorageSync(DELETED_KEY, Array.from(new Set(ids)));
+  wx.setStorageSync(requireAccountKey(DELETED_KEY), Array.from(new Set(ids)));
 }
 
 function markDeleted(editionId: string) {
@@ -56,6 +71,7 @@ function syncFavorite(editionId: string, favorited: boolean, createdAt?: string)
 }
 
 export async function initializeFavoritesCloudSync(): Promise<void> {
+  requireAccountKey(STORAGE_KEY);
   const remote = await runFavoriteCloud<FavoriteRecord[]>('listFavorites');
   const local = readFavorites();
   const deletedIds = new Set(readDeletedIds());
@@ -86,6 +102,7 @@ export function isFavorite(editionId: string): boolean {
 }
 
 export function toggleFavorite(editionId: string): boolean {
+  requireAccountKey(STORAGE_KEY);
   const records = readFavorites();
   const index = records.findIndex((item) => item.editionId === editionId);
   if (index >= 0) {
@@ -104,6 +121,7 @@ export function toggleFavorite(editionId: string): boolean {
 }
 
 export function removeFavorite(editionId: string) {
+  requireAccountKey(STORAGE_KEY);
   writeFavorites(readFavorites().filter((item) => item.editionId !== editionId));
   markDeleted(editionId);
   syncFavorite(editionId, false);

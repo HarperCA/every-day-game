@@ -1,13 +1,15 @@
 import { getFavoriteRecords } from '../../services/favorites';
 import { getReminderRecords } from '../../services/reminders';
+import { getUserProfile } from '../../services/profile';
 
 Page({
   data: {
     loginState: 'idle',
     loginError: '',
-    userIdDisplay: '',
     dataSyncState: 'idle',
     dataSyncError: '',
+    profileName: '微信用户',
+    avatarPath: '',
     favoriteCount: 0,
     reminderCount: 0,
   },
@@ -19,15 +21,17 @@ Page({
   },
   refreshState() {
     const app = getApp<any>();
-    const userId = app.globalData.userId || '';
+    const loggedIn = app.globalData.loginState === 'success';
+    const profile = getUserProfile();
     this.setData({
       loginState:app.globalData.loginState,
       loginError:app.globalData.loginError || '',
-      userIdDisplay:userId ? `云端账号 ${userId.slice(-8)}` : '',
       dataSyncState:app.globalData.dataSyncState || 'idle',
       dataSyncError:app.globalData.dataSyncError || '',
-      favoriteCount:getFavoriteRecords().length,
-      reminderCount:getReminderRecords().length,
+      profileName:profile.displayName,
+      avatarPath:profile.avatarPath,
+      favoriteCount:loggedIn ? getFavoriteRecords().length : 0,
+      reminderCount:loggedIn ? getReminderRecords().length : 0,
     });
   },
   async requestWechatLogin() {
@@ -36,8 +40,28 @@ Page({
     try { await app.requestWechatLogin(); } catch (_error) { /* 状态由 App 统一维护 */ }
     this.refreshState();
   },
-  openFavorites() { wx.navigateTo({ url: '/pages/favorites/favorites' }); },
-  openReminders() { wx.navigateTo({ url: '/pages/reminders/reminders' }); },
+  async openFavorites() {
+    if (!await this.ensureWechatLogin()) return;
+    wx.navigateTo({ url: '/pages/favorites/favorites' });
+  },
+  async openReminders() {
+    if (!await this.ensureWechatLogin()) return;
+    wx.navigateTo({ url: '/pages/reminders/reminders' });
+  },
+  async openProfile() {
+    if (!await this.ensureWechatLogin()) return;
+    wx.navigateTo({ url: '/pages/profile/profile' });
+  },
+  async ensureWechatLogin(): Promise<boolean> {
+    try {
+      const loggedIn = await getApp<any>().requestWechatLogin();
+      this.refreshState();
+      return loggedIn;
+    } catch (_error) {
+      this.refreshState();
+      return false;
+    }
+  },
   openFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   openRecommendationGuide() { wx.navigateTo({ url: '/pages/info/info?type=recommendation' }); },
   openPrivacyGuide() { wx.navigateTo({ url: '/pages/info/info?type=privacy' }); },

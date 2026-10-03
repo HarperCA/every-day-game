@@ -1,6 +1,7 @@
 <view class="page">
-  <view class="page-heading"><view class="page-title">我的提醒</view><view class="page-subtitle">共 {{items.length}} 项，站内提醒保存在当前设备</view></view>
-  <view wx:if="{{loading && items.length === 0}}"><view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view></view>
+  <view class="page-heading"><view class="page-title">我的提醒</view><view class="page-subtitle">共 {{items.length}} 项，登录后同步当前微信账号的提醒</view></view>
+  <view wx:if="{{loginRequired}}" class="state card"><view class="state-title">登录后查看提醒</view><view class="muted">提醒与当前微信账号关联。</view><button class="primary find-button" bindtap="requestWechatLogin">微信登录</button></view>
+  <view wx:elif="{{loading && items.length === 0}}"><view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view></view>
   <view wx:elif="{{error}}" class="state card"><view class="state-title">提醒加载失败</view><view class="muted">{{error}}</view><button size="mini" bindtap="retry">重新加载</button></view>
   <view wx:elif="{{items.length === 0}}" class="state card"><view class="empty-icon">⏰</view><view class="state-title">还没有设置提醒</view><view class="muted">进入赛事详情，可设置报名开始或报名截止提醒。</view><button class="primary find-button" bindtap="goFindCompetition">去发现赛事</button></view>
   <view wx:else>

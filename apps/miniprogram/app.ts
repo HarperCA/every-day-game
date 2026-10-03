@@ -32,7 +32,7 @@ App({
     const confirmed = await new Promise<boolean>((resolve) => {
       wx.showModal({
         title: '微信登录',
-        content: '登录后会使用微信云开发身份保存并同步你的收藏和赛事提醒。不采集手机号、真实姓名、学校或学号。',
+        content: '登录后会使用当前微信身份保存并同步你的收藏和赛事提醒。不采集手机号、真实姓名、学校或学号。',
         confirmText: '微信登录',
         cancelText: '暂不登录',
         success: result => resolve(Boolean(result.confirm)),

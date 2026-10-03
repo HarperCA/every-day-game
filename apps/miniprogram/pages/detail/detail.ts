@@ -41,9 +41,12 @@ Page({
     if (!item?.registrationUrlUsable) { wx.showToast({ title: '官方报名链接待更新', icon: 'none' }); return; }
     wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content: '链接已复制，请在浏览器中打开并核对主办单位。', showCancel: false }) });
   },
-  favorite() {
+  async favorite() {
     const id = this.data.item?.id;
     if (!id) return;
+    try {
+      if (!await getApp<any>().requestWechatLogin()) return;
+    } catch (_error) { return; }
     if (this.data.isFavorite) {
       const reminders = getRemindersForEdition(id);
       if (reminders.length) {
@@ -60,9 +63,12 @@ Page({
     this.setData({ isFavorite: favorited });
     wx.showToast({ title: favorited ? '已收藏' : '已取消收藏', icon: favorited ? 'success' : 'none' });
   },
-  openReminderPanel(preferredEventType = '') {
+  async openReminderPanel(preferredEventType = '') {
     const item = this.data.item;
     if (!item) return;
+    try {
+      if (!await getApp<any>().requestWechatLogin()) return;
+    } catch (_error) { return; }
     const now = Date.now();
     const reminderEvents = [
       { value: 'registration_start', label: '报名开始', targetAt: item.registrationStart || '', targetText: item.registrationStartDate || '待公布', available: Boolean(item.registrationStart && new Date(item.registrationStart).getTime() > now) },

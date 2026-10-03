@@ -1,0 +1,11 @@
+.profile-page{padding-top:24rpx}
+.editor-card{padding:46rpx 32rpx 36rpx}
+.avatar-picker{display:flex;align-items:center;justify-content:center;width:172rpx;height:172rpx;margin:0 auto;padding:0;border:0;border-radius:50%;overflow:hidden;background:#e8f1ff;color:#1765d9;font-size:68rpx;font-weight:700;line-height:1}
+.avatar-picker::after{border:0}
+.avatar-picker image{width:100%;height:100%}
+.avatar-hint{margin:18rpx 0 48rpx;text-align:center;color:#64748b;font-size:24rpx}
+.name-field{display:flex;align-items:center;gap:24rpx;padding:22rpx 6rpx;border-bottom:1rpx solid #e6ebf1;color:#172033;font-size:28rpx}
+.name-field text{flex:none;width:80rpx}
+.name-field input{flex:1;min-width:0;color:#172033}
+.save-button{margin-top:52rpx;background:#1765d9;color:#fff;border-radius:14rpx;font-size:29rpx;font-weight:650}
+.save-button::after{border:0}

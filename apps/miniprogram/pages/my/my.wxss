@@ -1,2 +1,14 @@
-.profile{display:flex;align-items:center;gap:20rpx;padding:28rpx}.avatar{width:84rpx;height:84rpx;background:#dceff1;color:#087e8b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34rpx;font-weight:700}.name{font-size:32rpx;font-weight:700}.profile button{margin-left:auto}.sync-warning{color:#b45309}.menu{margin-top:20rpx;padding:0 24rpx}.menu view{display:flex;justify-content:space-between;padding:28rpx 4rpx;border-bottom:1rpx solid #edf0f3}.menu view:last-child{border:none}.menu text{color:#8b96a6}.privacy{color:#738095;font-size:23rpx;line-height:1.65;padding:28rpx 10rpx}
-.wechat-login{background:#07c160!important;color:#fff!important;border:0!important}
+.profile{display:flex;align-items:center;gap:20rpx;padding:28rpx}
+.avatar{width:84rpx;height:84rpx;flex-shrink:0;background:#e8f1ff;color:#1765d9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34rpx;font-weight:700}
+.avatar{overflow:hidden}
+.avatar image{width:100%;height:100%}
+.profile-info{flex:1;min-width:0;word-break:break-all}
+.name{font-size:32rpx;font-weight:700}
+.profile-arrow{color:#8b96a6;font-size:42rpx;line-height:1}
+.wechat-login{flex:0 0 176rpx;box-sizing:border-box;width:176rpx;height:68rpx;margin:0;padding:0;border:0;border-radius:34rpx;background:#1765d9;color:#fff;font-size:25rpx;font-weight:600;line-height:68rpx;text-align:center;white-space:nowrap;box-shadow:0 6rpx 16rpx rgba(23,101,217,.2)}
+.wechat-login::after{border:0}
+.sync-warning{color:#b45309}
+.menu{margin-top:20rpx;padding:0 24rpx}
+.menu view{display:flex;justify-content:space-between;padding:28rpx 4rpx;border-bottom:1rpx solid #edf0f3}
+.menu view:last-child{border:none}
+.menu text{color:#8b96a6}

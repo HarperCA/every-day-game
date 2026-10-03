@@ -58,12 +58,13 @@ class ProjectFileTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertNotRegex(text, r"\.(slice|map|filter|join|substring)\(", str(path))
 
-    def test_selected_filter_area_supports_individual_and_full_clear(self):
+    def test_home_filters_can_be_cleared_without_a_separate_selected_area(self):
         page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")
         logic = (MINI / "pages/index/index.ts").read_text(encoding="utf-8")
-        self.assertIn("已选条件", page)
-        self.assertIn('bindtap="removeCondition"', page)
+        self.assertNotIn("已选条件", page)
+        self.assertNotIn('bindtap="removeCondition"', page)
         self.assertIn('bindtap="clearFilters"', page)
+        self.assertIn('bindtap="onComprehensiveTap"', page)
         self.assertIn("selectedConditions", logic)
 
     def test_development_preview_mode_is_gone(self):
@@ -77,14 +78,14 @@ class ProjectFileTests(unittest.TestCase):
         page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")
         logic = (MINI / "pages/index/index.ts").read_text(encoding="utf-8")
         repository = (MINI / "services/repository.ts").read_text(encoding="utf-8")
-        self.assertIn("更多筛选", page)
-        self.assertIn("查看{{morePreviewCount}}场赛事", page)
-        for label in ("参赛形式", "队伍人数", "报名费用", "报名组织方式"):
-            self.assertIn(label, page)
+        self.assertIn("全部筛选", page)
+        self.assertIn("确定 · {{morePreviewCount}}场赛事", page)
+        for label in ("参赛形式", "队伍人数", "报名费用", "报名方式"):
+            self.assertIn(label, logic)
         for field in ("participationFormat", "teamSizeCategory", "feeType", "registrationOrganization"):
             self.assertIn(field, logic)
             self.assertIn(field, repository)
-        self.assertIn("moreFilterLabel", logic)
+        self.assertIn("moreFilterCount", logic)
         self.assertIn("pageSize: 8", logic)
 
     def test_admin_has_separate_more_filter_editor(self):

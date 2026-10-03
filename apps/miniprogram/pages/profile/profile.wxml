@@ -1,0 +1,16 @@
+<view class="page profile-page">
+  <view class="card editor-card">
+    <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" aria-label="选择头像">
+      <image wx:if="{{avatarPath}}" src="{{avatarPath}}" mode="aspectFill" />
+      <text wx:else>微</text>
+    </button>
+    <view class="avatar-hint">点击更换头像</view>
+    <form bindsubmit="save">
+      <view class="name-field">
+        <text>名称</text>
+        <input name="displayName" type="nickname" maxlength="20" value="{{displayName}}" bindinput="onNameInput" placeholder="请输入你的名称" />
+      </view>
+      <button class="save-button" form-type="submit" loading="{{saving}}" disabled="{{saving}}">保存</button>
+    </form>
+  </view>
+</view>

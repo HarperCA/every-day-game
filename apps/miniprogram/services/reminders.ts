@@ -1,9 +1,20 @@
-import { callUserData, isCloudSessionReady } from './cloudSession';
+import { callUserData, getCurrentUserId, isCloudSessionReady } from './cloudSession';
 
 const STORAGE_KEY = 'competition-reminders-v1';
 const DELETED_IDS_KEY = 'competition-reminder-deletions-v1';
 const DELETED_EDITIONS_KEY = 'competition-reminder-edition-deletions-v1';
 let cloudWriteQueue: Promise<unknown> = Promise.resolve();
+
+function accountKey(base: string): string {
+  const userId = getCurrentUserId();
+  return isCloudSessionReady() && userId ? `${base}:${userId}` : '';
+}
+
+function requireAccountKey(base: string): string {
+  const key = accountKey(base);
+  if (!key) throw new Error('请先微信登录');
+  return key;
+}
 
 export type ReminderEventType = 'registration_start' | 'registration_end';
 export type AuthorizationStatus = 'not_requested' | 'accepted' | 'rejected' | 'unavailable';
@@ -50,8 +61,10 @@ export function buildReminderTaskName(competitionName: string, eventLabel: strin
 }
 
 function readRecords(): ReminderRecord[] {
+  const key = accountKey(STORAGE_KEY);
+  if (!key) return [];
   try {
-    const value = wx.getStorageSync(STORAGE_KEY);
+    const value = wx.getStorageSync(key);
     return Array.isArray(value) ? value.filter((item: any) => item?.id && item?.editionId && item?.remindAt).map((item: any) => ({
       ...item,
       competitionName:item.competitionName || '大学生竞赛',
@@ -63,18 +76,20 @@ function readRecords(): ReminderRecord[] {
 }
 
 function writeRecords(records: ReminderRecord[]) {
-  wx.setStorageSync(STORAGE_KEY, records);
+  wx.setStorageSync(requireAccountKey(STORAGE_KEY), records);
 }
 
 function readStringList(key: string): string[] {
+  const scopedKey = accountKey(key);
+  if (!scopedKey) return [];
   try {
-    const value = wx.getStorageSync(key);
+    const value = wx.getStorageSync(scopedKey);
     return Array.isArray(value) ? value.filter(item => typeof item === 'string' && item) : [];
   } catch (_error) { return []; }
 }
 
 function writeStringList(key: string, values: string[]) {
-  wx.setStorageSync(key, Array.from(new Set(values)));
+  wx.setStorageSync(requireAccountKey(key), Array.from(new Set(values)));
 }
 
 function markPendingDeletion(key: string, value: string) {
@@ -99,6 +114,7 @@ function queueCloud(action: string, payload: Record<string, unknown>, onSuccess?
 }
 
 export async function initializeRemindersCloudSync(): Promise<void> {
+  requireAccountKey(STORAGE_KEY);
   const remote = await runReminderCloud<ReminderRecord[]>('listReminders');
   const local = readRecords();
   const deletedIds = new Set(readStringList(DELETED_IDS_KEY));
@@ -154,6 +170,7 @@ export function saveReminderPlans(input: {
   presets: string[];
   customAt?: string;
 }): ReminderRecord[] {
+  requireAccountKey(STORAGE_KEY);
   const now = new Date();
   const target = new Date(input.targetAt);
   if (Number.isNaN(target.getTime()) || target <= now) throw new Error('目标事件时间已经过去或尚未公布');
@@ -198,6 +215,7 @@ export function saveReminderPlans(input: {
 }
 
 export function updateAuthorization(ids: string[], status: AuthorizationStatus) {
+  requireAccountKey(STORAGE_KEY);
   const now = new Date().toISOString();
   const records = readRecords().map(item => ids.includes(item.id) ? {
     ...item,
@@ -210,6 +228,7 @@ export function updateAuthorization(ids: string[], status: AuthorizationStatus) 
 }
 
 export function applyReminderAuthorization(plans: ReminderRecord[], status: AuthorizationStatus, templateId: string) {
+  requireAccountKey(STORAGE_KEY);
   if (!plans.length) return;
   const planIds = new Set(plans.map(item=>item.id));
   const current = readRecords();
@@ -241,18 +260,21 @@ export function requestReminderAuthorization(templateId: string): Promise<Author
 }
 
 export function removeReminder(id: string) {
+  requireAccountKey(STORAGE_KEY);
   writeRecords(readRecords().filter(item => item.id !== id));
   markPendingDeletion(DELETED_IDS_KEY, id);
   queueCloud('removeReminder', { id }, () => clearPendingDeletion(DELETED_IDS_KEY, id));
 }
 
 export function removeRemindersForEdition(editionId: string) {
+  requireAccountKey(STORAGE_KEY);
   writeRecords(readRecords().filter(item => item.editionId !== editionId));
   markPendingDeletion(DELETED_EDITIONS_KEY, editionId);
   queueCloud('removeRemindersForEdition', { editionId }, () => clearPendingDeletion(DELETED_EDITIONS_KEY, editionId));
 }
 
 export function syncReminderTarget(record: ReminderRecord, targetAt: string, changeStatus: ScheduleChangeStatus = 'time_updated'): ReminderRecord {
+  requireAccountKey(STORAGE_KEY);
   if (record.deliveryStatus !== 'pending' || (record.targetAt === targetAt && record.scheduleChangeStatus === changeStatus)) return record;
   const target = new Date(targetAt);
   if (Number.isNaN(target.getTime())) return record;

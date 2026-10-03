@@ -1,17 +1,16 @@
-.page { min-height:100vh; box-sizing:border-box; padding:24rpx; background:#f5f7fa; color:#172033; }
-.notice { margin-bottom:20rpx; padding:20rpx 24rpx; border:1rpx solid #b9ddd9; border-radius:18rpx; background:#edf9f7; color:#276c67; font-size:26rpx; line-height:1.6; }
+.page { min-height:100vh; box-sizing:border-box; padding:24rpx; background:#f4f7fc; color:#172033; }
 .card { padding:30rpx; border-radius:24rpx; background:#fff; box-shadow:0 8rpx 28rpx rgba(31,45,61,.06); }
 .competition { padding-bottom:26rpx; border-bottom:1rpx solid #edf0f4; }
 .competition text, .field > text { display:block; margin-bottom:12rpx; color:#64748b; font-size:25rpx; }
 .competition strong { font-size:31rpx; line-height:1.5; }
 .field { display:block; margin-top:28rpx; }
-.field i { color:#087e8b; font-style:normal; }
+.field i { color:#1765d9; font-style:normal; }
 .picker, input, textarea { box-sizing:border-box; width:100%; border:1rpx solid #dce3ea; border-radius:15rpx; background:#fbfcfd; font-size:28rpx; }
 .picker, input { min-height:84rpx; padding:22rpx; }
 .picker { display:flex; justify-content:space-between; }
 textarea { height:260rpx; padding:22rpx; line-height:1.6; }
 .field small { display:block; margin-top:8rpx; color:#94a3b8; text-align:right; font-size:22rpx; }
-.submit { margin-top:30rpx; border-radius:18rpx; background:#087e8b; color:#fff; font-weight:700; }
+.submit { margin-top:30rpx; border-radius:18rpx; background:#1765d9; color:#fff; font-weight:700; }
 .picker-empty { color:#94a3b8; }
 .records { margin-top:30rpx; }
 .records-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8rpx; font-size:29rpx; font-weight:700; }

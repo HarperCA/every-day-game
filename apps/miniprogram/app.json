@@ -6,6 +6,7 @@
     "pages/favorites/favorites",
     "pages/reminders/reminders",
     "pages/my/my",
+    "pages/profile/profile",
     "pages/info/info"
   ],
   "lazyCodeLoading": "requiredComponents",
@@ -13,15 +14,15 @@
     "navigationBarTitleText": "大学生竞赛助手",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f5f7fa"
+    "backgroundColor": "#f4f7fc"
   },
   "tabBar": {
     "color": "#64748b",
-    "selectedColor": "#087e8b",
+    "selectedColor": "#1765d9",
     "backgroundColor": "#ffffff",
     "list": [
-      {"pagePath": "pages/index/index", "text": "找比赛"},
-      {"pagePath": "pages/my/my", "text": "我的"}
+      {"pagePath": "pages/index/index", "text": "找比赛", "iconPath": "assets/tabbar-find-trophy-normal.png", "selectedIconPath": "assets/tabbar-find-trophy-active.png"},
+      {"pagePath": "pages/my/my", "text": "我的", "iconPath": "assets/tabbar-my-normal.png", "selectedIconPath": "assets/tabbar-my-active.png"}
     ]
   },
   "sitemapLocation": "sitemap.json"

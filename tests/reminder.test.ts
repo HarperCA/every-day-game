@@ -1,4 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../apps/miniprogram/services/cloudSession', () => ({
+  callUserData: vi.fn(),
+  isCloudSessionReady: () => true,
+  getCurrentUserId: () => 'test-user',
+}));
 import { applyReminderAuthorization, buildReminderTaskName, calculatePresetReminder, getReminderRecords, saveReminderPlans } from '../apps/miniprogram/services/reminders';
 
 const storage = new Map<string, unknown>();

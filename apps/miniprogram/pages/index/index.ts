@@ -47,8 +47,9 @@ Page({
     draftSortBy: '' as string,
     draftSortOrder: '' as string,
     morePanelVisible: false,
+    filterCategories: ['参赛形式', '队伍人数', '报名费用', '报名方式', '报名时间', '排序方式'],
+    activeFilterCategoryIndex: 0,
     moreFilterCount: 0,
-    moreFilterLabel: '更多筛选',
     morePreviewCount: 0,
     selectedConditions: [] as Array<{ kind: string; label: string }>,
     items: [] as any[],
@@ -70,6 +71,16 @@ Page({
   onSearch() { this.load(true); },
   onStatusChange(event: WechatMiniprogram.PickerChange) {
     this.setData({ statusIndex: Number(event.detail.value) }, () => { this.updateSelectedConditions(); this.load(true); });
+  },
+  onComprehensiveTap() {
+    if (!this.data.selectedConditions.length) return;
+    this.setData({
+      statusIndex: 0, levelIndex: 0, professionIndex: 0,
+      participationFormat: '', teamSizeCategory: '', feeType: '', registrationOrganization: '',
+      registrationWithin: '', sortBy: '', sortOrder: '',
+      draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
+      draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
+    }, () => { this.updateSelectedConditions(); this.load(true); });
   },
   onLevelChange(event: WechatMiniprogram.PickerChange) {
     this.setData({ levelIndex: Number(event.detail.value) }, () => { this.updateSelectedConditions(); this.load(true); });
@@ -99,25 +110,7 @@ Page({
       this.data.participationFormat, this.data.teamSizeCategory, this.data.feeType, this.data.registrationOrganization,
       this.data.registrationWithin, this.data.sortBy, this.data.sortOrder,
     ].filter(Boolean).length;
-    this.setData({ selectedConditions, moreFilterCount, moreFilterLabel: moreFilterCount ? `更多筛选·${moreFilterCount}` : '更多筛选' });
-  },
-  removeCondition(event: WechatMiniprogram.TouchEvent) {
-    const kind = String(event.currentTarget.dataset.kind || '');
-    if (kind === 'sort') {
-      this.setData({ sortBy: '', sortOrder: '' }, () => { this.updateSelectedConditions(); this.load(true); });
-      return;
-    }
-    const field: Record<string, string> = {
-      status: 'statusIndex', level: 'levelIndex', profession: 'professionIndex',
-      participationFormat: 'participationFormat', teamSizeCategory: 'teamSizeCategory',
-      feeType: 'feeType', registrationOrganization: 'registrationOrganization',
-      registrationWithin: 'registrationWithin',
-    };
-    if (!(kind in field)) return;
-    this.setData({ [field[kind]]: kind === 'status' || kind === 'level' || kind === 'profession' ? 0 : '' }, () => {
-      this.updateSelectedConditions();
-      this.load(true);
-    });
+    this.setData({ selectedConditions, moreFilterCount });
   },
   clearFilters() {
     this.setData({
@@ -126,7 +119,7 @@ Page({
       registrationWithin: '', sortBy: '', sortOrder: '',
       draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
       draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
-      morePanelVisible: false, selectedConditions: [], moreFilterCount: 0, moreFilterLabel: '更多筛选',
+      morePanelVisible: false, selectedConditions: [], moreFilterCount: 0,
     });
     this.load(true);
   },
@@ -139,11 +132,18 @@ Page({
       draftRegistrationWithin: this.data.registrationWithin,
       draftSortBy: this.data.sortBy,
       draftSortOrder: this.data.sortOrder,
+      activeFilterCategoryIndex: 0,
       morePanelVisible: true,
     }, () => this.refreshMorePreview());
   },
   closeMoreFilters() { this.setData({ morePanelVisible: false }); },
   blockPanelTap() {},
+  selectFilterCategory(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (Number.isInteger(index) && index >= 0 && index < this.data.filterCategories.length) {
+      this.setData({ activeFilterCategoryIndex: index });
+    }
+  },
   selectMoreOption(event: WechatMiniprogram.TouchEvent) {
     const kind = String(event.currentTarget.dataset.kind || '');
     const value = String(event.currentTarget.dataset.value || '');
@@ -194,9 +194,12 @@ Page({
   },
   retry() { this.load(true); },
   openDetail(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` }); },
-  toggleFavorite(event: WechatMiniprogram.TouchEvent) {
+  async toggleFavorite(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id || '');
     if (!id) return;
+    try {
+      if (!await getApp<any>().requestWechatLogin()) return;
+    } catch (_error) { return; }
     const favorited = toggleFavorite(id);
     this.refreshFavoriteState();
     wx.showToast({ title: favorited ? '已收藏' : '已取消收藏', icon: favorited ? 'success' : 'none' });

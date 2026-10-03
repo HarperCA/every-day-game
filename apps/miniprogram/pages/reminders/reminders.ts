@@ -8,14 +8,19 @@ function displayDateTime(value: string) {
 }
 
 Page({
-  data: { items: [] as any[], loading: true, error: '' },
+  data: { items: [] as any[], loading: true, loginRequired: false, error: '' },
   onShow() { this.load(); },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, loginRequired: false, error: '' });
     try {
-      const ready = getApp<any>().globalData.userDataReady;
+      const app = getApp<any>();
+      const ready = app.globalData.userDataReady;
       if (ready) await ready.catch(() => undefined);
+      if (app.globalData.loginState !== 'success') {
+        this.setData({ items: [], loading: false, loginRequired: true });
+        return;
+      }
       const records = getReminderRecords();
       const results = await Promise.all(records.map(async record => {
         try {
@@ -49,6 +54,11 @@ Page({
     } catch (error) { this.setData({ loading: false, error: error instanceof Error ? error.message : '提醒加载失败' }); }
   },
   retry() { this.load(); },
+  async requestWechatLogin() {
+    try {
+      if (await getApp<any>().requestWechatLogin()) this.load();
+    } catch (_error) { /* 登录状态由 App 维护 */ }
+  },
   openDetail(event: WechatMiniprogram.TouchEvent) { if (event.currentTarget.dataset.unavailable) return; wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.editionId}` }); },
   editReminder(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.editionId}&reminder=1&eventType=${event.currentTarget.dataset.eventType}` });

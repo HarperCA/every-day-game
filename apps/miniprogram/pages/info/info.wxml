@@ -1,26 +1,25 @@
 <view class="page info-page">
-  <view class="hero card">
-    <view class="eyebrow">使用说明</view>
+  <view class="hero card" wx:if="{{pageType === 'privacy'}}">
     <view class="title">{{page.title}}</view>
-    <view class="subtitle">{{page.subtitle}}</view>
   </view>
 
-  <view class="notice" wx:if="{{page.notice}}">
-    <view class="notice-mark">!</view>
-    <text>{{page.notice}}</text>
-  </view>
-
-  <view class="section card {{item.level ? 'level-' + item.level : ''}}" wx:for="{{page.sections}}" wx:key="title">
-    <view class="section-title">
+  <view class="section card {{item.level ? 'level-' + item.level : ''}} {{isRecommendationPage && !expandedSections[sectionIndex] ? 'section-collapsed' : ''}}" wx:for="{{page.sections}}" wx:for-index="sectionIndex" wx:key="title">
+    <view class="section-title {{isRecommendationPage ? 'section-title-collapsible' : ''}}" data-index="{{sectionIndex}}" bindtap="toggleSection">
       <view class="level-dot" wx:if="{{item.level}}"></view>
-      <text>{{item.title}}</text>
+      <text class="section-title-text">{{item.title}}</text>
+      <view class="section-chevron {{expandedSections[sectionIndex] ? 'section-chevron-open' : ''}}" wx:if="{{isRecommendationPage}}"></view>
     </view>
-    <view class="paragraph" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
-    <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this">
-      <view class="bullet-dot"></view>
-      <text>{{point}}</text>
-    </view>
+    <block wx:if="{{!isRecommendationPage || expandedSections[sectionIndex]}}">
+      <view class="paragraph" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
+      <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this">
+        <view class="bullet-dot"></view>
+        <text>{{point}}</text>
+      </view>
+    </block>
   </view>
 
-  <view class="footer-note">请以赛事官方最新通知为准</view>
+  <view class="section card other-link" wx:if="{{pageType === 'recommendation'}}" bindtap="openRecommendationOther" role="button" aria-label="其他，查看没有推荐等级的比赛、推荐依据和使用提示">
+    <text>其他</text><text class="other-arrow">›</text>
+  </view>
+
 </view>
