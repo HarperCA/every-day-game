@@ -3,6 +3,7 @@ import { initializeFavoritesCloudSync } from './services/favorites';
 import { loginWithWechat } from './services/cloudSession';
 import { initializeRemindersCloudSync } from './services/reminders';
 import { initClientLog, reportIssue } from './services/clientLog';
+import { watchForUpdate } from './services/appUpdate';
 
 App({
   globalData: {
@@ -19,6 +20,8 @@ App({
     this.globalData.userDataReady = Promise.resolve();
     // 访问异常上报：记下网络类型，补发上次没发出去的（clientLog.ts）
     initClientLog();
+    // 新版下载好后提示重启升级
+    watchForUpdate();
   },
   // 小程序代码报错、没人接住的 Promise 失败，都记一笔
   onError(message: string) {
