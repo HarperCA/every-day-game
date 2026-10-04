@@ -142,7 +142,9 @@ function composeRunDetail(runId, files) {
       const noteTrace = { found:pages ? `${searchNote ? `${searchNote}；` : ''}找到 ${pages} 个待核验页面${searched ? '' : '（通知正文里写出的网址）'}` : '', none:searchNote ? `${searchNote}，没有可用的页面` : (found?.error ? searchNote : '搜索后没找到'),
         noquota:'提得出赛事名，但本晚三个搜索引擎的额度都用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
       trail.push(step('trace', outcomeTrace, noteTrace));
-      Object.assign(row, { final:`转入通知追溯（找到 ${pages} 个待核验页面）`, stage:3 });
+      const traceFinal = { found:`转入通知追溯（找到 ${pages} 个待核验页面）`, none:'追溯没找到（搜了，没搜到可用页面）',
+        noquota:'追溯没找到（没轮上搜索额度）', noname:'追溯没找到（标题提不出合法赛事名，没搜）' }[outcomeTrace];
+      Object.assign(row, { final:traceFinal, stage:3 });
     } else if (combinedUrls.has(url)) {
       const outcomeRead = analyzeRead(url);
       Object.assign(row, { final:outcomeRead.final, stage:4 });

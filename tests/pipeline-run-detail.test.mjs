@@ -161,6 +161,13 @@ describe('通知追溯没找到的几种原因、追溯页面没读的几种原�
     expect(stepOf('https://n/4', 'trace')).toBe('noquota');
     expect(stepOf('https://n/5', 'trace')).toBe('noname');
   });
+  it('没找到页面的，最终结论按原因写，不再统一写“转入通知追溯”', () => {
+    const finalOf = url => detail.rows.find(row => row.url === url)?.final;
+    expect(finalOf('https://n/1')).toBe('转入通知追溯（找到 1 个待核验页面）');
+    expect(finalOf('https://n/3')).toBe('追溯没找到（搜了，没搜到可用页面）');
+    expect(finalOf('https://n/4')).toBe('追溯没找到（没轮上搜索额度）');
+    expect(finalOf('https://n/5')).toBe('追溯没找到（标题提不出合法赛事名，没搜）');
+  });
   it('追溯页面没读：把握低 / 通知类 / 新闻 / 重复，各有各的出口', () => {
     expect(stepOf('https://o/1', 'followup')).toBe('skip_low');
     expect(stepOf('https://o/2', 'followup')).toBe('skip_notice');
