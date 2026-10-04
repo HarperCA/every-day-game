@@ -15,7 +15,7 @@ export const POS: Record<string, [number, number]> = {
   same_name:[840, 300], scope:[980, 300], gate:[1120, 300], end_written:[1260, 300],
   end_dropped:[0, 190], end_dup:[120, 190], end_rejected:[345, 190], end_readfail:[630, 190], end_scope:[980, 190],
   end_lead:[320, 100],
-  trace:[350, 440], followup:[490, 440], end_trace_none:[420, 560],
+  trace:[350, 440], followup:[490, 440], end_trace_none:[420, 560], end_trace_skip:[530, 560],
 };
 
 // 整张图的范围（含四周留白），用来定容器宽高比和 SVG 视口
@@ -51,7 +51,7 @@ export const ROUTES: Record<string, Pt[]> = {
   'trace>followup':[[450, 473], [490, 473]],
   'trace>end_trace_none':[[400, 506], [400, 533], [450, 533], [450, 560]],
   'followup>read':[[540, 440], [540, 410], [580, 410], [580, 366]],
-  'followup>end_trace_none':[[540, 506], [540, 533], [490, 533], [490, 560]],
+  'followup>end_trace_skip':[[570, 506], [570, 560]],
   // 读取、抽取、查库
   'read>extract':[[660, 333], [700, 333]],
   'read>end_readfail':[[640, 300], [640, 256]],
