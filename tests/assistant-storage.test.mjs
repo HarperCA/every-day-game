@@ -9,7 +9,6 @@ import { RECORDS } from './assistant-fixtures.mjs';
 const require = createRequire(import.meta.url);
 const { saveTurnLog, loadRecentTurns, COLLECTION } = require('../apps/miniprogram/cloudfunctions/assistant/conversationLog.js');
 const { loadPublicRecords } = require('../apps/miniprogram/cloudfunctions/assistant/publicRecords.js');
-const { isTester, readTesters, CACHE_MS } = require('../apps/miniprogram/cloudfunctions/assistant/testers.js');
 
 // 用自有服务器同一套 SQLite 外壳跑，和线上的读写方式一致
 let dir;
@@ -57,29 +56,5 @@ describe('赛事助手：读公开比赛', () => {
     }
     const ids = (await loadPublicRecords(db)).map(item => item.id).sort();
     expect(ids).toEqual(['edition-a', 'edition-archived', 'edition-b', 'edition-c', 'edition-d']);
-  });
-});
-
-describe('赛事助手：测试名单', () => {
-  it('一行一个 openid，忽略空行和 # 注释', () => {
-    const file = path.join(dir, 'testers.txt');
-    fs.writeFileSync(file, '# 测试成员\no-a\n\n  o-b  \n#o-c\n');
-    expect([...readTesters(file)]).toEqual(['o-a', 'o-b']);
-    expect(isTester('o-a', { file, now:1 })).toBe(true);
-    expect(isTester('o-c', { file, now:1 })).toBe(false);
-    expect(isTester('', { file, now:1 })).toBe(false);
-  });
-
-  it('文件不存在：谁都不放行', () => {
-    expect(isTester('o-a', { file:path.join(dir, 'missing.txt'), now:1 })).toBe(false);
-  });
-
-  it('改了名单，缓存过期后生效', () => {
-    const file = path.join(dir, 'testers.txt');
-    fs.writeFileSync(file, 'o-a\n');
-    expect(isTester('o-new', { file, now:10 })).toBe(false);
-    fs.writeFileSync(file, 'o-a\no-new\n');
-    expect(isTester('o-new', { file, now:10 + CACHE_MS - 1 })).toBe(false);
-    expect(isTester('o-new', { file, now:10 + CACHE_MS + 1 })).toBe(true);
   });
 });

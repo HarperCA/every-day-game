@@ -1,9 +1,8 @@
-// 赛事助手（体验版）。只给测试名单里的人用；正式提交审核的代码里不含这个云函数。
+// 赛事助手（体验版）。登录用户都能调用（2026-10-17 用户决定不设测试名单）；正式提交审核的代码里不含这个云函数。
 // 设计与取舍见 docs/赛事助手-体验版-第一步后端执行文档.md
 const cloud = require('wx-server-sdk');
 const { validateAskInput } = require('./askValidation');
 const { answer } = require('./assistantCore');
-const { isTester } = require('./testers');
 const { createSecCheck } = require('./secCheck');
 const { createDeepSeekChat } = require('./deepseek');
 const { loadPublicRecords } = require('./publicRecords');
@@ -17,8 +16,7 @@ exports.main = async event => {
   const { OPENID } = cloud.getWXContext();
   if (!OPENID) return { ok:false, message:'unauthenticated' };
   if (event?.action !== 'ask') return { ok:false, message:'unsupported_action' };
-  // 不在名单、参数不合格这两种情况不写对话记录：前者不是测试成员，后者没有有效内容
-  if (!isTester(OPENID)) return { ok:false, message:'assistant_not_tester' };
+  // 参数不合格不写对话记录：没有有效内容
   let input;
   try { input = validateAskInput(event); } catch (error) { return { ok:false, message:error.message }; }
   try {

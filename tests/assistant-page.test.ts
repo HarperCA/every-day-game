@@ -90,12 +90,12 @@ describe('赛事助手对话页', () => {
   });
 
   it('出错：显示看得懂的话，原话放回输入框，可以重新发送', async () => {
-    callAssistant.mockRejectedValueOnce(new Error('assistant_not_tester'));
+    callAssistant.mockRejectedValueOnce(new Error('assistant_ai_failed'));
     const page = makePage();
     page.onLoad();
     await page.send('找比赛');
     const failed = page.data.messages[2];
-    expect(failed).toMatchObject({ role: 'bot', error: true, retryText: '找比赛', text: '赛事助手还在内测，暂时只对测试成员开放。' });
+    expect(failed).toMatchObject({ role: 'bot', error: true, retryText: '找比赛', text: '助手暂时没能回答，请再发一次。' });
     expect(page.data.input).toBe('找比赛');
     callAssistant.mockResolvedValueOnce(answer());
     await page.onRetry({ currentTarget: { dataset: { text: failed.retryText } } });

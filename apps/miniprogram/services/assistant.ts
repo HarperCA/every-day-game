@@ -28,7 +28,6 @@ export function askAssistant(message: string, sessionId: string): Promise<Assist
 
 // 接口错误码 → 给用户看的话（不出现错误码）
 const ERROR_TEXT: Record<string, string> = {
-  assistant_not_tester: '赛事助手还在内测，暂时只对测试成员开放。',
   assistant_input_invalid: `问题不能为空，也不能超过 ${MAX_QUESTION_CHARS} 字。`,
   assistant_timeout: '这次想得太久了，请再发一次。',
   assistant_ai_failed: '助手暂时没能回答，请再发一次。',
