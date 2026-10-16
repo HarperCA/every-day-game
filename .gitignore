@@ -20,3 +20,14 @@ reports/cloudbase-export/
 # 本地临时产物（PDF截图、漏斗快照等），不进仓库
 tmp/
 .claude/scheduled_tasks.lock
+
+# 只留在本地、不进仓库（2026-10-16 用户定）：
+# 数据库快照和运行报告可能含线上/用户数据；比赛名录原始下载体积大；软著、推广、设计稿不属于前后端代码。
+# 已经在仓库里的旧报告不受影响，仍照常跟踪。
+backups/
+reports/
+data/比赛名录/
+docs/软著材料/
+推广素材/
+design/
+/audit_*.tsv
