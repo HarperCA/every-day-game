@@ -1,0 +1,24 @@
+[Unit]
+Description=Competition Radar Beijing user and public API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/daily-contest/server
+Environment=PORT=8787
+Environment=HOST=127.0.0.1
+Environment=DB_FILE=/opt/daily-contest/server/data/app.db
+Environment=FUNCTIONS_DIR=/opt/daily-contest/functions
+Environment=WECHAT_APPID=wxb71625ff1404e4e5
+Environment=WECHAT_APPSECRET_FILE=/opt/daily-contest/secrets/wechat-appsecret
+Environment=PUBLIC_API_ORIGIN=https://154-8-197-241.sslip.io
+ExecStart=/bin/bash -c 'export ADMIN_TOKEN=$(cat /opt/daily-contest/secrets/admin-token) && export DISPATCH_SECRET=$(cat /opt/daily-contest/secrets/dispatch-secret) && export USER_SERVICE_BRIDGE_SECRET=$(cat /opt/daily-contest/secrets/bridge-secret) && export SYNC_SECRET=$(cat /opt/daily-contest/secrets/sync-secret) && exec /usr/bin/node src/index.mjs'
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

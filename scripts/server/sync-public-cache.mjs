@@ -13,9 +13,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { readSourceState, sourceStateFile, writeSourceState } from './sync-source-state.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const STATE_FILE = path.join(HERE, 'plans', 'public-sync-state.json');
 const DB_FILE = process.env.DB_FILE || path.join(HERE, 'server', 'data', 'app.db');
 const COLLECTION = 'event_edition_public_cache';
 // 腾讯云 HTTP 访问服务对请求体有上限（一批 40 条、约 80KB 时返回 413），按大小分批，每批不超过 50KB
@@ -27,13 +27,13 @@ export const isPublic = doc => ['published', 'archived'].includes(doc?.data_stat
   && doc.system_validation === 'passed' && doc.manual_review === 'passed';
 
 // 按序列化后的大小把条目分批；单条超过上限的单独成一批（让上海那边报错，而不是悄悄丢掉）
-export function batchBySize(docs, maxBytes = MAX_BATCH_BYTES) {
+export function batchBySize(docs, maxBytes = MAX_BATCH_BYTES, maxRecords = 100) {
   const batches = [];
   let current = [];
   let size = 0;
   for (const doc of docs) {
     const bytes = Buffer.byteLength(JSON.stringify(doc));
-    if (current.length && size + bytes > maxBytes) { batches.push(current); current = []; size = 0; }
+    if (current.length && (size + bytes > maxBytes || current.length >= maxRecords)) { batches.push(current); current = []; size = 0; }
     current.push(doc);
     size += bytes;
   }
@@ -80,7 +80,7 @@ async function callSync(endpoint, secret, body) {
     body:JSON.stringify({ ...body, secret }), signal:AbortSignal.timeout(60000),
   });
   const result = await response.json().catch(() => null);
-  if (!response.ok || !result?.ok) throw new Error(`上海同步失败（HTTP ${response.status}）：${result?.status || ''} ${result?.error || ''}`.trim());
+  if (!response.ok || !result?.ok) throw new Error(`目标同步失败（HTTP ${response.status}）：${result?.status || ''} ${result?.error || ''}`.trim());
   return result;
 }
 
@@ -93,7 +93,8 @@ async function main() {
   const docs = loadPublicDocs();
   // 防误删：本地一条公开数据都读不到，多半是数据库出问题，不能拿空列表去把上海清空
   if (!docs.length) throw new Error('本地公开数据为 0 条，疑似读库出错，本次不同步');
-  const state = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) : {};
+  const stateFile = sourceStateFile(path.join(HERE, 'plans'), 'public-sync', endpoint);
+  const state = readSourceState(stateFile, endpoint);
   const plan = planSync(docs, state, { full:args.full });
   const stamp = new Date().toISOString();
   if (!plan.upserts.length && !plan.prune) { console.log(`${stamp} 公开数据 ${docs.length} 条，无变化`); return; }
@@ -101,14 +102,15 @@ async function main() {
 
   let saved = 0;
   for (const batch of batchBySize(plan.upserts)) {
-    saved += (await callSync(endpoint, secret, { action:'upsert', records:batch })).saved || 0;
+    const result = await callSync(endpoint, secret, { action:'upsert', records:batch });
+    if (result.saved !== batch.length) throw new Error('公开缓存写入数量不一致，拒绝更新同步状态');
+    saved += result.saved;
   }
   let removed = 0;
   if (plan.prune) removed = (await callSync(endpoint, secret, { action:'prune', keepIds:plan.keepIds })).removed || 0;
 
-  fs.mkdirSync(path.dirname(STATE_FILE), { recursive:true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ hashes:plan.hashes, lastSyncAt:stamp, lastFullAt:plan.fullDue ? stamp : state.lastFullAt }, null, 1));
-  console.log(`${stamp} 公开数据 ${docs.length} 条：推送 ${saved} 条，上海删除 ${removed} 条${plan.fullDue ? '（整体核对）' : ''}`);
+  writeSourceState(stateFile, endpoint, { hashes:plan.hashes, lastSyncAt:stamp, lastFullAt:plan.fullDue ? stamp : state.lastFullAt });
+  console.log(`${stamp} 公开数据 ${docs.length} 条：推送 ${saved} 条，目标删除 ${removed} 条${plan.fullDue ? '（整体核对）' : ''}`);
 }
 
 // 让上海的 publicData 保持运行（2026-10-01）：云开发自己的定时触发器在这个环境不执行，

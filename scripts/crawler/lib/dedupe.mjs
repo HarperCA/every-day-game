@@ -283,9 +283,18 @@ export function matchCandidate(candidate, masters = []) {
 
 export function classifyCandidates(candidates = [], masters = []) {
   const buckets = { duplicate:[], same_event_other_tier:[], likely_duplicate:[], uncertain:[], new:[], invalid:[] };
+  // 一次抓取返回的候选也要互相比对。同一网址可能在同一来源的多个搜索词下出现；
+  // 只和入库记录比对会把这些结果全部判成 new，重复消耗后续抽取额度。
+  const seenUrls = new Map();
   for (const candidate of candidates) {
-    const match = matchCandidate(candidate, masters);
+    const key = urlKey(candidate?.detailUrl);
+    const earlier = key && seenUrls.get(key);
+    const match = earlier
+      ? { verdict:'duplicate', matchedId:earlier.match.verdict === 'duplicate' ? earlier.match.matchedId : null,
+        confidence:1, reason:`同批候选网址与「${earlier.candidate.name}」相同` }
+      : matchCandidate(candidate, masters);
     buckets[match.verdict].push({ candidate, match });
+    if (key && match.verdict !== 'invalid' && !earlier) seenUrls.set(key, { candidate, match });
   }
   return buckets;
 }

@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BUILTIN_HOSTS, loadBlockedSites } from './site-blocklist.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MAX_RESULTS = 10;
@@ -24,19 +25,67 @@ export function recordRawSearch(engine, query, status, body) {
   try { fs.appendFileSync(file, `${JSON.stringify({ at:new Date().toISOString(), engine, query, status, body })}\n`, 'utf8'); } catch { /* 保存失败不影响搜索 */ }
 }
 
+// 百度每天的总用量（2026-10-10 用户定）：自动任务每天最多 30 次，剩下的留给手动测试。
+// 百度的调用分散在几个程序里（夜间搜索、通知追溯代理、补读正式通知、记录追溯），各自只管自己的份额，
+// 合起来会超；这里用一个共享的计数文件按北京时间的日期记总数，每次调用前先领一次，领不到就不调。
+// 手动测试时设环境变量 BAIDU_MANUAL=1：单独记在 manual 里，不受 30 次限制，也不占自动任务的份额。
+export const BAIDU_DAILY_AUTO_LIMIT = 30;
+const BAIDU_USAGE_FILE = path.join(HERE, 'state', 'baidu-usage.json');
+const beijingDate = now => new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10);
+export function takeBaiduQuota({ caller = '', now = new Date(), file = process.env.BAIDU_USAGE_FILE || BAIDU_USAGE_FILE,
+  limit = Number(process.env.BAIDU_DAILY_LIMIT) || BAIDU_DAILY_AUTO_LIMIT, manual = process.env.BAIDU_MANUAL === '1' } = {}) {
+  const date = beijingDate(now);
+  let usage = {};
+  try { usage = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* 第一次或文件坏了，从 0 记 */ }
+  if (usage.date !== date) usage = { date, auto:0, manual:0, byCaller:{} };
+  if (!manual && usage.auto >= limit) return { ok:false, used:usage.auto, limit };
+  usage[manual ? 'manual' : 'auto'] += 1;
+  if (caller) usage.byCaller[caller] = (usage.byCaller[caller] || 0) + 1;
+  fs.mkdirSync(path.dirname(file), { recursive:true });
+  fs.writeFileSync(file, JSON.stringify(usage, null, 2), 'utf8');
+  return { ok:true, used:usage.auto, limit };
+}
+// 领不到时抛出的错误带 http_429 字样，各处原有的“额度用完”处理照常生效
+export function requireBaiduQuota(caller) {
+  const quota = takeBaiduQuota({ caller });
+  if (!quota.ok) throw new Error(`http_429: baidu_daily_auto_limit 今日自动任务已用 ${quota.used}/${quota.limit} 次百度搜索，剩下的留给测试`);
+}
+
 const readKey = file => { try { return fs.readFileSync(path.join(HERE, file), 'utf8').trim().replace(/^[A-Z_]+=/, ''); } catch { return ''; } };
 const clipText = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
 const normalize = item => ({ title:clipText(item?.title, 200), url:String(item?.url || ''), content:clipText(item?.content || item?.snippet, 600), date:clipText(item?.date || item?.publishedAt, 20) });
 const withTimeout = ms => AbortSignal.timeout(ms);
 
 // ---- 百度千帆 AI 搜索 ----
-export function baiduEngine({ key = readKey('.baidu-search-key'), fetchImpl = globalThis.fetch } = {}) {
+// 通知追溯、补读正式通知用的百度搜索（2026-10-09 起）：屏蔽转载、问答、聚合站和微信公众号文章（含子站），
+// 它们不是主办方原文，公众号文章追溯时也读不了，搜出来只会白占结果位置。学校网站不屏蔽：不少赛事官网挂在 edu.cn 下。
+// 官方参数说明：https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5
+// 2026-10-12 起和夜间搜索共用一份名单（site-blocklist.mjs：内置 + 后台确认），微信公众号已在内置名单里
+export const TRACE_BLOCKED_WEBSITES = BUILTIN_HOSTS;
+// 百度可选的搜索范围（2026-10-10 用户要求，给通知追溯代理用；官方文档 https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5）：
+//   site：只在这个网站里搜（search_filter.match.site，填不带协议的域名；官方注明为限时免费的付费功能）
+//   recent：只要近期发布的网页（search_recency_filter：week 7 天、month 30 天、semiyear 180 天、year 365 天）
+export const BAIDU_RECENCY = ['week', 'month', 'semiyear', 'year'];
+export function normalizeSite(value) {
+  const host = String(value || '').trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[/?#].*$/, '').replace(/:\d+$/, '');
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) ? host : '';
+}
+export function baiduSearchBody(query, { site = '', recent = '', blocked = TRACE_BLOCKED_WEBSITES } = {}) {
+  const host = normalizeSite(site);
+  return { messages:[{ content:query, role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:MAX_RESULTS }],
+    block_websites:blocked, query_policy:{ enable_rewrite:true },
+    ...(host ? { search_filter:{ match:{ site:[host] } } } : {}), ...(BAIDU_RECENCY.includes(recent) ? { search_recency_filter:recent } : {}) };
+}
+// blocked：屏蔽名单，不给就读 site-blocklist.mjs 的（内置 + 后台确认）
+export function baiduEngine({ key = readKey('.baidu-search-key'), fetchImpl = globalThis.fetch, caller = 'trace', blocked = null } = {}) {
   return {
     name:'baidu', label:'百度', key,
-    async search(query) {
+    async search(query, options = {}) {
+      requireBaiduQuota(caller);
+      const sites = blocked || await loadBlockedSites();
       const request = () => fetchImpl('https://qianfan.baidubce.com/v2/ai_search/web_search', {
         method:'POST', headers:{ 'X-Appbuilder-Authorization':`Bearer ${key}`, 'Content-Type':'application/json' },
-        body:JSON.stringify({ messages:[{ content:query, role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:MAX_RESULTS }] }),
+        body:JSON.stringify(baiduSearchBody(query, { ...options, blocked:sites })),
         signal:withTimeout(20000),
       });
       let response;
@@ -51,17 +100,31 @@ export function baiduEngine({ key = readKey('.baidu-search-key'), fetchImpl = gl
 }
 
 // ---- Kimi 会员通道的搜索（kimi-cli 的 SearchWeb 用的同一个接口，官方配置文档里有） ----
-export function kimiEngine({ key = readKey('.ai-key'), fetchImpl = globalThis.fetch } = {}) {
+// 服务端错误（5xx）等 retryDelayMs 后重试一次（2026-10-12）。
+// 带 site: 的搜索在那个网站里没有结果时，接口不返回空列表，而是报 500（2026-10-11 实测：同一查询连搜两次都是 500，
+// 换成不存在的网站也是 500；不带 site: 的搜索没结果时正常返回 200）。重试后仍是 500 的 site: 搜索按“没有结果”返回，
+// 不算引擎故障——否则搜索器连续两次失败就整晚停用 Kimi 搜索（10/11、10/12 两晚开跑几分钟就被停掉），
+// 处置代理也会因为一次搜索失败整条记录判失败。不带 site: 的 500 仍按失败处理。
+export function kimiEngine({ key = readKey('.ai-key'), fetchImpl = globalThis.fetch, retryDelayMs = 2000 } = {}) {
   return {
     name:'kimi', label:'Kimi', key,
     async search(query) {
-      const response = await fetchImpl('https://api.kimi.com/coding/v1/search', {
-        method:'POST', headers:{ 'content-type':'application/json', authorization:`Bearer ${key}`, 'X-Msh-Tool-Call-Id':crypto.randomUUID() },
-        body:JSON.stringify({ text_query:query, limit:MAX_RESULTS, enable_page_crawling:false, timeout_seconds:30 }),
-        signal:withTimeout(40000),
-      });
-      const raw = await response.text();
-      recordRawSearch('kimi', query, response.status, raw);
+      const request = async () => {
+        const response = await fetchImpl('https://api.kimi.com/coding/v1/search', {
+          method:'POST', headers:{ 'content-type':'application/json', authorization:`Bearer ${key}`, 'X-Msh-Tool-Call-Id':crypto.randomUUID() },
+          body:JSON.stringify({ text_query:query, limit:MAX_RESULTS, enable_page_crawling:false, timeout_seconds:30 }),
+          signal:withTimeout(40000),
+        });
+        const raw = await response.text();
+        recordRawSearch('kimi', query, response.status, raw);
+        return { response, raw };
+      };
+      let { response, raw } = await request();
+      if (response.status >= 500) {
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        ({ response, raw } = await request());
+      }
+      if (response.status === 500 && /(^|\s)site:\S/i.test(query)) return { references:[] };
       if (!response.ok) throw new Error(`http_${response.status}`);
       const payload = JSON.parse(raw);
       // 接口不一定遵守 limit（实测 limit=10 返回过 14 条），自己截断
@@ -127,13 +190,14 @@ export async function kimiFetchPage(url, { key = readKey('.ai-key'), fetchImpl =
 export function createSearcher(engines) {
   const state = engines.map(({ engine, budget }) => ({ engine, left:Math.max(0, budget), failures:0, used:0, disabled:!engine.key }));
   return {
-    async search(query) {
+    // options（site、recent）只有百度认；换到其他引擎时照常只按搜索词搜
+    async search(query, options = {}) {
       const attempts = [];
       for (const slot of state) {
         if (slot.disabled || slot.left <= 0) continue;
         const startedAt = Date.now();
         try {
-          const result = await slot.engine.search(query);
+          const result = await slot.engine.search(query, options);
           slot.left -= 1; slot.used += 1; slot.failures = 0;
           attempts.push({ engine:slot.engine.name, label:slot.engine.label, ok:true, returned:result.references.length, ms:Date.now() - startedAt, ...(result.usage ? { usage:result.usage } : {}) });
           return { engine:slot.engine.name, label:slot.engine.label, references:result.references, attempts };

@@ -1,0 +1,10 @@
+[Unit]
+Description=竞赛雷达每周统计建议屏蔽的网站（近 30 天百度结果里出现很多次、从没被放行或追溯成功的；只写建议，后台确认后才生效）
+After=daily-contest-api.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/daily-contest
+ExecStart=/usr/bin/node /opt/daily-contest/site-block-suggest.mjs
+StandardOutput=append:/var/log/daily-contest-site-block.log
+StandardError=append:/var/log/daily-contest-site-block.log

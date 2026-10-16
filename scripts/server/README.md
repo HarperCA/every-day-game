@@ -60,12 +60,14 @@
 | 02:00 | `scheduled-archive.sh` | 报名已截止的已发布赛事转为已归档 |
 | 02:15 | `trace-drafts.mjs` | 给信息不全的草稿搜补充线索（只记线索，不改字段） |
 | 02:30 | `scheduled-rescore-review-drafts.sh` → `rescore-review-drafts.mjs` | 给待审草稿重新打分 |
-| 02:40 | `draft-triage-expire-trace.mjs` | 追溯到期仍没结果的草稿转入隔离 |
+| 02:40 | `draft-triage-expire-trace.mjs` | 追溯到期的草稿标记待核查，保持草稿状态 |
 | 03:00 | `scheduled-stale-draft-check.sh` | 标出超过 3 天没处理的草稿 |
 | 03:20 | `route-ledger.mjs` | 统计每条搜索路线产出了多少合格赛事 |
 | 03:40 | `verify-public-cache.mjs` | 发布验收：小程序看到的数据和库里是否一致 |
 | 03:50 | `organizer-watch.mjs` | 打开已知主办方的通知栏目，看有没有新通知 |
 | 12:17 | `backup-db.sh` | ★ 数据库每日备份到 `backups/app-日期.db.gz`，保留 14 天（crontab） |
+
+部署 02:40 到期任务时，须将 `draft-triage-expire-trace.mjs` 与同目录的 `trace-expiry.mjs` 一起同步到 `/opt/daily-contest/`。
 
 定时配置在 `/etc/systemd/system/daily-contest-*.timer` 和 `.service`，仓库里是 `scripts/server/daily-contest-*`。
 （timer 文件里写的是 UTC 时间，加 8 小时是北京时间。）
@@ -141,3 +143,11 @@ systemctl restart daily-contest-api
 | `.dispatch-secret` | 定时任务调后端的内部口令 |
 
 不要打开、截图、提交到 git 或发给别人。
+
+## Kimi 审查后的处置（2026-10-09）
+
+通用审查或名称、报名日期、官网复核不通过时，交由 Kimi 代理搜索并读取官方来源，补齐字段后独立复核。后台决定最终状态：符合要求发布，确认报名结束归档，补查后仍无法核实或重复记录删除。筛选指标没有官方原文支持时标记未明确，不猜测。
+
+网络、模型配额及网页读取故障保留原记录并退避重试，不作为删除依据。长时间核验保存前重新读取数据，跳过期间已被修改的记录。
+
+调度器删除在同一事务中移除公开缓存，并将完整记录、证据、原因写入 `ai_resolution_backups`，处置理由写入审计日志。抓取和草稿复检删除备份保存在服务器备份目录，审计备注包含路径。搜索模块配置为 `KIMI_AGENT_SEARCH_MODULE=/opt/daily-contest/search-engines.mjs`。

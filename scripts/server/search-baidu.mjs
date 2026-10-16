@@ -19,7 +19,8 @@
 // URL，并且照样走 robots.txt 检查，不会因为「来自搜索结果」就绕开）。
 //
 // 用法：node search-baidu.mjs [--queries 4] [--out ../../reports/baidu-search-candidates.json]
-import { recordRawSearch } from './search-engines.mjs';
+import { recordRawSearch, requireBaiduQuota } from './search-engines.mjs';
+import { BUILTIN_HOSTS, loadBlockedSites } from './site-blocklist.mjs';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -37,6 +38,20 @@ const KEY_FILE = path.join(HERE, '.baidu-search-key');
 const SEARCH_URL = 'https://qianfan.baidubce.com/v2/ai_search/web_search';
 const SOURCE_NAME = '百度AI搜索';
 const WEB_RESULTS_PER_QUERY = 50; // 百度网页模态允许的最大值；计费按调用次数，不按返回条数。
+// 2026-10-09 起按百度官方 web_search 参数提高精度（https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5）：
+// · enable_rewrite：我们的搜索词是长句，让百度自己改写（官方称多 10～20 毫秒）
+// · 发布时间只要最近 4 个月（search_filter.range.page_time）：去掉往年旧通知和旧转发。
+//   官方快捷值只有 3 个月、6 个月，4 个月要按北京时间算出具体日期；起止日期必须同时给，否则不生效。
+// · block_websites：屏蔽这些站及其子站。名单在 site-blocklist.mjs：内置名单 + 后台“屏蔽网站”页确认的（2026-10-12 起）。
+//   学校网站不屏蔽，学校转发还要用来追溯官方通知。
+export const BLOCKED_WEBSITES = BUILTIN_HOSTS;
+export const RECENT_MONTHS = 4;
+export function recentPageTimeRange(now = new Date(), months = RECENT_MONTHS) {
+  const beijing = new Date(now.getTime() + 8 * 3600000);
+  const from = new Date(Date.UTC(beijing.getUTCFullYear(), beijing.getUTCMonth() - months, beijing.getUTCDate()));
+  // 月底往前推可能跨月（如 6 月 31 日不存在），Date.UTC 会自动顺延，误差最多几天，不影响用途
+  return { gte: from.toISOString().slice(0, 10), lte: beijing.toISOString().slice(0, 10) };
+}
 
 // 按用户确定的「最近可报名的大学生 + 专业 + 竞赛」逐专业搜索。
 // 搜索词只负责发现；是否仍可报名必须读取当届官方日期后核验。
@@ -207,7 +222,13 @@ export function toCandidate(reference, query, route = DEFAULT_ROUTE) {
   };
 }
 
-async function searchOnce(apiKey, query) {
+export function sortNewestFirst(references) {
+  const at = reference => { const value = Date.parse(String(reference?.date || reference?.page_time || '').replace(' ', 'T')); return Number.isFinite(value) ? value : -Infinity; };
+  return [...references].sort((a, b) => at(b) - at(a));
+}
+
+async function searchOnce(apiKey, query, blocked = BLOCKED_WEBSITES) {
+  requireBaiduQuota('nightly');
   const request = () => fetch(SEARCH_URL, {
     method: 'POST',
     headers: { 'X-Appbuilder-Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -215,6 +236,9 @@ async function searchOnce(apiKey, query) {
       messages: [{ content: query, role: 'user' }],
       search_source: 'baidu_search_v2', // 必须带，否则可能不触发真实检索
       resource_type_filter: [{ type: 'web', top_k: WEB_RESULTS_PER_QUERY }],
+      query_policy: { enable_rewrite: true },
+      search_filter: { range: { page_time: recentPageTimeRange() } },
+      block_websites: blocked,
     }),
     signal: AbortSignal.timeout(20000),
   });
@@ -235,6 +259,8 @@ async function searchOnce(apiKey, query) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const apiKey = readKey();
+  const blocked = await loadBlockedSites({ log:console.log });
+  console.log(`屏蔽网站 ${blocked.length} 个（内置 ${BUILTIN_HOSTS.length}，后台确认 ${blocked.length - BUILTIN_HOSTS.length}）`);
   const year = new Date().getFullYear();
   const planned = args.plan ? queriesFromPlan(JSON.parse(fs.readFileSync(args.plan, 'utf8'))) : [];
   const entries = planned.length ? planned
@@ -260,7 +286,7 @@ async function main() {
     perQuery.set(query, tally);
     let references;
     try {
-      references = await searchOnce(apiKey, query);
+      references = await searchOnce(apiKey, query, blocked);
     } catch (error) {
       failures.push({ query, error: error instanceof Error ? error.message : String(error) });
       console.log(`  失败: ${error instanceof Error ? error.message : error}`);
@@ -269,7 +295,8 @@ async function main() {
     stats.referencesTotal += references.length;
     tally.references = references.length;
     const route = routeOf.get(query) || DEFAULT_ROUTE;
-    for (const reference of references) {
+    // 最新的排前面（2026-10-10 用户要求）：百度接口没有按时间排序的参数，只能限定近 4 个月；拿到后按发布日期从新到旧排，没有日期的排最后
+    for (const reference of sortNewestFirst(references)) {
       const { reason, candidate } = screenReference(reference, query, route, seen);
       if (reason) {
         dropped.push(droppedEntry(reference, query, route, reason));

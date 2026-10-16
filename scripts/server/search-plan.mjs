@@ -3,7 +3,8 @@
 // 额度（2026-09-24 用户确定 60/25/15）：
 //   追溯线索与主办方监测 60%：一部分留给抓取流水线里的通知追溯，其余给“缺当届官方原文”的草稿和待审记录，
 //                            用赛事全名找当届通知，结果挂到记录上作线索（trace-drafts.mjs 执行）。
-//   覆盖空白 25%：按专业搜索，优先库里已发布、已归档赛事最少的专业大类。
+//   覆盖空白 25%：按专业搜索。2026-10-11 起改用教育部 2026 年本科专业目录的 883 个细分专业轮换（planMajorQueries）：
+//                 原先十几个大类词（法学、材料科学……）天天重复搜，28 天 259 次只出了 7 条；细分专业更容易搜到学会、行业办的小众比赛。
 //   新词试探 15%：只用已核验来源里出现过、库里还没有的赛事名（目前是四省立项目录），不自己造词。
 // 连续两次零候选的查询暂停，冷却期 2、4、8……天（上限 32 天），到期自动恢复，不永久封死。
 //
@@ -19,10 +20,12 @@ import { professionQuery } from './search-baidu.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLAN_DIR = path.join(HERE, 'plans');
 const STATE_FILE = path.join(PLAN_DIR, 'search-plan-state.json');
-// 千帆免费额度按月 1500 次、按天分配，约每天 50 次；留 5 次给手动补跑与诊断。
-export const DEFAULT_BUDGET = 45;
-// 抓取流水线里通知追溯每轮最多 10 次（resolve-notice-leads.mjs 的 searchBatch），从追溯额度里先扣。
-export const NOTICE_FOLLOWUP_CALLS = 10;
+// 千帆免费额度约每天 50 次。2026-10-10 用户定：自动任务每天最多 30 次（search-engines.mjs 的共享计数硬性拦住），剩下 20 次留给测试。
+// 同日再定：30 次全部给细分专业（覆盖空白）。通知追溯代理、补读正式通知改用 Kimi 搜索，记录追溯和新词试探不再分百度额度。
+export const DEFAULT_BUDGET = 30;
+export const ALL_TO_MAJORS = true;
+// 通知追溯代理的百度份额（2026-10-10 起为 0，代理只用 Kimi 搜索）
+export const NOTICE_FOLLOWUP_CALLS = 0;
 const MAX_QUERY_BYTES = 72; // 接口限制：查询最长 72 字节，汉字算 2。
 
 // 专业关键词 → 库里的十三类专业大类（“综合/不限专业”不参与覆盖空白）。
@@ -101,6 +104,38 @@ export function planTraceTargets(records, count, now) {
     }));
 }
 
+// 细分专业轮换（2026-10-11 起，用户定）：词库是 majors-2026.json（教育部《普通高等学校本科专业目录（2026年）》，883 种专业）。
+// 顺序（2026-10-10 用户定）：①门类在校生人数从少到多（教育部 2022 年《普通本科分学科门类学生数》；交叉学科今年新设、没有统计，排最前）；
+// ②同一门类里先搜今年新增的专业，再搜带“T”的特设专业，最后是基本专业；③再按专业代码。每个专业一次搜索。
+// 搜过的 30 天内不再搜（不管搜索那一步有没有候选——原先按“候选”冷却，大类词每次都有候选、永远不停）。
+export const MAJOR_REPEAT_DAYS = 30;
+let majorsCache = null;
+export function loadMajors(file = path.join(HERE, 'majors-2026.json')) {
+  if (!majorsCache) majorsCache = readJson(file, { majors:[] }).majors || [];
+  return majorsCache;
+}
+export const majorQuery = (name, year) => fitQuery(`${String(name).trim()} 大学生 竞赛`, `${year} 报名`);
+const majorTier = major => major.new2026 ? 0 : /T/.test(major.code) ? 1 : 2;
+const TIER_LABEL = ['今年新增', '特设专业', '基本专业'];
+export function orderMajors(majors) {
+  const enrol = major => (major.gateEnrollment === null || major.gateEnrollment === undefined ? -1 : major.gateEnrollment);
+  return [...majors].sort((a, b) => enrol(a) - enrol(b) || majorTier(a) - majorTier(b) || a.code.localeCompare(b.code));
+}
+export function planMajorQueries(majors, count, state, now, year) {
+  const cutoff = now.getTime() - MAJOR_REPEAT_DAYS * 86400000;
+  const picked = [];
+  for (const major of orderMajors(majors)) {
+    if (picked.length >= count) break;
+    const query = majorQuery(major.name, year);
+    const at = Date.parse(state.queries?.[query]?.lastRunAt || '') || 0;
+    if (at >= cutoff || paused(state, query, now) || picked.some(item => item.query === query)) continue;
+    picked.push({ route:ROUTES.gap, query, major:major.name, majorCode:major.code, majorClass:major.cls, gate:major.gate,
+      reason:`细分专业“${major.name}”（${major.gate}·${major.cls}，代码 ${major.code}，${TIER_LABEL[majorTier(major)]}；门类在校生 ${major.gateEnrollment ?? '无统计'}）：${at ? `上次搜索 ${new Date(at).toISOString().slice(0, 10)}` : '从未搜过'}` });
+  }
+  return picked;
+}
+
+// 旧的大类词挑法（2026-10-11 起不再使用，保留给对比和测试）
 export function planGapQueries(records, count, state, now, year) {
   const covered = Object.fromEntries([...new Set(Object.values(PROFESSION_CATEGORY))].map(category => [category, 0]));
   for (const record of records) {
@@ -159,11 +194,11 @@ export function updateCooldown(state, perQuery, now) {
   return next;
 }
 
-export function buildPlan({ records, directoryEntries, state, now, budget = DEFAULT_BUDGET, ledger = null, scopeOk }) {
+export function buildPlan({ records, directoryEntries, state, now, budget = DEFAULT_BUDGET, ledger = null, scopeOk, majors = null }) {
   const year = now.getFullYear();
-  const quota = allocate(budget);
+  const quota = ALL_TO_MAJORS ? { [ROUTES.trace]:NOTICE_FOLLOWUP_CALLS, [ROUTES.gap]:budget - NOTICE_FOLLOWUP_CALLS, [ROUTES.probe]:0 } : allocate(budget);
   const traceTargets = planTraceTargets(records, quota[ROUTES.trace] - NOTICE_FOLLOWUP_CALLS, now);
-  const gap = planGapQueries(records, quota[ROUTES.gap], state, now, year);
+  const gap = planMajorQueries(majors || loadMajors(), quota[ROUTES.gap], state, now, year);
   const probe = planProbeQueries(records, directoryEntries, quota[ROUTES.probe], state, now, scopeOk);
   return {
     date:now.toISOString(), budget, share:ROUTE_SHARE, quota,

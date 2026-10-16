@@ -12,12 +12,11 @@
 //   1. 发现时报名已截止 —— 直接归档，不进审核队列
 //   2. 没公布报名时间 —— 按库里同名往届的报名时间推算一个
 //   3. （真实或推算的）报名时间半年以内 —— 送三项核验（名称/报名时间/链接），
-//      三项都对且专业分类判断得有把握 —— 自动发布；否则转人工
-//   4. 半年以外 —— 先放草稿，不占审核队列，等接近了下次重跑再核验
-//   5. 没有时间信息、也找不到往届参照 —— 转人工
+//      三项都对且专业分类判断得有把握 —— 自动发布；否则由 Kimi 代理补查并发布、归档或删除
+//   4. 半年以外或没有时间信息 —— 代理寻找正式通知并完成发布、归档或删除
 //
 // 三条纪律不变：
-//   1. 没被自动发布/归档的，一律 draft，manualReview=pending。
+//   1. 审查失败及时间缺失的由代理完成处置；基础设施故障保留重试。
 //   2. 按 id 去重。重跑只更新既有草稿，不会产生第二条。
 //   3. 已经人工或系统动过的记录（manualReview 不再是 pending，或 dataStatus
 //      不再是 draft）一律跳过 —— 抓取不能覆盖已经做过的判断。
@@ -54,6 +53,7 @@ function primeAiEnv() {
   return true;
 }
 const aiConfigured = primeAiEnv();
+process.env.KIMI_AGENT_SEARCH_MODULE ||= path.join(HERE, 'search-engines.mjs');
 
 // review 档的二次判断走 EXTRACT_ 前缀配置，跟批量抽取共用 .extract-key——
 // 这是突发型负载（一天上百条），按量计费的 DeepSeek 比 Kimi 会员制窗口
@@ -74,9 +74,11 @@ const { candidateToRecord, withVerifiedName, PLATFORM_SOURCES } = require(path.j
 const { blockedTitleReason, isNoticeTitle, isNonEventTitle } = require(path.join(CJS_DIR, 'noticeResolution.js'));
 const { isClearlyOutOfScope, classifyCompetitionScope, assessIntakeRecord } = require(path.join(CJS_DIR, 'competitionScope.js'));
 const { assessAdmission } = require(path.join(CJS_DIR, 'competitionAdmission.js'));
+const { toPublicCache } = require(path.join(CJS_DIR, 'publicCache.js'));
 const { judgeAdmissionWithAi } = require(path.join(CJS_DIR, 'competitionAdmissionAi.js'));
 const { classifyIntake, applyFieldVerification } = require(path.join(CJS_DIR, 'intakeSchedule.js'));
 const { runFieldVerification, PROFESSION_TAXONOMY } = require(path.join(CJS_DIR, 'competitionAiReview.js'));
+const { resolveFailedCompetition } = require(path.join(CJS_DIR, 'kimiReviewDisposition.js'));
 const { buildReasoningDoc, thinkingEnabled } = require(path.join(CJS_DIR, 'aiReasoning.js'));
 
 // 本次运行里 AI 的思考过程（2026-09-30 测试阶段：所有模型的思考都打开并记录，见 cjs/aiReasoning.js）。
@@ -135,11 +137,10 @@ async function fillDraftProfessions(record) {
   return record;
 }
 
-// admit 候选的时间分档 + 核验入口。verdict !== 'admit' 的候选不调用这个函数，
-// 维持原来的"一律草稿"。
-async function applyIntakeDecision(record, existingRecords, now = new Date()) {
+// admit 走字段核验，review 直接交给代理补证；仅基础设施异常临时保留草稿。
+async function applyIntakeDecision(record, existingRecords, now = new Date(), options = {}) {
   const classification = classifyIntake(record, existingRecords, now);
-  if (classification.decision === 'archive') {
+  if (classification.decision === 'archive' && record.admissionVerdict !== 'review') {
     return {
       record:{
         ...record,
@@ -155,22 +156,28 @@ async function applyIntakeDecision(record, existingRecords, now = new Date()) {
       label:'archive',
     };
   }
-  if (classification.decision === 'hold' || classification.decision === 'manual_review') {
+  if (options.dryRun || !aiConfigured) {
+    const error = options.dryRun ? 'dry-run：未调用付费审核或代理' : '服务器未配置 Kimi 审核密钥，保留重试';
     return {
-      // hold 是故意先放着（报名时间还早），要豁免 3 天超时提醒；
-      // manual_review 没有时间信息、需要人判断，不豁免——3天没人处理就该报出来。
-      record:{ ...record, qualityIssues:[...record.qualityIssues, classification.reason], stalenessExempt:classification.decision === 'hold' },
-      label:classification.decision === 'hold' ? 'hold' : 'review',
+      record:{ ...record, stalenessExempt:false, qualityIssues:[...record.qualityIssues, error],
+        ...(!options.dryRun ? { aiResolutionFailure:{ error, failedAt:now.toISOString(), retryAfter:new Date(now.getTime() + 30 * 60000).toISOString() } } : {}) },
+      label:'review',
     };
   }
   // kimi_review
-  if (classification.estimatedRegistrationStart) {
+  if (classification.decision === 'kimi_review' && classification.estimatedRegistrationStart) {
     record = { ...record, schedule:{ ...record.schedule, registration_start:classification.estimatedRegistrationStart }, scheduleEstimated:true };
   }
-  if (!aiConfigured) {
-    return { record:{ ...record, qualityIssues:[...record.qualityIssues, '进入半年审核窗口，但服务器未配置 AI 密钥，暂转人工'] }, label:'review' };
-  }
   try {
+    if (record.admissionVerdict === 'review' || classification.decision === 'hold' || classification.decision === 'manual_review') {
+      const resolution = await resolveFailedCompetition(record, {
+        decision:'insufficient_evidence', summary:record.admissionVerdict === 'review'
+          ? '收录判断或官方字段尚未通过，需要搜索官方通知补证后完成处置'
+          : classification.reason || '报名时间或官方字段仍需补证',
+      }, { records:existingRecords, now, onReasoning:logReasoning(record, { stage:'时间缺失或远期候选代理补查' }) });
+      return { ...resolution, label:resolution.outcome === 'published' ? 'auto-publish'
+        : resolution.outcome === 'archived' ? 'archive' : resolution.outcome === 'draft' ? 'review' : 'delete' };
+    }
     const verification = await runFieldVerification(record, undefined, { chatTimeoutMs:180000, maxTokens:8000, onReasoning:logReasoning(record, { stage:'入库三项核验' }) });
     const readable = verification.evidence_status?.some(item => item.status === 'reachable' && item.chars > 100);
     const supported = (verification.professions || []).filter(item => PROFESSION_TAXONOMY.includes(item));
@@ -179,6 +186,14 @@ async function applyIntakeDecision(record, existingRecords, now = new Date()) {
       summary:`来源正文不可读，不能据此填写专业分类或自动发布；${verification.summary}`,
     };
     let updated = applyFieldVerification(record, safeVerification, now);
+    if (updated.dataStatus !== 'published') {
+      const resolution = await resolveFailedCompetition(record, safeVerification, {
+        records:existingRecords, now,
+        onReasoning:logReasoning(record, { stage:'入库审核失败后代理补查' }),
+      });
+      return { ...resolution, label:resolution.outcome === 'published' ? 'auto-publish'
+        : resolution.outcome === 'archived' ? 'archive' : resolution.outcome === 'draft' ? 'review' : 'delete' };
+    }
     // 2026-09-30 起测试：AI 思考全部打开，自动发布照常，但在后台“审核发布”的发布状态旁留一条备注，
     // 提醒人工点“AI思考过程”核对。只给后台看，公开缓存是字段白名单，小程序端看不到。
     if (updated.dataStatus === 'published' && thinkingEnabled()) {
@@ -187,7 +202,8 @@ async function applyIntakeDecision(record, existingRecords, now = new Date()) {
     return { record:updated, label:updated.dataStatus === 'published' ? 'auto-publish' : 'review' };
   } catch (error) {
     return {
-      record:{ ...record, qualityIssues:[...record.qualityIssues, `三项核验调用失败（${String(error?.message || error).slice(0, 120)}），转人工`] },
+      record:{ ...record, qualityIssues:[...record.qualityIssues, `三项核验或代理调用失败（${String(error?.message || error).slice(0, 120)}），保留重试`],
+        aiResolutionFailure:{ error:String(error?.message || error).slice(0, 500), failedAt:now.toISOString(), retryAfter:new Date(now.getTime() + 30 * 60000).toISOString() } },
       label:'review',
     };
   } finally {
@@ -243,9 +259,10 @@ async function main() {
   const call = async data => {
     const response = await fetch(`${API_BASE}/api/adminData`, {
       method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ adminToken, ...data }),
+      signal:AbortSignal.timeout(30000),
     });
     const result = await response.json();
-    if (!result?.ok) throw new Error(result?.message || 'adminData 返回异常');
+    if (!response.ok || result?.ok !== true) throw new Error(result?.message || 'adminData 返回异常');
     return result.data;
   };
 
@@ -256,6 +273,7 @@ async function main() {
   const existing = Array.isArray(snapshot?.records) ? snapshot.records : null;
   const version = snapshot?.stateVersions?.records;
   if (existing === null) throw new Error('bootstrap 未返回 records 数组，拒绝写入');
+  if (!Number.isInteger(version) || version < 0) throw new Error('bootstrap 未返回有效版本，拒绝无乐观锁写入');
   console.log(`库中现有 ${existing.length} 条，version=${version}`);
   // saveRecords 是整表替换。读到空表要么库真的空，要么读法又错了 ——
   // 后者的代价是抹掉全部数据，所以默认拒绝，必须显式确认。
@@ -267,6 +285,7 @@ async function main() {
   const next = [...existing];
   const added = [];
   const updated = [];
+  const deleted = [];
   const skipped = [];
   const scopeHeld = [];
   const superseded = []; // 被新一届替代的往届记录
@@ -286,7 +305,7 @@ async function main() {
     // 读完详情、拿到真实比赛名之后，再和库里比一次：名字规范化后完全一致的，不再新增，给已有那条补来源（same-name-supplement.mjs）。
     // 平台登记的赛事（天池、辽宁平台）按网址判重，不在这里按名字拦：同名往往是不同届。
     if (!PLATFORM_SOURCES.has(candidate.discovery?.source)) {
-      const same = findSameNameRecord(candidate.name, next);
+      const same = findSameNameRecord(candidate.name, next, { ...rawCandidate, ...candidate });
       // AI 判重裁决认定这是同一场比赛的新一届、库里同名的只是往届已归档记录：新的替代旧的，不能再当成“同名已有”挡掉
       const newEdition = rawCandidate.dedupeArbitration?.relation === 'new_edition' && same?.dataStatus === 'archived';
       if (same && !newEdition) {
@@ -333,7 +352,7 @@ async function main() {
     // "这个主办方靠不靠谱"这种需要理解上下文的事。红旗直接拒收的不会走
     // 到这里——那些信号本身可靠，不需要用主观判断去"求情"。
     let admissionJudgment = null;
-    if (verdict === 'review' && extractAiConfigured) {
+    if (verdict === 'review' && extractAiConfigured && !args.dryRun) {
       try {
         admissionJudgment = await judgeAdmissionWithAi(merged, undefined, { onReasoning:logReasoning(record, { stage:'收录判断' }) });
         if (admissionJudgment.worth_including && admissionJudgment.confident) verdict = 'admit';
@@ -360,9 +379,7 @@ async function main() {
 
     if (args.onlyAdmitted && verdict !== 'admit') { skipped.push([candidate.name, `门槛 ${verdict}`]); continue; }
 
-    // admit 档稍后在 applyIntakeDecision 中进行 Kimi 三项核验并填写专业。
-    // review 档不会自动发布，但也要请 Kimi 根据可读来源填写专业分类。
-    if (verdict === 'review') record = await fillDraftProfessions(record);
+    // admit 和 review 统一完成处置；专业分类由核验或代理补齐，不另留专业分类草稿。
 
     // candidateToRecord 每次都从零构造，firstSeenAt 要么继承自已有草稿、
     // 要么这是它第一次真正入库——3天超时判断就靠这个字段撑住，绝不能
@@ -386,17 +403,22 @@ async function main() {
     }
 
     let label = verdict;
-    if (verdict === 'admit') {
-      const outcome = await applyIntakeDecision(record, next, now);
+    if (verdict === 'admit' || verdict === 'review') {
+      const attemptedRecord = record;
+      const outcome = await applyIntakeDecision(record, next, now, { dryRun:args.dryRun });
       record = outcome.record;
       label = outcome.label;
+      if (!record) {
+        deleted.push({ id:current?.id || attemptedRecord.id, name:candidate.name,
+          reason:outcome.reason, record:current || attemptedRecord, candidateRecord:attemptedRecord,
+          agentResult:outcome.agentResult, decidedAt:now.toISOString(), existed:Boolean(current) });
+        if (current) next.splice(next.findIndex(item => item.id === current.id), 1);
+        skipped.push([candidate.name, `Kimi代理彻底删除：${outcome.reason}`]);
+        continue;
+      }
       // 2026-09-30 起：发现时已截止、但其余都符合要求的，不再丢弃，收进库里作为已归档，并估算下一届。
       // 归档记录没经过人工审核，公开缓存不会收它（要求系统验证和人工审核都通过），小程序看不到。
-      if (label === 'archive') record = await fillDraftProfessions(record);
-      if (['hold','review'].includes(label) && !record.aiFieldVerification
-        && !record.qualityIssues.some(issue => issue.startsWith('三项核验调用失败'))) {
-        record = await fillDraftProfessions(record);
-      }
+      if (label === 'archive' && !args.dryRun) record = await fillDraftProfessions(record);
     }
 
     if (!current) {
@@ -428,6 +450,8 @@ async function main() {
   for (const [name, why] of skipped) console.log(`  - ${String(why).padEnd(24)} ${name.slice(0, 30)}`);
 
   const reportFile = path.join(path.dirname(path.resolve(HERE, args.candidates)), 'ingest-report.json');
+  const deletionBackupFile = reportFile.replace(/ingest-report\.json$/, `kimi-deletion-backup-${Date.now()}.json`);
+  if (deleted.length) await fsp.writeFile(deletionBackupFile, JSON.stringify({ createdAt:now.toISOString(), dryRun:args.dryRun, persisted:false, records:deleted }, null, 2));
   await flushReasoning(call, { dryRun:args.dryRun, file:path.join(path.dirname(path.resolve(HERE, args.candidates)), 'ai-reasoning.json') });
   const writeIngestReport = persisted => {
     const failureReasons = {};
@@ -442,6 +466,9 @@ async function main() {
     });
     fs.writeFileSync(reportFile, JSON.stringify({
       generatedAt:new Date().toISOString(), persisted, dryRun:args.dryRun,
+      deleted:persisted ? deleted.filter(item => item.existed).length : null,
+      deletionBackupFile:deleted.length ? deletionBackupFile : null,
+      deletedList:deleted.map(({id,name,reason,existed}) => ({id,name,reason,existed})),
       eligibleDiscovered, added:persisted ? added.length : null,
       qualifiedNew:persisted ? added.filter(([, , verdict]) => verdict === 'admit').length : null,
       publishedNew:persisted ? added.filter(([, label]) => label === 'auto-publish').length : null,
@@ -464,7 +491,7 @@ async function main() {
   };
 
   if (args.dryRun) { writeIngestReport(false); console.log('\n--dry-run：未写入。'); return; }
-  if (!added.length && !updated.length) { writeIngestReport(true); console.log('\n没有需要写入的内容。'); return; }
+  if (!added.length && !updated.length && !deleted.some(item => item.existed)) { writeIngestReport(true); console.log('\n没有需要写入的内容。'); return; }
 
   const auditEntry = {
     id:`ingest-${Date.now()}`,
@@ -474,14 +501,30 @@ async function main() {
     recordName:`抓取入库：新增 ${added.length} 条，更新 ${updated.length} 条`,
     changedFields:['dataStatus'],
     changes:{ dataStatus:{ before:null, after:'draft' } },
-    reason:'来自服务器抓取与抽取，一律以草稿入库，待人工复核',
+    reason:deleted.length ? `Kimi审查失败后代理补查；删除完整备份：${deletionBackupFile}；${deleted.map(item => `${item.id}：${item.reason}`).join('；')}` : '来自服务器抓取与抽取；符合核验门槛的发布或归档',
     createdAt:new Date().toISOString(),
   };
-  // 整表替换的最后一道自检：写回去的条数不该少于原有条数。
-  if (next.length < existing.length) {
+  // 写库前先按公开缓存的门槛检查这一轮新增或改动的已发布/已归档记录：saveRecords 是整表替换，
+  // 只要有一条过不了门槛，整批都会被拒（public_cache_valid_official_source_required），其余好记录也进不了库。
+  // 过不了的这一条不写（改动的恢复成原样，新增的不加），记在报告里，其余照常写入（2026-10-05）。
+  const rejectedByCache = [];
+  for (let index = next.length - 1; index >= 0; index -= 1) {
+    const record = next[index];
+    const old = byId.get(record.id);
+    if (old === record || !['published', 'archived'].includes(record.dataStatus)) continue;
+    try { toPublicCache(record); } catch (error) {
+      rejectedByCache.push({ id:record.id, name:record.name, status:record.dataStatus, isNew:!old, reason:String(error.message || error) });
+      if (old) next[index] = old; else next.splice(index, 1);
+    }
+  }
+  for (const item of rejectedByCache) console.log(`  ✗ 公开缓存门槛没过，这条不写（${item.isNew ? '新增' : '改动'}，${item.status}）：${item.name}｜${item.reason}`);
+  // 整表替换只允许移除本轮代理明确决定删除且已完整备份的 ID。
+  const authorizedDeletedIds = new Set(deleted.filter(item => item.existed).map(item => item.id));
+  if (existing.some(item => !next.some(nextItem => nextItem.id === item.id) && !authorizedDeletedIds.has(item.id))) {
     throw new Error(`拒绝写入：将要写回 ${next.length} 条，少于现有 ${existing.length} 条`);
   }
   const result = await call({ action:'saveRecords', records:next, expectedVersion:version, auditEntry });
+  if (deleted.length) await fsp.writeFile(deletionBackupFile, JSON.stringify({ createdAt:now.toISOString(), dryRun:false, persisted:true, version:result.version, records:deleted }, null, 2));
   writeIngestReport(true);
   console.log(`\n已写入：${result.saved} 条，version ${version} → ${result.version}`);
   console.log(`公开缓存：发布 ${result.publicCachePublished ?? 0}，移除 ${result.publicCacheRemoved ?? 0}（草稿不进缓存）`);

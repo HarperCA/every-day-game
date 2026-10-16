@@ -28,17 +28,25 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classifyCandidates, hostOf, matchByUrlOnly } from './crawler/lib/dedupe.mjs';
+import { classifyCandidates, hostOf, matchByUrlOnly, matchCandidate, regionsOf } from './crawler/lib/dedupe.mjs';
 import { buildMastersFromRecords } from './crawler/lib/masters.mjs';
 import { collectMentions } from './known-event-mentions.mjs';
-import { loadMemory, recentlyRejected, remember, saveMemory } from './rejected-memory.mjs';
+import { loadMemory, recentlyRejected, remember, saveMemory, urlKey as urlKeyOf } from './rejected-memory.mjs';
 import { filterCandidatesWithJev } from './crawler/lib/jevCandidateFilter.mjs';
-import { followupCandidatesFromReport, splitTrustedFollowups, withTraceName } from './resolve-notice-leads.mjs';
+import { followupCandidatesFromReport, noticeFollowupCompleted, splitTrustedFollowups, withTraceName } from './resolve-notice-leads.mjs';
 import { isUnreadableHost } from './unreadable-hosts.mjs';
 import { stampDiscovery } from './discovery.mjs';
 import { buildPipelineLedger } from './pipeline-ledger.mjs';
+import { extractContestNames, precheckNotices } from './notice-precheck.mjs';
+import { loadSiteMemory, rememberSite, resolveNotices, saveSiteMemory, triedNote } from './notice-resolver.mjs';
+import { verifyOfficialSource } from './source-check.mjs';
+import { defaultPageReader } from './page-reader.mjs';
+import { deepseekEngine } from './search-engines.mjs';
+import { loadBlockedSites } from './site-blocklist.mjs';
 import { selectAmbiguous } from './arbitrate-dedupe.mjs';
 import { FIXED_SOURCE_INTERVAL_DAYS, checkDue, loadSchedule, markCrawled, saveSchedule } from './source-schedule.mjs';
+import { dueReadFollowups, leadKey, loadLeadFollowups, recordJevLeads, recordReadOutcomes, recordRediscoveries, saveLeadFollowups } from './lead-followups.mjs';
+import { LOCK_CHILD_FLAG, runWithPipelineLock } from './pipeline-lock.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TOKEN_FILE = path.join(HERE, '.admin-token');
@@ -88,6 +96,11 @@ function readAdminToken() {
   return token;
 }
 
+// DeepSeek 的钥匙（抽取、判重裁决共用），追溯前查库认名字用
+function readExtractKey() {
+  try { return fs.readFileSync(path.join(HERE, '.extract-key'), 'utf8').trim(); } catch { return ''; }
+}
+
 function readOpenRouterKey() {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY.trim();
   const keyFile = path.join(HERE, '.openrouter-key');
@@ -127,11 +140,14 @@ async function main() {
   // 1. 读库里当前真实状态，作为判重基准——不是种子快照。
   const bootstrapRes = await fetch(`${API_BASE}/api/adminData`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ adminToken, action: 'bootstrap' }),
+    signal: AbortSignal.timeout(30000),
   });
   const bootstrap = await bootstrapRes.json();
-  if (!bootstrap?.ok && !bootstrap?.data) throw new Error('bootstrap 失败：' + (bootstrap?.message || 'unknown'));
-  const records = bootstrap.data.records || [];
+  const records = validateBootstrap(bootstrap, bootstrapRes.ok);
   const masters = buildMastersFromRecords(records);
+  const leadFollowupsFile = path.join(HERE, 'plans', 'lead-followups.json');
+  let leadFollowups = loadLeadFollowups(leadFollowupsFile);
+  const readRetryKeys = new Set();
   console.log(`库中现有 ${records.length} 条记录 → ${masters.length} 个赛事主条目\n`);
 
   // 2. 逐个来源抓取 + 判重，只留 new。
@@ -144,6 +160,15 @@ async function main() {
   const scheduleFile = path.join(HERE, 'plans', 'source-schedule.json');
   let schedule = loadSchedule(scheduleFile);
   const scheduleReport = [];
+  const crawledFixedSources = [];
+  // 固定来源只有在本轮后续核验和结果账都完成后才推进七天周期。
+  // 否则详情抽取或入库失败会让尚未处理的候选被跳过整整一周。
+  async function finishRun(entry) {
+    await writeRunLog(entry);
+    if (args.dryRun || args.filterOnly || args.sourcesGiven || args.fromRun || !crawledFixedSources.length) return;
+    for (const source of crawledFixedSources) schedule = markCrawled(schedule, source, RUN_ID);
+    saveSchedule(scheduleFile, schedule);
+  }
   for (const source of args.sources) {
     const config = SOURCE_CONFIG[source];
     if (!config || !fs.existsSync(path.join(HERE, config.script))) {
@@ -179,7 +204,7 @@ async function main() {
     }
 
     const candidates = (JSON.parse(fs.readFileSync(outFile, 'utf8')).candidates || []).map(candidate => stampDiscovery(candidate, source, RUN_ID));
-    if (config.everyDays && !args.dryRun && !args.sourcesGiven) { schedule = markCrawled(schedule, source, RUN_ID); saveSchedule(scheduleFile, schedule); }
+    if (config.everyDays) crawledFixedSources.push(source);
     const buckets = classifyCandidates(candidates, masters);
     collectMentions([buckets], masters, recordsById, mentionGroups);
     const newCandidates = [...buckets.new, ...(config.uniqueUrls ? buckets.uncertain : [])].map(({ candidate }) => candidate);
@@ -215,9 +240,23 @@ async function main() {
   console.log(`提到库里已有赛事的通知：涉及 ${mentionGroups.size} 场赛事，清单 ${mentionsFile}
 `);
 
+  // 上轮详情读取失败的页面下一轮优先重读，不等固定来源的七天抓取周期。
+  // 已经有同网址的新抓取或库中记录的，不再重复放入。
+  if (!args.filterOnly && !args.dryRun) {
+    const currentKeys = new Set(allNew.map(candidate => leadKey(candidate.detailUrl)));
+    const recordMasters = buildMastersFromRecords(records);
+    for (const { key, candidate } of dueReadFollowups(leadFollowups)) {
+      if (matchByUrlOnly(candidate, recordMasters)) { delete leadFollowups.entries[key]; continue; }
+      if (!currentKeys.has(key)) { allNew.push(candidate); currentKeys.add(key); }
+      readRetryKeys.add(key);
+    }
+    saveLeadFollowups(leadFollowupsFile, leadFollowups);
+    if (readRetryKeys.size) console.log(`待重读详情 ${readRetryKeys.size} 条，优先进入本轮核验`);
+  }
+
   if (!allNew.length) {
     console.log('没有新候选，流水线到此结束（未调用 AI，未写库）。');
-    await writeRunLog({ summary, extracted: 0, ingest: null });
+    await finishRun({ summary, extracted: 0, ingest: null });
     return;
   }
 
@@ -226,12 +265,36 @@ async function main() {
   const memory = loadMemory(memoryFile);
   const beforeMemory = allNew.length;
   if (args.ignoreMemory) console.log('--ignore-memory：不跳过近 30 天被拒过的网址，全部按现在的规则重新判');
-  allNew.splice(0, allNew.length, ...allNew.filter(candidate => args.ignoreMemory || !recentlyRejected(memory, candidate.detailUrl)));
-  if (beforeMemory !== allNew.length) console.log(`近 30 天已被拒过的 ${beforeMemory - allNew.length} 条跳过（被拒网址记忆）
+  const rememberedList = [];
+  allNew.splice(0, allNew.length, ...allNew.filter(candidate => {
+    if (args.ignoreMemory || !recentlyRejected(memory, candidate.detailUrl)) return true;
+    const entry = memory.urls[urlKeyOf(candidate.detailUrl)] || {};
+    rememberedList.push({ url:candidate.detailUrl, reason:entry.reason || '', stage:entry.stage || '', at:entry.at || '' });
+    return false;
+  }));
+  const rememberedSkipped = beforeMemory - allNew.length;
+  // 哪些网址是因为“近 30 天处理过”被跳过的：后台运行详情据此区分“已在库”和“近期处理过”（2026-10-04）
+  try { fs.writeFileSync(path.join(RUN_DIR, 'memory-skipped.json'), JSON.stringify({ skipped:rememberedList }), 'utf8'); } catch { /* 写不了不影响本轮 */ }
+  if (!args.dryRun && !args.filterOnly) {
+    leadFollowups = recordRediscoveries(leadFollowups, allNew, new Date(), RUN_ID);
+    saveLeadFollowups(leadFollowupsFile, leadFollowups);
+  }
+  // 已在信源、目录或人工核查队列的相同网址不再反复分类；
+  // 尚未到期的详情重读也不随搜索结果提前执行。
+  const beforeFollowup = allNew.length;
+  allNew.splice(0, allNew.length, ...allNew.filter(candidate => {
+    const task = leadFollowups.entries[leadKey(candidate.detailUrl)];
+    if (task?.status === 'manual_review' && !args.ignoreMemory) return false;
+    if (task?.status === 'retry_read' && !readRetryKeys.has(leadKey(candidate.detailUrl))) return false;
+    return true;
+  }));
+  const followupSkipped = beforeFollowup - allNew.length;
+  if (rememberedSkipped) console.log(`近 30 天已被拒过的 ${rememberedSkipped} 条跳过（被拒网址记忆）
 `);
+  if (followupSkipped) console.log(`已在后续任务中或未到重读时间的 ${followupSkipped} 条不重复处理`);
   if (!allNew.length) {
     console.log('去掉已被拒过的之后没有新候选，流水线结束（未调用 AI，未写库）。');
-    await writeRunLog({ summary, rememberedSkipped:beforeMemory, extracted:0, ingest:null });
+    await finishRun({ summary, rememberedSkipped, followupSkipped, extracted:0, ingest:null });
     return;
   }
 
@@ -241,11 +304,12 @@ async function main() {
   // 平台登记的赛事（天池、辽宁平台）本身就是结构化的比赛条目，不需要 Jev 判断“是什么网页”，
   // 直接去读详情；Jev 只看搜索来的候选（2026-09-30：辽宁平台 11 场被 Jev 判“拿不准”、只留作线索）。
   const isPlatform = candidate => Boolean(SOURCE_CONFIG[candidate.discovery?.source]?.uniqueUrls);
-  const platformNew = allNew.filter(isPlatform);
-  console.log(`=== Jev 前置筛选 ${allNew.length - platformNew.length} 条新候选（平台条目 ${platformNew.length} 条直接读详情） ===`);
-  const jevResult = await filterCandidatesWithJev(allNew.filter(candidate => !isPlatform(candidate)), { apiKey:readOpenRouterKey() });
+  const platformNew = allNew.filter(candidate => isPlatform(candidate) || readRetryKeys.has(leadKey(candidate.detailUrl)));
+  console.log(`=== Jev 前置筛选 ${allNew.length - platformNew.length} 条新候选（平台条目/待重读 ${platformNew.length} 条直接读详情） ===`);
+  const jevResult = await filterCandidatesWithJev(allNew.filter(candidate => !platformNew.includes(candidate)), { apiKey:readOpenRouterKey() });
   for (const candidate of platformNew) {
-    jevResult.decisions.push({ candidate, action:'fetch', kind:'platform_entry', confidence:1, source:'platform', reason:'平台登记的赛事条目，跳过前置筛选直接读详情', probabilities:null, cost:0 });
+    const retry = readRetryKeys.has(leadKey(candidate.detailUrl));
+    jevResult.decisions.push({ candidate, action:'fetch', kind:retry ? 'read_retry' : 'platform_entry', confidence:1, source:retry ? 'followup' : 'platform', reason:retry ? '上轮详情读取失败，本轮有界重读' : '平台登记的赛事条目，跳过前置筛选直接读详情', probabilities:null, cost:0 });
     jevResult.fetch.push(candidate);
   }
   // 已知读不了的站（微信公众号等，robots 不让抓）：放行了也读不到，不去读，改成转进通知追溯，用标题或摘要里的赛事名去搜官网
@@ -275,7 +339,8 @@ async function main() {
   const combinedFile = path.join(RUN_DIR, 'combined-candidates.json');
   // 通知只用于追溯，不以通知标题进入详情抽取或赛事库。
   const priority = new Map(jevResult.decisions.map(item => [item.candidate, item]));
-  jevResult.fetch.sort((a, b) => (priority.get(b)?.probabilities?.competition_site || 0) + (priority.get(b)?.probabilities?.organizer_notice || 0) + (priority.get(b)?.probabilities?.registration_entry || 0)
+  jevResult.fetch.sort((a, b) => Number(readRetryKeys.has(leadKey(b.detailUrl))) - Number(readRetryKeys.has(leadKey(a.detailUrl)))
+    || (priority.get(b)?.probabilities?.competition_site || 0) + (priority.get(b)?.probabilities?.organizer_notice || 0) + (priority.get(b)?.probabilities?.registration_entry || 0)
     - ((priority.get(a)?.probabilities?.competition_site || 0) + (priority.get(a)?.probabilities?.organizer_notice || 0) + (priority.get(a)?.probabilities?.registration_entry || 0)));
   // 2026-09-29 起：所有通知类（校内选拔、学校转发、赛事报道，以及标题是通知的主办方通知）都追溯上级赛事，
   // 不再只取前 10 条；resolve-notice-leads 按上级赛事分组、按重要程度分配搜索额度。
@@ -283,19 +348,90 @@ async function main() {
     .filter(item => item.action === 'trace' || (/通知|公告|通告/.test(item.candidate.name || '') && item.kind !== 'unrelated' && item.action !== 'reject'))
     // 标题没有信息量（只有日期时间地名）或读不了的页面：赛事名换成摘要里提取的；同一场比赛的会在追溯里按赛事名归成一组，只搜一次
     .map(item => withTraceName(item.candidate, { replaceTitle:item.kind === 'title_no_info' || item.unreadable === true }));
+  // 标题为通知的 lead/review 会进入追溯，不能同时算成“只留线索”。
+  // 历史回填同样排除了 formal-notices，保持实时队列与结果账一致。
+  if (!args.dryRun && !args.filterOnly) {
+    const tracedKeys = new Set(formalNotices.map(candidate => leadKey(candidate.detailUrl)));
+    leadFollowups = recordJevLeads(leadFollowups, jevResult.decisions.filter(decision => !tracedKeys.has(leadKey(decision.candidate.detailUrl))), new Date(), RUN_ID);
+    saveLeadFollowups(leadFollowupsFile, leadFollowups);
+  }
   const noticeBudget = (() => {
-    try { return Number(JSON.parse(fs.readFileSync(planFileFor(), 'utf8')).trace?.noticeFollowups) || 10; } catch { return 10; }
+    // 0 也是有效值（2026-10-10 起百度额度全给细分专业，通知追溯代理只用 Kimi 搜索），不能用 || 兜底
+    try { const value = Number(JSON.parse(fs.readFileSync(planFileFor(), 'utf8')).trace?.noticeFollowups); return Number.isFinite(value) ? value : 10; } catch { return 10; }
   })();
   const followupFetch = [];
   if (formalNotices.length) {
     const noticesFile = path.join(RUN_DIR, 'formal-notices.json');
     const leadsFile = path.join(RUN_DIR, 'notice-resolution-leads.json');
     fs.writeFileSync(noticesFile, JSON.stringify({ candidates:formalNotices }, null, 2), 'utf8');
+    // 追溯前查库（notice-precheck.mjs，2026-10-12）：先认出通知背后的比赛，库里已有的、同一晚已在追的不派代理。
+    // 认不出或调用失败的照常追溯。结果写 notice-precheck.json，后台明细据此显示“追溯前查库：库里已有”。
+    const traceFile = path.join(RUN_DIR, 'trace-notices.json');
+    const agentFile = path.join(RUN_DIR, 'notice-agent-results.json');
+    const siteMemoryFile = path.join(HERE, 'plans', 'official-sites.json');
+    const writeLocal = !args.dryRun && !args.filterOnly;
+    let traceNotices = formalNotices;
+    let fixed = null;
     try {
-      run('node', ['resolve-notice-leads.mjs', noticesFile, leadsFile, '--budget', String(noticeBudget)]);
+      const names = await extractContestNames(formalNotices, { key:readExtractKey(), log:console.log });
+      const pre = precheckNotices(formalNotices, names, { masters:buildMastersFromRecords(records), recordsById, match:matchCandidate, regions:regionsOf });
+      traceNotices = pre.toTrace;
+      fs.writeFileSync(path.join(RUN_DIR, 'notice-precheck.json'), JSON.stringify({ createdAt:new Date().toISOString(), total:formalNotices.length,
+        named:names.size, toTrace:pre.toTrace.length, skipped:pre.skipped, checked:pre.checked }, null, 2), 'utf8');
+      console.log(`追溯前查库：${formalNotices.length} 篇通知，认出比赛名 ${names.size} 篇；库里已有 ${pre.skipped.filter(item => item.kind === 'in_library').length} 篇、`
+        + `同一晚重复 ${pre.skipped.filter(item => item.kind === 'same_night').length} 篇，不派代理；继续追溯 ${pre.toTrace.length} 篇`);
+      // 库里已有的记 30 天，免得每晚重复认名字；同一晚重复的不记（下一晚那场还没追到的话还要再追）
+      if (writeLocal) {
+        saveMemory(memoryFile, remember(loadMemory(memoryFile), pre.skipped.filter(item => item.kind === 'in_library')
+          .map(item => ({ url:item.url, reason:`追溯前查库：库里已有「${item.matched.name}」`, stage:'通知追溯前查库' }))));
+      }
+      // 固定步骤（notice-resolver.mjs，2026-10-12）：认出名字的先按固定步骤找官方来源，核到的不派代理；
+      // 没核到的连同“试过什么”交给代理，认不出名字的直接交给代理。整步失败就全部交给代理。
+      try {
+        const extractKey = readExtractKey();
+        fixed = await resolveNotices(pre.named, {
+          // 2026-10-12 用户定：搜索用 DeepSeek 自带的联网搜索（只给标题和网址，打分够用），不占 Kimi 额度
+          searchEngine:deepseekEngine({ key:extractKey }), readPage:await defaultPageReader(), siteMemory:loadSiteMemory(siteMemoryFile),
+          verify:(name, title, pages) => verifyOfficialSource(name, title, pages, { key:extractKey }),
+          blocked:await loadBlockedSites({ log:console.log }), log:console.log,
+        });
+        fs.writeFileSync(path.join(RUN_DIR, 'notice-fixed-results.json'), JSON.stringify({ createdAt:new Date().toISOString(), stats:fixed.stats, results:fixed.results,
+          unresolved:fixed.unresolved.map(item => ({ url:item.notice.detailUrl, title:item.notice.name, name:item.name, reason:item.reason, tried:item.tried })) }, null, 2), 'utf8');
+        if (writeLocal) saveSiteMemory(siteMemoryFile, fixed.siteMemory);
+        traceNotices = [...fixed.unresolved.map(item => ({ ...item.notice, contestName:item.name, traceHint:triedNote(item.tried, item.reason) })),
+          ...pre.unnamed.map(item => item.notice)];
+        console.log(`固定步骤：${pre.named.length} 篇，核到官方来源 ${fixed.stats.resolved}、不是比赛 ${fixed.stats.notCompetition}（官网记忆 ${fixed.stats.fromMemory}），`
+          + `没核到 ${fixed.stats.unresolved}；交给代理 ${traceNotices.length} 篇（含认不出名字的 ${pre.unnamed.length}）`);
+      } catch (error) {
+        fixed = null;
+        console.log(`固定步骤失败，继续追溯的通知全部交给代理：${String(error?.message || error).slice(0, 160)}`);
+      }
+    } catch (error) {
+      console.log(`追溯前查库失败，全部照常追溯：${String(error?.message || error).slice(0, 160)}`);
+    }
+    fs.writeFileSync(traceFile, JSON.stringify({ candidates:traceNotices }, null, 2), 'utf8');
+    try {
+      // 2026-10-10 起通知追溯改用 Kimi 代理（notice-agent.mjs）；2026-10-12 起只处理固定步骤没核到的
+      // token 上限 150 万（2026-10-12）：默认 600 万，而 Kimi 每 5 小时的额度约 250 万，连着两晚代理一个人用掉 240～270 万，
+      // 后面读详情、入库核验没有额度可用；到上限就停，没轮上的通知下一晚接着处理
+      let agentReport = { results:[], tokens:0, verifyTokens:0, engines:[], stopReason:'' };
+      if (traceNotices.length) {
+        run('node', ['notice-agent.mjs', traceFile, agentFile, '--baidu-budget', String(noticeBudget), '--budget-tokens', '1500000']);
+        agentReport = JSON.parse(fs.readFileSync(agentFile, 'utf8'));
+      }
+      // 两部分合并成原来的 notice-resolution-leads.json（格式不变，每条多一个 method：fixed / agent），后面的判重、读详情不用改
+      fs.writeFileSync(leadsFile, JSON.stringify({ generatedAt:new Date().toISOString(), method:fixed ? 'fixed+agent' : 'kimi_agent', model:agentReport.model,
+        tokens:agentReport.tokens, verifyTokens:(agentReport.verifyTokens || 0) + (fixed?.stats.verifyTokens || 0), tokenBudget:agentReport.tokenBudget, stopReason:agentReport.stopReason,
+        engines:agentReport.engines, fixedStats:fixed?.stats || null, results:[...(fixed?.results || []), ...agentReport.results] }, null, 2), 'utf8');
+      // 代理核实过的官网也记进官网记忆，下次同一场比赛直接读
+      if (writeLocal) {
+        let sites = loadSiteMemory(siteMemoryFile);
+        for (const item of agentReport.results) if (item.agent?.outcome === 'found_official' && item.proposedName && item.leads?.[0]?.url) sites = rememberSite(sites, { name:item.proposedName, url:item.leads[0].url, by:'agent', runId:RUN_ID });
+        saveSiteMemory(siteMemoryFile, sites);
+      }
       // 已经搜索追溯过的通知记 30 天，避免同一篇通知每晚重复搜（额度不够没轮上的不记，下次还有机会）
-      if (!args.dryRun) {
-        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => (item.followupQuery || item.pageVisit?.found) && !item.error)
+      if (!args.dryRun && !args.filterOnly) {
+        const traced = (JSON.parse(fs.readFileSync(leadsFile, 'utf8')).results || []).filter(item => noticeFollowupCompleted(item) && !item.error)
           .flatMap(item => (item.notices || [{ url:item.noticeUrl }]).map(notice => ({ url:notice.url, reason:`已追溯上级赛事：${item.proposedName}`, stage:'通知追溯' })));
         saveMemory(memoryFile, remember(loadMemory(memoryFile), traced));
       }
@@ -336,13 +472,13 @@ async function main() {
 
   if (args.filterOnly) {
     console.log('--filter-only：抓取与 Jev 筛选已完成，未调用详情抽取或入库。');
-    await writeRunLog({ summary, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, extracted:0, ingest:null });
+    await finishRun({ summary, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, extracted:0, ingest:null });
     return;
   }
 
   if (!detailCandidates.length) {
     console.log('前置筛选后没有需要下载详情页的候选，流水线结束（未调用抽取，未写库）。');
-    await writeRunLog({ summary, jev:{ fetch:0, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, extracted:0, ingest:null });
+    await finishRun({ summary, jev:{ fetch:0, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, extracted:0, ingest:null });
     return;
   }
 
@@ -350,6 +486,11 @@ async function main() {
   console.log(`=== AI 抽取 ${detailCandidates.length} 条新候选 ===`);
   const extractedFile = path.join(RUN_DIR, 'combined-extracted.json');
   run('node', ['run-extract.mjs', '--in', combinedFile, '--out', extractedFile]);
+  if (!args.dryRun) {
+    const extracted = JSON.parse(fs.readFileSync(extractedFile, 'utf8'));
+    leadFollowups = recordReadOutcomes(leadFollowups, detailCandidates, extracted.results || []);
+    saveLeadFollowups(leadFollowupsFile, leadFollowups);
+  }
 
   // 5. 入库——admit 候选继续走自动核验；review 候选也作为草稿写入，
   // 让人工能看到证据不足或抓取失败的线索，而不是被静默跳过。
@@ -370,7 +511,7 @@ async function main() {
     console.log(`被拒网址记忆：本轮记下 ${rejected.length} 条`);
   }
 
-  await writeRunLog({ summary, rememberedSkipped:beforeMemory - allNew.length, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, noticeFollowups:followupFetch.length, extracted:detailCandidates.length, ingest:'see stdout above' });
+  await finishRun({ summary, rememberedSkipped, followupSkipped, jev:{ fetch:jevResult.fetch.length, leads:jevResult.leads.length, rejected:jevResult.rejected.length, costUsd:jevResult.cost }, noticeFollowups:followupFetch.length, extracted:detailCandidates.length, ingest:'see stdout above' });
 }
 
 // cloudbase SDK 的匿名会话会挂一个不自然结束的句柄（推测是 auth 的 keepalive/
@@ -417,19 +558,32 @@ async function writeRunLog(entry) {
   // 这一轮已经保存过原始返回：删掉标记，下一轮不再保存（只保存一次）
   if (process.env.SEARCH_RAW_FILE) { try { fs.unlinkSync(path.join(HERE, 'plans', 'save-raw-once')); } catch { /* 已经删过 */ } }
   const logFile = path.join(HERE, 'pipeline.log');
+  fs.mkdirSync(RUN_DIR, { recursive:true });
   fs.appendFileSync(logFile, JSON.stringify({ at: new Date().toISOString(), ...entry }) + '\n', 'utf8');
   const ledger = buildPipelineLedger(RUN_DIR, { ...lastRunEntry, startedAt:STARTED_AT, ...runOptions });
   fs.writeFileSync(path.join(RUN_DIR, 'result-ledger.json'), JSON.stringify(ledger, null, 2));
   const response = await fetch(`${API_BASE}/api/adminData`, {
     method:'POST', headers:{ 'content-type':'application/json' },
     body:JSON.stringify({ adminToken:readAdminToken(), action:'savePipelineRun', run:ledger }),
+    signal:AbortSignal.timeout(30000),
   });
   const result = await response.json();
   if (!result?.ok) throw new Error(`结果账写入失败：${result?.message || response.status}`);
 }
 
+export function validateBootstrap(result, httpOk = true) {
+  if (!httpOk || result?.ok !== true || !Array.isArray(result?.data?.records)) {
+    throw new Error('bootstrap 失败或 records 无效，拒绝使用空库继续判重：' + (result?.message || 'invalid response'));
+  }
+  return result.data.records;
+}
+
 // 作为模块导入时不执行流水线，便于单测纯函数（和 crawl-tianchi.mjs 同样的写法）。
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  if (process.env[LOCK_CHILD_FLAG] !== '1') {
+    try { process.exit(runWithPipelineLock({ directory:path.join(HERE, 'plans'), script:fileURLToPath(import.meta.url), args:process.argv.slice(2) })); }
+    catch (error) { console.error(error.message); process.exit(1); }
+  }
   main().then(() => process.exit(0)).catch(error => {
     console.error('流水线失败:', error.message);
     writeRunLog({ error:error.message }).catch(logError => console.error('结果账写入失败:', logError.message))

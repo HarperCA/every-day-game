@@ -92,7 +92,7 @@ export class Fetcher {
         if (!response.ok) return '';
         const type = response.headers.get('content-type') || '';
         if (/html/i.test(type)) return ''; // 站点用首页兜底 404，不是真的 robots.txt
-        return await response.text();
+        return (await readLimitedBody(response, 256 * 1024)).toString('utf8');
       } catch {
         return ''; // 取不到按通行惯例视为允许
       }
@@ -106,6 +106,7 @@ export class Fetcher {
     try {
       const raw = await fs.readFile(cachePath(this.options.cacheDir, url), 'utf8');
       const entry = JSON.parse(raw);
+      if (entry.status !== 'ok') return null;
       if (Date.now() - entry.fetchedAt > this.options.cacheTtlMs) return null;
       return { ...entry, fromCache: true };
     } catch {
@@ -200,7 +201,11 @@ export class Fetcher {
         text: isBinary ? '' : decodeBody(buffer, charset),
         fetchedAt: Date.now(),
       };
-      if (useCache) await this.writeCache(url, { ...entry, bodyBase64: isBinary ? buffer.toString('base64') : undefined });
+      // 错误响应不能缓存十二小时；缓存故障也不能把成功抓取变成网络失败。
+      if (useCache && response.ok) {
+        try { await this.writeCache(url, { ...entry, bodyBase64: isBinary ? buffer.toString('base64') : undefined }); }
+        catch { this.stats.cacheErrors = (this.stats.cacheErrors || 0) + 1; }
+      }
       return { ...entry, body: buffer };
     } catch (error) {
       this.stats.errors += 1;

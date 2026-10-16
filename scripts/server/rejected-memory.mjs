@@ -7,7 +7,7 @@ import fs from 'node:fs';
 
 // 和 crawler/lib/dedupe.mjs 的 urlKey 相同（不跨目录引用：仓库里和服务器上的目录结构不一样）：
 // 不分 http/https、忽略 www、结尾斜杠和 # 锚点，保留路径和查询参数
-function urlKey(url) {
+export function urlKey(url) {
   try {
     const u = new URL(String(url || ''));
     if (!/^https?:$/.test(u.protocol)) return '';
@@ -43,5 +43,7 @@ export function remember(memory, entries, now = new Date(), days = REMEMBER_DAYS
 }
 
 export function saveMemory(file, memory) {
-  fs.writeFileSync(file, JSON.stringify(memory), 'utf8');
+  const temporary = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify(memory), 'utf8');
+  fs.renameSync(temporary, file);
 }

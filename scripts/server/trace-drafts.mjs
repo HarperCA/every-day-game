@@ -15,6 +15,7 @@ import { setDefaultResultOrder } from 'node:dns';
 import { fileURLToPath } from 'node:url';
 import { normalizeName } from './search-plan.mjs';
 import { mentionSearchTargets, noticeLeads } from './known-event-mentions.mjs';
+import { requireBaiduQuota } from './search-engines.mjs';
 
 setDefaultResultOrder('ipv4first');
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -72,6 +73,7 @@ export function nextTask(record, { query, leads, error = null }, now = new Date(
 }
 
 async function search(key, query) {
+  requireBaiduQuota('trace-drafts');
   const response = await fetch(SEARCH_URL, {
     method:'POST', headers:{ 'X-Appbuilder-Authorization':`Bearer ${key}`, 'Content-Type':'application/json' },
     body:JSON.stringify({ messages:[{ content:query, role:'user' }], search_source:'baidu_search_v2', resource_type_filter:[{ type:'web', top_k:50 }] }),

@@ -16,11 +16,15 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { Fetcher } from './crawler/lib/fetcher.mjs';
-import { extractDocxText, extractPdfText, extractText } from './crawler/lib/extract.mjs';
-import { evidenceLinks, rankEvidenceLinks } from './crawler/lib/jevLinkRanker.mjs';
 import { baiduEngine, createSearcher, deepseekEngine, kimiEngine, kimiFetchPage } from './search-engines.mjs';
+import { createPageReader } from './page-reader.mjs';
 import { fieldsFromImages, findNoticeTitles, imageCandidates, keyFieldCount, missingKeyFields, ocrImage, ocrRelevance, pickOfficialNotice } from './page-supplement.mjs';
+
+// 服务器部署时 crawler/ 在脚本旁；仓库里则是 scripts/crawler/。
+const crawlerModule = name => import(`./crawler/lib/${name}.mjs`).catch(() => import(`../crawler/lib/${name}.mjs`));
+const [{ Fetcher }, { extractDocxText, extractPdfText, extractText, findNoticeLinks }, { evidenceLinks, rankEvidenceLinks }] = await Promise.all([
+  crawlerModule('fetcher'), crawlerModule('extract'), crawlerModule('jevLinkRanker'),
+]);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const KEY_FILE = path.join(HERE, '.extract-key');
@@ -34,13 +38,7 @@ function readKey() {
   return key;
 }
 
-// 抽取模块从 process.env 读配置，所以必须在 require 之前设好。
-process.env.EXTRACT_AI_API_KEY = readKey();
-process.env.EXTRACT_AI_BASE_URL = process.env.EXTRACT_AI_BASE_URL || 'https://api.deepseek.com';
-process.env.EXTRACT_AI_MODEL = process.env.EXTRACT_AI_MODEL || 'deepseek-flash';
-
 const require = createRequire(import.meta.url);
-const { extractFromDetailPage } = require(path.join(CJS_DIR, 'competitionExtract.js'));
 
 // 服务器没有 60 秒上限，给模型更充裕的时间；仍然设上限，避免单条卡死拖垮整批。
 // 2026-09-30 测试阶段打开了 DeepSeek 的思考（cjs/aiReasoning.js），一条要多想几十秒，放宽到 5 分钟。
@@ -56,18 +54,11 @@ let renderedRereads = 0;
 // 找正式通知用的搜索也按百度 → Kimi → DeepSeek 依次补位，额度单独算，不占通知追溯的
 const MAX_SUPPLEMENTS = 20;
 let supplements = 0;
-const noticeSearcher = createSearcher([{ engine:baiduEngine(), budget:5 }, { engine:kimiEngine(), budget:10 }, { engine:deepseekEngine(), budget:10 }]);
+const noticeSearcher = createSearcher([{ engine:baiduEngine({ caller:'formal-notice' }), budget:0 }, { engine:kimiEngine(), budget:10 }, { engine:deepseekEngine(), budget:10 }]);
 const PAGE_LIMIT = 6000; // 抽取模块只看正文前 6000 字（competitionExtract.js 的 PAGE_TEXT_LIMIT）
 
-// 读一个网页的正文：先直接读（遵守 robots），只有骨架时再用 Kimi 读网页接口
-async function readPageText(url) {
-  const page = await evidenceFetcher.get(url);
-  if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) return { status:page.status, text:'' };
-  const text = extractText(page.text, { maxChars:8000 });
-  if (text.length >= 300) return { status:'ok', text, via:'direct' };
-  const rendered = await kimiFetchPage(url);
-  return { status:rendered.markdown.length >= 200 ? 'ok' : 'too_short', text:rendered.markdown, via:'kimi_fetch' };
-}
+// 读一个网页的正文：先直接读（遵守 robots），只有骨架时再用 Kimi 读网页接口；PDF、Word 附件也能读（page-reader.mjs，和通知追溯共用）
+const readPageText = createPageReader({ fetcher:evidenceFetcher, extract:{ extractText, extractPdfText, extractDocxText, findNoticeLinks }, maxChars:8000 });
 
 function readOpenRouterKey() {
   if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY.trim();
@@ -133,6 +124,17 @@ ${parsed.text}` : `附件《${file.name}》未能读出文字：${parsed.status}
   return sections.join('\n\n').slice(0, 30000);
 }
 
+// 官网直接给出 PDF / DOCX 正文时，也应走和平台附件相同的文本抽取。
+// 文本前缀保留可复核的原网址，后续仍须经过抽取模块的逐字引文回查。
+export async function binarySourceText(page, url, { pdf = extractPdfText, docx = extractDocxText } = {}) {
+  const body = page?.body;
+  if (page?.status !== 'ok' || !body?.length) return '';
+  const head = body.subarray(0, 4).toString('latin1');
+  const parsed = head.startsWith('%PDF') ? await pdf(body, { maxChars:30000 })
+    : head.startsWith('PK') ? docx(body, { maxChars:30000 }) : null;
+  return parsed?.text ? `来源文件：${page.finalUrl || url}\n${parsed.text}` : '';
+}
+
 // 按站点决定怎么取正文。取不到就返回空串，让抽取模块自己去抓页面。
 async function sourceTextFor(candidate) {
   const url = String(candidate.detailUrl || candidate.url || '');
@@ -149,7 +151,8 @@ async function sourceTextFor(candidate) {
   // 普通网站先抓页面，再对报名/章程/组织机构链接排序并读取最多 3 个。
   // Fetcher 负责 robots、频率、大小与最终跳转；不把未经验证的链接标为官网。
   const page = await evidenceFetcher.get(url);
-  if (page.status !== 'ok' || !/html/i.test(page.contentType || '')) return '';
+  if (page.status !== 'ok') return '';
+  if (!/html/i.test(page.contentType || '')) return binarySourceText(page, url);
   candidate.pageHtml = page.text;
   const links = evidenceLinks(page.text, page.finalUrl || url);
   const ranked = await rankEvidenceLinks(links, { apiKey:readOpenRouterKey(), contestName:String(candidate.name || '') });
@@ -171,6 +174,11 @@ async function sourceTextFor(candidate) {
 }
 
 async function main() {
+  // 抽取模块读取环境变量；保持 CLI 行为，同时允许单测导入纯文本处理函数。
+  process.env.EXTRACT_AI_API_KEY = readKey();
+  process.env.EXTRACT_AI_BASE_URL = process.env.EXTRACT_AI_BASE_URL || 'https://api.deepseek.com';
+  process.env.EXTRACT_AI_MODEL = process.env.EXTRACT_AI_MODEL || 'deepseek-flash';
+  const { extractFromDetailPage } = require(path.join(CJS_DIR, 'competitionExtract.js'));
   const args = parseArgs(process.argv.slice(2));
   const payload = JSON.parse(await fsp.readFile(path.resolve(HERE, args.in), 'utf8'));
   const candidates = (payload.candidates || payload.new || payload).slice(0, args.limit || undefined);
@@ -315,7 +323,9 @@ async function main() {
   console.log(`写入 ${outPath}`);
 }
 
-main().catch(error => {
-  console.error('批量抽取失败:', error.message);
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  main().catch(error => {
+    console.error('批量抽取失败:', error.message);
+    process.exit(1);
+  });
+}

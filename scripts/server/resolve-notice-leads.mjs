@@ -97,6 +97,13 @@ export function splitTrustedFollowups(followups = []) {
   return { trusted, others, decisions };
 }
 
+// 通知已产生可核验的追溯线索时，记下本次追溯，避免次日重复处理。
+// 摘要里直接写出的官网网址无需搜索，也可能在访问通知正文时没有新增网址。
+export function noticeFollowupCompleted(result = {}) {
+  return Boolean(result.followupQuery || result.pageVisit?.found
+    || (result.leads || []).some(lead => lead.fromNoticeText));
+}
+
 // 通知只是来源线索。追溯到的页面必须在主流水线再次判重、分类、抓正文和核验；
 // 这里绝不把通知标题本身转换成赛事记录。
 export function followupCandidatesFromReport(report = {}) {
@@ -104,8 +111,9 @@ export function followupCandidatesFromReport(report = {}) {
   const candidates = [];
   for (const result of report.results || []) {
     const proposedName = String(result.proposedName || '').trim();
-    if (!/(?:竞赛|大赛|挑战赛|比赛|联赛|锦标赛|赛)$/.test(proposedName)
-      || /通知|公告|公示|目录|清单|校赛|校内选拔|校级选拔/.test(proposedName)) continue;
+    // Kimi 代理（notice-agent.mjs）已经判过是不是一场比赛，名字不要求以“赛”结尾（如“黑客松”）
+    if ((!result.agent && !/(?:竞赛|大赛|挑战赛|比赛|联赛|锦标赛|赛)$/.test(proposedName))
+      || !proposedName || /通知|公告|公示|目录|清单|校赛|校内选拔|校级选拔/.test(proposedName)) continue;
     for (const lead of result.leads || []) {
       const url = String(lead.url || '');
       if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
@@ -134,10 +142,11 @@ export function followupCandidatesFromReport(report = {}) {
 // 能追溯的上级赛事名：以“赛”结尾、至少 6 个字（“比赛”“大赛”这种太笼统）；
 // 模拟仲裁庭、模拟法庭、学年奖也是比赛（贸仲杯国际商事仲裁模拟仲裁庭，2026-10-03）。
 // 学院自己办的（名字以某某学院开头、或带“院级”）没有上级赛事可追，不占搜索额度；
-// 教师赛（外语教学大赛、教学之星）、职工职业技能竞赛不是大学生比赛。
+// 教师赛（外语教学大赛、教学之星）、职工职业技能竞赛不是大学生比赛；奖学金、助学金评选不是比赛。
 const VALID_NAME = name => /(?:竞赛|大赛|挑战赛|比赛|联赛|锦标赛|赛|仲裁庭|模拟法庭|学年奖)$/.test(name) && name.length >= 6
   && !/通知|公告|公示|目录|清单|校赛|校内选拔|校级选拔|院级/.test(name)
   && !/教学大赛|教学之星|教师(?!教育)|(?<!大学生)职业技能竞赛/.test(name)
+  && !/奖学金|助学金|助学贷款|评奖评优/.test(name)
   && !/^[一-龥]{2,14}学院(?!杯)/.test(name);
 
 // 赛事名后面跟着的宣传语、环节、括号说明（2026-10-03 全量核对：31 篇真比赛通知因此提不出名字）：

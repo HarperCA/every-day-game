@@ -7,7 +7,10 @@ After=daily-contest-api.service
 Environment=NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000
 Type=oneshot
 WorkingDirectory=/opt/daily-contest
+ExecStartPre=/usr/bin/node /opt/daily-contest/crawl-service-guard.mjs preflight
 ExecStart=/usr/bin/node run-crawl-pipeline.mjs
+ExecStopPost=/usr/bin/node /opt/daily-contest/crawl-service-guard.mjs record-failure
 StandardOutput=append:/var/log/daily-contest-crawl.log
 StandardError=append:/var/log/daily-contest-crawl.log
-TimeoutStartSec=1800
+# 2026-10-12 从 1 小时放宽到 3 小时：10/11、10/12 两晚都在读详情、抽取时跑满 1 小时被杀，入库没执行
+TimeoutStartSec=10800

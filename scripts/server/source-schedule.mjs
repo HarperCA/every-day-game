@@ -19,7 +19,9 @@ export function loadSchedule(file) {
 
 export function saveSchedule(file, state) {
   fs.mkdirSync(path.dirname(file), { recursive:true });
-  fs.writeFileSync(file, JSON.stringify(state, null, 2), 'utf8');
+  const temporary = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify(state, null, 2), 'utf8');
+  fs.renameSync(temporary, file);
 }
 
 // 这个来源今天要不要抓。everyDays 为空表示每晚都抓（百度搜索）。

@@ -1,0 +1,10 @@
+[Unit]
+Description=每周一统计一次建议屏蔽的网站
+
+[Timer]
+# UTC 周一 01:00 = 北京时间周一 09:00；避开 01:00 起最长 3 小时的夜间抓取。
+OnCalendar=Mon *-*-* 01:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

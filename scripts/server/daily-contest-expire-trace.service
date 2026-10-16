@@ -1,5 +1,5 @@
 [Unit]
-Description=竞赛雷达追溯到期检查（traceDue 已过、仍是草稿的条目转入隔离，可恢复）
+Description=竞赛雷达追溯到期检查（traceDue 已过的草稿标记待核查，不转入隔离）
 After=daily-contest-api.service
 
 [Service]

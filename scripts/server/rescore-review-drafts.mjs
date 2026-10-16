@@ -116,6 +116,7 @@ async function main() {
   // 也在改同一份数据，最后存的时候版本号大概率已经对不上。存的时候按
   // id 把这份结果重新贴到最新数据上重试，而不是白跑一遍 Kimi 调用。
   const updatedById = new Map();
+  const deletedById = new Map();
   const promoted = [];
   const stillReview = [];
 
@@ -124,7 +125,7 @@ async function main() {
     let rescoredVerdict = assessAdmission(admissionInput).verdict;
     let judgmentNote = null;
 
-    if (rescoredVerdict !== 'admit' && extractAiConfigured) {
+    if (rescoredVerdict !== 'admit' && extractAiConfigured && !args.dryRun) {
       try {
         const judgment = await judgeAdmissionWithAi(admissionInput, undefined, { onReasoning:logReasoning(record, { stage:'复检收录判断' }) });
         if (judgment.worth_including && judgment.confident) rescoredVerdict = 'admit';
@@ -136,19 +137,22 @@ async function main() {
       }
     }
 
-    if (rescoredVerdict !== 'admit') { stillReview.push(record.name); continue; }
+    if (rescoredVerdict !== 'admit' && rescoredVerdict !== 'review') { stillReview.push(record.name); continue; }
 
     const withNote = judgmentNote ? { ...record, qualityIssues:[...record.qualityIssues, judgmentNote] } : record;
-    const outcome = await applyIntakeDecision(withNote, existing, now);
-    updatedById.set(record.id, { ...outcome.record, admissionVerdict:'admit' });
+    const outcome = await applyIntakeDecision({ ...withNote, admissionVerdict:rescoredVerdict }, existing, now, { dryRun:args.dryRun });
+    if (outcome.record) updatedById.set(record.id, { ...outcome.record, admissionVerdict:rescoredVerdict });
+    else deletedById.set(record.id, { record, reason:outcome.reason, agentResult:outcome.agentResult, decidedAt:now.toISOString() });
     promoted.push([record.name, outcome.label]);
   }
 
-  console.log(`\n复检通过、升级为 admit 并处理：${promoted.length} 条｜仍是 review：${stillReview.length} 条`);
+  console.log(`\n复检及代理处置：${promoted.length} 条｜收录规则拒绝或范围不符：${stillReview.length} 条`);
   for (const [name, label] of promoted) console.log(`  + ${label.padEnd(12)} ${name.slice(0, 34)}`);
 
   // 收录判断和三项核验的思考过程（见 ingest-candidates.mjs 的 reasoningLog）
   await flushReasoning(call, { dryRun:args.dryRun });
+  const deletionBackupFile = path.join(HERE, `rescore-kimi-deletion-backup-${Date.now()}.json`);
+  if (deletedById.size) fs.writeFileSync(deletionBackupFile, JSON.stringify({ createdAt:now.toISOString(), dryRun:args.dryRun, persisted:false, records:[...deletedById.values()] }, null, 2));
   if (args.dryRun) { console.log('\n--dry-run：未写入。'); return; }
   if (!promoted.length) { console.log('\n没有需要写入的变更。'); return; }
 
@@ -157,10 +161,10 @@ async function main() {
     action:'update',
     objectType:'event_edition',
     recordId:'batch',
-    recordName:`review 档复检：${promoted.length} 条升级为 admit`,
+    recordName:`review 档复检及代理处置：${promoted.length} 条`,
     changedFields:['admissionVerdict', 'dataStatus'],
     changes:{},
-    reason:'定期用记录已有数据重新打分；关键词打分仍不够的，再送 DeepSeek 判断一次',
+    reason:deletedById.size ? `复检后Kimi代理补查；完整删除备份：${deletionBackupFile}；${[...deletedById].map(([id,item]) => `${id}：${item.reason}`).join('；')}` : '定期用记录已有数据重新打分；关键词打分仍不够的，再送 DeepSeek 判断一次',
     createdAt:new Date().toISOString(),
   };
 
@@ -168,18 +172,25 @@ async function main() {
   for (let attempt = 1; attempt <= MAX_SAVE_RETRIES; attempt += 1) {
     const base = attempt === 1 ? { records:existing, version } : await (async () => {
       const fresh = await call({ action:'bootstrap' });
-      return { records:Array.isArray(fresh?.records) ? fresh.records : [], version:fresh?.stateVersions?.records };
+      if (!Array.isArray(fresh?.records)) throw new Error('bootstrap 未返回 records 数组，拒绝重试写入');
+      return { records:fresh.records, version:fresh?.stateVersions?.records };
     })();
     // 重跑过的候选如果在这段时间被人工动过（manualReview 不再是 pending），
     // 尊重人的判断，这次不覆盖它——跟 ingest-candidates.mjs 的纪律一致。
-    const nextRecords = base.records.map(record => {
+    const originals = new Map(existing.map(record => [record.id, record]));
+    const nextRecords = base.records.filter(record => !deletedById.has(record.id)
+      || JSON.stringify(record) !== JSON.stringify(originals.get(record.id))).map(record => {
       const updated = updatedById.get(record.id);
       if (!updated) return record;
-      if (record.manualReview !== 'pending' || record.dataStatus !== 'draft') return record;
+      if (record.manualReview !== 'pending' || record.dataStatus !== 'draft'
+        || JSON.stringify(record) !== JSON.stringify(originals.get(record.id))) return record;
       return updated;
     });
     try {
       const result = await call({ action:'saveRecords', records:nextRecords, expectedVersion:base.version, auditEntry });
+      if (deletedById.size) fs.writeFileSync(deletionBackupFile, JSON.stringify({ createdAt:now.toISOString(), dryRun:false, persisted:true,
+        removedIds:base.records.filter(record => !nextRecords.some(item => item.id === record.id)).map(record => record.id),
+        version:result.version, records:[...deletedById.values()] }, null, 2));
       console.log(`\n已写入：${result.saved} 条，version ${base.version} → ${result.version}${attempt > 1 ? `（第 ${attempt} 次尝试成功）` : ''}`);
       console.log(`公开缓存：发布 ${result.publicCachePublished ?? 0}，移除 ${result.publicCacheRemoved ?? 0}`);
       return;
