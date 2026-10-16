@@ -55,7 +55,7 @@ export function changedOperationFields<T extends object>(before: T, after: T, fi
 export function validateFeedbackRecord(record: FeedbackRecord) {
   const errors: string[] = [];
   if (!record.competitionName.trim()) errors.push('赛事名称不能为空');
-  if (record.content.trim().length < 5) errors.push('纠错内容至少填写5个字');
+  if (!record.content.trim()) errors.push('纠错内容不能为空');
   if (record.evidenceUrl && !/^https?:\/\//i.test(record.evidenceUrl)) errors.push('证据链接必须以 http:// 或 https:// 开头');
   return errors;
 }
@@ -87,8 +87,10 @@ const aiJobSeed: AiJobRecord[] = [
 
 function load<T>(key: string, seed: T[]): T[] {
   try {
-    const value = JSON.parse(window.localStorage.getItem(key) || '[]');
-    return Array.isArray(value) && value.length ? value : seed.map(item => ({ ...item }));
+    const saved = window.localStorage.getItem(key);
+    if (saved === null) return seed.map(item=>({...item}));
+    const value = JSON.parse(saved);
+    return Array.isArray(value) ? value : seed.map(item => ({ ...item }));
   } catch (_error) { return seed.map(item => ({ ...item })); }
 }
 
@@ -108,12 +110,10 @@ export const persistFeedbacks = (records: FeedbackRecord[]) => {
 };
 export const loadAiJobs = () => load(AI_JOB_KEY, aiJobSeed).map((item: any) => ({ ...item, source:item.source || (String(item.id).includes('-mock-') ? 'mock' : 'service') })) as AiJobRecord[];
 export const persistAiJobs = (records: AiJobRecord[]) => { persist(AI_JOB_KEY, records); queueCloudAiJobs(records); };
+export const replaceFeedbackCache = (records:FeedbackRecord[]) => persist(FEEDBACK_KEY,records);
+export const replaceAiJobCache = (records:AiJobRecord[]) => persist(AI_JOB_KEY,records);
 
 export function hydrateOperationStores(feedbacks: FeedbackRecord[], aiJobs: AiJobRecord[]) {
-  const nextFeedbacks = feedbacks.length ? feedbacks : loadFeedbacks();
-  const nextAiJobs = aiJobs.length ? aiJobs : loadAiJobs();
-  persist(FEEDBACK_KEY, nextFeedbacks);
-  persist(AI_JOB_KEY, nextAiJobs);
-  if (!feedbacks.length) queueCloudFeedbacks(nextFeedbacks);
-  if (!aiJobs.length) queueCloudAiJobs(nextAiJobs);
+  persist(FEEDBACK_KEY, feedbacks);
+  persist(AI_JOB_KEY, aiJobs);
 }

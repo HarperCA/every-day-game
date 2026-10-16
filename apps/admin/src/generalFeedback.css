@@ -1,0 +1,10 @@
+.general-feedback-content { max-width:420px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.general-feedback-status { display:inline-block; padding:4px 10px; border-radius:20px; background:#eef2f7; color:#526177; }
+.general-feedback-status.status-processing { background:#eaf2ff; color:#2469cc; }
+.general-feedback-status.status-resolved { background:#e7f6ed; color:#277747; }
+.general-feedback-empty { padding:32px; color:#64748b; text-align:center; }
+.general-feedback-error { color:#ba2525; background:#fff0f0; padding:12px; border-radius:8px; }
+.general-feedback-dialog { max-width:680px; }
+.general-feedback-dialog > label { display:flex; flex-direction:column; gap:8px; margin:18px 0; font-weight:600; }
+.general-feedback-dialog textarea { min-height:110px; resize:vertical; padding:12px; border:1px solid #dbe3ed; border-radius:8px; font:inherit; font-weight:400; }
+.general-feedback-original { white-space:pre-wrap; overflow-wrap:anywhere; padding:16px; background:#f5f7fa; border-radius:8px; }

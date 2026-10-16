@@ -2,6 +2,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import { eventLevels, feeTypes, participationFormats, registrationOrganizations, teamSizeCategories } from './validation';
 import { fromDateTimeLocal, linesToList, listToLines, toDateTimeLocal } from './editorUtils';
 import { displayAuditField } from './fieldLabels';
+import { displayQualityIssue, parseQualityIssueLines } from './qualityIssueDisplay';
+import seedCompetitions from './data/competitions.json';
 
 const dataStatuses = ['draft', 'pending_system_validation', 'pending_manual_review', 'reviewing', 'published', 'archived', 'offline', 'quarantined'];
 const dataStatusLabels: Record<string, string> = { draft:'草稿', pending_system_validation:'待系统验证', pending_manual_review:'待人工核验', reviewing:'资料复核中', published:'已发布', archived:'已归档', offline:'已下架' };
@@ -24,16 +26,25 @@ interface Props {
 }
 
 export default function CompetitionEditor({ editing, setEditing, errors, onCancel, onSave, onDelete, onRecover, isNew = false, saving = false }: Props) {
+  const seedSchedule = (seedCompetitions as any[]).find(record => record.id === editing.id)?.schedule;
+  const missingSeedDates = [
+    ['registration_start', '报名开始'], ['registration_end', '报名截止'],
+    ['competition_start', '比赛开始'], ['competition_end', '比赛结束'],
+  ].filter(([field]) => !editing.schedule?.[field] && seedSchedule?.[field])
+    .map(([field, label]) => `${label}：${new Date(seedSchedule[field]).toLocaleDateString('zh-CN', { timeZone:'Asia/Shanghai' })}`);
   const set = (field: string, value: unknown) => setEditing((current: any) => ({ ...current, [field]: value }));
   const setNested = (group: string, field: string, value: unknown) => setEditing((current: any) => ({ ...current, [group]: { ...current[group], [field]: value } }));
   const updateSource = (index: number, field: string, value: unknown) => setEditing((current: any) => ({
     ...current,
-    sources: current.sources.map((source: any, sourceIndex: number) => sourceIndex === index ? { ...source, [field]: value } : source),
+    ...(field === 'validity_status' && value === 'valid' ? { lastVerifiedAt: new Date().toISOString() } : {}),
+    sources: current.sources.map((source: any, sourceIndex: number) => sourceIndex === index
+      ? { ...source, [field]: value, ...(field === 'validity_status' && value === 'valid' ? { last_verified_at: new Date().toISOString() } : {}) }
+      : source),
   }));
   const removeSource = (index: number) => setEditing((current: any) => ({ ...current, sources: current.sources.filter((_: any, sourceIndex: number) => sourceIndex !== index) }));
   const addSource = () => setEditing((current: any) => ({
     ...current,
-    sources: [...(current.sources || []), { id:`source-${current.id}-${Date.now()}`, edition_id:current.id, url:'', source_type:'organizer_website', is_official:true, published_at:null, last_verified_at:null, validity_status:'unchecked' }],
+    sources: [...(current.sources || []), { id:`source-${current.id}-${Date.now()}`, edition_id:current.id, url:'', source_type:'organizer_website', title:'', content_summary:'', evidence_excerpt:'', supports_fields:[], review_reason:'', is_official:true, published_at:null, last_verified_at:null, validity_status:'unchecked' }],
   }));
 
   return <div className="modal-mask" onMouseDown={onCancel}>
@@ -54,7 +65,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <ListField label="别名（每行一项）" value={editing.aliases} onChange={value=>set('aliases',value)}/>
         <ListField label="客观标签（每行一项）" value={editing.objectiveTags} onChange={value=>set('objectiveTags',value)}/>
         <ListField label="适合专业（每行一项）" value={editing.professions} onChange={value=>set('professions',value)}/>
-        <ListField label="数据质量问题（每行一项）" value={editing.qualityIssues} onChange={value=>set('qualityIssues',value)}/>
+        <IssueListField label="数据质量问题" value={editing.qualityIssues} onChange={value=>set('qualityIssues',value)}/>
       </div></fieldset>
 
       {editing.noticeResolution && <fieldset><legend>通知追溯线索（待逐条核验）</legend>
@@ -71,22 +82,26 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <TextField label="组队人数原文" value={editing.teamSize} onChange={value=>set('teamSize',value)}/>
         <label>报名组织方式<select value={editing.registrationOrganization} onChange={e=>set('registrationOrganization',e.target.value)}>{registrationOrganizations.map(value=><option key={value}>{value}</option>)}</select></label>
         <label>报名费用<select value={editing.feeType} onChange={e=>set('feeType',e.target.value)}>{feeTypes.map(value=><option key={value}>{value}</option>)}</select></label>
-        <TextField label="官方报名方式原文" value={editing.registrationMethod} onChange={value=>set('registrationMethod',value)}/>
+        <CollapsibleField label="官方报名方式原文" value={editing.registrationMethod} onChange={value=>set('registrationMethod',value)}/>
         <label className="wide">报名网址<input type="url" value={editing.registrationUrl} onChange={e=>set('registrationUrl',e.target.value)}/></label>
-        <TextField label="费用说明原文" value={editing.fees} onChange={value=>set('fees',value)}/>
+        <CollapsibleField label="费用说明原文" value={editing.fees} onChange={value=>set('fees',value)}/>
       </div></fieldset>
 
       <fieldset><legend>时间安排</legend><div className="editor-grid">
         <DateField label="报名开始" value={editing.schedule.registration_start} onChange={value=>setNested('schedule','registration_start',value)}/>
         <DateField label="报名截止" value={editing.schedule.registration_end} onChange={value=>setNested('schedule','registration_end',value)}/>
+        <label>报名截止说明（各赛项、各校截止不同时，截止日期填最晚的一个，这里写“最晚报名时间”等；没有日期时写“以学校通知为准”等，40 字内）<input maxLength={40} value={editing.schedule.registration_end_note || ''} onChange={e=>setNested('schedule','registration_end_note',e.target.value)}/></label>
         <DateField label="比赛开始" value={editing.schedule.competition_start} onChange={value=>setNested('schedule','competition_start',value)}/>
         <DateField label="比赛结束" value={editing.schedule.competition_end} onChange={value=>setNested('schedule','competition_end',value)}/>
         <label>待公布<input type="checkbox" checked={Boolean(editing.schedule.pending_announcement)} onChange={e=>setNested('schedule','pending_announcement',e.target.checked)}/></label>
         <label>人工状态覆盖<input value={editing.schedule.status_override || ''} onChange={e=>setNested('schedule','status_override',e.target.value||null)}/></label>
-        <TextField label="覆盖原因" value={editing.schedule.status_override_reason || ''} onChange={value=>setNested('schedule','status_override_reason',value||null)}/>
-        <TextField label="时间说明" value={editing.schedule.time_note || ''} onChange={value=>setNested('schedule','time_note',value)}/>
-        <label>时间变更状态<input value={editing.schedule.change_status || ''} onChange={e=>setNested('schedule','change_status',e.target.value)}/></label>
-      </div></fieldset>
+        <CollapsibleField label="覆盖原因" value={editing.schedule.status_override_reason || ''} onChange={value=>setNested('schedule','status_override_reason',value||null)}/>
+        <CollapsibleField label="时间说明" value={editing.schedule.time_note || ''} onChange={value=>setNested('schedule','time_note',value)}/>
+        <CollapsibleField label="时间变更状态" value={editing.schedule.change_status || ''} onChange={value=>setNested('schedule','change_status',value)} multiline={false}/>
+      </div>
+        {missingSeedDates.length > 0 && <p className="source-context-hint">当前记录缺少部分日期；初始底稿曾记录 {missingSeedDates.join('、')}。底稿仅供核对，请打开当届官方来源确认后手动补录。</p>}
+        {editing.schedule.pending_announcement && editing.schedule.status_override === '已截止' && <p className="source-context-hint">“待公布”和“已截止”同时存在，请核对它们是否指向同一届次。未知日期应留空，只有官方明确待公布时才勾选“待公布”。</p>}
+      </fieldset>
 
       <fieldset><legend>赛项信息</legend><div className="editor-grid">
         <label className="wide">赛项名称<input value={editing.track.name} onChange={e=>setNested('track','name',e.target.value)}/></label>
@@ -101,7 +116,7 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <label className="wide">证据定位（系统自动关联）<output>{(editing.recommendation.evidence_refs || []).map(displayAuditField).join('、') || '暂无'}</output></label>
         <ListField label="限制说明（每行一项）" value={editing.recommendation.limitations} onChange={value=>setNested('recommendation','limitations',value)}/>
         <TextField label="备赛建议" value={editing.recommendation.preparation} onChange={value=>setNested('recommendation','preparation',value)}/>
-        <ListField label="缺失信息（每行一项）" value={editing.recommendation.missing_information} onChange={value=>setNested('recommendation','missing_information',value)}/>
+        <IssueListField label="缺失信息" value={editing.recommendation.missing_information} onChange={value=>setNested('recommendation','missing_information',value)}/>
         <label>赛事数据版本<input value={editing.recommendation.event_data_version} onChange={e=>setNested('recommendation','event_data_version',e.target.value)}/></label>
         <label>推荐规则版本<input value={editing.recommendation.rule_version} onChange={e=>setNested('recommendation','rule_version',e.target.value)}/></label>
         <label>推荐系统验证（只读）<select value={editing.recommendation.system_validation} disabled>{validationStatuses.map(value=><option key={value} value={value}>{validationLabels[value]}</option>)}</select></label>
@@ -117,17 +132,24 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
       </div></fieldset>
 
       <fieldset><legend>数据来源</legend>
-        <div className="source-list">{(editing.sources || []).map((source:any,index:number)=><section className="source-card" key={source.id || index}>
-          <div className="source-card-head"><b>来源 {index+1}</b><button className="danger-action" onClick={()=>removeSource(index)}>删除来源</button></div>
+        <div className="source-list">{(editing.sources || []).map((source:any,index:number)=><details className="source-card" key={source.id || index}>
+          <summary><b>来源 {index+1} · {source.title || source.url || '内容待补充'}</b><small>{source.validity_status === 'valid' ? '已核验有效' : source.validity_status === 'invalid' ? '原文不支持' : source.validity_status === 'unreachable' ? '链接无法打开' : '待核验'}</small></summary>
+          <div className="source-card-body"><div className="source-card-head"><button className="danger-action" onClick={()=>removeSource(index)}>删除来源</button></div>
+          <p className="source-context-hint">{source.content_summary || '尚未记录来源的具体内容。请打开原文，填写摘要、证据与采用原因。'} {source.url && <a href={source.url} target="_blank" rel="noreferrer">打开原文 ↗</a>}</p>
           <div className="editor-grid">
             <label>来源 ID（只读）<input value={source.id} readOnly/></label><label>来源类型<input value={source.source_type} onChange={e=>updateSource(index,'source_type',e.target.value)}/></label>
             <label className="wide">来源网址<input type="url" value={source.url} onChange={e=>updateSource(index,'url',e.target.value)}/></label>
+            <label className="wide">原文标题<input value={source.title || ''} placeholder="填写来源页面或通知的实际标题" onChange={e=>updateSource(index,'title',e.target.value)}/></label>
+            <TextField label="具体内容摘要" value={source.content_summary || ''} onChange={value=>updateSource(index,'content_summary',value)}/>
+            <TextField label="原文证据摘录" value={source.evidence_excerpt || ''} onChange={value=>updateSource(index,'evidence_excerpt',value)}/>
+            <ListField label="支持核对的字段（每行一项）" value={source.supports_fields || []} onChange={value=>updateSource(index,'supports_fields',value)}/>
+            <TextField label="采用或存疑原因" value={source.review_reason || ''} onChange={value=>updateSource(index,'review_reason',value)}/>
             <label>是否官方<input type="checkbox" checked={Boolean(source.is_official)} onChange={e=>updateSource(index,'is_official',e.target.checked)}/></label>
-            <label>有效性状态<input value={source.validity_status} onChange={e=>updateSource(index,'validity_status',e.target.value)}/></label>
+            <label>原文核验状态<select value={source.validity_status || 'unchecked'} onChange={e=>updateSource(index,'validity_status',e.target.value)}><option value="unchecked">待核验</option><option value="valid">已打开原文并核验有效</option><option value="invalid">原文不支持所述信息</option><option value="unreachable">链接无法打开</option></select></label>
             <DateField label="发布日期" value={source.published_at} onChange={value=>updateSource(index,'published_at',value)}/>
             <DateField label="最后核验时间" value={source.last_verified_at} onChange={value=>updateSource(index,'last_verified_at',value)}/>
-          </div>
-        </section>)}</div>
+          </div></div>
+        </details>)}</div>
         <button className="add-source" onClick={addSource}>＋ 添加数据来源</button>
       </fieldset>
 
@@ -140,8 +162,24 @@ function TextField({ label, value, onChange }: { label:string; value:string; onC
   return <label className="wide">{label}<textarea value={value || ''} onChange={e=>onChange(e.target.value)}/></label>;
 }
 
+function CollapsibleField({ label, value, onChange, multiline = true }: { label:string; value:unknown; onChange:(value:string)=>void; multiline?:boolean }) {
+  const text = String(value || '');
+  return <details className="wide collapsible-editor-field"><summary>{label}{text.trim() ? '（已填写）' : ''}</summary>{multiline
+    ? <textarea aria-label={label} value={text} onChange={event=>onChange(event.target.value)}/>
+    : <input aria-label={label} value={text} onChange={event=>onChange(event.target.value)}/>}
+  </details>;
+}
+
 function ListField({ label, value, onChange }: { label:string; value:unknown; onChange:(value:string[])=>void }) {
   return <label className="wide">{label}<textarea value={listToLines(value)} onChange={e=>onChange(linesToList(e.target.value))}/></label>;
+}
+
+function IssueListField({ label, value, onChange }: { label:string; value:unknown; onChange:(value:string[])=>void }) {
+  const items = Array.isArray(value) ? value.map(String) : [];
+  return <div className="wide issue-list-field"><strong>{label}（每行一项）</strong>
+    {items.length ? <ul>{items.map((item,index)=><li key={`${item}-${index}`}>{displayQualityIssue(item)}</li>)}</ul> : <p>暂无</p>}
+    <details><summary>编辑条目</summary><textarea aria-label={`${label}条目`} defaultValue={items.map(displayQualityIssue).join('\n')} onChange={event=>onChange(parseQualityIssueLines(event.target.value))}/><small>每行一个条目，格式为“中文说明（原代码）”；保存时保留原代码。</small></details>
+  </div>;
 }
 
 function DateField({ label, value, onChange }: { label:string; value:unknown; onChange:(value:string|null)=>void }) {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { describeCloudError, getPipelineRunDetail, type PipelineRunDetail as Detail, type PipelineRunRow } from './adminCloud';
 import PipelineFlow, { kindName, plain } from './PipelineFlow';
+import { summarizePipelineRows } from './pipelineStatistics';
 
 // 单轮抓取明细：上面是数据流图，下面是逐条明细表，两者合在一块：
 // 点流程图的方框、连线或连线上的数字，明细表就只显示对应的那批比赛，并多一列“在这个环节的结果”。
@@ -33,6 +34,7 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
   const [kind, setKind] = useState('');
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState<Selection>(null);
+  const rowStats = useMemo(() => summarizePipelineRows(detail.rows), [detail.rows]);
 
   const flow = detail.flow;
   const nodeById = useMemo(() => new Map((flow?.nodes || []).map(node => [node.id, node])), [flow]);
@@ -80,6 +82,7 @@ export function PipelineRunView({ detail, onBack }:{ detail:Detail; onBack:()=>v
       <p>上面是这一轮的数据流图，下面是每一条候选的去向。点流程图的方框、连线或连线上的数字，明细表就只显示对应的比赛。</p></div></header>
     <p className="pipeline-note">搜索时丢弃 {s.dropped} 条；前置筛选：{Object.entries(s.filter).map(([key, value]) => `${FILTER_LABEL[key] || key} ${value}`).join('、')}；
       其中 {s.formalNotices} 条正式通知转去追溯赛事官网。{Object.keys(s.failureReasons).length ? `读了详情页但未入库的原因：${Object.entries(s.failureReasons).map(([key, value]) => `${key}（${value}）`).join('；')}。` : ''}</p>
+    <section className="panel pipeline-overview"><h2>本轮读完详情但未入库：{rowStats.afterReadNotStored.total} 条候选页面</h2><p>仅统计正文读取与抽取成功后，被同名判重、赛事范围或入库门槛挡住的逐条记录；试运行、仅读取失败和保留线索不计入。多篇页面可能对应同一场比赛。</p>{rowStats.afterReadNotStored.byProblem.length ? <ol className="pipeline-problem-list">{rowStats.afterReadNotStored.byProblem.map(item => <li key={`${item.stage}-${item.reason}`}><span>{item.stage === 'same_name' ? '同名判重' : item.stage === 'scope' ? '赛事范围' : '入库门槛'} · {item.reason}</span><b>{item.count}</b></li>)}</ol> : <p>本轮没有可逐条确认的未入库原因；旧运行记录可能缺少完整路径。</p>}</section>
 
     {detail.sourceSchedule && detail.sourceSchedule.some(item => item.everyDays > 0) && <p className="pipeline-note">固定来源每 {detail.sourceSchedule.find(item => item.everyDays > 0)?.everyDays} 天才抓一次：{detail.sourceSchedule.filter(item => item.everyDays > 0).map(item =>
       `${item.source}${item.ran ? '本轮已抓取' : `本轮没抓（上次 ${item.lastCrawledAt ? new Date(item.lastCrawledAt).toLocaleDateString('zh-CN', { timeZone:'Asia/Shanghai' }) : '—'}，下次约 ${item.nextDueAt ? new Date(item.nextDueAt).toLocaleDateString('zh-CN', { timeZone:'Asia/Shanghai' }) : '—'}）`}`).join('；')}。百度搜索每晚都跑。</p>}

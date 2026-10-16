@@ -1,4 +1,7 @@
 import { validateAdminRecord } from './validation';
+import { registrationScheduleIssues, unresolvedRegistrationQualityIssues } from './registrationSchedule';
+import { publishScopeIssue } from './publishScope';
+import { hasReviewedOfficialSource } from './sourceReview';
 
 export const workflowStatusLabels: Record<string, string> = {
   not_run: '未执行',
@@ -12,6 +15,8 @@ export const qualityIssueLabels: Record<string, string> = {
   source_reachability_not_checked: '来源链接尚未核验可访问性',
   track_requires_official_split: '组合赛项需按官方资料拆分',
   registration_time_pending: '报名时间待官方确认',
+  registration_start_pending: '报名开始时间待官方确认',
+  registration_end_pending: '报名截止时间待官方确认',
   registration_url_pending: '报名入口待官方确认',
   source_missing: '缺少官方数据来源',
   profession_mapping_pending: '适合专业待人工确认',
@@ -40,6 +45,8 @@ function blockedTitle(record: any): boolean {
 
 export function getSystemReviewIssues(record: any): string[] {
   const issues = [...validateAdminRecord(record)];
+  const scopeIssue = publishScopeIssue(record);
+  if (scopeIssue) issues.push(scopeIssue);
   if (noticeUnresolved(record)) issues.push('通知线索待追溯真实赛事名称、官网和报名入口');
   if (blockedTitle(record)) issues.push('名称含感叹号或活动报道用语，不得入赛事库');
   if (!/^https?:\/\//i.test(record.registrationUrl || '')) issues.push('报名链接缺失或格式不正确');
@@ -48,7 +55,7 @@ export function getSystemReviewIssues(record: any): string[] {
     issues.push('缺少有效格式的官方来源链接');
   }
   if (!Array.isArray(record.professions) || !record.professions.length) issues.push('尚未配置适合专业');
-  for (const issue of record.qualityIssues || []) {
+  for (const issue of unresolvedRegistrationQualityIssues(record)) {
     issues.push(qualityIssueLabels[issue] || `待处理：${issue}`);
   }
   return Array.from(new Set(issues));
@@ -60,6 +67,12 @@ export function getSystemReviewIssues(record: any): string[] {
 // 后台看着像发布成功，小程序其实什么都没收到。
 export function getPublishBlockers(record: any): string[] {
   const blockers: string[] = [];
+  blockers.push(...registrationScheduleIssues(record.schedule));
+  for (const issue of unresolvedRegistrationQualityIssues(record)) {
+    if (/^registration_(?:start|end|time)_pending$/.test(issue)) blockers.push(qualityIssueLabels[issue] || `报名时间待核实：${issue}`);
+  }
+  const scopeIssue = publishScopeIssue(record);
+  if (scopeIssue) blockers.push(scopeIssue);
   if (noticeUnresolved(record)) blockers.push('通知线索尚未解析为赛事');
   if (blockedTitle(record)) blockers.push('名称含感叹号或活动报道用语');
   if (/(?:19|20)\d{2}|第[零〇一二三四五六七八九十百千万两\d]+届/.test(String(record.name || ''))) blockers.push('赛事名称尚未拆分年份和届次');
@@ -68,7 +81,7 @@ export function getPublishBlockers(record: any): string[] {
   if (!/^https?:\/\//i.test(record.registrationUrl || '')) blockers.push('报名链接不可用');
   if (!record.lastVerifiedAt) blockers.push('缺少最后核验时间');
   if (!Array.isArray(record.professions) || !record.professions.length) blockers.push('适合专业未映射');
-  if (!(record.sources || []).some((source: any) => source.is_official && !['discovery_notice','university_notice','search_candidate'].includes(source.source_type) && source.validity_status === 'valid' && /^https?:\/\//i.test(source.url || ''))) blockers.push('缺少已核验有效的官方来源');
+  if (!hasReviewedOfficialSource(record)) blockers.push('缺少已核验有效的官方来源');
   return blockers;
 }
 

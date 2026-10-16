@@ -1,3 +1,5 @@
+import { registrationScheduleIssues } from './registrationSchedule';
+
 export const eventLevels = ['国际级', '国家级', '省级/区域级', '其他/未明确'];
 export const participationFormats = ['个人赛', '团队赛', '个人或团队均可', '暂未明确'];
 export const teamSizeCategories = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];
@@ -6,6 +8,7 @@ export const registrationOrganizations = ['自行报名', '学校统一报名', 
 
 export function validateAdminRecord(record: any): string[] {
   const errors: string[] = [];
+  errors.push(...registrationScheduleIssues(record.schedule));
   if (!record.name?.trim()) errors.push('赛事名称不能为空');
   if (!record.editionName?.trim()) errors.push('届次名称不能为空');
   if (/(?:19|20)\d{2}|第[零〇一二三四五六七八九十百千万两\d]+届/.test(String(record.name || ''))) errors.push('赛事名称只保留正文；年份和第几届请填入独立字段');

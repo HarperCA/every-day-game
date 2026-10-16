@@ -1,11 +1,31 @@
 import type { AuditEntry } from './dataStore';
 import type { AiJobRecord, FeedbackRecord } from './operationsStore';
 
+export interface GeneralFeedbackRecord {
+  id: string;
+  type: 'bug' | 'suggestion' | 'data' | 'other';
+  content: string;
+  contact: string;
+  status: 'pending' | 'processing' | 'resolved';
+  publicReply: string;
+  internalNote: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+}
+export interface GeneralFeedbackList {
+  items: GeneralFeedbackRecord[];
+  total: number;
+}
+export const listGeneralFeedback = (filters: {status?:string;type?:string;page?:number;pageSize?:number} = {}) => callAdmin<GeneralFeedbackList>('listGeneralFeedback', filters);
+export const updateGeneralFeedback = (input: {id:string;status:GeneralFeedbackRecord['status'];publicReply:string;internalNote:string;expectedUpdatedAt:string}) => callAdmin<{feedback:GeneralFeedbackRecord}>('updateGeneralFeedback', input);
+
 // 后端已迁到自有服务器（见 docs/migration-to-self-hosted.md）。
 // 默认走同源相对路径 /api——nginx 把它转给本机的 Node 服务，
 // 浏览器眼里只有一个域名，没有跨域，也不再受 CloudBase「安全来源」白名单管。
 const API_BASE = ((import.meta as any).env?.VITE_API_BASE || '').trim().replace(/\/+$/, '');
 let sessionToken = '';
+let sessionGeneration = 0;
 let writeQueue: Promise<unknown> = Promise.resolve();
 type StateKey = 'records' | 'feedbacks' | 'aiJobs';
 let stateVersions: Record<StateKey, number> = { records:0, feedbacks:0, aiJobs:0 };
@@ -83,6 +103,7 @@ async function callAdmin<T>(action: string, payload: Record<string, unknown> = {
 }
 
 export async function connectAdminCloud(token: string): Promise<AdminCloudBootstrap> {
+  const generation = ++sessionGeneration;
   sessionToken = '';
   writeBlockedMessage = '';
   const adminToken = token.trim();
@@ -90,9 +111,11 @@ export async function connectAdminCloud(token: string): Promise<AdminCloudBootst
   // 不再需要匿名身份：自有服务器不管「请求从哪个网页来的」，
   // 鉴权就是这一把 ADMIN_TOKEN 本身。
   const loginResult = await postJson('/api/adminData', { action: 'login', adminToken });
+  requireCurrentSession(generation);
   if (!loginResult?.ok || !loginResult.data?.sessionToken) throw new Error(loginResult?.message || '管理员会话建立失败');
   sessionToken = loginResult.data.sessionToken;
   const bootstrap = await callAdmin<AdminCloudBootstrap>('bootstrap');
+  requireCurrentSession(generation);
   stateVersions = {
     records:Number.isInteger(bootstrap.stateVersions?.records) ? bootstrap.stateVersions.records : 0,
     feedbacks:Number.isInteger(bootstrap.stateVersions?.feedbacks) ? bootstrap.stateVersions.feedbacks : 0,
@@ -102,9 +125,14 @@ export async function connectAdminCloud(token: string): Promise<AdminCloudBootst
 }
 
 export function disconnectAdminCloud() {
+  ++sessionGeneration;
   sessionToken = '';
   stateVersions = { records:0, feedbacks:0, aiJobs:0 };
   writeBlockedMessage = '';
+}
+
+function requireCurrentSession(generation: number) {
+  if (generation !== sessionGeneration) throw new Error('管理员会话已变更，请重新操作');
 }
 
 function requireWritablePage() {
@@ -113,17 +141,19 @@ function requireWritablePage() {
 
 function enqueue(action: string, payload: Record<string, unknown>) {
   if (!sessionToken) return;
+  const generation = sessionGeneration;
   emit('syncing');
   writeQueue = writeQueue
     .catch(() => undefined)
     .then(() => {
+      requireCurrentSession(generation);
       requireWritablePage();
       return callAdmin(action, payload);
     })
-    .then(() => emit('synced'))
+    .then(() => { if (generation === sessionGeneration) emit('synced'); })
     .catch(error => {
       console.error('后台同步失败', error);
-      emit('error', describeCloudError(error));
+      if (generation === sessionGeneration) emit('error', describeCloudError(error));
     });
 }
 
@@ -134,18 +164,25 @@ function enqueueState(
   followUps: Array<{ action:string; payload:Record<string, unknown> }> = [],
 ) {
   if (!sessionToken) return;
+  const generation = sessionGeneration;
   emit('syncing');
   writeQueue = writeQueue
     .catch(() => undefined)
     .then(async () => {
+      requireCurrentSession(generation);
       requireWritablePage();
       const result = await callAdmin<{ version:number }>(action, { ...payload, expectedVersion:stateVersions[key] });
+      requireCurrentSession(generation);
       stateVersions[key] = result.version;
-      for (const followUp of followUps) await callAdmin(followUp.action, followUp.payload);
+      for (const followUp of followUps) {
+        requireCurrentSession(generation);
+        await callAdmin(followUp.action, followUp.payload);
+      }
     })
-    .then(() => emit('synced'))
+    .then(() => { if (generation === sessionGeneration) emit('synced'); })
     .catch(error => {
       console.error('后台状态同步失败', error);
+      if (generation !== sessionGeneration) return;
       if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
       emit('error', describeCloudError(error));
     });
@@ -158,16 +195,46 @@ export async function initializeCloudRecords(records: any[]) {
 
 // Manual creation must await server validation before changing the local list.
 export async function saveManualRecords(records: any[], auditEntry: AuditEntry): Promise<{version:number;publicCachePublished?:number;publicCacheRemoved?:number}> {
-  await writeQueue;
-  requireWritablePage();
+  const generation = sessionGeneration;
   emit('syncing');
-  const task = callAdmin<{ version:number;publicCachePublished?:number;publicCacheRemoved?:number }>('saveRecords', { records, auditEntry, expectedVersion:stateVersions.records });
-  writeQueue = task.then(result => { stateVersions.records = result.version; emit('synced'); return result; }).catch(error => {
-    if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
-    emit('error', describeCloudError(error));
+  const task = writeQueue.catch(() => undefined).then(async () => {
+    requireCurrentSession(generation);
+    requireWritablePage();
+    const result = await callAdmin<{ version:number;publicCachePublished?:number;publicCacheRemoved?:number }>('saveRecords', { records, auditEntry, expectedVersion:stateVersions.records });
+    requireCurrentSession(generation);
+    stateVersions.records = result.version;
+    emit('synced');
+    return result;
+  }).catch(error => {
+    if (generation === sessionGeneration) {
+      if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
+      emit('error', describeCloudError(error));
+    }
     throw error;
   });
-  return await writeQueue as {version:number;publicCachePublished?:number;publicCacheRemoved?:number};
+  writeQueue = task.catch(() => undefined);
+  return task;
+}
+
+export function saveOperationState(input: {records?:any[];feedbacks?:FeedbackRecord[];aiJobs?:AiJobRecord[];submittedUpdates?:FeedbackRecord[];auditEntries:AuditEntry[]}) {
+  const generation = sessionGeneration;
+  emit('syncing');
+  const task = writeQueue.catch(() => undefined).then(async () => {
+    requireCurrentSession(generation);
+    requireWritablePage();
+    const result = await callAdmin<{versions:Partial<Record<StateKey,number>>}>('saveOperationState', {...input,expectedVersions:{...stateVersions}});
+    requireCurrentSession(generation);
+    stateVersions = {...stateVersions,...result.versions};
+    emit('synced');
+  }).catch(error => {
+    if (generation === sessionGeneration) {
+      if (error instanceof Error && error.message.includes('state_version_conflict:')) writeBlockedMessage = error.message;
+      emit('error',describeCloudError(error));
+    }
+    throw error;
+  });
+  writeQueue = task.catch(() => undefined);
+  return task;
 }
 
 export const queueCloudRecords = (records: any[], auditEntry?: AuditEntry) => enqueueState('saveRecords', 'records', { records, ...(auditEntry ? { auditEntry } : {}) });
@@ -276,6 +343,45 @@ export interface ClientIssueReport {
   recent:ClientIssue[];
 }
 export const getClientIssues = (days = 14) => callAdmin<ClientIssueReport>('clientIssues', { days });
+
+// 偏好问卷统计（2026-10-09 起）：登录用户填的专业、比赛大类、省份的计数快照，服务器每 5 分钟从上海拉一次
+export interface PreferenceStats {
+  total:number; completed:number; skipped:number; noProfession:number; noCategory:number; noProvince:number;
+  profession:Record<string, number>; categories:Record<string, number>; province:Record<string, number>;
+  generatedAt:string; pulledAt:string;
+}
+export const getPreferenceStats = () => callAdmin<PreferenceStats | null>('preferenceStats');
+
+// 接口用量（2026-10-10 起）：服务器各进程记下的外部接口调用账，按天汇总和按使用位置细分
+export interface ApiUsageCell { calls:number; ok:number; failed:number; tokens:number; costUsd:number }
+export interface ApiUsageDetail extends ApiUsageCell {
+  date:string; api:string; apiLabel:string; caller:string; callerLabel:string;
+  tokensIn:number; tokensOut:number; avgMs:number; errors:Array<{ code:string; count:number }>; lastAt:string;
+}
+export interface ApiUsageReport {
+  generatedAt:string; dates:string[]; since:string | null;
+  apis:Array<{ id:string; label:string; unit:string; quota:string }>;
+  baiduToday:{ auto:number; manual:number; limit:number; byCaller:Record<string, number> };
+  days:Array<{ date:string; total:number; apis:Record<string, ApiUsageCell> }>;
+  details:ApiUsageDetail[];
+}
+export const getApiUsage = (days = 14) => callAdmin<ApiUsageReport>('apiUsage', { days });
+
+// 百度搜索屏蔽网站（2026-10-12 起）：内置名单 + 后台确认的；每周一统计“建议屏蔽”，确认后才生效
+export interface SiteBlockSuggestion {
+  host:string; refs:number; candidates:number; dropped:number; droppedReasons:Record<string, number>;
+  fetched:number; traced:number; traceFound:number; firstSeen:string; lastSeen:string;
+  samples:Array<{ title:string; url:string }>; reason:string;
+}
+export interface SiteBlocklist {
+  blocked:Array<{ host:string; reason:string; decidedAt:string; evidence?:{ refs:number; candidates:number; generatedAt:string } }>;
+  suggestions:SiteBlockSuggestion[];
+  dismissed:Array<{ host:string; decidedAt:string; refs?:number }>;
+  builtin:Array<{ host:string; reason:string }>;
+  generatedAt:string; windowDays:number; minRefs:number; runs:number;
+}
+export const getSiteBlocklist = () => callAdmin<SiteBlocklist>('siteBlocklist');
+export const decideSiteBlock = (host:string, decision:'block'|'dismiss'|'unblock'|'restore') => callAdmin<SiteBlocklist>('decideSiteBlock', { host, decision });
 
 // AI 思考过程（后端 aiReasoning.js，存在 ai_reasoning 集合）：按赛事列出，最新的在前
 export interface AiReasoningEntry {

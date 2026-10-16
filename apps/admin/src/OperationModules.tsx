@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { appendAuditEntry, downloadJson, persistAdminRecords, type AuditEntry } from './dataStore';
-import { changedOperationFields, loadAiJobs, loadFeedbacks, persistAiJobs, persistFeedbacks, validateAiJobRecord, validateFeedbackRecord, type AiJobRecord, type FeedbackRecord } from './operationsStore';
+import { downloadJson, replaceAdminRecordCache, replaceAuditCache, type AuditEntry } from './dataStore';
+import { changedOperationFields, loadAiJobs, loadFeedbacks, replaceAiJobCache, replaceFeedbackCache, validateAiJobRecord, validateFeedbackRecord, type AiJobRecord, type FeedbackRecord } from './operationsStore';
+import { describeCloudError, saveOperationState } from './adminCloud';
 import { displayAuditField } from './fieldLabels';
 
 type Section = 'feedback' | 'ai_jobs' | 'audit';
@@ -34,6 +35,8 @@ function localInputToIso(value: string) {
 }
 
 export default function OperationModules({ section, records, setRecords, audits, setAudits, setNotice }: Props) {
+  const [saving,setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [feedbacks, setFeedbacks] = useState(() => loadFeedbacks());
   const [aiJobs, setAiJobs] = useState(() => loadAiJobs());
   const [keyword, setKeyword] = useState('');
@@ -59,8 +62,31 @@ export default function OperationModules({ section, records, setRecords, audits,
   const spotCheckedCount = feedbacks.filter(item=>item.spotCheckStatus==='correct'||item.spotCheckStatus==='incorrect').length;
   const spotCheckAccuracy = spotCheckedCount ? `${Math.round(feedbacks.filter(item=>item.spotCheckStatus==='correct').length / spotCheckedCount * 100)}%` : '—';
 
-  function recordAudit(action: string, objectType: string, recordId: string, recordName: string, changedFields: string[], metadata?: Pick<AuditEntry,'reason'|'changes'>) {
-    setAudits(appendAuditEntry({ action, objectType, recordId, recordName, changedFields, actor:'admin@example.local', ...metadata }));
+  function createAudit(action:string,objectType:string,recordId:string,recordName:string,changedFields:string[],metadata?:Pick<AuditEntry,'reason'|'changes'>):AuditEntry {
+    return {id:`audit-${crypto.randomUUID()}`,createdAt:new Date().toISOString(),action,objectType,recordId,recordName,changedFields,actor:'admin@example.local',...metadata};
+  }
+  async function saveChanges(input:{feedbacks?:FeedbackRecord[];aiJobs?:AiJobRecord[];records?:any[]},entries:AuditEntry[]):Promise<boolean> {
+    if (savingRef.current) return false;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const previous = new Map(feedbacks.map(item=>[item.id,item]));
+      const submittedUpdates = (input.feedbacks || []).filter(item=>item.source==='user_submission' && JSON.stringify(previous.get(item.id))!==JSON.stringify(item));
+      await saveOperationState({...input,submittedUpdates,auditEntries:entries});
+      if (input.feedbacks) {setFeedbacks(input.feedbacks);replaceFeedbackCache(input.feedbacks);}
+      if (input.aiJobs) {setAiJobs(input.aiJobs);replaceAiJobCache(input.aiJobs);}
+      if (input.records) {setRecords(input.records);replaceAdminRecordCache(input.records);}
+      const nextAudits=[...entries,...audits].slice(0,100);setAudits(nextAudits);replaceAuditCache(nextAudits);
+      return true;
+    } catch(error) {
+      const message=`保存失败：${describeCloudError(error)}`;
+      setNotice(message);
+      if (editingFeedback) setFeedbackEditErrors([message]);
+      if (editingAiJob) setAiJobEditErrors([message]);
+      if (reviewing) setReviewError(message);
+      return false;
+    }
+    finally {savingRef.current=false;setSaving(false);}
   }
 
   function openReview(item: FeedbackRecord) {
@@ -68,22 +94,18 @@ export default function OperationModules({ section, records, setRecords, audits,
     setReviewDecision('accepted'); setReviewNote(''); setReviewError('');
   }
 
-  function submitReview() {
-    if (!reviewing) return;
+  async function submitReview() {
+    if (!reviewing || saving) return;
     if (reviewNote.trim().length < 5) { setReviewError('请填写至少5个字的审核说明'); return; }
     const now = new Date().toISOString();
     const next = feedbacks.map(item => item.id === reviewing.id ? { ...item, status:reviewDecision, reviewer:'admin@example.local', reviewNote:reviewNote.trim(), resolvedAt:now } as FeedbackRecord : item);
-    setFeedbacks(next); persistFeedbacks(next);
-    if (reviewDecision === 'accepted') {
-      const nextRecords = records.map(item => item.id === reviewing.editionId ? { ...item, dataStatus:'reviewing', manualReview:'pending', qualityIssues:Array.from(new Set([...(item.qualityIssues||[]),'user_feedback_requires_review'])), updatedAt:now, updatedBy:'admin@example.local' } : item);
-      setRecords(nextRecords); persistAdminRecords(nextRecords);
-    }
-    recordAudit(reviewDecision === 'accepted' ? 'feedback_accept' : 'feedback_reject', 'feedback', reviewing.id, reviewing.competitionName, ['status','review_note',...(reviewDecision === 'accepted' ? ['event_edition.data_status'] : [])]);
+    const nextRecords = reviewDecision === 'accepted' ? records.map(item => item.id === reviewing.editionId ? { ...item, dataStatus:'reviewing', manualReview:'pending', qualityIssues:Array.from(new Set([...(item.qualityIssues||[]),'user_feedback_requires_review'])), updatedAt:now, updatedBy:'admin@example.local' } : item) : undefined;
+    if (!await saveChanges({feedbacks:next,records:nextRecords},[createAudit(reviewDecision === 'accepted' ? 'feedback_accept' : 'feedback_reject','feedback',reviewing.id,reviewing.competitionName,['status','review_note',...(reviewDecision === 'accepted' ? ['event_edition.data_status'] : [])])])) return;
     setNotice(reviewDecision === 'accepted' ? '纠错已采纳，关联赛事已进入资料复核状态' : '纠错已驳回并记录审核理由');
     setReviewing(null);
   }
 
-  function queueFeedbacksForAi(items: FeedbackRecord[]) {
+  async function queueFeedbacksForAi(items: FeedbackRecord[]) {
     const targets = items.filter(item => item.status === 'pending_ai_review');
     if (!targets.length) { setNotice('没有待加入AI审核队列的纠错'); return; }
     const now = new Date().toISOString();
@@ -96,57 +118,50 @@ export default function OperationModules({ section, records, setRecords, audits,
       retryCount:0, maxRetries:2, lastAttemptAt:now, nextRetryAt:now, source:'service',
     }));
     const nextJobs = [...newJobs,...aiJobs];
-    setFeedbacks(nextFeedbacks); persistFeedbacks(nextFeedbacks);
-    setAiJobs(nextJobs); persistAiJobs(nextJobs);
-    targets.forEach(item=>recordAudit('feedback_ai_queue','feedback',item.id,item.competitionName,['status','ai_job_id']));
+    if (!await saveChanges({feedbacks:nextFeedbacks,aiJobs:nextJobs},targets.map(item=>createAudit('feedback_ai_queue','feedback',item.id,item.competitionName,['status','ai_job_id'])))) return;
     setNotice(`已将 ${targets.length} 条纠错加入AI审核队列；只有服务端返回结果后才会进入通过池或问题列表`);
   }
 
-  function spotCheck(item: FeedbackRecord, correct: boolean) {
+  async function spotCheck(item: FeedbackRecord, correct: boolean) {
     const now = new Date().toISOString();
     if (correct) {
       const finalStatus = item.aiDecision === 'rejected' ? 'rejected' : 'accepted';
       const next = feedbacks.map(row=>row.id===item.id?{...row,status:finalStatus as 'accepted'|'rejected',spotCheckStatus:'correct' as const,spotCheckedAt:now,reviewer:'admin@example.local',reviewNote:`抽查确认AI结论正确：${item.aiConclusion||''}`,resolvedAt:now}:row);
-      setFeedbacks(next); persistFeedbacks(next);
-      if (finalStatus === 'accepted') {
-        const nextRecords = records.map(record=>record.id===item.editionId?{...record,dataStatus:'reviewing',manualReview:'pending',qualityIssues:Array.from(new Set([...(record.qualityIssues||[]),'user_feedback_requires_review'])),updatedAt:now,updatedBy:'admin@example.local'}:record);
-        setRecords(nextRecords); persistAdminRecords(nextRecords);
-      }
-      recordAudit('feedback_spotcheck_correct','feedback',item.id,item.competitionName,['spot_check_status','status']);
+      const nextRecords = finalStatus === 'accepted' ? records.map(record=>record.id===item.editionId?{...record,dataStatus:'reviewing',manualReview:'pending',qualityIssues:Array.from(new Set([...(record.qualityIssues||[]),'user_feedback_requires_review'])),updatedAt:now,updatedBy:'admin@example.local'}:record) : undefined;
+      if (!await saveChanges({feedbacks:next,records:nextRecords},[createAudit('feedback_spotcheck_correct','feedback',item.id,item.competitionName,['spot_check_status','status'])])) return;
       setNotice('已记录抽查正确，并按AI结论完成该条纠错');
     } else {
       const next = feedbacks.map(row=>row.id===item.id?{...row,status:'ai_flagged' as const,spotCheckStatus:'incorrect' as const,spotCheckedAt:now}:row);
-      setFeedbacks(next); persistFeedbacks(next);
       const nextJobs = aiJobs.map(job=>job.id===item.aiJobId?{...job,status:'manual_required' as const,errorCode:'spot_check_incorrect',errorMessage:'管理员抽查发现AI审核结论不正确，已转人工复核。'}:job);
-      setAiJobs(nextJobs); persistAiJobs(nextJobs);
-      recordAudit('feedback_spotcheck_incorrect','feedback',item.id,item.competitionName,['spot_check_status','status','ai_job.status']);
+      if (!await saveChanges({feedbacks:next,aiJobs:nextJobs},[createAudit('feedback_spotcheck_incorrect','feedback',item.id,item.competitionName,['spot_check_status','status','ai_job.status'])])) return;
       setNotice('已标记AI审核有误，该纠错已进入问题待人工审核列表');
       setFeedbackView('issues');
     }
   }
 
-  function handleAiJob(item: AiJobRecord, action: 'retry'|'manual'|'resolve') {
+  async function handleAiJob(item: AiJobRecord, action: 'retry'|'manual'|'resolve') {
     const now = new Date();
     let updated: AiJobRecord;
+    let notice='';
     if (action === 'retry') {
       if (item.retryCount >= item.maxRetries) {
         updated = { ...item, status:'manual_required' };
-        setNotice('该任务已达到自动重试上限，已转人工处理');
+        notice = ('该任务已达到自动重试上限，已转人工处理');
       } else {
         updated = { ...item, status:'queued', retryCount:item.retryCount+1, nextRetryAt:new Date(now.getTime()+5*60*1000).toISOString() };
-        setNotice('任务已加入重试队列；开发模式不会伪造AI执行成功');
+        notice = ('任务已加入重试队列；开发模式不会伪造AI执行成功');
       }
     } else if (action === 'manual') {
       updated = { ...item, status:'manual_required', nextRetryAt:undefined };
-      setNotice('任务已转人工处理');
+      notice = ('任务已转人工处理');
     } else {
       if (!window.confirm('确定将该AI失败任务标记为已关闭吗？')) return;
       updated = { ...item, status:'resolved', resolvedAt:now.toISOString(), nextRetryAt:undefined };
-      setNotice('任务已关闭');
+      notice = ('任务已关闭');
     }
     const next = aiJobs.map(job => job.id === item.id ? updated : job);
-    setAiJobs(next); persistAiJobs(next);
-    recordAudit(`ai_job_${action}`, 'ai_job', item.id, item.competitionName, ['status',...(action==='retry'?['retry_count','next_retry_at']:[])]);
+    if (!await saveChanges({aiJobs:next},[createAudit(`ai_job_${action}`, 'ai_job', item.id, item.competitionName, ['status',...(action==='retry'?['retry_count','next_retry_at']:[])])])) return;
+    setNotice(notice);
   }
 
   function openFeedbackEditor(item: FeedbackRecord) {
@@ -159,8 +174,8 @@ export default function OperationModules({ section, records, setRecords, audits,
     setEditingFeedback(current => current ? { ...current, [field]:value } : current);
   }
 
-  function saveFeedbackEdit() {
-    if (!editingFeedback) return;
+  async function saveFeedbackEdit() {
+    if (!editingFeedback || saving) return;
     const original = feedbacks.find(item=>item.id===editingFeedback.id);
     if (!original) return;
     const errors = validateFeedbackRecord(editingFeedback);
@@ -171,8 +186,7 @@ export default function OperationModules({ section, records, setRecords, audits,
     if (!window.confirm(`确定保存这条纠错记录的 ${changedFields.length} 项修改吗？\n变更字段：${changedFields.join('、')}`)) return;
     const next = feedbacks.map(item=>item.id===editingFeedback.id?editingFeedback:item);
     const changes = Object.fromEntries(changedFields.map(field=>[field,{before:(original as any)[field],after:(editingFeedback as any)[field]}]));
-    setFeedbacks(next); persistFeedbacks(next);
-    recordAudit('feedback_update','feedback',editingFeedback.id,editingFeedback.competitionName,changedFields,{reason:feedbackEditReason.trim(),changes});
+    if (!await saveChanges({feedbacks:next},[createAudit('feedback_update','feedback',editingFeedback.id,editingFeedback.competitionName,changedFields,{reason:feedbackEditReason.trim(),changes})])) return;
     setNotice(`已保存纠错记录的 ${changedFields.length} 项修改`);
     setEditingFeedback(null);
   }
@@ -187,8 +201,8 @@ export default function OperationModules({ section, records, setRecords, audits,
     setEditingAiJob(current => current ? { ...current, [field]:value } : current);
   }
 
-  function saveAiJobEdit() {
-    if (!editingAiJob) return;
+  async function saveAiJobEdit() {
+    if (!editingAiJob || saving) return;
     const original = aiJobs.find(item=>item.id===editingAiJob.id);
     if (!original) return;
     const errors = validateAiJobRecord(editingAiJob);
@@ -199,14 +213,13 @@ export default function OperationModules({ section, records, setRecords, audits,
     if (!window.confirm(`确定保存这条AI任务的 ${changedFields.length} 项修改吗？\n此操作只修改任务配置，不代表AI已经执行成功。\n变更字段：${changedFields.join('、')}`)) return;
     const next = aiJobs.map(item=>item.id===editingAiJob.id?editingAiJob:item);
     const changes = Object.fromEntries(changedFields.map(field=>[field,{before:(original as any)[field],after:(editingAiJob as any)[field]}]));
-    setAiJobs(next); persistAiJobs(next);
-    recordAudit('ai_job_update','ai_job',editingAiJob.id,editingAiJob.competitionName,changedFields,{reason:aiJobEditReason.trim(),changes});
+    if (!await saveChanges({aiJobs:next},[createAudit('ai_job_update','ai_job',editingAiJob.id,editingAiJob.competitionName,changedFields,{reason:aiJobEditReason.trim(),changes})])) return;
     setNotice(`已保存AI任务的 ${changedFields.length} 项修改`);
     setEditingAiJob(null);
   }
 
   const header = section === 'feedback' ? ['纠错审核','核对用户提交的时间、链接、资格和规则问题'] : section === 'ai_jobs' ? ['AI失败任务','管理失败重试、人工接管和关闭状态'] : ['操作记录','查询后台关键写操作和处理轨迹'];
-  return <>
+  return <fieldset disabled={saving} style={{border:0,padding:0,margin:0}}>
     <header><div><h1>{header[0]}</h1><p>{header[1]}</p></div><div className="header-actions">{section==='feedback'&&<button className="primary" onClick={()=>queueFeedbacksForAi(feedbacks)}>待审核全部加入AI</button>}<button onClick={()=>downloadJson(section==='audit'?'audit-log':section, section==='feedback'?{feedbacks}:section==='ai_jobs'?{aiJobs}:{audits})}>导出 JSON</button></div></header>
     {section==='feedback'&&<div className="mock-data-banner">{feedbacks.some(item=>item.source==='user_submission')?'当前列表包含真实用户提交；“开发样例”记录仅用于流程验收。':'开发预览：当前纠错列表均为验收样例，不代表真实用户提交。'}</div>}
     {section==='ai_jobs'&&<div className="mock-data-banner">{aiJobs.some(item=>item.source==='service')?'当前列表同时包含服务端队列记录和开发样例；任务状态不等于外部 AI 已执行。':'开发预览：当前任务列表均为验收样例，不代表真实 AI 调用。'}</div>}
@@ -220,7 +233,7 @@ export default function OperationModules({ section, records, setRecords, audits,
       <section className="panel"><div className="toolbar"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="搜索赛事、错误码或错误信息"/><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">全部状态</option>{Object.entries(aiStatusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></div><div className="table-wrap"><table><thead><tr><th>赛事与任务</th><th>Provider / 模型</th><th>错误</th><th>重试</th><th>状态</th><th>操作</th></tr></thead><tbody>{aiRows.map(item=><tr key={item.id}><td><b>{item.competitionName}</b><small>{aiJobLabels[item.jobType]} · {item.editionId}</small></td><td>{item.provider}<small>{item.model}</small></td><td className="long-cell"><code>{item.errorCode}</code><small>{item.errorMessage}</small></td><td>{item.retryCount} / {item.maxRetries}<small>{item.nextRetryAt?`下次 ${item.nextRetryAt.slice(0,16).replace('T',' ')}`:`最近 ${item.lastAttemptAt.slice(0,16).replace('T',' ')}`}</small></td><td><span className={`admin-badge badge-${item.status}`}>{aiStatusLabels[item.status]}</span></td><td><div className="row-actions"><button className="edit-action" onClick={()=>openAiJobEditor(item)}>编辑任务</button>{item.status!=='resolved'&&<button onClick={()=>handleAiJob(item,'retry')}>重试</button>}{item.status!=='manual_required'&&item.status!=='resolved'&&<button onClick={()=>handleAiJob(item,'manual')}>转人工</button>}{item.status!=='resolved'&&<button onClick={()=>handleAiJob(item,'resolve')}>关闭</button>}</div></td></tr>)}</tbody></table></div><footer>Mock任务只验证队列状态，不会伪造外部AI调用；正式执行由受控服务端任务处理器完成</footer></section>
     </>}
     {section === 'audit' && <section className="panel audit-table-panel"><div className="toolbar"><input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="搜索对象、管理员或字段"/><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">全部动作</option>{Array.from(new Set(audits.map(item=>item.action))).map(value=><option key={value}>{value}</option>)}</select></div><div className="table-wrap"><table><thead><tr><th>时间</th><th>管理员</th><th>动作</th><th>对象类型</th><th>对象</th><th>变更字段</th><th>修改原因</th></tr></thead><tbody>{auditRows.map(item=><tr key={item.id}><td>{item.createdAt.slice(0,19).replace('T',' ')}</td><td>{item.actor}</td><td><code>{item.action}</code></td><td>{item.objectType||'event_edition'}</td><td><b>{item.recordName}</b><small>{item.recordId}</small></td><td>{item.changedFields.join('、')||'—'}</td><td>{item.reason||'—'}</td></tr>)}</tbody></table></div><footer>显示 {auditRows.length} / {audits.length} 条 · 云端最多加载最近100条</footer></section>}
-    {editingFeedback&&<div className="modal-mask" onMouseDown={()=>setEditingFeedback(null)}><section className="editor-modal operation-editor" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>编辑纠错记录</h2><p>{editingFeedback.competitionName}</p></div><button className="modal-close" onClick={()=>setEditingFeedback(null)}>×</button></div><div className="editor-note">纠错 ID、关联届次和提交时间保持只读；其余审核与AI字段可直接修改。保存前会再次确认并写入操作记录。</div><div className="editor-grid">
+    {editingFeedback&&<div className="modal-mask" onMouseDown={()=>{if(!saving)setEditingFeedback(null);}}><section className="editor-modal operation-editor" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>编辑纠错记录</h2><p>{editingFeedback.competitionName}</p></div><button className="modal-close" onClick={()=>setEditingFeedback(null)}>×</button></div><div className="editor-note">纠错 ID、关联届次和提交时间保持只读；其余审核与AI字段可直接修改。保存前会再次确认并写入操作记录。</div><div className="editor-grid">
       <label>纠错 ID（只读）<input value={editingFeedback.id} readOnly/></label><label>届次 ID（只读）<input value={editingFeedback.editionId} readOnly/></label>
       <label>赛事名称<input value={editingFeedback.competitionName} onChange={e=>updateFeedbackField('competitionName',e.target.value)}/></label><label>提交用户<input value={editingFeedback.submitterMasked} onChange={e=>updateFeedbackField('submitterMasked',e.target.value)}/></label>
       <label>纠错分类<select value={editingFeedback.category} onChange={e=>updateFeedbackField('category',e.target.value as FeedbackRecord['category'])}>{Object.entries(feedbackCategoryLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>处理状态<select value={editingFeedback.status} onChange={e=>updateFeedbackField('status',e.target.value as FeedbackRecord['status'])}>{Object.entries(feedbackStatusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
@@ -230,7 +243,7 @@ export default function OperationModules({ section, records, setRecords, audits,
       <label>抽查状态<select value={editingFeedback.spotCheckStatus||'not_checked'} onChange={e=>updateFeedbackField('spotCheckStatus',e.target.value as FeedbackRecord['spotCheckStatus'])}><option value="not_checked">未抽查</option><option value="correct">抽查正确</option><option value="incorrect">抽查有误</option></select></label><label>审核人<input value={editingFeedback.reviewer||''} onChange={e=>updateFeedbackField('reviewer',e.target.value||undefined)}/></label>
       <label className="wide">审核说明<textarea value={editingFeedback.reviewNote||''} onChange={e=>updateFeedbackField('reviewNote',e.target.value||undefined)}/></label><label className="wide">本次修改原因<textarea value={feedbackEditReason} onChange={e=>setFeedbackEditReason(e.target.value)} placeholder="至少5个字，操作记录中会保留该原因"/></label>
     </div>{feedbackEditErrors.length>0&&<div className="editor-errors">{feedbackEditErrors.map(error=><div key={error}>{error}</div>)}</div>}<div className="editor-actions sticky-actions"><button onClick={()=>setEditingFeedback(null)}>取消</button><button className="primary" onClick={saveFeedbackEdit}>保存修改</button></div></section></div>}
-    {editingAiJob&&<div className="modal-mask" onMouseDown={()=>setEditingAiJob(null)}><section className="editor-modal operation-editor" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>编辑AI失败任务</h2><p>{editingAiJob.competitionName}</p></div><button className="modal-close" onClick={()=>setEditingAiJob(null)}>×</button></div><div className="editor-note">任务 ID 与关联届次保持只读。修改任务配置不会被视为AI执行成功；保存前会再次确认并写入操作记录。</div><div className="editor-grid">
+    {editingAiJob&&<div className="modal-mask" onMouseDown={()=>{if(!saving)setEditingAiJob(null);}}><section className="editor-modal operation-editor" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>编辑AI失败任务</h2><p>{editingAiJob.competitionName}</p></div><button className="modal-close" onClick={()=>setEditingAiJob(null)}>×</button></div><div className="editor-note">任务 ID 与关联届次保持只读。修改任务配置不会被视为AI执行成功；保存前会再次确认并写入操作记录。</div><div className="editor-grid">
       <label>任务 ID（只读）<input value={editingAiJob.id} readOnly/></label><label>届次 ID（只读）<input value={editingAiJob.editionId} readOnly/></label>
       <label>赛事名称<input value={editingAiJob.competitionName} onChange={e=>updateAiJobField('competitionName',e.target.value)}/></label><label>任务类型<select value={editingAiJob.jobType} onChange={e=>updateAiJobField('jobType',e.target.value as AiJobRecord['jobType'])}>{Object.entries(aiJobLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
       <label>任务状态<select value={editingAiJob.status} onChange={e=>updateAiJobField('status',e.target.value as AiJobRecord['status'])}>{Object.entries(aiStatusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label>Provider<input value={editingAiJob.provider} onChange={e=>updateAiJobField('provider',e.target.value)}/></label>
@@ -240,6 +253,6 @@ export default function OperationModules({ section, records, setRecords, audits,
       <label>最近执行时间<input type="datetime-local" value={isoToLocalInput(editingAiJob.lastAttemptAt)} onChange={e=>updateAiJobField('lastAttemptAt',localInputToIso(e.target.value)||editingAiJob.lastAttemptAt)}/></label><label>下次重试时间<input type="datetime-local" value={isoToLocalInput(editingAiJob.nextRetryAt)} onChange={e=>updateAiJobField('nextRetryAt',localInputToIso(e.target.value))}/></label>
       <label className="wide">本次修改原因<textarea value={aiJobEditReason} onChange={e=>setAiJobEditReason(e.target.value)} placeholder="至少5个字，操作记录中会保留该原因"/></label>
     </div>{aiJobEditErrors.length>0&&<div className="editor-errors">{aiJobEditErrors.map(error=><div key={error}>{error}</div>)}</div>}<div className="editor-actions sticky-actions"><button onClick={()=>setEditingAiJob(null)}>取消</button><button className="primary" onClick={saveAiJobEdit}>保存修改</button></div></section></div>}
-    {reviewing&&<div className="modal-mask" onMouseDown={()=>setReviewing(null)}><section className="editor-modal review-modal" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>人工审核AI问题</h2><p>{reviewing.competitionName}</p></div><button className="modal-close" onClick={()=>setReviewing(null)}>×</button></div><div className="feedback-detail"><b>{feedbackCategoryLabels[reviewing.category]}</b><p>{reviewing.content}</p>{reviewing.evidenceUrl&&<a href={reviewing.evidenceUrl} target="_blank" rel="noreferrer">打开用户提供的证据链接</a>}</div>{reviewing.aiConclusion&&<div className="ai-review-summary"><b>AI预审结论 · {reviewing.aiRiskLevel==='high'?'高风险':reviewing.aiRiskLevel==='medium'?'中风险':'低风险'}</b><p>{reviewing.aiConclusion}</p><small>{reviewing.aiEvidenceSummary}</small></div>}<div className="decision-row"><label><input type="radio" checked={reviewDecision==='accepted'} onChange={()=>setReviewDecision('accepted')}/> 采纳并进入资料复核</label><label><input type="radio" checked={reviewDecision==='rejected'} onChange={()=>setReviewDecision('rejected')}/> 驳回</label></div><label className="review-note">人工审核说明<textarea value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="说明核验依据、对AI问题的判断和后续处理"/></label>{reviewError&&<div className="editor-errors">{reviewError}</div>}<div className="editor-actions"><button onClick={()=>setReviewing(null)}>取消</button><button className="primary" onClick={submitReview}>提交人工审核</button></div></section></div>}
-  </>;
+    {reviewing&&<div className="modal-mask" onMouseDown={()=>{if(!saving)setReviewing(null);}}><section className="editor-modal review-modal" onMouseDown={event=>event.stopPropagation()}><div className="editor-head"><div><h2>人工审核AI问题</h2><p>{reviewing.competitionName}</p></div><button className="modal-close" onClick={()=>setReviewing(null)}>×</button></div><div className="feedback-detail"><b>{feedbackCategoryLabels[reviewing.category]}</b><p>{reviewing.content}</p>{reviewing.evidenceUrl&&<a href={reviewing.evidenceUrl} target="_blank" rel="noreferrer">打开用户提供的证据链接</a>}</div>{reviewing.aiConclusion&&<div className="ai-review-summary"><b>AI预审结论 · {reviewing.aiRiskLevel==='high'?'高风险':reviewing.aiRiskLevel==='medium'?'中风险':'低风险'}</b><p>{reviewing.aiConclusion}</p><small>{reviewing.aiEvidenceSummary}</small></div>}<div className="decision-row"><label><input type="radio" checked={reviewDecision==='accepted'} onChange={()=>setReviewDecision('accepted')}/> 采纳并进入资料复核</label><label><input type="radio" checked={reviewDecision==='rejected'} onChange={()=>setReviewDecision('rejected')}/> 驳回</label></div><label className="review-note">人工审核说明<textarea value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="说明核验依据、对AI问题的判断和后续处理"/></label>{reviewError&&<div className="editor-errors">{reviewError}</div>}<div className="editor-actions"><button onClick={()=>setReviewing(null)}>取消</button><button className="primary" onClick={submitReview}>提交人工审核</button></div></section></div>}
+  </fieldset>;
 }

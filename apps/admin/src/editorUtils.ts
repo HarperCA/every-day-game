@@ -29,7 +29,12 @@ export function listToLines(value: unknown): string {
 }
 
 export function toDateTimeLocal(value: unknown): string {
-  return typeof value === 'string' && value ? value.slice(0, 16) : '';
+  if (typeof value !== 'string' || !value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00`;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) return '';
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(value)) return value.slice(0, 16);
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp + 8 * 60 * 60 * 1000).toISOString().slice(0, 16) : '';
 }
 
 export function fromDateTimeLocal(value: string): string | null {

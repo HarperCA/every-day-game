@@ -4,6 +4,7 @@
 //   - 已发布记录的身份问题（event_identity）只打“需人工核对”标记，不自动隔离。
 const IDENTITY_FLAG = 'AI身份审核：';
 const SOURCE_FLAG = 'AI来源审核：';
+const QUARANTINE_ON_IDENTITY = false;
 
 function noteSourceQuality(record: any, review: any) {
   const issue = review?.issues?.find((item: any) => item.field === 'source_quality');
@@ -33,7 +34,9 @@ export function applyReviewDisposition(input: any, review: any, now = new Date()
     return {...updated, needsManualReview:true, updatedBy:'ai-identity-review',
       qualityIssues:[...rest, `${IDENTITY_FLAG}${issue.finding}（已发布记录不自动隔离，请人工核对）`]};
   }
-  if (!issue || record.dataStatus === 'quarantined') return updated;
+  // 2026-10-09 起：身份有问题不再直接隔离。保留 needs_changes 的审核结论，
+  // 下一轮定时审核会交给 Kimi 处置代理：是真比赛就补官方来源后发布或归档，确认不是比赛就删除（先备份）。
+  if (!issue || record.dataStatus === 'quarantined' || !QUARANTINE_ON_IDENTITY) return updated;
   return {...updated, dataStatus:'quarantined', manualReview:'pending', systemValidation:'not_run',
     recommendation:{...record.recommendation,published_cache:false,manual_review:'pending',system_validation:'not_run'},
     quarantine:{at:now,reason:issue.finding,actor:'ai-identity-review',ruleVersion:'quarantine-v1',previousStatus:record.dataStatus,
