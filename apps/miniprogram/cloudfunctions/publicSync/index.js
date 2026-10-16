@@ -9,6 +9,8 @@
 //   status：返回现有条数
 const crypto = require('node:crypto');
 const cloud = require('wx-server-sdk');
+const { aggregatePreferences } = require('./preferenceValidation');
+const { pullIssuePage } = require('./logPagination');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -63,7 +65,8 @@ exports.main = async event => {
   if (!secretMatches(params.secret)) return { ok:false, status:'forbidden' };
   try {
     if (params.action === 'upsert') {
-      const records = Array.isArray(params.records) ? params.records.slice(0, MAX_UPSERT) : [];
+      if (!Array.isArray(params.records) || params.records.length > MAX_UPSERT || params.records.some(record => !record || !validId(record.id))) return { ok:false, status:'invalid_records' };
+      const records = params.records;
       let saved = 0;
       for (const record of records) {
         if (!record || !validId(record.id)) continue;
@@ -89,21 +92,26 @@ exports.main = async event => {
     if (params.action === 'status') return { ok:true, status:'ok', count:(await allIds()).length };
     // 访问异常（clientLog 云函数收的）和每日成功加载次数（publicData 记的），给美国服务器拉回去在后台显示
     if (params.action === 'pullClientLogs') {
-      const since = String(params.since || '1970-01-01T00:00:00.000Z');
-      const limit = Math.min(500, Math.max(1, Number(params.limit) || 200));
       const _ = db.command;
-      const issues = await db.collection('client_issues').where({ received_at:_.gte(since) })
-        .orderBy('received_at', 'asc').limit(limit).get().then(r => r.data || []).catch(error => {
-          if (missingCollection(error)) return [];
-          throw error;
-        });
+      const page = await pullIssuePage(db, params, missingCollection);
       const fromDate = String(params.statsFrom || '1970-01-01');
       const stats = await db.collection('client_stats').where({ date:_.gte(fromDate) }).limit(100).get()
         .then(r => r.data || []).catch(error => {
           if (missingCollection(error)) return [];
           throw error;
         });
-      return { ok:true, status:'ok', issues, stats, hasMore:issues.length === limit };
+      return { ok:true, status:'ok', ...page, stats };
+    }
+    // 偏好问卷统计（userData 存的 user_preference）：只回计数，不带账号信息，给美国服务器后台“问卷统计”页显示
+    if (params.action === 'pullPreferenceStats') {
+      const rows = [];
+      for (let skip = 0; skip < 50000; skip += 1000) {
+        const page = await db.collection('user_preference').field({ profession:true, categories:true, province:true, survey_status:true })
+          .skip(skip).limit(1000).get().catch(error => { if (missingCollection(error)) return { data:[] }; throw error; });
+        rows.push(...(page.data || []));
+        if ((page.data || []).length < 1000) break;
+      }
+      return { ok:true, status:'ok', stats:{ ...aggregatePreferences(rows), generatedAt:new Date().toISOString() } };
     }
     return { ok:false, status:'unsupported_action' };
   } catch (error) {

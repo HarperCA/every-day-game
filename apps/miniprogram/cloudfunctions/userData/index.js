@@ -5,6 +5,8 @@ const { nextFeedbackRateState } = require('./feedbackRateLimit');
 const { shouldDeleteCloudReminder, shouldPreserveCloudReminder } = require('./reminderWritePolicy');
 const { normalizeReminderInput, normalizeReminderBatch, requireReminderEventType } = require('./reminderValidation');
 const { normalizeFavoriteBatch, requireFavoriteFlag, requireFavoriteId } = require('./favoriteValidation');
+const { normalizePreferenceInput } = require('./preferenceValidation');
+const { forwardIfConfigured } = require('./cloudBridge');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -142,7 +144,39 @@ async function upsertRemindersAtomically(records) {
   });
 }
 
+const PREFERENCE_COLLECTION = 'user_preference';
+const missingCollection = error => /-502005|collection not exists|DATABASE_COLLECTION_NOT_EXIST/i.test(String(error?.errCode || '') + String(error?.message || error));
+
+function preferenceToClient(item) {
+  if (!item) return null;
+  return { profession:item.profession || '', categories:item.categories || [], province:item.province || '',
+    surveyStatus:item.survey_status || 'completed', dontShowAgain:item.dont_show_again === true, updatedAt:item.updated_at || '' };
+}
+
+// 每个账号一条，文档 id 就是账号 id；集合第一次用时还不存在，建好再写
+async function savePreference(userId, data) {
+  try {
+    await db.collection(PREFERENCE_COLLECTION).doc(userId).set({ data });
+  } catch (error) {
+    if (!missingCollection(error)) throw error;
+    await db.createCollection(PREFERENCE_COLLECTION).catch(createError => { if (!/exist/i.test(String(createError?.message || createError))) throw createError; });
+    await db.collection(PREFERENCE_COLLECTION).doc(userId).set({ data });
+  }
+}
+
+async function readPreference(userId) {
+  try {
+    const result = await db.collection(PREFERENCE_COLLECTION).doc(userId).get();
+    return result.data || null;
+  } catch (error) {
+    if (missingCollection(error) || isMissingDocument(error)) return null;
+    throw error;
+  }
+}
+
 async function handle(action, event, userId) {
+  if (action === 'submitGeneralFeedback') return require('./generalFeedback').submit(db, userId, event);
+  if (action === 'listGeneralFeedback') return require('./generalFeedback').list(db, event, userId);
   if (action === 'submitFeedback') {
     const { editionId, competitionName, category, content, evidenceUrl } = validateFeedbackInput(event);
     const nowDate = new Date();
@@ -163,6 +197,16 @@ async function handle(action, event, userId) {
       await transaction.collection('feedback').doc(record.id).set({ data:record });
     });
     return { id:record.id, status:record.status, createdAt:record.created_at };
+  }
+  // 偏好问卷（专业、比赛大类、省份）：每个账号一条，换手机登录能带上
+  if (action === 'getPreferences') return preferenceToClient(await readPreference(userId));
+  if (action === 'savePreferences') {
+    const item = normalizePreferenceInput(event.preferences || {});
+    const now = new Date().toISOString();
+    const existing = await readPreference(userId);
+    await savePreference(userId, { user_id:userId, profession:item.profession, categories:item.categories, province:item.province,
+      survey_status:item.surveyStatus, dont_show_again:item.dontShowAgain, created_at:existing?.created_at || now, updated_at:now, data_version:1 });
+    return preferenceToClient({ ...item, survey_status:item.surveyStatus, dont_show_again:item.dontShowAgain, updated_at:now });
   }
   if (action === 'listFeedback') {
     const result = await db.collection('feedback').where({ user_id:userId })
@@ -260,6 +304,8 @@ async function handle(action, event, userId) {
 
 exports.main = async event => {
   try {
+    const forwarded = await forwardIfConfigured('userData', event, cloud.getWXContext());
+    if (forwarded) return forwarded;
     const userId = await currentUserId();
     const data = await handle(event.action, event, userId);
     return { ok:true, data };

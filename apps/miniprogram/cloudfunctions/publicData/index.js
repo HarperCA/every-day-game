@@ -1,5 +1,6 @@
 const cloud = require('wx-server-sdk');
 const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
+const { forwardIfConfigured } = require('./cloudBridge');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -91,6 +92,10 @@ exports.main = async rawEvent => {
   if (fromHttp && fromHttp.action !== 'warm') return { ok:false, message:'forbidden' };
   const event = fromHttp || rawEvent;
   try {
+    // Retire Shanghai warm-up writes once the explicit bridge mode is enabled.
+    if (process.env.CLOUD_USER_SERVICE_MODE === 'bridge' && (event?.Type === 'Timer' || event?.action === 'warm')) return { ok:true, warmed:0, retired:true };
+    const forwarded = await forwardIfConfigured('publicData', event, cloud.getWXContext?.() || {});
+    if (forwarded) return forwarded;
     // 保持运行：服务器每 5 分钟经 HTTP 调一次（也保留云开发定时触发器，万一平台恢复了也能用），
     // 顺便刷新缓存，让实例不休眠、用户请求不用等冷启动。这类调用不算用户访问，不计数。
     if (event?.Type === 'Timer' || event?.action === 'warm') {

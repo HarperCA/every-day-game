@@ -2,9 +2,28 @@
 const { classifyCompetitionScope } = require('./competitionScope');
 const { assessIntakeRecord } = require('./competitionScope');
 const { requirePublishGate } = require('./publicCache');
+// 2026-10-09 起（用户要求）：身份有问题（不是独立比赛）不再直接隔离，统一交给 Kimi 处置代理——
+// 记录保留 needs_changes 的审核结论，下一轮定时审核会把它当作“未处理的审核问题”交给代理（kimiReviewDisposition.js）：
+// 是真比赛就补官方来源后发布或归档，确认不是比赛就删除（删除前备份）。已隔离的旧记录保持原样。
+const QUARANTINE_ON_IDENTITY = false;
 function isolateMisimport(input, now = new Date().toISOString()) {
   if (input.dataStatus === 'quarantined') return input;
   const record = noteSourceQuality(input);
+  if (!QUARANTINE_ON_IDENTITY) {
+    // 标题规则判出“不是一场比赛”（通知、目录、校赛、获奖报道等）而 Kimi 没指出的：补一条身份问题，
+    // 让下一轮定时审核同样交给处置代理处理，而不是隔离
+    const scope = classifyCompetitionScope(record);
+    const titleReject = scope.decision === 'reject' && /通知|栏目|目录|报道|公示|下级选拔|校赛|院赛/.test(scope.reason);
+    let next = record;
+    const hasIdentity = (record.aiReview?.issues || []).some(issue => issue.field === 'event_identity');
+    if (titleReject && !hasIdentity) {
+      next = { ...record, aiReview:{ ...(record.aiReview || {}), decision:'needs_changes', risk_level:'high', reviewed_at:record.aiReview?.reviewed_at || now,
+        issues:[...(record.aiReview?.issues || []), { field:'event_identity', finding:scope.reason, recommendation:'交给处置代理核实', evidence_ref:'' }] } };
+    }
+    const identity = next.aiReview?.decision === 'needs_changes' && next.aiReview?.risk_level === 'high'
+      && (next.aiReview.issues || []).find(issue => issue.field === 'event_identity');
+    return next.dataStatus === 'published' ? flagPublishedIdentity(next, identity, now) : next;
+  }
   const scope = classifyCompetitionScope(record);
   const identityIssue = record.aiReview?.decision === 'needs_changes'
     && record.aiReview?.risk_level === 'high'
@@ -58,6 +77,7 @@ const isFlaggedPublished = record => record.dataStatus === 'published' && record
   && (record.qualityIssues || []).some(item => String(item).startsWith(IDENTITY_FLAG));
 
 function requireReviewDisposition(previous, next) {
+  if (!QUARANTINE_ON_IDENTITY) return; // 身份问题交给处置代理，不再强制隔离
   const byId = new Map(previous.map(record => [record.id, record]));
   for (const record of next) {
     const old = byId.get(record.id);

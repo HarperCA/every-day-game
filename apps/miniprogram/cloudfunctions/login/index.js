@@ -1,10 +1,15 @@
 const cloud = require('wx-server-sdk');
 const { requireActiveAccount } = require('./loginPolicy');
+const { forwardIfConfigured } = require('./cloudBridge');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 
 exports.main = async () => {
+  let forwarded;
+  try { forwarded = await forwardIfConfigured('login', {}, cloud.getWXContext()); }
+  catch (error) { return { ok:false, message:error instanceof Error ? error.message : 'cloud_bridge_failed' }; }
+  if (forwarded) return forwarded;
   const { OPENID, APPID, UNIONID } = cloud.getWXContext();
   if (!OPENID) return { ok: false, message: '无法取得微信用户身份' };
 

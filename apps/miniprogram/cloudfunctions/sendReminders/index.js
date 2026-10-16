@@ -4,7 +4,7 @@ const { assertScheduledInvocation, failureDeliveryStatus, isDeliverableScheduleS
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const command = db.command;
-const TEMPLATE_ID = '1-cgPt-WP5tLOUwCNBhr5YMtEIQ-SneYzQbWTURiTCo';
+const TEMPLATE_ID = 'Hdc1YLawcLjHfgiAjZYF6fJMkAMTwcPCHZYqLyvo2mY';
 const configuredBatchSize = Number(process.env.REMINDER_BATCH_SIZE || 1);
 const BATCH_SIZE = Number.isInteger(configuredBatchSize) ? Math.min(50, Math.max(1, configuredBatchSize)) : 1;
 const MAX_RETRIES = 3;
@@ -48,12 +48,17 @@ async function logInvocation(event, context, outcome) {
 async function recoverTimedOutClaims(now) {
   const expiredClaimAt = new Date(now.getTime() - CLAIM_TIMEOUT_MS).toISOString();
   await db.collection('reminder').where({ delivery_status:'queued', updated_at:command.lte(expiredClaimAt) }).update({
-    data:{ delivery_status:'failed', retry_count:command.inc(1), last_error:'send_claim_timeout', updated_at:now.toISOString() },
+    // 已调用微信但未写回状态也会留下 queued，自动重试可能重复通知。
+    data:{ delivery_status:'manual_required', last_error:'send_claim_timeout_delivery_unknown', updated_at:now.toISOString() },
   });
 }
 
 async function claimReminder(item, now) {
-  const result = await db.collection('reminder').where({ _id:item._id, delivery_status:item.delivery_status }).update({
+  const result = await db.collection('reminder').where({
+    _id:item._id, delivery_status:item.delivery_status, authorization_status:'accepted',
+    remind_at:item.remind_at, schedule_change_status:item.schedule_change_status,
+    ...(item.updated_at ? { updated_at:item.updated_at } : {}),
+  }).update({
     data:{ delivery_status:'queued', updated_at:now.toISOString() },
   });
   return Boolean(result.stats && result.stats.updated === 1);
@@ -71,12 +76,19 @@ async function sendReminder(item, now) {
     lang:'zh_CN',
     data:{
       thing1:{ value:taskName },
-      time2:{ value:formatShanghaiTime(item.remind_at) },
+      time3:{ value:formatShanghaiTime(item.remind_at) },
+      thing5:{ value:truncate(`请查看${item.event_label || '报名'}安排，以官方通知为准`, 20) },
     },
   });
-  await db.collection('reminder').doc(item._id).update({
-    data:{ delivery_status:'sent', sent_at:now.toISOString(), last_error:null, updated_at:now.toISOString() },
-  });
+  try {
+    await db.collection('reminder').doc(item._id).update({
+      data:{ delivery_status:'sent', sent_at:now.toISOString(), last_error:null, updated_at:now.toISOString() },
+    });
+  } catch (error) {
+    // 通知已经发出，数据库写回失败必须区别于发送失败。
+    error.reminderAlreadySent = true;
+    throw error;
+  }
 }
 
 // 经腾讯云 HTTP 访问服务（/send-reminders）调用时，参数在 event.body（JSON 字符串）里。
@@ -126,9 +138,9 @@ exports.main = async rawEvent => {
       summary.sent += 1;
     } catch (error) {
       const retryCount = retries + 1;
-      const deliveryStatus = failureDeliveryStatus(retryCount, MAX_RETRIES);
+      const deliveryStatus = error.reminderAlreadySent ? 'manual_required' : failureDeliveryStatus(retryCount, MAX_RETRIES);
       await db.collection('reminder').doc(item._id).update({
-        data:{ delivery_status:deliveryStatus, retry_count:retryCount, last_error:errorText(error), updated_at:now.toISOString() },
+        data:{ delivery_status:deliveryStatus, retry_count:retryCount, last_error:error.reminderAlreadySent ? `sent_but_state_update_failed: ${errorText(error)}` : errorText(error), updated_at:now.toISOString() },
       });
       if (deliveryStatus === 'manual_required') summary.manualRequired += 1;
       else summary.failed += 1;

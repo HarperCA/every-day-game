@@ -11,7 +11,7 @@
 // 三、不猜专业分类。天池的标签（机器人、CV、NLP）和库里的十三类专业分类
 //    不是一回事，映射是判断不是事实，留空让人来定 —— 而且 professions
 //    为空时公开缓存本来就会拒绝发布，正好形成一道自然的提醒。
-const { deriveRewardTier, deriveScaleTier, normalizeRecognition } = require('./competitionValue');
+const { deriveRewardTier, deriveScaleTier, normalizeRecognition, inferCompetitionRegion } = require('./competitionValue');
 const { blockedTitleReason, isNoticeTitle } = require('./noticeResolution');
 const { normalizeEditionTitle } = require('./editionTitle');
 
@@ -173,7 +173,7 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
     participantUnit:participantCount === null ? '暂未公布' : (candidate.participant_unit || '队'),
     scaleTier:deriveScaleTier(participantCount),
     participantScale:candidate.participant_scale || '',
-    region:'',
+    region:inferCompetitionRegion({ region:candidate.region, name:title.name, editionName, eventLevel:'其他/未明确' }),
     lifecycle:'暂未明确',
     // 认可度等级是判断，抽取只给建议。normalizeRecognition 会丢掉没有出处的条目。
     recognition:normalizeRecognition((extracted?.recognition_hints || []).map(hint => ({

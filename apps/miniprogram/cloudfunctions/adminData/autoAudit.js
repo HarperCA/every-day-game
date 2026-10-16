@@ -43,7 +43,7 @@ function whyChanged(before, after) {
   return '';
 }
 
-function autoAudits(beforeRecords, afterRecords, actor, now = new Date()) {
+function autoAudits(beforeRecords, afterRecords, actor, now = new Date(), reasons = new Map()) {
   if (!SYSTEM_ACTORS[actor]) throw new Error(`unknown_system_actor:${actor}`);
   const byId = new Map((beforeRecords || []).map(record => [record.id, record]));
   const stamp = now.getTime();
@@ -59,8 +59,9 @@ function autoAudits(beforeRecords, afterRecords, actor, now = new Date()) {
       changes[field] = { before:from ?? null, after:to ?? null };
       parts.push(`${label} ${show(field, from)} → ${show(field, to)}`);
     }
-    if (!parts.length) continue;
-    const why = whyChanged(before, after);
+    if (!parts.length && !reasons.has(after.id)) continue;
+    if (!parts.length) parts.push('Kimi 代理已完成补查，保留当前状态');
+    const why = reasons.get(after.id) || whyChanged(before, after);
     entries.push({
       id:`auto-${actor}-${stamp}-${entries.length}`,
       action:after.dataStatus === 'archived' && before.dataStatus !== 'archived' ? 'archive' : 'update',
@@ -73,6 +74,15 @@ function autoAudits(beforeRecords, afterRecords, actor, now = new Date()) {
       createdAt:now.toISOString(),
       systemActor:actor,
     });
+  }
+  const retained = new Set((afterRecords || []).map(record => record.id));
+  for (const before of beforeRecords || []) {
+    if (retained.has(before.id)) continue;
+    entries.push({ id:`auto-${actor}-${stamp}-${entries.length}`, action:'delete', objectType:'event_edition',
+      recordId:String(before.id).slice(0, 200), recordName:before.name, changedFields:['dataStatus'],
+      changes:{dataStatus:{before:before.dataStatus || null,after:null}},
+      reason:reasons.get(before.id) || 'Kimi 代理补查后仍无法核实，已从比赛库删除并保存处置备份',
+      createdAt:now.toISOString(), systemActor:actor });
   }
   return entries;
 }

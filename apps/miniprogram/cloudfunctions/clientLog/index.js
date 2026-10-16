@@ -3,6 +3,7 @@
 // 只收白名单里的字段、逐个截断；不记 IP、微信身份。美国服务器经 publicSync 的 pullClientLogs 拉走。
 const cloud = require('wx-server-sdk');
 const { sanitizeEvents } = require('./sanitize');
+const { forwardIfConfigured } = require('./cloudBridge');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -22,6 +23,8 @@ async function addIssue(data) {
 
 exports.main = async event => {
   try {
+    const forwarded = await forwardIfConfigured('clientLog', event, cloud.getWXContext());
+    if (forwarded) return forwarded;
     const receivedAt = new Date().toISOString();
     const events = sanitizeEvents(event?.events, receivedAt);
     for (const item of events) await addIssue(item);

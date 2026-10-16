@@ -29,6 +29,8 @@ export const command = {
   in: values => ({ [COMMAND]: 'in', values }),
   inc: amount => ({ [COMMAND]: 'inc', amount }),
   lte: value => ({ [COMMAND]: 'lte', value }),
+  gte: value => ({ [COMMAND]: 'gte', value }),
+  gt: value => ({ [COMMAND]: 'gt', value }),
 };
 
 function matchesCondition(actual, expected) {
@@ -36,6 +38,8 @@ function matchesCondition(actual, expected) {
     switch (expected[COMMAND]) {
       case 'in': return Array.isArray(expected.values) && expected.values.includes(actual);
       case 'lte': return actual !== undefined && actual !== null && actual <= expected.value;
+      case 'gte': return actual !== undefined && actual !== null && actual >= expected.value;
+      case 'gt': return actual !== undefined && actual !== null && actual > expected.value;
       default: throw new Error(`unsupported_query_command:${expected[COMMAND]}`);
     }
   }
@@ -96,7 +100,7 @@ class Query {
   constructor(db, collection, state = {}) {
     this.db = db;
     this.collection = collection;
-    this.state = { where: null, orderBy: [], limit: null, skip: 0, ...state };
+    this.state = { where: null, orderBy: [], limit: null, skip: 0, field: null, ...state };
   }
 
   #derive(patch) {
@@ -107,6 +111,7 @@ class Query {
   orderBy(field, direction = 'asc') { return this.#derive({ orderBy: [...this.state.orderBy, { field, direction }] }); }
   limit(n) { return this.#derive({ limit: n }); }
   skip(n) { return this.#derive({ skip: n }); }
+  field(fields) { return this.#derive({ field: fields }); }
 
   async get() {
     let rows = listDocs(this.db, this.collection);
@@ -124,6 +129,11 @@ class Query {
     }
     if (this.state.skip) rows = rows.slice(this.state.skip);
     if (this.state.limit !== null) rows = rows.slice(0, this.state.limit);
+    if (this.state.field) {
+      const enabled = Object.entries(this.state.field).filter(([, include]) => include).map(([key]) => key);
+      if (enabled.length) rows = rows.map(row => Object.fromEntries(Object.entries(row).filter(([key]) => (key === '_id' && this.state.field._id !== false && this.state.field._id !== 0) || enabled.includes(key))));
+      else rows = rows.map(row => Object.fromEntries(Object.entries(row).filter(([key]) => this.state.field[key] !== false && this.state.field[key] !== 0)));
+    }
     return { data: rows };
   }
 
@@ -166,6 +176,7 @@ class DatabaseFacade {
   constructor(db) {
     this.db = db;
     this.command = command;
+    this.transactionTail = Promise.resolve();
   }
 
   collection(name) { return new CollectionRef(this.db, name); }
@@ -175,14 +186,20 @@ class DatabaseFacade {
   // transaction()，改成手动 BEGIN/COMMIT，失败回滚。语义上一致：
   // 要么全成，要么全不成。
   async runTransaction(work) {
-    this.db.exec('BEGIN IMMEDIATE');
+    const previous = this.transactionTail;
+    let release;
+    this.transactionTail = new Promise(resolve => { release = resolve; });
+    await previous;
     try {
+      this.db.exec('BEGIN IMMEDIATE');
       const result = await work(this);
       this.db.exec('COMMIT');
       return result;
     } catch (error) {
       try { this.db.exec('ROLLBACK'); } catch (_ignored) { /* 已经回滚过就忽略 */ }
       throw error;
+    } finally {
+      release();
     }
   }
 }

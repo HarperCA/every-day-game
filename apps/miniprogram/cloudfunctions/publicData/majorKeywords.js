@@ -31,18 +31,36 @@ const MAJOR_TERMS = {
 const CATEGORY_NAMES = ['综合/不限专业', ...Object.keys(MAJOR_TERMS)];
 
 const TERMS = Object.entries(MAJOR_TERMS).flatMap(([category, terms]) => terms.map(term => ({ term:term.toLowerCase(), category })));
+const { majors } = require('./undergraduateMajors2026.json');
+const normalize = value => String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+const CATALOG = majors.map(major => ({ ...major, normalizedName: normalize(major.name) }));
+const EXACT_MAJORS = new Map();
+for (const major of CATALOG) {
+  EXACT_MAJORS.set(major.normalizedName, major.categories);
+  EXACT_MAJORS.set(normalize(major.code), major.categories);
+}
 
 // 学生常带的后缀：“计算机专业”“土木类”“临床医学系”，匹配前先去掉
 function stripSuffix(keyword) {
-  return keyword.replace(/(专业|类专业|专业类|类|系|学院|方向)$/, '');
+  let result = keyword;
+  while (true) {
+    const next = result.replace(/(类专业|专业类|专业|学院|方向|类|系)$/, '');
+    if (next === result) return result;
+    result = next;
+  }
 }
 
 // 返回搜索词对应的专业大类（可能多个，空数组表示这个词不像专业名）。
 // 规则：搜索词和词表里的某个词“互相包含”（至少 2 个字符）就算对上：
 //   “计算机”对上“计算机科学与技术”；“土木工程专业”去掉后缀后对上“土木工程”；单个字不匹配，避免“法”“化”之类乱匹配。
 function majorCategories(rawKeyword) {
-  const base = String(rawKeyword || '').trim().toLowerCase().replace(/\s+/g, '');
+  const base = normalize(rawKeyword);
   const keyword = stripSuffix(base);
+  // 具体专业完整名称和代码优先，避免经济统计学、软件工程被泛词串到其他类。
+  const exact = EXACT_MAJORS.get(base) || EXACT_MAJORS.get(keyword);
+  if (exact) return [...exact];
+  // 比赛名称仍由普通文本搜索匹配，不能因名称里出现一个专业词而扩大结果。
+  if (/(竞赛|比赛|赛事|大赛|挑战杯)/.test(base)) return [];
   const found = new Set();
   for (const name of CATEGORY_NAMES) if (name.toLowerCase() === base || name.toLowerCase() === keyword) found.add(name);
   if (['不限', '不限专业', '综合', '各专业', '所有专业'].includes(keyword)) found.add('综合/不限专业');
@@ -53,6 +71,15 @@ function majorCategories(rawKeyword) {
       const inside = keyword.length >= 3 ? term.includes(keyword) : term.startsWith(keyword);
       // 搜索词比词表里的词长（“我想找计算机”）时，只认三个字以上的词，免得“程序设计”因为含“设计”被算成艺术类
       if (inside || (term.length >= 3 && keyword.includes(term))) found.add(category);
+    }
+  }
+  // 仅补充专业名称的较长前缀；两字泛词（如设计）不遍历整个目录。
+  // 也不将含有专业名的任意长句当作专业。
+  if (keyword.length >= 3 && /^[\u4e00-\u9fff]+$/.test(keyword)) {
+    for (const major of CATALOG) {
+      if (major.normalizedName.startsWith(keyword)) {
+        for (const category of major.categories) found.add(category);
+      }
     }
   }
   return [...found];

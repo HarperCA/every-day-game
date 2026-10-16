@@ -134,15 +134,9 @@ function evaluateDraftStaleness(record, now = new Date()) {
   return { stale:true, reason:draftStalenessReason(record) };
 }
 
-// 把三项核验结果套到一条刚发现的草稿上。三项全过、或者不对的项 Kimi 都
-// 给出了能用的修正值——两种情况都视为"资料已经对齐来源"，专业判断有把握
-// 就自动发布（比照人工通过时的做法，把来源标记为已核验有效，否则发布闸
-// 过不了）。有任何一项既不对、Kimi 又给不出修正值，或者专业判断没把握，
-// 才留在草稿。
-//
-// 跟已发布赛事周检用的自动改法（index.js 的 applyPublishedFieldCorrections）
-// 是对称的：那边治"已经发布、数据漂移了"，这边治"刚发现、数据一开始就不
-// 齐"，改的方式该是一样的，不能只给已发布的记录用上自动改。
+// 把 AI 的字段核验与可用修正写入草稿，供人工审查。模型的布尔结论无法证明
+// 来源确属赛事主办方，也不能证明官网原文对应这场比赛的当前届次/赛项；
+// 不得据此代替人工审核、把来源改成官方有效或直接发布。
 //
 // record：candidateToRecord() 产出的草稿。verification：runFieldVerification()
 // 的结果。纯函数，不做任何网络调用，方便单测。
@@ -183,8 +177,8 @@ function applyFieldVerification(record, verification, now) {
     const ok = verification.registration_url_correction && /^https?:\/\//i.test(verification.registration_url_correction);
     if (ok) {
       corrected.registrationUrl = verification.registration_url_correction;
-      corrected.sources = corrected.sources.map((source, index) => index === 0 ? { ...source, url:verification.registration_url_correction } : source);
-      notes.push('Kimi核验自动更新了报名链接');
+      // 报名入口是待确认字段；不能覆盖原来源 URL，否则会丢失审查依据。
+      notes.push('Kimi建议更新报名链接，待核对原来源与当前届次');
     } else { notes.push('Kimi核验：链接疑有误，且给不出修正值'); unresolved = true; }
   }
   if (!verification.professions_confident || !verification.professions.length) {
@@ -195,27 +189,20 @@ function applyFieldVerification(record, verification, now) {
     corrected.professions = verification.professions;
   }
 
-  if (!unresolved) {
-    return {
-      ...corrected,
-      dataStatus:'published',
-      systemValidation:'passed',
-      manualReview:'passed',
-      manualReviewReason:`Kimi三项核验通过（名称/报名时间/链接，${notes.length ? '含自动修正' : '原始资料即一致'}），系统自动发布`,
-      professions:corrected.professions,
-      publishedAt:timestamp,
-      updatedAt:timestamp,
-      updatedBy:'kimi-intake-review',
-      aiFieldVerification:verification,
-      sources:corrected.sources.map(source => ['discovery_notice','university_notice','search_candidate'].includes(source.source_type)
-        ? source : { ...source, is_official:true, validity_status:'valid', last_verified_at:timestamp }),
-    };
+  if (verification.source_scope !== 'official') notes.push('来源是否为赛事主办方或主管部门官方原文待人工确认');
+  if (!(verification.evidence_status || []).some(item => item.status === 'reachable' && item.chars > 100)) {
+    notes.push('来源正文未充分读取，待人工核验');
   }
+  if (!unresolved) notes.push('AI字段初核完成；仍需人工对照官方原文核查赛事名称、当前届次、报名时间及入口');
   return {
     ...corrected,
-    qualityIssues:[...record.qualityIssues, ...notes],
+    dataStatus:'draft',
+    systemValidation:'not_run',
+    manualReview:'pending',
+    qualityIssues:[...(record.qualityIssues || []), ...notes],
     aiFieldVerification:verification,
     updatedAt:timestamp,
+    updatedBy:'kimi-intake-review',
   };
 }
 

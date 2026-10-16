@@ -21,6 +21,13 @@ const SOURCE = { baidu:'百度搜索', tianchi:'天池', upln:'辽宁平台', da
 const READ_FAIL = /robots|boilerplate|fetch_failed|unsupported|^http_|invalid_url|network|timeout|too_large|budget|forbidden|not_found/i;
 const WRITTEN_LABEL = { archive:'归档', 'auto-publish':'自动发布', review:'待人工审核', hold:'先放草稿（报名较晚）', admit:'进入草稿', draft:'进入草稿' };
 
+// 和 scripts/server/rejected-memory.mjs 的 urlKey 相同：不分 http/https、忽略 www、结尾斜杠和 # 锚点
+const urlKey = url => {
+  try {
+    const u = new URL(String(url || ''));
+    return /^https?:$/.test(u.protocol) ? `${u.hostname.replace(/^www\./, '').toLowerCase()}${u.pathname.replace(/\/+$/, '')}${u.search}` : '';
+  } catch { return ''; }
+};
 const clip = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
 const step = (n, o, note = '', extra = {}) => ({ n, o, note:clip(note, 160), ...extra });
 
@@ -32,8 +39,16 @@ function composeRunDetail(runId, files) {
   const combined = files['combined-candidates.json']?.candidates || [];
   const extracted = files['combined-extracted.json']?.results || [];
   const leads = files['notice-resolution-leads.json']?.results || [];
+  // 追溯前查库跳过的通知（notice-precheck.json，2026-10-12 起）：库里已有、同一晚已在追
+  const precheckSkipped = new Map((files['notice-precheck.json']?.skipped || []).map(item => [item.url, item]));
+  // 固定步骤（notice-fixed-results.json，2026-10-12 起）：没核到、交给代理的原因；固定步骤核到的官方网址
+  const fixedUnresolved = new Map((files['notice-fixed-results.json']?.unresolved || []).map(item => [item.url, item]));
+  const fixedLeadUrls = new Set(leads.filter(item => item.method === 'fixed').flatMap(item => (item.leads || []).map(lead => lead.url)));
   const ingest = files['ingest-report.json'] || {};
   const held = files['combined-candidates.json.scope-review.json']?.held || [];
+  // 近 30 天处理过、本轮在判重后被跳过的网址（2026-10-04 起每轮保存；更早的运行没有这份清单）
+  const hasMemoryFile = Array.isArray(files['memory-skipped.json']?.skipped);
+  const memorySkipped = new Map((files['memory-skipped.json']?.skipped || []).map(item => [urlKey(item.url), item]));
 
   // 判重时规则拿不准、交给 AI 裁决的（dedupe-arbitration-<来源>.json，逐条带理由和思考过程）
   const arbitrationByUrl = new Map();
@@ -127,22 +142,37 @@ function composeRunDetail(runId, files) {
   // 前置筛选之后这条走向哪里：追溯 / 读详情 / 搁置
   function afterFilter(row, url, decision, trail) {
     const action = decision.action;
-    if (formalUrls.has(url)) {
+    if (formalUrls.has(url) && precheckSkipped.has(url)) {
+      const pre = precheckSkipped.get(url);
+      const last = trail[trail.length - 1];
+      if (action !== 'trace' && last && (last.n === 'jev' || last.n === 'rule')) last.o = 'notice';
+      trail.push(step('trace', 'known', `追溯前查库：认出「${pre.name}」；${pre.reason}`), step('end_trace_skip', ''));
+      Object.assign(row, { final:pre.kind === 'in_library' ? `追溯前查库：库里已有「${pre.matched?.name || pre.name}」，不派代理` : `追溯前查库：同一晚已有通知在追「${pre.name}」，不派代理`, stage:3 });
+    } else if (formalUrls.has(url)) {
       const found = leadsByNotice.get(url);
       const pages = found?.leads?.length || 0;
       // 前置筛选本来没判“追溯”，但标题是通知，流水线把它转去追溯了：路径上标出来
       const last = trail[trail.length - 1];
       if (action !== 'trace' && last && (last.n === 'jev' || last.n === 'rule')) last.o = 'notice';
       // 没找到页面的三种情况：提不出合法赛事名（根本没分到组，没搜）/ 分到组了但没轮上额度 / 搜了没找到
-      const outcomeTrace = pages ? 'found' : found?.followupQuery ? 'none' : found ? 'noquota' : 'noname';
+      // 2026-10-10 起由 Kimi 代理追溯（found.agent）：有结论没找到算 none，没轮上或出错算 noquota
+      const agent = found?.agent;
+      const fixedRun = found?.method === 'fixed';
+      const outcomeTrace = fixedRun ? (pages ? 'found_fixed' : 'notcomp_fixed')
+        : pages ? 'found' : agent ? (found.followupQuery ? 'none' : 'noquota') : found?.followupQuery ? 'none' : found ? 'noquota' : 'noname';
       // 用了哪个搜索引擎、返回几条、保留几条（2026-10-01 起百度 → Kimi → DeepSeek 依次补位）
       const searched = found?.search;
       const visitNote = found?.pageVisit?.found ? `访问通知页面，提取到 ${found.pageVisit.found} 个网址` : '';
       const searchNote = [visitNote, searched ? `用${searched.label}搜索，返回 ${searched.returned} 条，保留 ${searched.kept} 条` : found?.error ? `搜索失败：${found.error}` : ''].filter(Boolean).join('；');
       const noteTrace = { found:pages ? `${searchNote ? `${searchNote}；` : ''}找到 ${pages} 个待核验页面${searched ? '' : '（通知正文里写出的网址）'}` : '', none:searchNote ? `${searchNote}，没有可用的页面` : (found?.error ? searchNote : '搜索后没找到'),
         noquota:'提得出赛事名，但本晚三个搜索引擎的额度都用完，没轮上', noname:'标题提不出合法赛事名（栏目、汇总、招聘、校级等），没搜' }[outcomeTrace];
-      trail.push(step('trace', outcomeTrace, noteTrace));
-      const traceFinal = { found:`转入通知追溯（找到 ${pages} 个待核验页面）`, none:'追溯没找到（搜了，没搜到可用页面）',
+      const handedOver = fixedUnresolved.get(url);
+      const agentNote = !agent ? '' : fixedRun
+        ? clip(`固定步骤：搜索 ${agent.searches} 次、读网页 ${agent.reads} 次；${agent.reason || agent.label}${pages ? `；核到 ${pages} 个官方网址` : ''}`, 400)
+        : clip(`${handedOver ? `固定步骤没核到（${handedOver.reason}），交给代理；` : ''}Kimi 代理 ${agent.turns} 轮，搜索 ${agent.searches} 次、读网页 ${agent.reads} 次；结论：${agent.label}${agent.reason ? `（${agent.reason}）` : ''}${pages ? `；找到 ${pages} 个官方网址` : ''}`, 400);
+      trail.push(step('trace', outcomeTrace, agentNote || noteTrace));
+      const traceFinal = outcomeTrace === 'found_fixed' ? `固定步骤核到官方来源（${pages} 个网址）` : outcomeTrace === 'notcomp_fixed' ? '追溯没找到（固定步骤：不是比赛）'
+        : agent && !pages ? `追溯没找到（${agent.label}）` : { found:`转入通知追溯（找到 ${pages} 个待核验页面）`, none:'追溯没找到（搜了，没搜到可用页面）',
         noquota:'追溯没找到（没轮上搜索额度）', noname:'追溯没找到（标题提不出合法赛事名，没搜）' }[outcomeTrace];
       Object.assign(row, { final:traceFinal, stage:3 });
     } else if (combinedUrls.has(url)) {
@@ -187,9 +217,17 @@ function composeRunDetail(runId, files) {
           const why = arbitration.error ? `AI 裁决失败（${arbitration.error}），保守跳过` : `AI 裁决：${arbitration.label || arbitration.relation}｜${arbitration.reason || ''}`;
           Object.assign(row, { dup:'已在库或疑似重复（AI 裁决）', reason:why, final:`判重跳过：${why}`, stage:1 });
           trail.push(step('dedupe', 'ambiguous', '规则拿不准，交 AI 裁决'), step('arbitrate', 'skip', why));
+        } else if (memorySkipped.has(urlKey(url))) {
+          // 判重通过了，但这个网址近 30 天处理过（追溯过或被拒过），本轮不再处理
+          const hit = memorySkipped.get(urlKey(url));
+          const why = `近 30 天已处理过${hit.reason ? `（${hit.reason}）` : ''}，本轮不再处理`;
+          Object.assign(row, { dup:'近 30 天已处理过', reason:why, final:`判重跳过：${why}`, stage:1 });
+          trail.push(step('dedupe', 'skip', why));
         } else {
-          Object.assign(row, { dup:'已在库或疑似重复', reason:'判重时与库里已有赛事重名或疑似重名，本轮跳过', final:'判重跳过', stage:1 });
-          trail.push(step('dedupe', 'skip', row.reason));
+          // 运行目录里有 memory-skipped.json 的，说明跳过的确实是判重；老的运行记录没存这份清单，只能说两种可能
+          const reason = hasMemoryFile ? '判重时与库里已有赛事重名或疑似重名，本轮跳过' : '与库里赛事重名或疑似重名，或近 30 天处理过的网址（这一轮的记录没有保存具体原因），本轮跳过';
+          Object.assign(row, { dup:'已在库或疑似重复', reason, final:'判重跳过', stage:1 });
+          trail.push(step('dedupe', 'skip', reason));
         }
       } else {
         Object.assign(row, { dup:'新', filter:ACTION[decision.action] || decision.action, kind:KIND[decision.kind] || decision.kind || '',
@@ -251,12 +289,14 @@ function composeRunDetail(runId, files) {
       intro:clip(decision.proposedName ? `追溯的上级赛事：${decision.proposedName}` : '', 160), dup:'', filter:ACTION[decision.action] || decision.action || '',
       kind:KIND[decision.kind] || decision.kind || '', reason:decision.reason || '', confidence:Number.isFinite(decision.confidence) ? decision.confidence : null,
       final:'', stage:3 };
-    // 从“通知追溯”环节出来的页面：先补一条只用来画连线的路径（不算追溯环节处理了它）
-    const trail = [step('trace', 'found', '', { virtual:true })];
+    // 从“通知追溯”环节出来的页面：路径只用来画连线（不算追溯环节处理了它）。
+    // 2026-10-10 起“追溯页面筛选”并进 AI 代理，读了的走 trace:found → 读详情，没读的走 trace:skip_* → 找到后不读
+    const trail = [];
     if (combinedUrls.has(decision.url)) {
       const outcomeRead = analyzeRead(decision.url);
       Object.assign(row, { final:outcomeRead.final, stage:4 });
-      trail.push(step('followup', 'read', decision.source === 'notice_text' ? '通知正文里写出的网址，直接放行' : decision.reason || ''), ...outcomeRead.trail);
+      const fixedLead = fixedLeadUrls.has(decision.url);
+      trail.push(step('trace', fixedLead ? 'found_fixed' : 'found', fixedLead ? '固定步骤核到的官方网址，直接读' : decision.source === 'notice_text' ? '代理找到的官方网址（或通知正文里写出的网址），直接读' : decision.reason || '', { virtual:true }), ...outcomeRead.trail);
       const result = extractByUrl.get(decision.url) || {};
       if (result.reasoning?.text) row.thinking = String(result.reasoning.text);
     } else {
@@ -265,7 +305,7 @@ function composeRunDetail(runId, files) {
       const skip = decision.action === 'fetch' ? (noticeLike ? 'skip_notice' : 'skip_dup') : (decision.lowConfidence || decision.action === 'review') ? 'skip_low' : 'skip_news';
       const skipText = { skip_notice:'追溯页面：通知类页面或标题含通知/选拔/喜报，不读', skip_dup:'追溯页面：放行但库里已有或同批重复，不读', skip_low:'追溯页面：Jev 把握低，只留线索，未读', skip_news:'追溯页面：转载、新闻或无关，不再往下追，未读' }[skip];
       row.final = skipText;
-      trail.push(step('followup', skip, `${skipText}｜${decision.reason || ''}`));
+      trail.push(step('trace', skip, `${skipText}｜${decision.reason || ''}`, { virtual:true }), step('end_trace_skip', ''));
     }
     row.trail = finalizeTrail(trail);
     rows.push(row);
@@ -302,7 +342,10 @@ function composeRunDetail(runId, files) {
       error:item.error || '',
       // 第一种办法：访问通知页面提取网址（读了哪几篇、各提取到几个）；提取到了就不再搜索
       pageVisit:item.pageVisit ? { found:item.pageVisit.found || 0, visits:(item.pageVisit.visits || []).map(visit => ({ url:visit.url, status:visit.status, found:visit.found || 0 })) } : null,
-      searchSkipped:item.searchSkipped || '' })),
+      searchSkipped:item.searchSkipped || '',
+      // Kimi 代理追溯（2026-10-10 起）：结论、理由、轮数、搜索和读网页次数
+      agent:item.agent ? { outcome:item.agent.outcome, label:item.agent.label, reason:clip(item.agent.reason, 400), turns:item.agent.turns, tokens:item.agent.tokens,
+        searches:item.agent.searches, reads:item.agent.reads, engines:item.agent.engines || {} } : null })),
     // 本轮各搜索引擎用了多少次、有没有被停用
     searchEngines:Array.isArray(files['notice-resolution-leads.json']?.engines) ? files['notice-resolution-leads.json'].engines : [],
     perQuery:(baidu.perQuery || []).map(item => ({ query:item.query, route:item.route || '', results:item.references, outOfScope:item.outOfScope,

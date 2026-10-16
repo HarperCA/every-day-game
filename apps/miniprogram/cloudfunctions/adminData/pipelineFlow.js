@@ -36,18 +36,23 @@ const NODES = {
       unreadable:{ label:'放行，但网站读不了（微信等），转去追溯', to:'trace' },
       fetch_unread:{ label:'放行但本轮没读', to:'end_lead' }, trace:{ label:'转载/新闻，追溯上级赛事', to:'trace' },
       lead:{ label:'拿不准或目录，只留线索', to:'end_lead' }, reject:{ label:'与赛事无关，丢弃', to:'end_rejected' } } },
-  trace:{ label:'通知追溯', kind:'ai', who:'系统按上级赛事分组；①访问通知页面提取网址 ②用“比赛名 报名入口”联网搜索（百度 → Kimi → DeepSeek 依次补位）',
-    desc:'通知、转载、新闻里都写着上级赛事的名字，按赛事名分组（同一场比赛的几篇只处理一次）。追溯分两种：'
-      + '①页面能读的，直接访问通知页面，提取页面里写出的官网、报名网址，不花搜索额度；'
-      + '②页面读不了（微信公众号等）或页面里没写网址的，用“比赛名 报名入口”搜索最新的官网：先用百度（每晚 10 次），用完换 Kimi（15 次），再不够用 DeepSeek（15 次，只返回标题和网址）。'
-      + '每一组用了哪种办法、搜索返回了什么，都记在明细里。',
-    outcomes:{ found:{ label:'找到待核验页面', to:'followup' }, none:{ label:'搜了但没找到页面', to:'end_trace_none' },
-      noquota:{ label:'提得出赛事名，但没轮上搜索额度', to:'end_trace_none' }, noname:{ label:'提不出合法赛事名，没搜', to:'end_trace_none' } } },
-  followup:{ label:'追溯页面\n筛选', kind:'ai', who:'通知正文里写出的网址直接放行；搜索搜到的由 Jev 判',
-    desc:'追溯找到的页面。通知正文里亲口写出的官网只按网址判重、不再让 AI 复判；搜索来的仍由 Jev 判类别。',
-    outcomes:{ read:{ label:'放行读详情', to:'read' }, skip_low:{ label:'把握低，只留线索', to:'end_trace_skip' },
-      skip_notice:{ label:'通知类页面或标题含通知/选拔/喜报，不读', to:'end_trace_skip' }, skip_news:{ label:'转载、新闻或无关，不再往下追', to:'end_trace_skip' },
-      skip_dup:{ label:'库里已有或同批重复，不读', to:'end_trace_skip' } } },
+  // 2026-10-10 用户定：原“通知追溯”“追溯页面筛选”两个环节合成一个 AI 代理（Kimi API），代理自己判断找到的是不是官方来源
+  // 2026-10-12 起分三段：追溯前查库 → 固定步骤 → 代理兜底（只处理固定步骤没核到的）。为不改动流程图版面，仍是一个环节，各段的结果分开列
+  trace:{ label:'通知追溯\n固定步骤+代理', kind:'ai', who:'DeepSeek 认比赛名查库；固定步骤（Kimi 搜索 + 读网页 + DeepSeek 核对原文）；没核到的交给 Codex 代理（GPT-6.1-Sol，推理 xhigh）',
+    desc:'① 追溯前查库：用 DeepSeek 认出每篇通知背后的比赛，库里已有的、同一晚已在追的不再追。'
+      + '② 固定步骤：官网记忆里有的直接读；否则按“比赛名 年份 通知”“比赛名 官网”两个搜索词搜，按网站类型和标题打分挑前两个，读正文（PDF、空壳页都能读），'
+      + '交给 DeepSeek 一次核对是不是官方来源并摘出主办、参赛对象、届次、报名时间，代码逐字核对原文；主办方和参赛对象或报名截止核到、而且是当届的，算找到官方来源。'
+      + '③ 代理兜底：没核到的连同试过什么交给 Kimi 代理，读网页同样只给核对过的要点；核到就让它收尾；结论里的来源由代码复核，没读到正文、转载站、摘录对不上原文的去掉。'
+      + '每晚代理 token 上限 150 万，每篇最多 6 轮、6 万 token；没轮上的第二天再来。每篇的结论、理由、搜索和读网页都记在明细里。',
+    outcomes:{ found:{ label:'代理找到官方来源，读详情', to:'read' }, found_fixed:{ label:'固定步骤核到官方来源，读详情', to:'read' },
+      skip_dup:{ label:'找到了，但库里已有或同批重复，不读', to:'end_trace_skip' },
+      known:{ label:'追溯前查库：库里已有或同一晚已在追，不再追', to:'end_trace_skip' },
+      notcomp_fixed:{ label:'固定步骤：两次都判为不是比赛', to:'end_trace_none' },
+      none:{ label:'代理有结论：不是比赛、只是赛区/校赛、找不到或读不出（含来源没通过代码复核）', to:'end_trace_none' },
+      noquota:{ label:'没轮上（token 或 Kimi 额度用完）或代理出错', to:'end_trace_none' },
+      noname:{ label:'提不出合法赛事名，没搜（旧版追溯）', to:'end_trace_none' },
+      skip_low:{ label:'旧版：Jev 把握低，只留线索', to:'end_trace_skip' }, skip_notice:{ label:'旧版：通知类页面，不读', to:'end_trace_skip' },
+      skip_news:{ label:'旧版：转载、新闻或无关，不读', to:'end_trace_skip' } } },
   read:{ label:'读详情页', kind:'system', who:'下载网页，检查是不是空壳、是不是允许抓取；空壳页用 Kimi 读网页接口重读；缺关键信息时补读正式通知、识别页面图片',
     desc:'遵守 robots.txt。抓到的是导航骨架（空壳页，前后端分离的官网常见）时，用 Kimi 会员通道的读网页接口在服务端执行脚本后重读一次（每轮最多 20 条，robots 不允许的站不读）；重读还是骨架就不往下走。PDF、Word 附件会读出文字。'
       + '读完参赛对象或报名时间还缺的：先按页面里的公告标题搜官网自己的正式通知，读了合在一起重抽（文字，可逐字核对）；仍缺的再把页面大图交给 DeepSeek 识别文字，靠图片补出的项整条转人工审核。',
@@ -70,9 +75,9 @@ const NODES = {
   end_dup:{ label:'判重跳过', kind:'end', tone:'drop', desc:'库里已有，或 30 天内被拒过的网址。' },
   end_ai_dup:{ label:'AI 判重\n跳过', kind:'end', tone:'drop', desc:'AI 裁决为同一届重复、学校学院的下级通知，或看不出是不是同一场（保守跳过）。' },
   end_rejected:{ label:'前置筛选\n丢弃', kind:'end', tone:'bad', desc:'标题规则或 AI 判为与赛事无关。' },
-  end_lead:{ label:'只留线索\n没处理', kind:'end', tone:'warn', desc:'目录、栏目、拿不准的、放行但没轮上读的。只记在当晚报告里，之后没有环节再看它。' },
-  end_trace_none:{ label:'追溯\n没找到', kind:'end', tone:'warn', desc:'通知追溯没有找到可以核验的页面：搜了没搜到、没轮上搜索额度，或提不出合法赛事名。' },
-  end_trace_skip:{ label:'找到后\n筛选不读', kind:'end', tone:'warn', desc:'追溯找到了页面，但筛选后决定不读：把握低、通知类页面、转载新闻，或库里已有（重复）。' },
+  end_lead:{ label:'线索待核查', kind:'end', tone:'warn', desc:'本轮未进入赛事库。目录、信源和拿不准的线索写入持久核查任务；详情读取失败会按次数安排重试。' },
+  end_trace_none:{ label:'追溯\n没找到', kind:'end', tone:'warn', desc:'通知追溯没有找到官方来源：代理判为不是比赛、只是赛区或校赛、找不到或读不出，或者没轮上（额度用完、代理出错）。' },
+  end_trace_skip:{ label:'找到后\n筛选不读', kind:'end', tone:'warn', desc:'代理找到了官方网址，但库里已有或同批重复，不再读；2026-10-12 起还包括追溯前查库就认出库里已有、或同一晚已有通知在追的，不派代理（旧版还包括把握低、通知类页面、转载新闻）。' },
   end_readfail:{ label:'读取或\n抽取失败', kind:'end', tone:'bad', desc:'robots 禁止、空壳页、抓取出错、AI 没给出答案。' },
   end_scope:{ label:'未入库', kind:'end', tone:'bad', desc:'范围检查没通过、同名已有、或入库门槛没过。' },
   end_written:{ label:'写入后台', kind:'end', tone:'good', desc:'新增草稿、自动发布、归档，或给已有同名赛事补来源。' },

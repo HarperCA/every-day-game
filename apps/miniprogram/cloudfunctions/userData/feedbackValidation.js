@@ -13,7 +13,7 @@ function validateFeedbackInput(event) {
   const category = requiredText(event.category, 'category');
   if (!FEEDBACK_CATEGORIES.has(category)) throw new Error('invalid_category');
   const content = requiredText(event.content, 'content');
-  if (content.length < 5 || content.length > 2000) throw new Error('invalid_content_length');
+  if (!content.length || content.length > 2000) throw new Error('invalid_content_length');
   const evidenceUrl = String(event.evidenceUrl || '').trim();
   if (evidenceUrl && (!/^https?:\/\//i.test(evidenceUrl) || evidenceUrl.length > 2048)) throw new Error('invalid_evidence_url');
   return { editionId, competitionName, category, content, evidenceUrl };

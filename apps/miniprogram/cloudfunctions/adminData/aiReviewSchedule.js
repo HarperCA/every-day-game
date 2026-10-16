@@ -25,12 +25,34 @@ function backoffUntilMs(record) {
   return lastAt + Math.min(count * BACKOFF_STEP_MS, MAX_BACKOFF_MS);
 }
 
+// A failed assessment is an actionable queue item even before the weekly review expires.
+// A later independent official pass, explicit human review, or completed agent resolution
+// supersedes the old assessment and must not launch the same recovery again.
+function hasUnresolvedAiReview(record) {
+  if (!['needs_changes','insufficient_evidence'].includes(record?.aiReview?.decision)) return false;
+  const failedAt = reviewedAtMs(record);
+  const afterFailure = value => Number.isFinite(Date.parse(value || '')) && Date.parse(value) >= failedAt;
+  // draft：代理跑过、独立复核没全过，已留草稿等人工，不再立刻重跑代理
+  if (['published','archived','draft'].includes(record.aiResolution?.outcome) && afterFailure(record.aiResolution.reviewed_at)) return false;
+  const verification = record.fieldVerification;
+  if (verification?.all_correct === true && verification.source_scope === 'official'
+      && !record.needsManualReview && afterFailure(verification.reviewed_at)) return false;
+  const actor = String(record.updatedBy || '');
+  if (record.manualReview === 'passed' && !record.needsManualReview && actor
+      && !/^(system|kimi|ai|scheduled|auto|field|archive)/i.test(actor)
+      && afterFailure(record.reviewedAt)) return false;
+  return true;
+}
+
 function isStale(record, cutoff, now = Date.now()) {
   if (!record || !record.id) return false;
   // 已归档的赛事不会再展示给学生，也不会再改内容，重新审核是白烧模型额度。
   if (record.dataStatus === 'archived' || record.dataStatus === 'quarantined') return false;
-  if (now < backoffUntilMs(record)) return false;
-  return reviewedAtMs(record) < cutoff;
+  if (now < backoffUntilMs(record) || (hasUnresolvedAiReview(record) && now < fieldVerificationBackoffUntilMs(record))) return false;
+  // 代理处理过（含留草稿）也算一次审核，7 天内不再重审
+  const resolvedAt = Date.parse(record.aiResolution?.reviewed_at || '');
+  const lastReviewedAt = Math.max(reviewedAtMs(record), Number.isFinite(resolvedAt) ? resolvedAt : 0);
+  return hasUnresolvedAiReview(record) || lastReviewedAt < cutoff;
 }
 
 function staleCutoff(now, staleDays) {
@@ -46,7 +68,7 @@ function selectStaleRecords(records, { now = Date.now(), staleDays = STALE_DAYS,
   const cutoff = staleCutoff(now, staleDays);
   return (Array.isArray(records) ? records : [])
     .filter(record => isStale(record, cutoff, now))
-    .sort((left, right) => reviewedAtMs(left) - reviewedAtMs(right))
+    .sort((left, right) => Number(hasUnresolvedAiReview(right)) - Number(hasUnresolvedAiReview(left)) || reviewedAtMs(left) - reviewedAtMs(right))
     .slice(0, Math.max(0, limit));
 }
 
@@ -118,7 +140,7 @@ function selectStaleForFieldVerification(records, { now = Date.now(), staleDays 
 }
 
 module.exports = {
-  DEFAULT_BATCH_LIMIT, STALE_DAYS,
+  DEFAULT_BATCH_LIMIT, STALE_DAYS, hasUnresolvedAiReview,
   backoffUntilMs, countStaleRecords, nextFailureMark, reviewedAtMs, runStatus, selectStaleRecords,
   fieldVerifiedAtMs, fieldVerificationBackoffUntilMs, nextFieldVerificationFailureMark,
   isStaleForFieldVerification, countStaleForFieldVerification, selectStaleForFieldVerification,

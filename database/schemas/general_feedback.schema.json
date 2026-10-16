@@ -1,0 +1,17 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"general_feedback",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["id","user_id","type","content","status","created_at","updated_at"],
+  "properties":{
+    "_id":{"type":"string"}, "id":{"type":"string"}, "user_id":{"type":"string"},
+    "type":{"enum":["bug","suggestion","data","other"]},
+    "content":{"type":"string","minLength":1,"maxLength":2000},
+    "contact":{"type":"string","maxLength":200}, "app_version":{"type":"string","maxLength":40},
+    "status":{"enum":["pending","processing","resolved"]},
+    "public_reply":{"type":"string","maxLength":2000}, "internal_note":{"type":"string","maxLength":2000},
+    "created_at":{"type":"string","format":"date-time"}, "updated_at":{"type":"string","format":"date-time"},
+    "resolved_at":{"type":["string","null"],"format":"date-time"}, "data_version":{"type":"integer","minimum":1}
+  }
+}

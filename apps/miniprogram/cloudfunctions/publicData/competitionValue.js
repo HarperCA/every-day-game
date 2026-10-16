@@ -25,6 +25,43 @@ const LIFECYCLES = ['长期举办', '首届', '不定期', '疑似停办', '已�
 // 与 event_edition schema 的同名字段保持一致，抽取结果必须落在这几个值里。
 const REGISTRATION_ORGANIZATIONS = ['自行报名', '学校统一报名', '两种方式均可', '需先校内选拔', '以赛区或学校通知为准', '暂未明确'];
 
+// 地区筛选按赛事面向范围标记，不按承办学校所在地推断，避免把全国赛事误标成主办校所在省。
+const EXPLICIT_REGIONS = [
+  ['内蒙古自治区', /内蒙古(?:自治区|赛区|地区|高校|大学生)/],
+  ['广西壮族自治区', /广西(?:壮族自治区|赛区|地区|高校|大学生)/],
+  ['西藏自治区', /西藏(?:自治区|赛区|地区|高校|大学生)/],
+  ['宁夏回族自治区', /宁夏(?:回族自治区|赛区|地区|高校|大学生)/],
+  ['新疆维吾尔自治区', /新疆(?:维吾尔自治区|赛区|地区|高校|大学生)/],
+  ['北京市', /北京(?:市|赛区|地区|高校|大学生)/], ['天津市', /天津(?:市|赛区|地区|高校|大学生)/],
+  ['上海市', /上海(?:市|赛区|地区|高校|大学生)/], ['重庆市', /重庆(?:市|赛区|地区|高校|大学生)/],
+  ['河北省', /河北(?:省|赛区|地区|高校|大学生)/], ['山西省', /山西(?:省|赛区|地区|高校|大学生)/],
+  ['辽宁省', /辽宁(?:省|赛区|地区|高校|大学生)/], ['吉林省', /吉林(?:省|赛区|地区|高校|大学生)/],
+  ['黑龙江省', /黑龙江(?:省|赛区|地区|高校|大学生)/], ['江苏省', /江苏(?:省|赛区|地区|高校|大学生)/],
+  ['浙江省', /浙江(?:省|赛区|地区|高校|大学生)/], ['安徽省', /安徽(?:省|赛区|地区|高校|大学生)/],
+  ['福建省', /福建(?:省|赛区|地区|高校|大学生)/], ['江西省', /江西(?:省|赛区|地区|高校|大学生)/],
+  ['山东省', /山东(?:省|赛区|地区|高校|大学生)/], ['河南省', /河南(?:省|赛区|地区|高校|大学生)/],
+  ['湖北省', /湖北(?:省|赛区|地区|高校|大学生)/], ['湖南省', /湖南(?:省|赛区|地区|高校|大学生)/],
+  ['广东省', /广东(?:省|赛区|地区|高校|大学生)/], ['海南省', /海南(?:省|赛区|地区|高校|大学生)/],
+  ['四川省', /四川(?:省|赛区|地区|高校|大学生)/], ['贵州省', /贵州(?:省|赛区|地区|高校|大学生)/],
+  ['云南省', /云南(?:省|赛区|地区|高校|大学生)/], ['陕西省', /陕西(?:省|赛区|地区|高校|大学生)/],
+  ['甘肃省', /甘肃(?:省|赛区|地区|高校|大学生)/], ['青海省', /青海(?:省|赛区|地区|高校|大学生)/],
+  ['台湾地区', /台湾(?:地区|赛区|高校|大学生)/], ['香港特别行政区', /香港(?:特别行政区|赛区|地区|高校|大学生)/],
+  ['澳门特别行政区', /澳门(?:特别行政区|赛区|地区|高校|大学生)/],
+];
+
+function inferCompetitionRegion(record = {}) {
+  const explicit = String(record.region || '').trim();
+  if (explicit) return explicit;
+  const name = `${record.name || ''} ${record.editionName || ''}`;
+  const area = name.match(/华北|华东|华南|华中|东北|西北|西南|长三角|珠三角|京津冀|东三省/);
+  if (area) return `${area[0]}地区`;
+  const province = EXPLICIT_REGIONS.find(([, pattern]) => pattern.test(name));
+  if (province) return province[0];
+  if (record.eventLevel === '国际级' || /国际|亚太|全球|世界/.test(name)) return '国际';
+  if (/全国/.test(name)) return '全国';
+  return '';
+}
+
 const RECOGNITION_PATHS = ['保研考研', '求职就业', '出国留学', '创业融资'];
 const RECOGNITION_LEVELS = ['高', '中', '低', '暂未明确'];
 const LEVEL_SCORE = { '高':6, '中':3, '低':1, '暂未明确':0 };
@@ -188,7 +225,7 @@ function valueFields(record = {}) {
     participant_unit:normalizeEnum(record.participantUnit, PARTICIPANT_UNITS, '暂未公布'),
     scale_tier:normalizeEnum(record.scaleTier, SCALE_TIERS, '暂未公布'),
     participant_scale:String(record.participantScale || ''),
-    region:String(record.region || ''),
+    region:inferCompetitionRegion(record),
     lifecycle:normalizeEnum(record.lifecycle, LIFECYCLES, '暂未明确'),
     recognition:normalizeRecognition(record.recognition),
     value_scores:valueScores(record),
@@ -201,7 +238,7 @@ function valueFields(record = {}) {
 module.exports = {
   REWARD_TIERS, REWARD_HIGHLIGHTS, SCALE_TIERS, PARTICIPANT_UNITS, LIFECYCLES, REGISTRATION_ORGANIZATIONS,
   RECOGNITION_PATHS, RECOGNITION_LEVELS, MAX_VALUE_SCORE,
-  deriveRewardTier, deriveScaleTier,
+  deriveRewardTier, deriveScaleTier, inferCompetitionRegion,
   normalizeRecognition, valueScores, bestValueScore, valueFields,
   SCHOOL_TIMING_NOTES, TIMING_RELIABILITY, schoolTimingAdvice,
 };

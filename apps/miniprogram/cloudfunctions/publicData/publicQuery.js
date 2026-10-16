@@ -8,6 +8,15 @@ const PUBLIC_DATA_STATUSES = new Set(['published', 'archived']);
 // 粗筛，不是精确合同期限。
 const REGISTRATION_WITHIN_DAYS = { '1m':31, '3m':92, '6m':183 };
 
+function registrationInstant(value, boundary) {
+  if (!value) return null;
+  const date = String(value);
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? `${date}T${boundary === 'end' ? '23:59:59.999' : '00:00:00'}+08:00` : date;
+  const instant = Date.parse(normalized);
+  return Number.isFinite(instant) ? instant : null;
+}
+
 function assertPublicRecordCapacity(records) {
   if (!Array.isArray(records)) throw new Error('invalid_public_records');
   if (records.length > MAX_PUBLIC_RECORDS) throw new Error('public_record_limit_exceeded');
@@ -22,11 +31,22 @@ function normalizePublicRecordId(value) {
 }
 
 function currentRegistrationStatus(item, now = new Date()) {
+  if (item.data_status === 'archived') return '已截止';
+  const start = registrationInstant(item.registration_start, 'start');
+  const end = registrationInstant(item.registration_end, 'end');
+  if (end !== null && now.getTime() > end) return '已截止';
+  // 没有报名截止日、但比赛结束日已过：报名肯定已经结束，算已截止（2026-10-10，与 adminData/publicCache.js 一致）
+  const competitionEnded = registrationInstant(item.competition_end, 'end');
+  if (end === null && competitionEnded !== null && now.getTime() > competitionEnded) return '已截止';
   if (item.registration_status_override) return item.registration_status_override;
-  const end = item.registration_end ? new Date(item.registration_end) : null;
-  if (end && now > end) return '已截止';
-  if (!item.registration_start) return '时间待公布';
-  if (now < new Date(item.registration_start)) return '即将报名';
+  if (start === null) return '时间待公布';
+  if (now.getTime() < start) return '即将报名';
+  // 已开始、没有统一截止日（多见于“以学校或赛区通知为准”的赛事）：算报名中，详情页另有“以学校通知为准”的提示（2026-10-09）。
+  // 保护：比赛已经开始（还没有结束日或没到结束日），报名多半已经结束、只是没拿到截止日，不算报名中，显示时间待公布。
+  if (end === null) {
+    const competitionStarted = registrationInstant(item.competition_start, 'start');
+    if (competitionStarted !== null && now.getTime() > competitionStarted) return '时间待公布';
+  }
   return '报名中';
 }
 

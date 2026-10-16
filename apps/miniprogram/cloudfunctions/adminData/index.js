@@ -9,11 +9,12 @@ const { aiReviewConfigStatus, probeImageCapability, runCompetitionAiReview, runF
 const { extractFromDetailPage } = require('./competitionExtract');
 const { REASONING_COLLECTION, buildReasoningDoc, createReasoningCollector, saveReasoningDocs } = require('./aiReasoning');
 const {
-  countStaleRecords, nextFailureMark, runStatus, selectStaleRecords,
+  countStaleRecords, nextFailureMark, runStatus, selectStaleRecords, hasUnresolvedAiReview,
   countStaleForFieldVerification, selectStaleForFieldVerification, nextFieldVerificationFailureMark,
 } = require('./aiReviewSchedule');
 const { archiveRecord, shouldArchive } = require('./archiveSchedule');
 const { evaluateDraftStaleness } = require('./intakeSchedule');
+const { registrationScheduleIssues } = require('./registrationSchedule');
 const { applyPublishedFieldCorrections } = require('./fieldVerificationIssues');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -22,6 +23,8 @@ const db = cloud.database();
 // 这个限制已经不存在了（服务端请求体上限 10MB，见 apps/server/src/index.mjs）。
 // 放宽到 2000，给内容规模增长留够空间。
 const MAX_RECORDS = 2000;
+// Both scheduled review paths share one model-use lock within this API process.
+const recordInFlight = new Set();
 const MAX_FEEDBACKS = 1000;
 const MAX_AI_JOBS = 1000;
 // 实测：单条审核约 50 秒，且 Kimi 端并发请求是排队的，3 条并发只会让后两条超时。
@@ -132,7 +135,7 @@ function feedbackReviewUpdate(item, now) {
   if (!FEEDBACK_STATUSES.has(item.status)) throw new Error('invalid_feedback_status');
   if (!FEEDBACK_CATEGORIES.has(item.category)) throw new Error('invalid_feedback_category');
   const content = String(item.content || '').trim();
-  if (content.length < 5 || content.length > 2000) throw new Error('invalid_feedback_content');
+  if (!content || content.length > 2000) throw new Error('invalid_feedback_content');
   const evidenceUrl = String(item.evidenceUrl || '').trim();
   if (evidenceUrl && (!/^https?:\/\//i.test(evidenceUrl) || evidenceUrl.length > 2048)) throw new Error('invalid_feedback_evidence_url');
   return {
@@ -249,26 +252,87 @@ async function bootstrap() {
   };
 }
 
+// Rebase a long model run on the latest state. Never overwrite a record edited meanwhile.
+async function commitScheduledChanges(originalRecords, proposedRecords, resolutions, actor) {
+  const originals = new Map(originalRecords.map(record => [record.id, record]));
+  const proposed = new Map(proposedRecords.map(record => [record.id, record]));
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const latest = await loadState('competitions');
+    const applied = new Map();
+    const skipped = [];
+    const records = latest.records.flatMap(record => {
+      const original = originals.get(record.id);
+      if (!original || JSON.stringify(original) === JSON.stringify(proposed.get(record.id))) return [record];
+      if (JSON.stringify(original) !== JSON.stringify(record)) { skipped.push(record.id); return [record]; }
+      if (resolutions.has(record.id)) applied.set(record.id, resolutions.get(record.id));
+      return proposed.has(record.id) ? [proposed.get(record.id)] : [];
+    });
+    const reasons = new Map([...applied].map(([id, resolution]) => [id, resolution.reason]));
+    try {
+      const result = await saveState('competitions', records, latest.version, async (transaction, current) => {
+        const cacheResult = await syncPublicCache(transaction, current.records || [], records);
+        for (const [id, resolution] of applied) {
+          if (resolution.outcome !== 'delete') continue;
+          const backupId = `resolution-${Date.now()}-${require('crypto').createHash('sha256').update(id).digest('hex').slice(0, 16)}`;
+          await transaction.collection('ai_resolution_backups').doc(backupId).set({ data:{
+            record:originals.get(id), recordId:id, outcome:'delete', reason:resolution.reason,
+            evidence:resolution.agentResult || null, createdAt:new Date().toISOString(), actor,
+          } });
+        }
+        return cacheResult;
+      }, null, autoAudits(latest.records, records, actor, new Date(), reasons));
+      return { ...result, records, skipped, resolutions:[...applied].map(([id, value]) => ({id,outcome:value.outcome,reason:value.reason})) };
+    } catch (error) {
+      if (attempt === 2 || !/version|conflict/i.test(String(error?.message || error))) throw error;
+    }
+  }
+}
+
+async function resolveReviewFailure(record, review, options) {
+  const resolve = options.resolveFailedCompetition || require('./kimiReviewDisposition').resolveFailedCompetition;
+  const resolution = await resolve(record, review, { ...options, records:options.allRecords || [] });
+  if (!resolution || !['published','archived','draft','delete'].includes(resolution.outcome)
+      || (resolution.outcome === 'delete' ? resolution.record !== null
+        : resolution.record?.id !== record.id || resolution.record?.dataStatus !== resolution.outcome)
+      || !String(resolution.reason || '').trim()) throw new Error('invalid_kimi_resolution_result');
+  return resolution;
+}
+
 async function runAiReviewPool(records, concurrency = 5, options = {}) {
   const results = new Map();
+  const resolutions = new Map();
   const failures = [];
+  const inFlightSkipped = [];
   let cursor = 0;
   async function worker() {
     while (cursor < records.length) {
       const record = records[cursor++];
+      if (recordInFlight.has(record.id)) { inFlightSkipped.push(record.id); continue; }
+      recordInFlight.add(record.id);
       // 这次审核里 Kimi 的思考过程，审核结束后写进 ai_reasoning（成功失败都记，失败时更需要看它想了什么）
       const collector = createReasoningCollector({ recordId:record.id, recordName:record.name });
       try {
-        results.set(record.id, await runCompetitionAiReview(record, undefined, { ...options, onReasoning:collector.onReasoning }));
+        if (hasUnresolvedAiReview(record)) {
+          resolutions.set(record.id, await resolveReviewFailure(record, record.aiReview, { ...options, onReasoning:collector.onReasoning }));
+          results.set(record.id, record.aiReview);
+          continue;
+        }
+        const review = await (options.runReview || runCompetitionAiReview)(record, undefined, { ...options, onReasoning:collector.onReasoning });
+        if (review.decision !== 'recommend_approve' || registrationScheduleIssues(record.schedule).length
+            || !['published','archived'].includes(record.dataStatus)) {
+          resolutions.set(record.id, await resolveReviewFailure(record, review, { ...options, onReasoning:collector.onReasoning }));
+        }
+        results.set(record.id, review);
       } catch (error) {
         failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
       } finally {
-        await saveReasoningDocs(db, collector.docs());
+        try { await saveReasoningDocs(db, collector.docs()); }
+        finally { recordInFlight.delete(record.id); }
       }
     }
   }
   await Promise.all(Array.from({ length:Math.min(concurrency, records.length) }, () => worker()));
-  return { results, failures };
+  return { results, resolutions, failures, inFlightSkipped };
 }
 
 function scheduledBatchLimit() {
@@ -278,7 +342,31 @@ function scheduledBatchLimit() {
 
 // 自建服务器不再沿用云函数 60 秒总预算；仍每次只审核少量记录，
 // 防止定时任务重叠和同一批次写库冲突。
-async function runScheduledCompetitionAiReview(trigger = 'timer') {
+function selectRequestedReviewRecords(records, trigger, requestedRecordIds = []) {
+  if (!Array.isArray(requestedRecordIds) || requestedRecordIds.length > 10
+      || requestedRecordIds.some(id => typeof id !== 'string' || !id.trim() || id.length > 200)) {
+    throw new Error('invalid_manual_ai_review_record_ids');
+  }
+  if (!requestedRecordIds.length) return null;
+  if (trigger !== 'manual') throw new Error('manual_ai_review_retry_required');
+  const requested = new Set(requestedRecordIds);
+  return records.filter(record => requested.has(record.id) && !recordInFlight.has(record.id) && !['archived','quarantined'].includes(record.dataStatus));
+}
+
+const quotaPauseModule = require('./aiQuotaPause');
+// 这一轮有因为额度用完失败的：暂停 5 小时；有调用成功的：说明额度已恢复，清掉暂停
+async function applyQuotaOutcome(summary, failures, succeeded) {
+  const quotaFailure = failures.find(item => quotaPauseModule.isQuotaError(item.error));
+  if (quotaFailure) {
+    const pause = quotaPauseModule.nextPause(quotaFailure.error, new Date(), await quotaPauseModule.readPause(db));
+    await quotaPauseModule.writePause(db, pause);
+    summary.pausedUntil = pause.pausedUntil;
+  } else if (succeeded) {
+    await quotaPauseModule.clearPause(db);
+  }
+}
+
+async function runScheduledCompetitionAiReview(trigger = 'timer', requestedRecordIds = []) {
   const startedAt = new Date().toISOString();
   const summary = {
     trigger, startedAt, completedAt:startedAt,
@@ -288,34 +376,57 @@ async function runScheduledCompetitionAiReview(trigger = 'timer') {
   try {
     const state = await loadState('competitions');
     const limit = scheduledBatchLimit();
-    const due = selectStaleRecords(state.records, { limit });
+    const requested = selectRequestedReviewRecords(state.records, trigger, requestedRecordIds);
+    // Kimi 额度用完时暂停 5 小时（aiQuotaPause.js）；后台手动指定记录的照常跑
+    const quotaPause = requested === null ? quotaPauseModule.activePause(await quotaPauseModule.readPause(db)) : null;
+    if (quotaPause) {
+      summary.status = 'paused';
+      summary.pausedUntil = quotaPause.pausedUntil;
+      summary.remaining = countStaleRecords(state.records);
+      summary.completedAt = new Date().toISOString();
+      summary.createdAt = summary.completedAt;
+      return summary;
+    }
+    const due = requested === null ? selectStaleRecords(state.records.filter(record => !recordInFlight.has(record.id)), { limit }) : requested;
+    if (requested !== null) summary.requestedRecordIds = [...new Set(requestedRecordIds)];
     summary.selected = due.length;
     if (due.length) {
       const chatTimeoutMs = 0;
       summary.chatTimeoutMs = chatTimeoutMs;
-      const { results, failures } = await runAiReviewPool(due, due.length, {
+      const { results, resolutions, failures, inFlightSkipped } = await runAiReviewPool(due, due.length, {
         chatTimeoutMs,
         maxTokens:SCHEDULED_MAX_TOKENS,
         concise:true,
+        allRecords:state.records,
       });
+      summary.inFlightSkipped = inFlightSkipped;
+      summary.selected = results.size + failures.length;
       const now = new Date().toISOString();
       const failureById = new Map(failures.map(item => [item.recordId, item.error]));
-      const records = state.records.map(record => {
+      let records = state.records.map(record => {
+        if (resolutions.has(record.id)) return resolutions.get(record.id).record;
         if (results.has(record.id)) {
           const { aiReviewFailure, ...rest } = record; // 成功后清除退避标记
           return require('./quarantine').isolateMisimport({ ...rest, aiReview:results.get(record.id), updatedAt:now, updatedBy:'kimi-scheduled-review' }, now);
         }
-        if (failureById.has(record.id)) {
+        // 额度用完不是这条记录的问题，不加失败退避标记
+        if (failureById.has(record.id) && !quotaPauseModule.isQuotaError(failureById.get(record.id))) {
           return { ...record, aiReviewFailure:nextFailureMark(record, failureById.get(record.id)) };
         }
         return record;
-      });
+      }).filter(Boolean);
       // 失败也要落盘，否则退避计数永远是 0，同一条记录会被无限重试。
-      if (results.size || failures.length) await saveState('competitions', records, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], records), null, autoAudits(state.records, records, 'ai-review'));
+      if (results.size || failures.length) {
+        const committed = await commitScheduledChanges(state.records, records, resolutions, 'ai-review');
+        summary.resolutions = committed.resolutions;
+        summary.skipped = committed.skipped;
+        records = committed.records;
+      }
       summary.succeeded = results.size;
       summary.failed = failures.length;
       summary.failures = failures.slice(0, 20);
       summary.remaining = countStaleRecords(records);
+      await applyQuotaOutcome(summary, failures, results.size);
     }
     summary.status = runStatus(summary);
   } catch (error) {
@@ -341,7 +452,7 @@ async function archiveExpiredRegistrations(trigger = 'manual') {
     summary.scanned = state.records.length;
     const results = [];
     const nextRecords = state.records.map(record => {
-      if (!shouldArchive(record, registrationStatus, startedAt)) return record;
+      if (registrationScheduleIssues(record.schedule).length || !shouldArchive(record, registrationStatus, startedAt)) return record;
       const updated = archiveRecord(record, startedAt);
       results.push({ id:record.id, name:record.name, nextEditionEstimate:updated.nextEditionEstimate });
       return updated;
@@ -392,18 +503,27 @@ async function loadLastArchiveRun() {
 
 async function runFieldVerificationPool(records, options = {}) {
   const results = new Map();
+  const resolutions = new Map();
   const failures = [];
+  const inFlightSkipped = [];
   for (const record of records) {
+    if (recordInFlight.has(record.id)) { inFlightSkipped.push(record.id); continue; }
+    recordInFlight.add(record.id);
     const collector = createReasoningCollector({ recordId:record.id, recordName:record.name });
     try {
-      results.set(record.id, await runFieldVerification(record, undefined, { ...options, onReasoning:collector.onReasoning }));
+      const review = await (options.runReview || runFieldVerification)(record, undefined, { ...options, onReasoning:collector.onReasoning });
+      if (!review.all_correct || registrationScheduleIssues(record.schedule).length || applyPublishedFieldCorrections(record, review, new Date()).needsManualReview) {
+        resolutions.set(record.id, await resolveReviewFailure(record, review, { ...options, onReasoning:collector.onReasoning }));
+      }
+      results.set(record.id, review);
     } catch (error) {
       failures.push({ recordId:record.id, recordName:record.name, error:String(error?.message || error).slice(0, 500) });
     } finally {
-      await saveReasoningDocs(db, collector.docs());
+      try { await saveReasoningDocs(db, collector.docs()); }
+      finally { recordInFlight.delete(record.id); }
     }
   }
-  return { results, failures };
+  return { results, resolutions, failures, inFlightSkipped };
 }
 
 async function runScheduledPublishedVerification(trigger = 'timer') {
@@ -418,22 +538,34 @@ async function runScheduledPublishedVerification(trigger = 'timer') {
 
     // 第一步：报名已经截止的已发布记录，直接归档，不进三项核验。
     const afterArchive = state.records.map(record => {
-      if (!shouldArchive(record, registrationStatus, startedAt)) return record;
+      if (registrationScheduleIssues(record.schedule).length || !shouldArchive(record, registrationStatus, startedAt)) return record;
       summary.archived += 1;
       return archiveRecord(record, startedAt);
     });
 
-    const due = selectStaleForFieldVerification(afterArchive, { limit:FIELD_VERIFICATION_BATCH_LIMIT });
+    // Kimi 额度用完时暂停 5 小时：只做不调用 AI 的归档，不做三项核验
+    const quotaPause = quotaPauseModule.activePause(await quotaPauseModule.readPause(db));
+    if (quotaPause) summary.pausedUntil = quotaPause.pausedUntil;
+    const due = quotaPause ? [] : selectStaleForFieldVerification(afterArchive.filter(record => !recordInFlight.has(record.id)), { limit:FIELD_VERIFICATION_BATCH_LIMIT });
     summary.selected = due.length;
 
     let nextRecords = afterArchive;
     if (summary.archived || due.length) {
-      const { results, failures } = due.length
-        ? await runFieldVerificationPool(due, { chatTimeoutMs:FIELD_VERIFICATION_CHAT_TIMEOUT_MS })
-        : { results:new Map(), failures:[] };
+      const { results, resolutions, failures, inFlightSkipped } = due.length
+        ? await runFieldVerificationPool(due, { chatTimeoutMs:FIELD_VERIFICATION_CHAT_TIMEOUT_MS, allRecords:state.records })
+        : { results:new Map(), resolutions:new Map(), failures:[], inFlightSkipped:[] };
+      summary.inFlightSkipped = inFlightSkipped;
+      summary.selected = results.size + failures.length;
       const now = new Date();
       const failureById = new Map(failures.map(item => [item.recordId, item.error]));
       nextRecords = afterArchive.map(record => {
+        if (resolutions.has(record.id)) {
+          const resolution = resolutions.get(record.id);
+          if (resolution.outcome === 'archived') summary.archived += 1;
+          if (resolution.outcome === 'published') summary.corrected += 1;
+          if (resolution.outcome === 'draft') summary.flagged += 1;
+          return resolution.record;
+        }
         if (results.has(record.id)) {
           const { fieldVerificationFailure, ...rest } = record; // 成功后清除退避标记
           const updated = applyPublishedFieldCorrections(rest, results.get(record.id), now);
@@ -441,18 +573,22 @@ async function runScheduledPublishedVerification(trigger = 'timer') {
           else if (!results.get(record.id).all_correct) summary.corrected += 1;
           return updated;
         }
-        if (failureById.has(record.id)) {
+        if (failureById.has(record.id) && !quotaPauseModule.isQuotaError(failureById.get(record.id))) {
           return { ...record, fieldVerificationFailure:nextFieldVerificationFailureMark(record, failureById.get(record.id), now) };
         }
         return record;
-      });
+      }).filter(Boolean);
       summary.succeeded = results.size;
       summary.failed = failures.length;
       summary.failures = failures.slice(0, 20);
-      await saveState('competitions', nextRecords, state.version, (transaction, current) => syncPublicCache(transaction, current.records || [], nextRecords), null, autoAudits(state.records, nextRecords, 'field-verification'));
+      await applyQuotaOutcome(summary, failures, results.size);
+      const committed = await commitScheduledChanges(state.records, nextRecords, resolutions, 'field-verification');
+      nextRecords = committed.records;
+      summary.resolutions = committed.resolutions;
+      summary.skipped = committed.skipped;
     }
     summary.remaining = countStaleForFieldVerification(nextRecords);
-    summary.status = summary.failed && !summary.succeeded && due.length ? 'failed' : (summary.selected || summary.archived ? 'completed' : 'idle');
+    summary.status = summary.failed && !summary.succeeded && due.length ? 'failed' : (summary.selected || summary.archived ? 'completed' : (summary.pausedUntil ? 'paused' : 'idle'));
   } catch (error) {
     summary.error = String(error?.message || error).slice(0, 500);
     summary.status = 'failed';
@@ -582,6 +718,8 @@ async function loadLastAiReviewRun() {
 }
 
 async function handle(event) {
+  if (event.action === 'listGeneralFeedback') return require('./generalFeedback').list(db, event);
+  if (event.action === 'updateGeneralFeedback') return require('./generalFeedback').update(db, event);
   if (event.action === 'bootstrap') return bootstrap();
   // 小程序访问异常（clientIssues.js）：服务器 pull-client-logs.mjs 从上海拉回来后经这里写库。
   // 按上海那边的 _id / 日期存，重复拉取会覆盖成同一条，不会重复计数。
@@ -608,6 +746,27 @@ async function handle(event) {
       savedStats += 1;
     }
     return { savedIssues, savedStats };
+  }
+  // 偏好问卷统计（2026-10-09 起）：pull-client-logs.mjs 从上海 publicSync 的 pullPreferenceStats 拉回的计数快照，
+  // 只有计数、没有账号信息。整份覆盖成一条（id=latest）。
+  if (event.action === 'savePreferenceStats') {
+    const stats = event.stats || {};
+    const counts = value => Object.fromEntries(Object.entries(value && typeof value === 'object' ? value : {})
+      .filter(([key, n]) => typeof key === 'string' && key.length <= 30 && Number.isFinite(Number(n))).slice(0, 60).map(([key, n]) => [key, Number(n)]));
+    const data = { total:Number(stats.total) || 0, completed:Number(stats.completed) || 0, skipped:Number(stats.skipped) || 0,
+      noProfession:Number(stats.noProfession) || 0, noCategory:Number(stats.noCategory) || 0, noProvince:Number(stats.noProvince) || 0,
+      profession:counts(stats.profession), categories:counts(stats.categories), province:counts(stats.province),
+      generatedAt:String(stats.generatedAt || '').slice(0, 40), pulledAt:new Date().toISOString() };
+    await db.collection('preference_stats').doc('latest').set({ data });
+    return { saved:true };
+  }
+  if (event.action === 'preferenceStats') {
+    try { return (await db.collection('preference_stats').doc('latest').get()).data || null; }
+    catch (error) { if (error?.errCode === -1 || /not exist|not found/i.test(error?.message || '')) return null; throw error; }
+  }
+  // 后台“接口用量”页（2026-10-10 起）：各接口每天的调用量、用在哪里（只读，读服务器上的调用账）
+  if (event.action === 'apiUsage') {
+    return require('./apiUsageReport').buildApiUsageReport({ days:event.days });
   }
   // 后台“访问异常”页：最近 N 天的成功率、各类异常、最近的异常明细（只读）
   if (event.action === 'clientIssues') {
@@ -694,6 +853,12 @@ async function handle(event) {
     await db.collection('admin_state').doc(DISCOVERED_CHANNELS_DOC).set({ data:{ channels, updated_at:new Date().toISOString() } });
     return { saved:Object.keys(channels).length };
   }
+  // 百度搜索的屏蔽网站名单（siteBlocklist.js）：读名单、统计脚本写建议、后台确认或忽略
+  if (event.action === 'siteBlocklist') return require('./siteBlocklist').loadSiteBlocklist(db);
+  if (event.action === 'saveSiteBlockSuggestions') return require('./siteBlocklist').saveSuggestions(db, event);
+  if (event.action === 'decideSiteBlock') {
+    return require('./siteBlocklist').decideSiteBlock(db, { host:event.host, decision:event.decision, note:event.note });
+  }
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
   // 一次性探测：当前模型是否真的接受图片输入。
   if (event.action === 'aiImageProbe') {
@@ -717,7 +882,7 @@ async function handle(event) {
     });
   }
   // 手动跑一次定时任务的同一段逻辑，用于验证触发器之外的部分是否正常。
-  if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual');
+  if (event.action === 'runScheduledAiReview') return runScheduledCompetitionAiReview('manual', event.recordIds === undefined ? [] : event.recordIds);
   if (event.action === 'archiveExpiredRegistrations') return archiveExpiredRegistrations('manual');
   if (event.action === 'runScheduledFieldVerification') return runScheduledPublishedVerification(event.trigger || 'manual');
   if (event.action === 'flagStaleDrafts') return flagStaleDrafts(event.trigger || 'manual');
@@ -755,6 +920,32 @@ async function handle(event) {
     } finally {
       await saveReasoningDocs(db, collector.docs());
     }
+  }
+  if (event.action === 'saveOperationState') {
+    const specs = [['records','competitions',MAX_RECORDS],['feedbacks','feedbacks',MAX_FEEDBACKS],['aiJobs','ai_jobs',MAX_AI_JOBS]];
+    const writes = specs.filter(([key]) => event[key] !== undefined).map(([key,id,max]) => ({key,id,records:requireRecords(event[key],max,key)}));
+    if (!writes.length) throw new Error('empty_operation_state');
+    const auditEntries = requireRecords(event.auditEntries || [],MAX_FEEDBACKS,'audit_entries').map(entry => buildSafeAuditEntry(entry));
+    const updates = requireRecords(event.submittedUpdates || [],MAX_FEEDBACKS,'submitted_feedback_updates');
+    return db.runTransaction(async transaction => {
+      const versions = {};
+      for (const write of writes) {
+        let current = {version:0,records:[]};
+        try { current = (await transaction.collection('admin_state').doc(write.id).get()).data || current; }
+        catch (error) { if (!(error?.errCode === -1 || /not exist|not found/i.test(error?.message || ''))) throw error; }
+        versions[write.key] = nextStateVersion(write.id,current.version,event.expectedVersions?.[write.key]);
+        if (write.key === 'records') {
+          require('./competitionScope').requireScopeForNewRecords(current.records || [],write.records);
+          require('./quarantine').requireReviewDisposition(current.records || [],write.records);
+          require('./quarantine').requireQuarantineRecovery(current.records || [],write.records);
+          await syncPublicCache(transaction,current.records || [],write.records);
+        }
+        await transaction.collection('admin_state').doc(write.id).set({data:{records:write.records,version:versions[write.key],updated_at:new Date().toISOString(),updated_by:'super_admin'}});
+      }
+      if (updates.length) await syncSubmittedFeedbacks(updates,transaction);
+      for (const entry of auditEntries) await transaction.collection('audit_log').doc(entry.id).set({data:entry});
+      return {versions};
+    });
   }
   if (event.action === 'saveRecords') {
     const records = requireRecords(event.records, MAX_RECORDS, 'records');
@@ -811,3 +1002,8 @@ exports.runScheduledCompetitionAiReview = runScheduledCompetitionAiReview;
 exports.archiveExpiredRegistrations = archiveExpiredRegistrations;
 exports.runScheduledPublishedVerification = runScheduledPublishedVerification;
 exports.flagStaleDrafts = flagStaleDrafts;
+
+exports.runFieldVerificationPool = runFieldVerificationPool;
+exports.commitScheduledChanges = commitScheduledChanges;
+
+exports.selectRequestedReviewRecords = selectRequestedReviewRecords;
