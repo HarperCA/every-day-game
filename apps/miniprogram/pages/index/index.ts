@@ -326,6 +326,8 @@ Page({
   },
   retry() { this.load(true); },
   openDetail(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` }); },
+  // 赛事助手还没上线：先放入口，点了只提示（2026-10 改版，用户定）
+  openAssistant() { wx.showToast({ title: '赛事助手即将上线', icon: 'none' }); },
   async toggleFavorite(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id || '');
     if (!id) return;
