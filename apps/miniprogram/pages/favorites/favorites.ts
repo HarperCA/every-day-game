@@ -9,6 +9,7 @@ Page({
     loading: true,
     loginRequired: false,
     error: '',
+    emptyHelp: false,
   },
 
   onShow() {
@@ -115,6 +116,8 @@ Page({
     });
   },
 
+  // 空状态标题旁的“?”：点一下显示说明，再点收起
+  toggleEmptyHelp() { this.setData({ emptyHelp: !this.data.emptyHelp }); },
   goFindCompetition() {
     wx.switchTab({ url: '/pages/index/index' });
   },

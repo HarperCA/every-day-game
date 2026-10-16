@@ -1,45 +1,44 @@
-<view class="page">
-  <view class="card">
-    <view wx:if="{{lockedCompetition}}" class="competition"><text>纠错赛事</text><strong>{{competitionName}}</strong></view>
-    <label wx:else class="field">
-      <text>纠错赛事 <i>必填</i></text>
-      <picker wx:if="{{competitions.length}}" mode="selector" range="{{competitions}}" range-key="label" value="{{competitionIndex}}" bindchange="onCompetitionChange">
-        <view class="picker">{{competitionIndex >= 0 ? competitionName : '请选择赛事'}} <text>›</text></view>
-      </picker>
-      <view wx:else class="picker picker-empty">{{competitionsLoading ? '正在加载赛事列表…' : '暂无可选赛事'}}</view>
-    </label>
-    <label class="field">
-      <text>问题类型</text>
-      <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
-        <view class="picker">{{categories[categoryIndex].label}} <text>›</text></view>
-      </picker>
-    </label>
-    <label class="field">
-      <text>问题说明 <i>必填</i></text>
-      <textarea maxlength="2000" value="{{content}}" bindinput="onContentInput" placeholder="请说明哪里有误，以及你认为正确的信息。" />
-      <small>{{content.length}} / 2000</small>
-    </label>
-    <label class="field">
-      <text>证据链接 <i>选填</i></text>
-      <input type="text" value="{{evidenceUrl}}" bindinput="onEvidenceInput" placeholder="https:// 主办方通知或官网页面" />
-    </label>
+<!-- 信息纠错（2026-10 改版）：铺满式表单。从详情页进入时赛事已定，不能改 -->
+<view class="fb-page">
+  <view class="gh">纠错内容</view>
+  <view class="grp">
+    <view wx:if="{{lockedCompetition}}" class="cell locked"><text class="k">赛事</text><text class="v">{{competitionName}}</text></view>
+    <picker wx:elif="{{competitions.length}}" mode="selector" range="{{competitions}}" range-key="label" value="{{competitionIndex}}" bindchange="onCompetitionChange">
+      <view class="cell"><text class="k">赛事</text><text class="v {{competitionIndex >= 0 ? '' : 'ph'}}">{{competitionIndex >= 0 ? competitionName : '请选择赛事'}}</text><text class="chev">›</text></view>
+    </picker>
+    <view wx:else class="cell"><text class="k">赛事</text><text class="v ph">{{competitionsLoading ? '正在加载赛事列表…' : '暂无可选赛事'}}</text></view>
+    <picker mode="selector" range="{{categories}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
+      <view class="cell cell-line"><text class="k">问题类型</text><text class="v">{{categories[categoryIndex].label}}</text><text class="chev">›</text></view>
+    </picker>
   </view>
-  <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在提交…' : '提交纠错'}}</button>
 
-  <view wx:if="{{!lockedCompetition}}" class="records card">
-    <view class="records-head">我的纠错<text wx:if="{{records.length}}">{{records.length}} 条</text></view>
-    <view wx:if="{{recordsHint}}" class="records-empty">{{recordsHint}}</view>
-    <view wx:elif="{{recordsLoading && !records.length}}" class="records-empty">正在加载…</view>
-    <view wx:elif="{{!records.length}}" class="records-empty">你还没有提交过纠错。</view>
-    <view wx:else>
-      <view wx:for="{{records}}" wx:key="id" class="record">
-        <view class="record-top">
-          <strong>{{item.competitionName}}</strong>
-          <text class="status status-{{item.statusValue}}">{{item.statusLabel}}</text>
+  <view class="gh">问题说明 <text class="req">必填</text></view>
+  <view class="grp ta">
+    <textarea maxlength="2000" value="{{content}}" bindinput="onContentInput" placeholder="哪里有误？你认为正确的信息是什么？" placeholder-class="ph-text" />
+    <view class="count">{{content.length}} / 2000</view>
+  </view>
+
+  <view class="gh">证据 <text class="opt">选填</text></view>
+  <view class="grp">
+    <view class="cell"><text class="k">链接</text><input class="inp" type="text" value="{{evidenceUrl}}" bindinput="onEvidenceInput" placeholder="主办方通知或官网页面" placeholder-class="ph-text" /></view>
+  </view>
+
+  <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在提交…' : '提交纠错'}}</button>
+  <view class="hint">提交后会先自动审核，再由管理员确认；处理结果在下方“我的纠错”里看。</view>
+
+  <block wx:if="{{!lockedCompetition}}">
+    <view class="gh">我的纠错 <text class="opt" wx:if="{{records.length}}">{{records.length}} 条</text></view>
+    <view class="grp">
+      <view wx:if="{{recordsHint}}" class="empty">{{recordsHint}}</view>
+      <view wx:elif="{{recordsLoading && !records.length}}" class="empty">正在加载…</view>
+      <view wx:elif="{{!records.length}}" class="empty">你还没有提交过纠错。</view>
+      <view wx:else>
+        <view wx:for="{{records}}" wx:key="id" class="rec">
+          <view class="rtop"><text class="rname">{{item.competitionName}}</text><text class="rs {{item.statusValue === 'accepted' ? 'ok' : item.statusValue === 'rejected' ? 'no' : item.statusValue === 'human_reviewing' ? 'ing' : 'wait'}}">{{item.statusLabel}}</text></view>
+          <view class="rmeta">{{item.categoryLabel}} · {{item.createdAt}}</view>
+          <view class="rbody">{{item.content}}</view>
         </view>
-        <view class="record-meta">{{item.categoryLabel}} · {{item.createdAt}}</view>
-        <view class="record-content">{{item.content}}</view>
       </view>
     </view>
-  </view>
+  </block>
 </view>

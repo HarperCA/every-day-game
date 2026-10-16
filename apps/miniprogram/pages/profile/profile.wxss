@@ -1,11 +1,18 @@
-.profile-page{padding-top:24rpx}
-.editor-card{padding:46rpx 32rpx 36rpx}
-.avatar-picker{display:flex;align-items:center;justify-content:center;width:172rpx;height:172rpx;margin:0 auto;padding:0;border:0;border-radius:50%;overflow:hidden;background:#e8f1ff;color:#1765d9;font-size:68rpx;font-weight:700;line-height:1}
-.avatar-picker::after{border:0}
-.avatar-picker image{width:100%;height:100%}
-.avatar-hint{margin:18rpx 0 48rpx;text-align:center;color:#64748b;font-size:24rpx}
-.name-field{display:flex;align-items:center;gap:24rpx;padding:22rpx 6rpx;border-bottom:1rpx solid #e6ebf1;color:#172033;font-size:28rpx}
-.name-field text{flex:none;width:80rpx}
-.name-field input{flex:1;min-width:0;color:#172033}
-.save-button{margin-top:52rpx;background:#1765d9;color:#fff;border-radius:14rpx;font-size:29rpx;font-weight:650}
-.save-button::after{border:0}
+/* 个人资料（2026-10 改版）：铺满式。颜色变量见 app.wxss */
+page { background: var(--bg); }
+.pf-page { min-height: 100vh; padding-top: 20rpx; box-sizing: border-box; }
+.grp { background: var(--surface); border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); padding-bottom: 8rpx; }
+.row { position: relative; display: flex; align-items: center; gap: 24rpx; min-height: 120rpx; padding: 0 32rpx; font-size: 32rpx; }
+.avatar-row { width: 100%; margin: 0; border: 0; border-radius: 0; background: none; text-align: left; line-height: 1.4; }
+.avatar-row::after { border: 0; }
+.name-row::before { content: ""; position: absolute; top: 0; left: 32rpx; right: 0; height: 1rpx; background: var(--line); }
+.k { flex: 1; }
+.av { flex: none; width: 88rpx; height: 88rpx; border-radius: 50%; overflow: hidden; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 34rpx; font-weight: 700; }
+.av image { width: 100%; height: 100%; }
+.chev { flex: none; color: var(--muted); font-size: 36rpx; line-height: 1; }
+.name-row input { flex: 1; min-width: 0; text-align: right; font-size: 30rpx; }
+.name-row .k { flex: none; }
+.ph-text { color: var(--muted); }
+.foot { padding: 20rpx 32rpx 0; font-size: 25rpx; color: var(--muted); }
+.save-button { margin: 44rpx 32rpx 24rpx; height: 92rpx; line-height: 92rpx; border-radius: 16rpx; background: var(--accent); color: #fff; font-size: 32rpx; font-weight: 600; }
+.save-button::after { border: 0; }

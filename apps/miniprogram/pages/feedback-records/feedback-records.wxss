@@ -1,1 +1,19 @@
-page{background:#f4f7fc;color:#172235;font-size:28rpx}.records-page{padding:28rpx}.record{padding:32rpx;background:#fff;border-radius:18rpx;margin-bottom:24rpx}.record-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:24rpx}.type{font-weight:600}.status{font-size:24rpx;padding:6rpx 16rpx;border-radius:8rpx;background:#eef1f5;color:#687486}.status.processing{background:#eaf2ff;color:#1765d9}.status.resolved{background:#e7f7ee;color:#228450}.content,.reply-content{white-space:pre-wrap;word-break:break-all;line-height:1.7}.date{color:#929baa;font-size:23rpx;margin-top:18rpx}.reply{background:#f4f7fc;border-radius:12rpx;padding:24rpx;margin-top:24rpx}.reply-heading{font-weight:600;color:#1765d9;margin-bottom:12rpx}.hint,.empty,.error{text-align:center;padding:40rpx 16rpx;color:#929baa}.error{color:#9d4a36}.error button{display:block;margin-top:24rpx}
+/* 我的反馈（2026-10 改版）。颜色变量见 app.wxss */
+page { background: var(--bg); }
+.rec-page { min-height: 100vh; padding-bottom: 48rpx; box-sizing: border-box; }
+.gap { height: 20rpx; }
+.grp { background: var(--surface); border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); }
+.fb { padding: 28rpx 32rpx; display: flex; flex-direction: column; gap: 12rpx; }
+.fbtop { display: flex; align-items: baseline; justify-content: space-between; gap: 20rpx; }
+.type { font-size: 30rpx; font-weight: 600; }
+.rs { flex: none; font-size: 26rpx; font-weight: 600; }
+.rs.done { color: #1a7f52; } .rs.doing { color: var(--accent); } .rs.wait { color: var(--muted); }
+.fbbody { font-size: 29rpx; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+.fbdate { font-size: 24rpx; color: var(--muted); }
+.reply { margin-top: 8rpx; padding: 20rpx 24rpx; border-left: 6rpx solid var(--accent); background: var(--bg); }
+.reply-head { font-size: 26rpx; color: var(--accent); margin-bottom: 4rpx; }
+.reply-body { font-size: 28rpx; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+.hint, .empty, .error { text-align: center; padding: 40rpx 16rpx; color: var(--muted); font-size: 26rpx; }
+.empty { padding-top: 160rpx; }
+.error { color: #9d4a36; }
+.error button { display: block; margin-top: 24rpx; }

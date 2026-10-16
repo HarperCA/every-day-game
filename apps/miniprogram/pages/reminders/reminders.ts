@@ -8,8 +8,15 @@ function displayDateTime(value: string) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// 提醒卡片左边的小日历：把提醒时间拆成 月 / 日 / 时分
+function remindParts(value: string) {
+  const date = new Date(value);
+  const pad = (part: number) => String(part).padStart(2, '0');
+  return { remindMonth: date.getMonth() + 1, remindDay: date.getDate(), remindTime: `${pad(date.getHours())}:${pad(date.getMinutes())}` };
+}
+
 Page({
-  data: { items: [] as any[], loading: true, loginRequired: false, error: '' },
+  data: { items: [] as any[], loading: true, loginRequired: false, error: '', emptyHelp: false },
   onShow() { this.load(); },
   onUnload() { (this as any).loadRequestId = ((this as any).loadRequestId || 0) + 1; },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
@@ -61,11 +68,13 @@ Page({
         }
       }));
       if (getCurrentUserId() !== owner || (this as any).loadRequestId !== requestId) return;
-      const items = results.filter(Boolean).sort((a: any, b: any) => new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime());
+      const items = results.filter(Boolean).sort((a: any, b: any) => new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime()).map((item: any) => ({ ...item, ...remindParts(item.remindAt) }));
       this.setData({ items, loading: false });
     } catch (error) { if ((this as any).loadRequestId !== requestId) return; this.setData({ loading: false, error: error instanceof Error ? error.message : '提醒加载失败' }); }
   },
   retry() { this.load(); },
+  // 空状态标题旁的“?”：点一下显示说明，再点收起
+  toggleEmptyHelp() { this.setData({ emptyHelp: !this.data.emptyHelp }); },
   async requestWechatLogin() {
     try {
       if (await getApp<any>().requestWechatLogin()) this.load();

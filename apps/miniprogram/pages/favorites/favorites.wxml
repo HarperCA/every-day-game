@@ -1,63 +1,39 @@
-<view class="page">
-  <view class="page-heading">
-    <view class="page-title">我的收藏</view>
-    <view class="page-subtitle">共 {{items.length}} 场，登录后同步当前微信账号的收藏</view>
-  </view>
+<!-- 我的收藏（2026-10 改版）：卡片和首页一样；右上角实心星标 = 取消收藏 -->
+<view class="fav-page">
+  <view class="count" wx:if="{{!loginRequired && !error && items.length}}">共 {{items.length}} 场</view>
 
-  <view wx:if="{{loginRequired}}" class="state card"><view class="state-title">登录后查看收藏</view><view class="muted">收藏与当前微信账号关联。</view><button class="primary find-button" bindtap="requestWechatLogin">微信登录</button></view>
+  <view wx:if="{{loginRequired}}" class="state"><view class="state-title">登录后查看收藏</view><view class="state-sub">收藏与当前微信账号关联。</view><button class="state-btn" bindtap="requestWechatLogin">微信登录</button></view>
   <view wx:elif="{{loading && items.length === 0}}">
-    <view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this">
-      <view></view><view></view><view></view>
-    </view>
+    <view class="skeleton" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view></view>
   </view>
-
-  <view wx:elif="{{error}}" class="state card">
+  <view wx:elif="{{error}}" class="state">
     <view class="state-title">收藏加载失败</view>
-    <view class="muted">{{error}}</view>
-    <button class="retry" size="mini" bindtap="retry">重新加载</button>
+    <view class="state-sub">{{error}}</view>
+    <button class="state-btn" bindtap="retry">重新加载</button>
   </view>
-
-  <view wx:elif="{{items.length === 0}}" class="state card">
+  <view wx:elif="{{items.length === 0}}" class="state">
     <view class="empty-icon">☆</view>
-    <view class="state-title">还没有收藏赛事</view>
-    <view class="muted">在赛事列表或详情页点击收藏，就能在这里快速找到。</view>
-    <button class="primary find-button" bindtap="goFindCompetition">去发现赛事</button>
+    <view class="title-row"><text class="state-title">还没有收藏赛事</text><text class="qmark {{emptyHelp ? 'on' : ''}}" bindtap="toggleEmptyHelp" role="button" aria-label="说明">?</text></view>
+    <view wx:if="{{emptyHelp}}" class="tip">在首页或详情页点星标，就能在这里快速找到。</view>
+    <button class="state-btn" bindtap="goFindCompetition">去发现赛事</button>
   </view>
 
   <view wx:else>
-    <view class="favorite-card card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">
-      <view wx:if="{{item.unavailable}}">
-        <view class="competition-name">{{item.name}}</view>
-        <view class="muted">该收藏仍保留，赛事资料目前无法打开。可稍后下拉刷新，或自行取消收藏。</view>
-        <view class="favorite-date">收藏于 {{item.favoriteAt}}</view>
-        <button class="cancel-button" size="mini" data-id="{{item.id}}" catchtap="cancelFavorite">取消收藏</button>
+    <view class="ccard {{item.isEnded ? 'ended' : ''}}" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">
+      <view class="ccard-r1">
+        <text class="ccard-name">{{item.name}}</text>
+        <text class="ccard-star on" data-id="{{item.id}}" catchtap="cancelFavorite" role="button" aria-label="取消收藏">★</text>
       </view>
-      <block wx:else>
-      <view class="card-head">
-        <view class="status-row">
-          <text class="status {{item.statusClass}}">{{item.registrationStatus}}</text>
-          <text wx:if="{{item.isEnded}}" class="ended-mark">已结束</text>
-        </view>
+      <view wx:if="{{item.unavailable}}" class="gone">赛事资料暂时打不开，收藏仍保留。可以下拉刷新，或点星标取消收藏。</view>
+      <view wx:else class="ccard-r2">
+        <text class="st {{item.statusClass}}">{{item.registrationStatus}}</text>
+        <text wx:if="{{item.isEnded}}" class="ccard-dl arch">已过报名日期</text>
+        <text wx:elif="{{item.registrationEndDate}}" class="ccard-dl">截止 {{item.registrationEndDate}}{{item.registrationEndNote ? '（' + item.registrationEndNote + '）' : ''}}</text>
+        <text wx:elif="{{item.registrationEndNote}}" class="ccard-dl">截止 {{item.registrationEndNote}}</text>
+        <text wx:else class="ccard-dl">报名时间待官方公布</text>
+        <text wx:if="{{item.recommendationLevel}}" class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
       </view>
-      <view class="competition-name">{{item.name}}</view>
-      <view class="edition">{{item.editionName}}</view>
-      <view class="tags">
-        <text class="tag">{{item.eventLevel}}</text>
-        <text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text>
-      </view>
-      <view class="recommendation" wx:if="{{item.recommendationLevel}}">
-        <text>{{item.recommendationLevel}}</text>
-      </view>
-      <view class="card-footer">
-        <view>
-          <view class="deadline" wx:if="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}{{item.registrationEndNote ? '（' + item.registrationEndNote + '）' : ''}}</view>
-          <view class="deadline" wx:elif="{{item.registrationEndNote}}">报名截止 {{item.registrationEndNote}}</view>
-          <view class="deadline" wx:else>报名时间待官方公布</view>
-          <view class="favorite-date">收藏于 {{item.favoriteAt}}</view>
-        </view>
-        <button class="cancel-button" size="mini" data-id="{{item.id}}" catchtap="cancelFavorite">取消收藏</button>
-      </view>
-      </block>
+      <view class="since">收藏于 {{item.favoriteAt}}</view>
     </view>
   </view>
 </view>

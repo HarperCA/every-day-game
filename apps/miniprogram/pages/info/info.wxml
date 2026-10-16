@@ -1,30 +1,37 @@
-<view class="page info-page">
-  <view class="hero card" wx:if="{{pageType === 'privacy'}}">
-    <view class="title">{{page.title}}</view>
-  </view>
-
-  <view class="section card {{item.level ? 'level-' + item.level : ''}} {{isRecommendationPage && !expandedSections[sectionIndex] ? 'section-collapsed' : ''}}" wx:for="{{page.sections}}" wx:for-index="sectionIndex" wx:key="title">
-    <view class="section-title {{isRecommendationPage ? 'section-title-collapsible' : ''}}" data-index="{{sectionIndex}}" bindtap="toggleSection">
-      <view class="level-dot" wx:if="{{item.level}}"></view>
-      <text class="section-title-text">{{item.title}}</text>
-      <view class="section-chevron {{expandedSections[sectionIndex] ? 'section-chevron-open' : ''}}" wx:if="{{isRecommendationPage}}"></view>
+<!-- 说明页（2026-10 改版）：推荐等级是可展开的列表；隐私说明、关于是一篇文章 -->
+<view class="info-page">
+  <!-- 推荐等级说明、其他：一行一档，点了原地展开 -->
+  <block wx:if="{{isRecommendationPage}}">
+    <view class="grp">
+      <view class="xrow" wx:for="{{page.sections}}" wx:for-index="sectionIndex" wx:key="title">
+        <view class="xhead" data-index="{{sectionIndex}}" bindtap="toggleSection" role="button" aria-expanded="{{expandedSections[sectionIndex]}}">
+          <view wx:if="{{item.level}}" class="dot dot-{{item.level}}"></view>
+          <text class="xt">{{item.title}}</text>
+          <text class="xarr {{expandedSections[sectionIndex] ? 'open' : ''}}">⌄</text>
+        </view>
+        <view wx:if="{{expandedSections[sectionIndex]}}" class="xbody {{item.level ? 'with-dot' : ''}}">
+          <view class="p" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
+          <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this"><view class="bullet-dot"></view><text>{{point}}</text></view>
+        </view>
+      </view>
     </view>
-    <block wx:if="{{!isRecommendationPage || expandedSections[sectionIndex]}}">
-      <view class="paragraph" wx:if="{{item.showVersion}}">版本：{{currentVersion}}</view>
-      <view class="paragraph" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
-      <view class="cooperation-contact" wx:if="{{item.wechat}}">
-        <text class="paragraph" selectable>微信：{{item.wechat}}</text>
-        <button size="mini" bindtap="copyCooperationWechat">复制微信号</button>
+    <view class="grp other-grp" wx:if="{{pageType === 'recommendation'}}">
+      <view class="xhead" bindtap="openRecommendationOther" role="button" aria-label="其他，查看没有推荐等级的比赛、推荐依据和使用提示"><text class="xt">其他</text><text class="chev">›</text></view>
+    </view>
+  </block>
+
+  <!-- 隐私说明、关于：文章 -->
+  <view wx:else class="doc">
+    <view class="doc-title" wx:if="{{pageType === 'privacy'}}">{{page.title}}</view>
+    <block wx:for="{{page.sections}}" wx:key="title">
+      <view class="h3">{{item.title}}</view>
+      <view class="p" wx:if="{{item.showVersion}}">版本：{{currentVersion}}</view>
+      <view class="p" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
+      <view class="wechat-row" wx:if="{{item.wechat}}">
+        <text class="p" selectable>微信：{{item.wechat}}</text>
+        <button class="copy" size="mini" bindtap="copyCooperationWechat">复制微信号</button>
       </view>
-      <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this">
-        <view class="bullet-dot"></view>
-        <text>{{point}}</text>
-      </view>
+      <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this"><view class="bullet-dot"></view><text>{{point}}</text></view>
     </block>
   </view>
-
-  <view class="section card other-link" wx:if="{{pageType === 'recommendation'}}" bindtap="openRecommendationOther" role="button" aria-label="其他，查看没有推荐等级的比赛、推荐依据和使用提示">
-    <text>其他</text><text class="other-arrow">›</text>
-  </view>
-
 </view>

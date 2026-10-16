@@ -1,17 +1,39 @@
-<view class="page">
-  <view class="page-heading"><view class="page-title">我的提醒</view><view class="page-subtitle">共 {{items.length}} 项，登录后同步当前微信账号的提醒</view></view>
-  <view wx:if="{{loginRequired}}" class="state card"><view class="state-title">登录后查看提醒</view><view class="muted">提醒与当前微信账号关联。</view><button class="primary find-button" bindtap="requestWechatLogin">微信登录</button></view>
-  <view wx:elif="{{loading && items.length === 0}}"><view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view></view>
-  <view wx:elif="{{error}}" class="state card"><view class="state-title">提醒加载失败</view><view class="muted">{{error}}</view><button size="mini" bindtap="retry">重新加载</button></view>
-  <view wx:elif="{{items.length === 0}}" class="state card"><view class="empty-icon">⏰</view><view class="state-title">还没有设置提醒</view><view class="muted">进入赛事详情，可设置报名开始或报名截止提醒。</view><button class="primary find-button" bindtap="goFindCompetition">去发现赛事</button></view>
+<!-- 我的提醒（2026-10 改版）：左边小日历是提醒时间；中间名称和事件；右边编辑、删除图标 -->
+<view class="rem-page">
+  <view class="count" wx:if="{{!loginRequired && !error && items.length}}">共 {{items.length}} 项，按提醒时间排列</view>
+
+  <view wx:if="{{loginRequired}}" class="state"><view class="state-title">登录后查看提醒</view><view class="state-sub">提醒与当前微信账号关联。</view><button class="state-btn" bindtap="requestWechatLogin">微信登录</button></view>
+  <view wx:elif="{{loading && items.length === 0}}"><view class="skeleton" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view></view></view>
+  <view wx:elif="{{error}}" class="state"><view class="state-title">提醒加载失败</view><view class="state-sub">{{error}}</view><button class="state-btn" bindtap="retry">重新加载</button></view>
+  <view wx:elif="{{items.length === 0}}" class="state">
+    <view class="empty-icon">🔔</view>
+    <view class="title-row"><text class="state-title">还没有设置提醒</text><text class="qmark {{emptyHelp ? 'on' : ''}}" bindtap="toggleEmptyHelp" role="button" aria-label="说明">?</text></view>
+    <view wx:if="{{emptyHelp}}" class="tip">进入赛事详情，点底部铃铛设置报名开始或截止提醒。</view>
+    <button class="state-btn" bindtap="goFindCompetition">去发现赛事</button>
+  </view>
   <view wx:else>
-    <view class="reminder-card card" wx:for="{{items}}" wx:key="id">
-      <view class="card-head"><text class="event-badge">{{item.eventLabel}}</text><text class="change-badge" wx:if="{{item.changeLabel}}">{{item.changeLabel}}</text><text class="expired-badge" wx:elif="{{item.isManualRequired}}">多次发送失败，请重新授权</text><text class="expired-badge" wx:elif="{{item.isExpired}}">提醒时间已到</text></view>
-      <view class="competition-name" data-edition-id="{{item.editionId}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">{{item.competitionName}}</view><view class="edition" wx:if="{{item.editionName}}">{{item.editionName}}</view>
-      <view class="muted" wx:if="{{item.unavailable}}">赛事资料暂不可读取或已下架；提醒记录仍保留，可稍后刷新或删除。</view>
-      <view class="time-block"><view><text>目标时间</text><text>{{item.targetAtDisplay}}</text></view><view><text>提醒时间</text><text>{{item.remindAtDisplay}}</text></view><view><text>提前设置</text><text>{{item.advanceLabel}}</text></view></view>
-      <view class="authorization {{item.authorizationStatus === 'accepted' ? 'authorized' : ''}}" wx:if="{{!item.unavailable}}">{{item.authorizationLabel}}</view>
-      <view class="card-actions"><button wx:if="{{!item.unavailable && (item.authorizationStatus !== 'accepted' || item.isManualRequired)}}" size="mini" data-id="{{item.id}}" bindtap="authorize">{{item.isManualRequired ? '重新授权' : '稍后授权'}}</button><button wx:if="{{!item.unavailable}}" size="mini" data-edition-id="{{item.editionId}}" data-event-type="{{item.eventType}}" bindtap="editReminder">编辑</button><button class="delete-button" size="mini" data-id="{{item.id}}" bindtap="deleteReminder">删除</button></view>
+    <view class="rcard {{item.isExpired ? 'past' : ''}}" wx:for="{{items}}" wx:key="id">
+      <view class="cal">
+        <text class="cal-m">{{item.remindMonth}}月</text>
+        <text class="cal-d">{{item.remindDay}}</text>
+        <text class="cal-t">{{item.remindTime}}</text>
+      </view>
+      <view class="rmid">
+        <text class="rname {{item.unavailable ? 'na' : ''}}" data-edition-id="{{item.editionId}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">{{item.competitionName}}</text>
+        <text class="rsub">{{item.eventLabel}} · {{item.advanceLabel}}</text>
+        <text wx:if="{{item.unavailable}}" class="rflag">赛事资料暂不可读取或已下架，提醒仍保留</text>
+        <text wx:elif="{{item.changeLabel}}" class="rflag warn">{{item.changeLabel}}</text>
+        <text wx:elif="{{item.isManualRequired}}" class="rflag err">发送失败，请重新授权</text>
+        <text wx:elif="{{item.isExpired}}" class="rflag">提醒时间已到</text>
+        <view wx:if="{{!item.unavailable && (item.authorizationStatus !== 'accepted' || item.isManualRequired)}}" class="rauth">
+          <text>{{item.isManualRequired ? '微信通知发送失败' : '还没开通微信通知'}}</text>
+          <text class="rauth-btn" data-id="{{item.id}}" bindtap="authorize">{{item.isManualRequired ? '重新授权' : '去授权'}}</text>
+        </view>
+      </view>
+      <view class="racts">
+        <image wx:if="{{!item.unavailable}}" class="ract" src="/assets/rem-edit.svg" mode="aspectFit" data-edition-id="{{item.editionId}}" data-event-type="{{item.eventType}}" bindtap="editReminder" role="button" aria-label="编辑提醒" />
+        <image class="ract" src="/assets/rem-trash.svg" mode="aspectFit" data-id="{{item.id}}" bindtap="deleteReminder" role="button" aria-label="删除提醒" />
+      </view>
     </view>
   </view>
 </view>

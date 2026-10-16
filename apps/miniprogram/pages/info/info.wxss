@@ -1,14 +1,27 @@
-.info-page{padding-bottom:44rpx}.hero{padding:36rpx 30rpx;background:linear-gradient(145deg,#ffffff,#eff5ff)}.title{margin-top:0;color:#172033;font-size:42rpx;font-weight:800}.section{margin-top:20rpx;padding:28rpx}.section-title{display:flex;align-items:center;gap:12rpx;margin-bottom:16rpx;color:#1e293b;font-size:29rpx;font-weight:800}.paragraph{color:#526172;font-size:25rpx;line-height:1.75}.paragraph+.paragraph{margin-top:12rpx}.bullet{display:flex;align-items:flex-start;gap:14rpx;color:#526172;font-size:25rpx;line-height:1.65;padding:7rpx 0}.bullet-dot{flex:none;width:10rpx;height:10rpx;margin-top:16rpx;border-radius:50%;background:#1765d9}.level-dot{width:16rpx;height:16rpx;border-radius:50%;background:#1765d9}.level-strong .level-dot{background:#174a9e}.level-worth .level-dot{background:#2465ba}.level-practice .level-dot{background:#4a81c7}.level-challenge .level-dot{background:#7199c8}.level-caution .level-dot{background:#9aacc6}.level-insufficient .level-dot{background:#8b96a6}
-.section-title-text{flex:1}
-.cooperation-contact{display:flex;align-items:center;justify-content:space-between;gap:20rpx;margin-top:18rpx}.cooperation-contact button{flex:none;margin:0;color:#1765d9;background:#eff5ff;font-size:24rpx}
-.info-page .section-title{margin:0 0 16rpx}
-.section-title-collapsible{min-height:48rpx}
-.section-title-collapsible{position:relative;justify-content:center}
-.section-title-collapsible .section-title-text{flex:none;padding:0 36rpx;text-align:center}
-.section-title-collapsible .level-dot{position:absolute;left:0}
-.section-title-collapsible .section-chevron{position:absolute;right:0}
-.info-page .section-collapsed .section-title{margin-bottom:0}
-.section-chevron{flex:none;width:14rpx;height:14rpx;margin-right:8rpx;border-right:3rpx solid #8292a7;border-bottom:3rpx solid #8292a7;transform:rotate(45deg);transition:transform .2s}
-.section-chevron-open{transform:rotate(-135deg)}
-.other-link{position:relative;display:flex;align-items:center;justify-content:center;min-height:52rpx;color:#1e293b;font-size:29rpx;font-weight:800;text-align:center}
-.other-arrow{position:absolute;right:0;color:#8292a7;font-size:42rpx;font-weight:400;line-height:1}
+/* 说明页（2026-10 改版）：铺满式。颜色变量见 app.wxss */
+page { background: var(--bg); }
+.info-page { min-height: 100vh; padding: 20rpx 0 64rpx; box-sizing: border-box; }
+.grp { background: var(--surface); border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); }
+.other-grp { margin-top: 20rpx; }
+.xrow { position: relative; }
+.xrow + .xrow::before { content: ""; position: absolute; top: 0; left: 32rpx; right: 0; height: 1rpx; background: var(--line); }
+.xhead { display: flex; align-items: center; gap: 20rpx; min-height: 104rpx; padding: 0 32rpx; font-size: 32rpx; }
+.xt { flex: 1; }
+.dot { width: 18rpx; height: 18rpx; border-radius: 50%; flex: none; background: var(--muted); }
+.dot-strong { background: var(--r1); } .dot-worth { background: var(--r2); } .dot-practice { background: var(--r3); } .dot-challenge { background: var(--r4); } .dot-caution { background: var(--r5); } .dot-insufficient { background: var(--muted); }
+.xarr { color: var(--muted); font-size: 30rpx; line-height: 1; transition: transform .2s; }
+.xarr.open { transform: rotate(180deg); }
+.chev { color: var(--muted); font-size: 36rpx; line-height: 1; }
+.xbody { padding: 0 32rpx 28rpx; font-size: 28rpx; color: var(--ink2); line-height: 1.75; }
+.xbody.with-dot { padding-left: 70rpx; }
+.p { color: var(--ink2); font-size: 28rpx; line-height: 1.8; }
+.p + .p { margin-top: 8rpx; }
+.bullet { display: flex; align-items: flex-start; gap: 14rpx; color: var(--ink2); font-size: 28rpx; line-height: 1.7; padding: 4rpx 0; }
+.bullet-dot { flex: none; width: 10rpx; height: 10rpx; margin-top: 18rpx; border-radius: 50%; background: var(--muted); }
+/* 文章 */
+.doc { background: var(--surface); border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); padding: 8rpx 32rpx 36rpx; }
+.doc-title { padding: 24rpx 0 4rpx; font-size: 42rpx; font-weight: 700; }
+.h3 { margin: 36rpx 0 10rpx; font-size: 31rpx; font-weight: 700; }
+.wechat-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-top: 8rpx; }
+.copy { flex: none; margin: 0; color: var(--accent); background: var(--surface); border: 1rpx solid var(--line); font-size: 25rpx; border-radius: 12rpx; }
+.copy::after { border: 0; }

@@ -1,24 +1,26 @@
-<view class="page preferences-page">
-  <view class="card preferences-card">
-    <view class="step-count">{{step + 1}} / 2</view>
-    <block wx:if="{{step === 0}}">
-      <view class="question">你所在的地区是哪里？</view>
-      <picker-view class="wheel" value="{{provinceIndex}}" bindchange="onProvinceChange" indicator-style="height:72rpx;" aria-label="上下滑动选择地区">
-        <picker-view-column><view class="wheel-option" wx:for="{{provinceOptions}}" wx:key="*this">{{item}}</view></picker-view-column>
-      </picker-view>
-    </block>
-    <block wx:else>
-      <view class="question">你想参加哪些专业大类的比赛？（可多选）</view>
-      <picker-view class="wheel" value="{{categoryIndex}}" bindchange="onCategoryChange" indicator-style="height:72rpx;" aria-label="上下滑动选择专业大类">
-        <picker-view-column><view class="wheel-option {{item.selected ? 'selected' : ''}}" wx:for="{{categoryOptions}}" wx:key="label" data-value="{{item.value}}" bindtap="selectCategory">{{item.label}}{{item.selected ? ' ✓' : ''}}</view></picker-view-column>
-      </picker-view>
-      <view class="tags"><view class="tag" wx:for="{{categories}}" wx:key="*this" data-value="{{item}}" bindtap="selectCategory">{{item}} ×</view></view>
-    </block>
-    <checkbox-group bindchange="onDontShowAgainChange"><label class="optout"><checkbox value="hide" checked="{{dontShowAgain}}" color="#1765d9"/><text>不再显示偏好调查弹窗</text></label></checkbox-group>
-    <view class="actions">
-      <button class="secondary" bindtap="cancel" disabled="{{saving}}">取消</button>
-      <button wx:if="{{step > 0}}" class="secondary" bindtap="previousStep" disabled="{{saving}}">上一步</button>
-      <button class="primary" bindtap="confirmStep" loading="{{saving}}" disabled="{{saving}}">{{step < 1 ? '确定，下一步' : '确定，完成'}}</button>
+<!-- 比赛偏好（2026-10 改版）：一页填完，微信设置页风格。地区用系统选择器，专业大类一行一个、右边打勾 -->
+<view class="pref-page">
+  <view class="gh">地区</view>
+  <view class="grp">
+    <picker mode="multiSelector" range="{{[provinceOptions]}}" value="{{provinceIndex}}" bindchange="onProvinceChange">
+      <view class="cell"><text class="k">所在地区</text><text class="v">{{provinceOptions[provinceIndex[0]]}}</text><text class="chev">›</text></view>
+    </picker>
+  </view>
+
+  <view class="gh">想参加的专业大类（可多选，已选 {{categories.length}} 个）</view>
+  <view class="grp">
+    <view class="cell {{item.selected ? 'on' : ''}}" wx:for="{{categoryOptions}}" wx:key="label" data-value="{{item.value}}" bindtap="selectCategory" role="checkbox" aria-checked="{{item.selected}}">
+      <text class="k">{{item.label}}</text><text class="ck">✓</text>
     </view>
   </view>
+
+  <view class="gh">其他</view>
+  <view class="grp">
+    <checkbox-group bindchange="onDontShowAgainChange">
+      <label class="cell"><text class="k">不再弹出偏好调查</text><checkbox value="hide" checked="{{dontShowAgain}}" color="#1765d9" /></label>
+    </checkbox-group>
+  </view>
+  <view class="foot">首页会按这里的地区和专业大类默认筛选，全国性比赛也会显示。</view>
+
+  <button class="save" bindtap="save" loading="{{saving}}" disabled="{{saving}}">保存</button>
 </view>

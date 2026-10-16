@@ -1,47 +1,103 @@
-<view class="page" wx:if="{{item}}">
-  <view class="summary card">
-    <view class="status">{{item.registrationStatus}}</view>
+<!-- 详情页（2026-10 改版）：顶部名称、届次、级别、专业；竖向时间线；收藏、提醒、复制报名链接固定在底部 -->
+<view class="detail-page" wx:if="{{item}}">
+  <view class="hero">
+    <view class="hero-row">
+      <text class="st {{item.statusClass}}">{{item.registrationStatus}}</text>
+      <text wx:if="{{item.recommendationLevel}}" class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
+    </view>
     <view class="title">{{item.name}}</view>
+    <view class="hero-meta">
+      <text wx:if="{{item.editionOrdinal}}">{{item.editionOrdinal}}</text>
+      <text wx:if="{{item.editionYear}}">{{item.editionYear}}</text>
+      <text wx:if="{{item.eventLevel}}">{{item.eventLevel}}</text>
+    </view>
+    <view class="hero-tags" wx:if="{{item.professions.length}}"><text wx:for="{{item.professions}}" wx:key="*this">{{item}}</text></view>
   </view>
-  <view class="section-title">关键时间</view>
-  <view class="info card"><view><text>报名开始</text><text>{{item.registrationStartDate || '待公布'}}</text></view><view><text>报名截止</text><text>{{item.registrationEndDate ? item.registrationEndDate + (item.registrationEndNote ? '（' + item.registrationEndNote + '）' : '') : (item.registrationEndNote || '待公布')}}</text></view><view><text>比赛开始</text><text>{{item.competitionStartDate || '待公布'}}</text></view><view><text>比赛结束</text><text>{{item.competitionEndDate || '待公布'}}</text></view>
-    <view wx:if="{{item.timeNote}}" class="time-note"><text>时间说明</text><text class="time-note-body">{{item.timeNote}}</text></view>
-    <view wx:if="{{item.dataStatus === 'archived' && item.nextEditionEstimateDate}}" class="next-edition">下一届预计：{{item.nextEditionEstimateDate}} 前后（按上一届时间推算，以官方通知为准）</view>
-  </view>
-  <view wx:if="{{item.dataStatus === 'archived'}}" class="timing-warning card timing-unverified">
-    <view class="timing-head">这届已归档，报名已截止</view>
-  </view>
-  <view wx:if="{{item.schoolTimingDependent}}" class="timing-warning card timing-{{item.timingReliability}}">
-    <view wx:if="{{item.timingReliability !== 'school_controlled'}}" class="timing-head">以上日期未经确认</view>
-    <view class="timing-note">{{item.schoolTimingNote}}</view>
-  </view>
-  <view class="quick-actions">
-    <button class="reminder-action" bindtap="openReminderPanel">{{reminderCount ? '管理提醒 · ' + reminderCount + '项' : '设置提醒'}}</button>
-    <button class="ghost {{isFavorite ? 'favorited' : ''}}" bindtap="favorite">{{isFavorite ? '已收藏 · 点击取消' : '收藏赛事'}}</button>
-  </view>
-  <button class="primary action" disabled="{{!item.registrationUrlUsable}}" bindtap="copyRegistrationUrl">{{item.registrationUrlUsable ? '复制官方报名链接' : '官方报名链接待更新'}}</button>
-  <button class="secondary action" bindtap="feedback">信息纠错</button>
-  <view class="recommendation card" wx:if="{{item.recommendationLevel}}">
-    <view class="recommendation-head" bindtap="toggleRecommendation" role="button" aria-expanded="{{recommendationExpanded}}"><text>{{item.recommendationLevel}}</text><text class="recommendation-toggle">{{recommendationExpanded ? '收起 ▲' : '展开 ▼'}}</text></view>
-    <view hidden="{{!recommendationExpanded}}" class="recommendation-body">
-      <view class="label">适合对象</view><view>{{item.recommendation.suitable_for || '暂无说明'}}</view>
-      <view class="label">推荐理由</view><view wx:if="{{!item.recommendation.reasons.length}}">暂无说明</view><view class="bullet" wx:for="{{item.recommendation.reasons}}" wx:for-item="reason" wx:key="*this">· {{reason}}</view>
-      <view class="label">限制条件</view><view wx:if="{{!item.recommendation.limitations.length}}">暂无说明</view><view class="bullet" wx:for="{{item.recommendation.limitations}}" wx:for-item="limitation" wx:key="*this">· {{limitation}}</view>
-      <view class="label">准备建议</view><view>{{item.recommendation.preparation || '暂无说明'}}</view>
-      <view class="confidence">推荐可信度：{{item.recommendation.confidence || '待核验'}}</view>
+
+  <view class="body">
+    <view class="sec">
+      <view class="sec-title">关键时间</view>
+      <view class="tl">
+        <view class="tl-item"><text class="tl-k">报名开始</text><text class="tl-v {{item.registrationStartDate ? '' : 'todo'}}">{{item.registrationStartDate || '待公布'}}</text></view>
+        <view class="tl-item key">
+          <text class="tl-k">报名截止</text>
+          <view class="tl-v {{item.registrationEndDate || item.registrationEndNote ? '' : 'todo'}}">
+            <text>{{item.registrationEndDate || item.registrationEndNote || '待公布'}}</text>
+            <text wx:if="{{item.registrationEndDate && item.registrationEndNote}}" class="tl-note">{{item.registrationEndNote}}</text>
+          </view>
+        </view>
+        <view class="tl-item"><text class="tl-k">比赛开始</text><text class="tl-v {{item.competitionStartDate ? '' : 'todo'}}">{{item.competitionStartDate || '待公布'}}</text></view>
+        <view class="tl-item"><text class="tl-k">比赛结束</text><text class="tl-v {{item.competitionEndDate ? '' : 'todo'}}">{{item.competitionEndDate || '待公布'}}</text></view>
+      </view>
+      <view wx:if="{{item.timeNote}}" class="time-note"><text class="time-note-k">时间说明</text><text class="time-note-body">{{item.timeNote}}</text></view>
+      <view wx:if="{{item.dataStatus === 'archived' && item.nextEditionEstimateDate}}" class="next-edition">下一届预计：{{item.nextEditionEstimateDate}} 前后（按上一届时间推算，以官方通知为准）</view>
+    </view>
+
+    <!-- 时间提醒紧跟在时间后面：放在页面别处，用户看完日期就滑走了 -->
+    <view wx:if="{{item.dataStatus === 'archived'}}" class="timing-warning timing-unverified">
+      <view class="timing-head">这届已归档，报名已截止</view>
+    </view>
+    <view wx:if="{{item.schoolTimingDependent}}" class="timing-warning timing-{{item.timingReliability}}">
+      <view wx:if="{{item.timingReliability !== 'school_controlled'}}" class="timing-head">以上日期未经确认</view>
+      <view class="timing-note">{{item.schoolTimingNote}}</view>
+    </view>
+
+    <view class="sec" wx:if="{{item.recommendationLevel}}">
+      <view class="fold" bindtap="toggleRecommendation" role="button" aria-expanded="{{recommendationExpanded}}">
+        <text class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
+        <text class="fold-title">的推荐理由</text>
+        <text class="fold-arrow {{recommendationExpanded ? 'open' : ''}}">⌄</text>
+      </view>
+      <view hidden="{{!recommendationExpanded}}" class="fold-body">
+        <view class="label">适合对象</view><view class="value">{{item.recommendation.suitable_for || '暂无说明'}}</view>
+        <view class="label">推荐理由</view><view wx:if="{{!item.recommendation.reasons.length}}" class="value">暂无说明</view><view class="bullet" wx:for="{{item.recommendation.reasons}}" wx:for-item="reason" wx:key="*this">· {{reason}}</view>
+        <view class="label">限制条件</view><view wx:if="{{!item.recommendation.limitations.length}}" class="value">暂无说明</view><view class="bullet" wx:for="{{item.recommendation.limitations}}" wx:for-item="limitation" wx:key="*this">· {{limitation}}</view>
+        <view class="label">准备建议</view><view class="value">{{item.recommendation.preparation || '暂无说明'}}</view>
+        <view class="confidence">推荐可信度：{{item.recommendation.confidence || '待核验'}}</view>
+      </view>
+    </view>
+
+    <view class="sec">
+      <view class="fold" bindtap="toggleRules" role="button" aria-expanded="{{rulesExpanded}}"><text class="fold-title">参赛与规则</text><text class="fold-arrow {{rulesExpanded ? 'open' : ''}}">⌄</text></view>
+      <view wx:if="{{rulesExpanded}}" class="fold-body">
+        <view class="label">{{item.showEligibility ? '参赛对象' : '参赛对象与资格'}}</view><view class="value {{item.fieldText.participants === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.participants}}</view>
+        <block wx:if="{{item.showEligibility}}"><view class="label">参赛资格</view><view class="value">{{item.fieldText.eligibility}}</view></block>
+        <view class="label">团队人数</view><view class="value {{item.fieldText.teamSize === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.teamSize}}</view>
+        <view class="label">赛项/组别</view><view class="value">{{item.track.name}}</view>
+        <view class="label">比赛形式与作品要求</view><view class="value {{item.fieldText.formatAndRules === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.formatAndRules}}</view>
+        <block wx:if="{{item.rewardHighlights.length || item.fieldText.rewards !== '信息不足'}}"><view class="label">奖项设置</view><view wx:if="{{item.rewardHighlights.length}}" class="tag-row"><text wx:for="{{item.rewardHighlights}}" wx:for-item="highlight" wx:key="*this">{{highlight}}</text></view><view wx:if="{{item.fieldText.rewards !== '信息不足'}}" class="value rewards-text">{{item.rewards}}</view></block>
+        <view class="label">报名费及其他费用</view><view class="value {{item.fieldText.fees === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.fees}}</view>
+      </view>
+    </view>
+
+    <view class="sec">
+      <view class="fold" bindtap="toggleOfficialInfo" role="button" aria-expanded="{{officialInfoExpanded}}"><text class="fold-title">官方信息</text><text class="fold-arrow {{officialInfoExpanded ? 'open' : ''}}">⌄</text></view>
+      <view wx:if="{{officialInfoExpanded}}" class="fold-body">
+        <view class="edition-meta"><view><text>赛事年份</text><text>{{item.editionYear || '未明确'}}</text></view><view><text>第几届</text><text>{{item.editionOrdinal || '未明确'}}</text></view></view>
+        <view class="label">赛事级别与标签</view>
+        <view class="tag-row"><text>{{item.eventLevel}}</text><text wx:for="{{item.objectiveTags}}" wx:key="*this">{{item}}</text></view>
+        <view class="label">主办单位</view><view class="value {{item.fieldText.organizer === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.organizer}}</view>
+        <view class="label">官方报名方式</view><view class="value {{item.fieldText.registrationMethod === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.registrationMethod}}</view>
+      </view>
+    </view>
+
+    <view class="foot">
+      <view class="feedback-link" bindtap="feedback" role="button">信息有误？去纠错 ›</view>
+      <view class="disclaimer">是否计入综测、保研或校内竞赛认定，请以本校最新文件为准。平台推荐不代表学校、主办单位或官方认定。</view>
     </view>
   </view>
-  <view class="fold-heading" bindtap="toggleRules" role="button" aria-expanded="{{rulesExpanded}}"><text>参赛与规则</text><text class="fold-action">{{rulesExpanded ? '收起 ▲' : '展开 ▼'}}</text></view>
-  <view wx:if="{{rulesExpanded}}" class="text-card card"><view class="label">{{item.showEligibility ? '参赛对象' : '参赛对象与资格'}}</view><view class="{{item.fieldText.participants === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.participants}}</view><block wx:if="{{item.showEligibility}}"><view class="label">参赛资格</view><view>{{item.fieldText.eligibility}}</view></block><view class="label">团队人数</view><view class="{{item.fieldText.teamSize === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.teamSize}}</view><view class="label">赛项/组别</view><view>{{item.track.name}}</view><view class="label">比赛形式与作品要求</view><view class="{{item.fieldText.formatAndRules === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.formatAndRules}}</view><block wx:if="{{item.rewardHighlights.length || item.fieldText.rewards !== '信息不足'}}"><view class="label">奖项设置</view><view wx:if="{{item.rewardHighlights.length}}" class="tag-row reward-tags"><text wx:for="{{item.rewardHighlights}}" wx:for-item="highlight" wx:key="*this">{{highlight}}</text></view><view wx:if="{{item.fieldText.rewards !== '信息不足'}}" class="rewards-text">{{item.rewards}}</view></block><view class="label">报名费及其他费用</view><view class="{{item.fieldText.fees === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.fees}}</view></view>
-  <view class="fold-heading" bindtap="toggleOfficialInfo" role="button" aria-expanded="{{officialInfoExpanded}}"><text>官方信息</text><text class="fold-action">{{officialInfoExpanded ? '收起 ▲' : '展开 ▼'}}</text></view>
-  <view wx:if="{{officialInfoExpanded}}" class="text-card card">
-    <view class="edition-meta"><view><text>赛事年份</text><text>{{item.editionYear || '未明确'}}</text></view><view><text>第几届</text><text>{{item.editionOrdinal || '未明确'}}</text></view></view>
-    <view class="label">赛事级别与标签</view>
-    <view class="tag-row"><text>{{item.eventLevel}}</text><text wx:for="{{item.objectiveTags}}" wx:key="*this">{{item}}</text></view>
-    <view class="label">主办单位</view><view class="{{item.fieldText.organizer === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.organizer}}</view>
-    <view class="label">官方报名方式</view><view class="{{item.fieldText.registrationMethod === '信息不足' ? 'insufficient' : ''}}">{{item.fieldText.registrationMethod}}</view>
+
+  <!-- 底部操作栏：收藏、提醒、复制官方报名链接 -->
+  <view class="action-bar">
+    <view class="icon-action {{isFavorite ? 'fav-on' : ''}}" bindtap="favorite" role="button" aria-label="{{isFavorite ? '取消收藏' : '收藏赛事'}}">
+      <text class="icon-glyph">{{isFavorite ? '★' : '☆'}}</text><text>{{isFavorite ? '已收藏' : '收藏'}}</text>
+    </view>
+    <view class="icon-action {{reminderCount ? 'rem-on' : ''}}" bindtap="openReminderPanel" role="button" aria-label="{{reminderCount ? '管理提醒' : '设置提醒'}}">
+      <image class="icon-img" src="{{reminderCount ? '/assets/detail-bell-on.svg' : '/assets/detail-bell.svg'}}" mode="aspectFit" aria-hidden="true" /><text>{{reminderCount ? '已提醒' : '提醒'}}</text>
+    </view>
+    <button class="cta" disabled="{{!item.registrationUrlUsable}}" bindtap="copyRegistrationUrl">{{item.registrationUrlUsable ? '复制官方报名链接' : '官方报名链接待更新'}}</button>
   </view>
-  <view class="disclaimer">是否计入综测、保研或校内竞赛认定，请以本校最新文件为准。平台推荐不代表学校、主办单位或官方认定。</view>
+
   <view wx:if="{{reminderPanelVisible}}" class="reminder-mask" bindtap="closeReminderPanel" catchtouchmove="blockPanelTap">
     <view class="reminder-sheet" catchtap="blockPanelTap">
       <view class="sheet-handle"></view>

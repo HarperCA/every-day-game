@@ -1,18 +1,33 @@
+<!-- “我的”页（2026-10 改版）：铺满式列表。头像一行；收藏、提醒和其他入口都是列表行 -->
 <brand-nav />
-<view class="page">
-  <view class="profile card" bindtap="openProfile">
+<view class="my-page">
+  <view class="profile-row" bindtap="openProfile" role="button" aria-label="个人资料">
     <view class="avatar"><image wx:if="{{avatarPath}}" src="{{avatarPath}}" mode="aspectFill" /><text wx:else>微</text></view>
     <view class="profile-info">
       <view class="name">{{loginState === 'success' ? profileName : '未登录'}}</view>
-      <view class="muted" wx:if="{{loginState === 'loading'}}">正在连接微信身份…</view>
-      <view class="muted" wx:elif="{{loginState === 'failed'}}">微信登录失败：{{loginError}}</view>
-      <view class="muted" wx:if="{{loginState === 'success' && dataSyncState === 'loading'}}">正在同步收藏与提醒…</view>
-      <view class="muted sync-warning" wx:if="{{loginState === 'success' && dataSyncState === 'partial'}}">微信登录成功，但部分数据暂未同步：{{dataSyncError}}</view>
+      <view class="sub" wx:if="{{loginState === 'idle'}}">登录后同步收藏和提醒</view>
+      <view class="sub" wx:if="{{loginState === 'loading'}}">正在连接微信身份…</view>
+      <view class="sub err" wx:elif="{{loginState === 'failed'}}">微信登录失败：{{loginError}}</view>
+      <view class="sub" wx:if="{{loginState === 'success' && dataSyncState === 'loading'}}">正在同步收藏与提醒…</view>
+      <view class="sub warn" wx:if="{{loginState === 'success' && dataSyncState === 'partial'}}">部分数据暂未同步：{{dataSyncError}}</view>
     </view>
     <button wx:if="{{loginState === 'idle'}}" class="wechat-login" catchtap="requestWechatLogin">微信登录</button>
     <button wx:if="{{loginState === 'failed'}}" class="wechat-login" catchtap="requestWechatLogin">重新登录</button>
-    <text wx:if="{{loginState === 'success'}}" class="profile-arrow">›</text>
+    <text wx:if="{{loginState === 'success'}}" class="chev">›</text>
   </view>
-  <view class="menu card"><view bindtap="openFavorites">我的收藏<text>{{favoriteCount}} 场 ›</text></view><view bindtap="openReminders">我的提醒<text>{{reminderCount}} 项 ›</text></view><view bindtap="openFeedback">信息纠错<text>提交与进度 ›</text></view></view>
-  <view class="menu card"><view bindtap="openGeneralFeedback">意见反馈<text>建议与处理进度 ›</text></view><view bindtap="openCompetitionPreferences">比赛偏好<text>修改专业大类、比赛大类与地区 ›</text></view><view bindtap="openRecommendationGuide">推荐等级说明<text>›</text></view><view bindtap="openPrivacyGuide">隐私说明<text>›</text></view><view bindtap="openAbout">关于<text>›</text></view></view>
+
+  <view class="group">
+    <view class="row" bindtap="openFavorites"><image class="ico" src="/assets/my-star.svg" mode="aspectFit" /><text class="t">我的收藏</text><text class="s">{{favoriteCount}} 场</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openReminders"><image class="ico" src="/assets/my-bell.svg" mode="aspectFit" /><text class="t">我的提醒</text><text class="s">{{reminderCount}} 项</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openCompetitionPreferences"><image class="ico" src="/assets/my-sliders.svg" mode="aspectFit" /><text class="t">比赛偏好</text><text class="s">专业与地区</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openFeedback"><image class="ico" src="/assets/my-edit.svg" mode="aspectFit" /><text class="t">信息纠错</text><text class="s">提交与进度</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openGeneralFeedback"><image class="ico" src="/assets/my-chat.svg" mode="aspectFit" /><text class="t">意见反馈</text><text class="s">建议与进度</text><text class="chev">›</text></view>
+  </view>
+
+  <view class="ghead">说明</view>
+  <view class="group">
+    <view class="row" bindtap="openRecommendationGuide"><image class="ico" src="/assets/my-medal.svg" mode="aspectFit" /><text class="t">推荐等级说明</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openPrivacyGuide"><image class="ico" src="/assets/my-shield.svg" mode="aspectFit" /><text class="t">隐私说明</text><text class="chev">›</text></view>
+    <view class="row" bindtap="openAbout"><image class="ico" src="/assets/my-info.svg" mode="aspectFit" /><text class="t">关于</text><text class="chev">›</text></view>
+  </view>
 </view>
