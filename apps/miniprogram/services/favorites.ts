@@ -9,6 +9,10 @@ function accountKey(base: string): string {
   return isCloudSessionReady() && userId ? `${base}:${userId}` : '';
 }
 
+function assertAccount(owner: string) {
+  if (!owner || !isCloudSessionReady() || getCurrentUserId() !== owner) throw new Error('账号已变更，请重新操作');
+}
+
 function requireAccountKey(base: string): string {
   const key = accountKey(base);
   if (!key) throw new Error('请先微信登录');
@@ -58,7 +62,13 @@ function clearDeleted(editionId: string) {
 }
 
 function runFavoriteCloud<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  const task = favoriteCloudQueue.catch(() => undefined).then(() => callUserData<T>(action, payload));
+  const owner = getCurrentUserId();
+  const task = favoriteCloudQueue.catch(() => undefined).then(async () => {
+    assertAccount(owner);
+    const result = await callUserData<T>(action, payload);
+    assertAccount(owner);
+    return result;
+  });
   favoriteCloudQueue = task.catch(() => undefined);
   return task;
 }
@@ -72,6 +82,7 @@ function syncFavorite(editionId: string, favorited: boolean, createdAt?: string)
 
 export async function initializeFavoritesCloudSync(): Promise<void> {
   requireAccountKey(STORAGE_KEY);
+  const owner = getCurrentUserId();
   const remote = await runFavoriteCloud<FavoriteRecord[]>('listFavorites');
   const local = readFavorites();
   const deletedIds = new Set(readDeletedIds());
@@ -86,7 +97,8 @@ export async function initializeFavoritesCloudSync(): Promise<void> {
   for (let index = 0; index < records.length; index += 50) {
     await runFavoriteCloud('mergeFavorites', { records:records.slice(index, index + 50) });
   }
-  writeDeletedIds([]);
+  assertAccount(owner);
+  writeDeletedIds(readDeletedIds().filter(id => !deletedIds.has(id)));
 }
 
 export function getFavoriteRecords(): FavoriteRecord[] {

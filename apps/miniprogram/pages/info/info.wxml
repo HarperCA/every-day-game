@@ -10,7 +10,12 @@
       <view class="section-chevron {{expandedSections[sectionIndex] ? 'section-chevron-open' : ''}}" wx:if="{{isRecommendationPage}}"></view>
     </view>
     <block wx:if="{{!isRecommendationPage || expandedSections[sectionIndex]}}">
+      <view class="paragraph" wx:if="{{item.showVersion}}">版本：{{currentVersion}}</view>
       <view class="paragraph" wx:for="{{item.paragraphs}}" wx:for-item="paragraph" wx:key="*this">{{paragraph}}</view>
+      <view class="cooperation-contact" wx:if="{{item.wechat}}">
+        <text class="paragraph" selectable>微信：{{item.wechat}}</text>
+        <button size="mini" bindtap="copyCooperationWechat">复制微信号</button>
+      </view>
       <view class="bullet" wx:for="{{item.items}}" wx:for-item="point" wx:key="*this">
         <view class="bullet-dot"></view>
         <text>{{point}}</text>

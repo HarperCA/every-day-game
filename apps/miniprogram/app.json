@@ -3,10 +3,13 @@
     "pages/index/index",
     "pages/detail/detail",
     "pages/feedback/feedback",
+    "pages/general-feedback/general-feedback",
+    "pages/feedback-records/feedback-records",
     "pages/favorites/favorites",
     "pages/reminders/reminders",
     "pages/my/my",
     "pages/profile/profile",
+    "pages/preferences/preferences",
     "pages/info/info"
   ],
   "lazyCodeLoading": "requiredComponents",

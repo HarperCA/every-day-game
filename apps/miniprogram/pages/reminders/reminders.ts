@@ -1,5 +1,6 @@
+import { getCurrentUserId } from '../../services/cloudSession';
 import { getCompetition } from '../../services/repository';
-import { getReminderRecords, removeReminder, requestReminderAuthorization, syncReminderTarget, updateAuthorization } from '../../services/reminders';
+import { getReminderRecords, removeReminder, requestReminderAuthorization, syncReminderTarget, applyReminderAuthorization } from '../../services/reminders';
 
 function displayDateTime(value: string) {
   const date = new Date(value);
@@ -10,8 +11,16 @@ function displayDateTime(value: string) {
 Page({
   data: { items: [] as any[], loading: true, loginRequired: false, error: '' },
   onShow() { this.load(); },
+  onUnload() { (this as any).loadRequestId = ((this as any).loadRequestId || 0) + 1; },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
+    const requestId = ((this as any).loadRequestId || 0) + 1;
+    (this as any).loadRequestId = requestId;
+    const startingOwner = getCurrentUserId();
+    if ((this as any).listOwner !== startingOwner) {
+      (this as any).listOwner = startingOwner;
+      this.setData({ items: [] });
+    }
     this.setData({ loading: true, loginRequired: false, error: '' });
     try {
       const app = getApp<any>();
@@ -21,10 +30,12 @@ Page({
         this.setData({ items: [], loading: false, loginRequired: true });
         return;
       }
+      const owner = getCurrentUserId();
       const records = getReminderRecords();
       const results = await Promise.all(records.map(async record => {
         try {
           const competition = await getCompetition(record.editionId);
+          if (getCurrentUserId() !== owner || (this as any).loadRequestId !== requestId) return null;
           const currentTarget = record.eventType === 'registration_start' ? competition.registrationStart : competition.registrationEnd;
           let synced = record;
           const scheduleCancelled = competition.scheduleChangeStatus === 'cancelled';
@@ -49,9 +60,10 @@ Page({
           };
         }
       }));
-      const items = results.sort((a: any, b: any) => new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime());
+      if (getCurrentUserId() !== owner || (this as any).loadRequestId !== requestId) return;
+      const items = results.filter(Boolean).sort((a: any, b: any) => new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime());
       this.setData({ items, loading: false });
-    } catch (error) { this.setData({ loading: false, error: error instanceof Error ? error.message : '提醒加载失败' }); }
+    } catch (error) { if ((this as any).loadRequestId !== requestId) return; this.setData({ loading: false, error: error instanceof Error ? error.message : '提醒加载失败' }); }
   },
   retry() { this.load(); },
   async requestWechatLogin() {
@@ -68,12 +80,19 @@ Page({
     wx.showModal({ title: '删除提醒', content: '确定删除这条提醒计划吗？', confirmColor: '#c24141', success: (result: any) => { if (!result.confirm) return; removeReminder(id); this.load(); wx.showToast({ title: '已删除', icon: 'success' }); } });
   },
   async authorize(event: WechatMiniprogram.TouchEvent) {
+    try {
     const id = String(event.currentTarget.dataset.id || '');
     const templateId = getApp<any>().globalData.reminderTemplateId || '';
+    const owner = getCurrentUserId();
+    const plans = getReminderRecords().filter(item => item.id === id);
     const status = await requestReminderAuthorization(templateId);
-    updateAuthorization([id], status);
+    if (getCurrentUserId() !== owner) throw new Error('账号已变更，请重新操作');
+    applyReminderAuthorization(plans, status, templateId);
     this.load();
     wx.showToast({ title: status === 'accepted' ? '授权成功' : status === 'unavailable' ? '订阅模板尚未配置' : '暂未授权', icon: status === 'accepted' ? 'success' : 'none' });
+    } catch (error) {
+      wx.showToast({ title: error instanceof Error ? error.message : '微信授权请求失败', icon:'none' });
+    }
   },
   goFindCompetition() { wx.switchTab({ url: '/pages/index/index' }); },
 });

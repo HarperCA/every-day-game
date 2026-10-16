@@ -1,0 +1,14 @@
+.preferences-page { padding-top:40rpx; }
+.preferences-card { padding:32rpx 24rpx; }
+.step-count { text-align:center; color:#1765d9; font-size:26rpx; }
+.question { margin:28rpx 0; text-align:center; font-size:32rpx; font-weight:650; }
+.wheel { height:360rpx; background:#f8faff; border:1rpx solid #dbe5f3; border-radius:16rpx; overflow:hidden; }
+.wheel-option { height:72rpx; display:flex; align-items:center; justify-content:center; font-size:28rpx; color:#27364a; }
+.selected { color:#1765d9; font-weight:650; }
+.tags { display:flex; flex-wrap:wrap; gap:12rpx; margin-top:24rpx; }
+.tag { color:#1765d9; background:#e8f1ff; padding:12rpx 18rpx; border-radius:12rpx; }
+.optout { display:flex; align-items:center; margin-top:28rpx; font-size:26rpx; }
+.optout checkbox { transform:scale(.8); }
+.actions { display:flex; gap:12rpx; margin-top:36rpx; }
+.actions button { flex:1; padding:0 8rpx; margin:0; font-size:26rpx; }
+.secondary { color:#52637a; background:#f1f5fa; }

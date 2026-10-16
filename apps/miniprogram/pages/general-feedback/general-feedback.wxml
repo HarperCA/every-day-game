@@ -1,0 +1,11 @@
+<view class="feedback-page">
+  <view class="records-link" bindtap="openRecords">我的反馈 <text>›</text></view>
+  <view class="form">
+    <picker range="{{types}}" range-key="label" value="{{typeIndex}}" bindchange="onTypeChange">
+      <view class="type-row"><text>反馈类型</text><view>{{types[typeIndex].label}} <text class="arrow">›</text></view></view>
+    </picker>
+    <view class="content-area"><view class="label">反馈内容</view><textarea value="{{content}}" bindinput="onContentInput" maxlength="2000" placeholder="请告诉我们遇到的问题或改进建议" /><view class="count">{{content.length}} / 2000</view></view>
+  </view>
+  <view class="contact-row"><text>联系方式</text><input value="{{contact}}" bindinput="onContactInput" maxlength="100" placeholder="选填，微信或邮箱" /></view>
+  <view class="submit-area"><button class="submit" bindtap="submit" loading="{{submitting}}" disabled="{{submitting}}">提交反馈</button></view>
+</view>

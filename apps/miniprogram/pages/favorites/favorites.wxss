@@ -10,14 +10,11 @@
 .status-pending { background: #7b61a8; }
 .status-closed { background: #7a8492; }
 .ended-mark { color: #7a8492; background: #eef1f4; border-radius: 999rpx; padding: 7rpx 13rpx; font-size: 21rpx; }
-.verified { color: #8190a5; font-size: 22rpx; }
 .competition-name { font-size: 32rpx; font-weight: 750; line-height: 1.45; margin-top: 18rpx; }
 .edition { color: #65748a; font-size: 24rpx; margin-top: 7rpx; }
 .tags { display: flex; gap: 10rpx; flex-wrap: wrap; margin: 18rpx 0; }
 .tag { background: #eef4ff; color: #315b96; border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 21rpx; }
 .recommendation { display: flex; gap: 12rpx; color: #244b83; font-weight: 700; }
-.reference { color: #8a96a8; font-weight: 400; font-size: 22rpx; }
-.reason { color: #4c596d; font-size: 24rpx; margin-top: 10rpx; line-height: 1.55; }
 .card-footer { border-top: 1rpx solid #edf0f4; margin-top: 18rpx; padding-top: 16rpx; display: flex; justify-content: space-between; align-items: flex-end; gap: 18rpx; }
 .deadline { color: #27364a; font-size: 24rpx; }
 .favorite-date { color: #8995a7; font-size: 21rpx; margin-top: 7rpx; }

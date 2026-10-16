@@ -1,14 +1,46 @@
-import { API_BASE_URL, CLOUD_ENV_ID, USE_SELF_HOSTED_BACKEND, USER_DATA_ON_CLOUD } from '../config/cloud';
+import { API_BASE_URL, BEIJING_BACKEND_ENABLED, CLOUD_ENV_ID, FEEDBACK_API_BASE_URL, USE_SELF_HOSTED_BACKEND, USER_DATA_ON_CLOUD } from '../config/cloud';
 
-// 仍走美国服务器的用户操作：纠错反馈（管理员在美国服务器的后台审核）
-const SELF_HOSTED_USER_ACTIONS = new Set(['submitFeedback', 'listFeedback']);
+// 迁移过渡期直接走自有服务器的操作，其他操作保留上海兼容入口。
+const SELF_HOSTED_USER_ACTIONS = new Set(['submitFeedback', 'listFeedback', 'submitGeneralFeedback', 'listGeneralFeedback']);
 import { reportIssue, SLOW_THRESHOLD_MS } from './clientLog';
 
 let sessionReady = false;
 let cloudInitialized = false;
 let currentUserId = '';
-// 自有后端用 openid 认身份；登录后存下来，后续请求带上。
+// 仅用于核对微信登录身份；接口凭签名会话认证，不凭客户端 OpenID。
 let currentOpenid = '';
+interface ServerSessionState { token:string; request:Promise<string> | null }
+const serverSessions = new Map<string, ServerSessionState>();
+let loginGeneration = 0;
+
+function sessionFor(origin:string): ServerSessionState {
+  let state = serverSessions.get(origin);
+  if (!state) { state = { token:'', request:null }; serverSessions.set(origin, state); }
+  return state;
+}
+
+async function ensureServerUserSession(origin:string): Promise<string> {
+  const state = sessionFor(origin);
+  if (state.token) return state.token;
+  if (!state.request) {
+    const generation = loginGeneration;
+    const request = (async () => {
+      const code = await new Promise<string>((resolve, reject) => {
+        wx.login({ success: (res: any) => res?.code ? resolve(res.code) : reject(new Error('微信登录未返回 code')), fail: (err: any) => reject(new Error(err?.errMsg || '微信登录失败')) });
+      });
+      const result = await requestSelfHosted<{ openid:string; userSessionToken:string; userSessionOrigin?:string }>('/api/login', { code }, origin);
+      if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+      if (!result.userSessionToken) throw new Error('反馈服务尚未更新，请稍后重试');
+      if (result.userSessionOrigin && result.userSessionOrigin !== origin) throw new Error('用户服务来源不匹配，请稍后重试');
+      if (currentOpenid && result.openid !== currentOpenid) throw new Error('微信身份已变化，请重新登录');
+      state.token = result.userSessionToken;
+      return state.token;
+    })();
+    state.request = request;
+    request.then(() => { if (state.request === request) state.request = null; }, () => { if (state.request === request) state.request = null; });
+  }
+  return state.request;
+}
 
 export interface LoginResult {
   userId: string;
@@ -26,11 +58,12 @@ function resultData<T>(response: any): T {
 // 后端已迁到自有服务器（见 docs/migration-to-self-hosted.md）。
 // wx.request 的目标域名必须先在微信公众平台登记「服务器域名」，
 // 且必须是 HTTPS——这是微信平台的硬性要求，和后端放在哪无关。
-function requestSelfHosted<T>(path: string, data: Record<string, unknown>): Promise<T> {
+function requestSelfHosted<T>(path: string, data: Record<string, unknown>, origin = API_BASE_URL): Promise<T> {
   return new Promise((resolve, reject) => {
     wx.request({
-      url: `${API_BASE_URL}${path}`,
+      url: `${origin}${path}`,
       method: 'POST',
+      timeout: 15000,
       header: { 'content-type': 'application/json' },
       data,
       success(response: any) {
@@ -66,9 +99,11 @@ function ensureCloudInitialized() {
 }
 
 export async function loginWithWechat(): Promise<LoginResult> {
+  const generation = ++loginGeneration;
   sessionReady = false;
   currentUserId = '';
   currentOpenid = '';
+  serverSessions.clear();
 
   if (USER_DATA_ON_CLOUD) {
     // 腾讯云开发上海：身份由微信云开发直接给出（云函数里 cloud.getWXContext()），不用自己换
@@ -76,10 +111,13 @@ export async function loginWithWechat(): Promise<LoginResult> {
     try {
       ensureCloudInitialized();
       const response = await wx.cloud.callFunction({ name: 'login' });
-      const data = resultData<LoginResult & { openid?: string }>(response);
+      const data = resultData<LoginResult & { openid?:string; userSessionToken?:string; userSessionOrigin?:string }>(response);
+      if (generation !== loginGeneration) throw new Error('登录请求已过期，请重新操作');
       if (!data.userId) throw new Error('登录云函数未返回用户标识');
       currentOpenid = data.openid || '';
       currentUserId = data.userId;
+      // Cloud bridge tokens are origin-bound. Never guess their destination.
+      if (data.userSessionToken && data.userSessionOrigin === API_BASE_URL) sessionFor(API_BASE_URL).token = data.userSessionToken;
       sessionReady = true;
       return { userId: data.userId, isNewUser: data.isNewUser };
     } catch (error) {
@@ -97,10 +135,13 @@ export async function loginWithWechat(): Promise<LoginResult> {
         fail: (error: any) => reject(new Error(error?.errMsg || '微信登录失败')),
       });
     });
-    const data = await requestSelfHosted<LoginResult & { openid?: string }>('/api/login', { code });
+    const data = await requestSelfHosted<LoginResult & { openid?: string; userSessionToken?: string }>('/api/login', { code });
+    if (generation !== loginGeneration) throw new Error('登录请求已过期，请重新操作');
     if (!data.userId) throw new Error('登录接口未返回用户标识');
+    if (!data.userSessionToken) throw new Error('用户服务尚未更新，请稍后重试');
     currentOpenid = data.openid || '';
     currentUserId = data.userId;
+    sessionFor(API_BASE_URL).token = data.userSessionToken;
     sessionReady = true;
     return { userId: data.userId, isNewUser: data.isNewUser };
   }
@@ -108,6 +149,7 @@ export async function loginWithWechat(): Promise<LoginResult> {
   ensureCloudInitialized();
   const response = await wx.cloud.callFunction({ name: 'login' });
   const data = resultData<LoginResult>(response);
+  if (generation !== loginGeneration) throw new Error('登录请求已过期，请重新操作');
   if (!data.userId) throw new Error('登录云函数未返回用户标识');
   currentUserId = data.userId;
   sessionReady = true;
@@ -124,12 +166,32 @@ export function getCurrentUserId(): string {
 
 export async function callUserData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   if (!sessionReady) throw new Error('微信登录尚未完成');
+  if (USE_SELF_HOSTED_BACKEND && (!USER_DATA_ON_CLOUD || SELF_HOSTED_USER_ACTIONS.has(action))) {
+    const generation = loginGeneration;
+    const origin = SELF_HOSTED_USER_ACTIONS.has(action) ? FEEDBACK_API_BASE_URL : API_BASE_URL;
+    const send = async () => {
+      const userSessionToken = await ensureServerUserSession(origin);
+      if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+      const result = await requestSelfHosted<T>('/api/userData', { ...payload, action, userSessionToken }, origin);
+      if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+      return result;
+    };
+    try { return await send(); }
+    catch (error) {
+      if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+      if (!(error instanceof Error) || error.message !== 'user_session_expired') throw error;
+      sessionFor(origin).token = '';
+      return send();
+    }
+  }
   if (USER_DATA_ON_CLOUD && !SELF_HOSTED_USER_ACTIONS.has(action)) {
+    const generation = loginGeneration;
     const started = Date.now();
     try {
       ensureCloudInitialized();
-      const response = await wx.cloud.callFunction({ name: 'userData', data: { action, ...payload } });
+      const response = await wx.cloud.callFunction({ name: 'userData', data: { ...payload, action } });
       const data = resultData<T>(response);
+      if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
       const elapsed = Date.now() - started;
       if (elapsed > SLOW_THRESHOLD_MS) reportIssue('slow', { action: `userData.${action}`, elapsedMs: elapsed });
       return data;
@@ -138,17 +200,9 @@ export async function callUserData<T>(action: string, payload: Record<string, un
       throw error;
     }
   }
-  if (USE_SELF_HOSTED_BACKEND) {
-    const started = Date.now();
-    try {
-      return await requestSelfHosted<T>('/api/userData', { action, __openid: currentOpenid, ...payload });
-    } catch (error) {
-      // 收藏、提醒同步失败：记一笔（访问异常上报，见 clientLog.ts）
-      reportIssue('user_data_failed', { action: `userData.${action}`, message: error instanceof Error ? error.message : String(error), elapsedMs: Date.now() - started });
-      throw error;
-    }
-  }
-  const response = await wx.cloud.callFunction({ name: 'userData', data: { action, ...payload } });
+  const generation = loginGeneration;
+  const response = await wx.cloud.callFunction({ name: 'userData', data: { ...payload, action } });
+  if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
   return resultData<T>(response);
 }
 
@@ -160,10 +214,21 @@ export async function callUserData<T>(action: string, payload: Record<string, un
 export async function callPublicData<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
   const started = Date.now();
   const describe = (error: unknown) => (error instanceof Error ? error.message : String((error as any)?.errMsg || error));
+  if (BEIJING_BACKEND_ENABLED) {
+    try {
+      const result = await requestSelfHosted<T>('/api/publicData', { ...payload, action });
+      const elapsed = Date.now() - started;
+      if (elapsed > SLOW_THRESHOLD_MS) reportIssue('slow', { action:`publicData.${action}`, elapsedMs:elapsed });
+      return result;
+    } catch (error) {
+      reportIssue('load_failed', { action:`publicData.${action}`, message:describe(error), elapsedMs:Date.now() - started });
+      throw error;
+    }
+  }
   let result: T;
   try {
     ensureCloudInitialized();
-    const response = await wx.cloud.callFunction({ name: 'publicData', data: { action, ...payload } });
+    const response = await wx.cloud.callFunction({ name: 'publicData', data: { ...payload, action } });
     result = resultData<T>(response);
   } catch (cloudError) {
     if (!USE_SELF_HOSTED_BACKEND) throw cloudError;

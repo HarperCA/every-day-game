@@ -1,0 +1,11 @@
+<view class="records-page">
+  <view class="record" wx:for="{{records}}" wx:key="id">
+    <view class="record-heading"><text class="type">{{item.typeLabel}}</text><text class="status {{item.status}}">{{item.statusLabel}}</text></view>
+    <view class="content">{{item.content}}</view><view class="date">提交于 {{item.createdText}}</view>
+    <view class="reply" wx:if="{{item.publicReply}}"><view class="reply-heading">官方回复</view><view class="reply-content">{{item.publicReply}}</view><view class="date" wx:if="{{item.updatedText}}">更新于 {{item.updatedText}}</view></view>
+  </view>
+  <view class="empty" wx:if="{{!loading && !error && !records.length}}">还没有反馈记录</view>
+  <view class="hint" wx:if="{{loading}}">正在加载…</view>
+  <view class="error" wx:if="{{error}}">{{error}}<button bindtap="retry" size="mini">重新加载</button></view>
+  <view class="hint" wx:if="{{records.length && !hasMore && !loading && !error}}">已显示全部反馈</view>
+</view>

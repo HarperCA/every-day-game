@@ -1,3 +1,4 @@
+import { getCurrentUserId } from '../../services/cloudSession';
 import { getCompetition } from '../../services/repository';
 import { getFavoriteRecords, removeFavorite } from '../../services/favorites';
 import { getRemindersForEdition, removeRemindersForEdition } from '../../services/reminders';
@@ -14,11 +15,20 @@ Page({
     this.load();
   },
 
+  onUnload() { (this as any).loadRequestId = ((this as any).loadRequestId || 0) + 1; },
+
   onPullDownRefresh() {
     this.load().finally(() => wx.stopPullDownRefresh());
   },
 
   async load() {
+    const requestId = ((this as any).loadRequestId || 0) + 1;
+    (this as any).loadRequestId = requestId;
+    const startingOwner = getCurrentUserId();
+    if ((this as any).listOwner !== startingOwner) {
+      (this as any).listOwner = startingOwner;
+      this.setData({ items: [] });
+    }
     this.setData({ loading: true, loginRequired: false, error: '' });
     try {
       const app = getApp<any>();
@@ -28,6 +38,7 @@ Page({
         this.setData({ items: [], loading: false, loginRequired: true });
         return;
       }
+      const owner = getCurrentUserId();
       const records = getFavoriteRecords();
       const results = await Promise.all(records.map(async (record) => {
         try {
@@ -46,8 +57,10 @@ Page({
           };
         }
       }));
+      if ((this as any).loadRequestId !== requestId || getCurrentUserId() !== owner) return;
       this.setData({ items: results, loading: false });
     } catch (error) {
+      if ((this as any).loadRequestId !== requestId) return;
       this.setData({
         loading: false,
         error: error instanceof Error ? error.message : '收藏加载失败',
@@ -71,6 +84,7 @@ Page({
   },
 
   cancelFavorite(event: any) {
+    const owner = getCurrentUserId();
     const id = event.currentTarget.dataset.id;
     const reminders = getRemindersForEdition(id);
     if (reminders.length) {
@@ -79,6 +93,7 @@ Page({
         content: `这场赛事还有 ${reminders.length} 项提醒。是否同时删除提醒？`,
         confirmText: '同时删除', cancelText: '保留提醒', confirmColor: '#c24141',
         success: (result: any) => {
+          if (getCurrentUserId() !== owner) return;
           removeFavorite(id);
           if (result.confirm) removeRemindersForEdition(id);
           this.setData({ items: this.data.items.filter((item: any) => item.id !== id) });
@@ -92,7 +107,7 @@ Page({
       content: '确定将这场赛事移出收藏吗？',
       confirmColor: '#1765d9',
       success: (result: any) => {
-        if (!result.confirm) return;
+        if (!result.confirm || getCurrentUserId() !== owner) return;
         removeFavorite(id);
         this.setData({ items: this.data.items.filter((item: any) => item.id !== id) });
         wx.showToast({ title: '已取消收藏', icon: 'success' });

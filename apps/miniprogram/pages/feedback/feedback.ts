@@ -65,7 +65,7 @@ Page({
     }
   },
   onShow() {
-    this.loadRecords();
+    if (!this.data.lockedCompetition) this.loadRecords();
   },
   async loadCompetitions() {
     this.setData({ competitionsLoading: true });
@@ -83,11 +83,16 @@ Page({
     }
   },
   async loadRecords() {
+    // 赛事纠错页只负责提交，历史记录统一在“我的 → 信息纠错”查看。
+    if (this.data.lockedCompetition) return;
     this.setData({ recordsLoading: true });
     try {
       const list = await callUserData<any[]>('listFeedback');
       this.setData({
-        records: (list || []).map(item => ({
+        records: [...(list || [])].sort((left, right) => {
+          const timestamp = (value: string) => new Date(value).getTime() || 0;
+          return timestamp(right.createdAt) - timestamp(left.createdAt);
+        }).map(item => ({
           id: item.id,
           competitionName: item.competitionName || '未记录赛事',
           categoryLabel: (categories.find(entry => entry.value === item.category) || { label: '其他问题' }).label,
@@ -125,7 +130,7 @@ Page({
     const content = this.data.content.trim();
     const evidenceUrl = this.data.evidenceUrl.trim();
     if (!this.data.editionId) { wx.showToast({ title: '请先选择要纠错的赛事', icon: 'none' }); return; }
-    if (content.length < 5) { wx.showToast({ title: '请至少填写5个字', icon: 'none' }); return; }
+    if (!content) { wx.showToast({ title: '请填写问题说明', icon: 'none' }); return; }
     if (content.length > 2000) { wx.showToast({ title: '纠错内容不能超过2000字', icon: 'none' }); return; }
     if (evidenceUrl && !/^https?:\/\//i.test(evidenceUrl)) { wx.showToast({ title: '证据链接需以 http:// 或 https:// 开头', icon: 'none' }); return; }
 
@@ -140,12 +145,12 @@ Page({
         content,
         evidenceUrl,
       });
-      // 提交后留在本页刷新进度，让用户直接看到这条记录进入待审核。
+      // 通用入口刷新记录；赛事纠错页不加载历史记录。
       this.setData({ content: '', evidenceUrl: '' });
-      await this.loadRecords();
+      if (!this.data.lockedCompetition) await this.loadRecords();
       wx.showModal({
         title: '纠错已提交',
-        content: '管理员会核对你提供的说明和证据。审核完成前，赛事页面不会自动改动。你可以在下方查看处理进度。',
+        content: '管理员会核对你提供的说明和证据。审核完成前，赛事页面不会自动改动。你可以在“我的 → 信息纠错”查看处理进度。',
         showCancel: false,
       });
     } catch (error) {

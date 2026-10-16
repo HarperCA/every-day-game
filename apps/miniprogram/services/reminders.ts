@@ -10,6 +10,10 @@ function accountKey(base: string): string {
   return isCloudSessionReady() && userId ? `${base}:${userId}` : '';
 }
 
+function assertAccount(owner: string) {
+  if (!owner || !isCloudSessionReady() || getCurrentUserId() !== owner) throw new Error('账号已变更，请重新操作');
+}
+
 function requireAccountKey(base: string): string {
   const key = accountKey(base);
   if (!key) throw new Error('请先微信登录');
@@ -101,7 +105,13 @@ function clearPendingDeletion(key: string, value: string) {
 }
 
 function runReminderCloud<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  const task = cloudWriteQueue.catch(() => undefined).then(() => callUserData<T>(action, payload));
+  const owner = getCurrentUserId();
+  const task = cloudWriteQueue.catch(() => undefined).then(async () => {
+    assertAccount(owner);
+    const result = await callUserData<T>(action, payload);
+    assertAccount(owner);
+    return result;
+  });
   cloudWriteQueue = task.catch(() => undefined);
   return task;
 }
@@ -115,6 +125,7 @@ function queueCloud(action: string, payload: Record<string, unknown>, onSuccess?
 
 export async function initializeRemindersCloudSync(): Promise<void> {
   requireAccountKey(STORAGE_KEY);
+  const owner = getCurrentUserId();
   const remote = await runReminderCloud<ReminderRecord[]>('listReminders');
   const local = readRecords();
   const deletedIds = new Set(readStringList(DELETED_IDS_KEY));
@@ -135,8 +146,9 @@ export async function initializeRemindersCloudSync(): Promise<void> {
   for (let index = 0; index < records.length; index += 10) {
     await runReminderCloud('mergeReminders', { records:records.slice(index, index + 10) });
   }
-  writeStringList(DELETED_IDS_KEY, []);
-  writeStringList(DELETED_EDITIONS_KEY, []);
+  assertAccount(owner);
+  writeStringList(DELETED_IDS_KEY, readStringList(DELETED_IDS_KEY).filter(id => !deletedIds.has(id)));
+  writeStringList(DELETED_EDITIONS_KEY, readStringList(DELETED_EDITIONS_KEY).filter(id => !deletedEditions.has(id)));
 }
 
 export function calculatePresetReminder(targetAt: string, option: { days?: number; months?: number }): Date {
@@ -161,7 +173,7 @@ export function getRemindersForEdition(editionId: string): ReminderRecord[] {
   return getReminderRecords().filter(item => item.editionId === editionId);
 }
 
-export function saveReminderPlans(input: {
+export interface ReminderPlanInput {
   editionId: string;
   competitionName: string;
   eventType: ReminderEventType;
@@ -169,7 +181,27 @@ export function saveReminderPlans(input: {
   targetAt: string;
   presets: string[];
   customAt?: string;
-}): ReminderRecord[] {
+}
+
+export function validateReminderPlans(input: ReminderPlanInput): void {
+  requireAccountKey(STORAGE_KEY);
+  const now = new Date();
+  const target = new Date(input.targetAt);
+  if (Number.isNaN(target.getTime()) || target <= now) throw new Error('目标事件时间已经过去或尚未公布');
+  const hasValidPreset = input.presets.some(key => {
+    const option = ADVANCE_OPTIONS.find(item => item.key === key);
+    return Boolean(option && calculatePresetReminder(input.targetAt, option) > now);
+  });
+  if (input.customAt) {
+    const custom = new Date(input.customAt);
+    if (Number.isNaN(custom.getTime()) || custom <= now) throw new Error('自定义提醒时间必须晚于现在');
+    if (custom >= target) throw new Error('自定义提醒时间必须早于目标事件');
+  }
+  if (!hasValidPreset && !input.customAt) throw new Error('请选择至少一个尚未过去的提醒时间');
+}
+
+export function saveReminderPlans(input: ReminderPlanInput, authorizedTemplateId = ''): ReminderRecord[] {
+  validateReminderPlans(input);
   requireAccountKey(STORAGE_KEY);
   const now = new Date();
   const target = new Date(input.targetAt);
@@ -209,6 +241,12 @@ export function saveReminderPlans(input: {
     });
   }
   if (!plans.length) throw new Error('请选择至少一个尚未过去的提醒时间');
+  if (authorizedTemplateId) {
+    for (const plan of plans) {
+      plan.authorizationStatus = 'accepted';
+      plan.subscriptionTemplateId = authorizedTemplateId;
+    }
+  }
   writeRecords([...plans, ...preserved]);
   queueCloud('replaceReminderEvent', { editionId:input.editionId, eventType:input.eventType, records:plans });
   return plans;
@@ -234,13 +272,13 @@ export function applyReminderAuthorization(plans: ReminderRecord[], status: Auth
   const current = readRecords();
   let selectedId = '';
   if (status === 'accepted') {
-    selectedId = [...plans].filter(item=>item.authorizationStatus !== 'accepted').sort((a,b)=>a.remindAt.localeCompare(b.remindAt))[0]?.id || '';
+    selectedId = [...plans].filter(item=>item.authorizationStatus !== 'accepted' || item.deliveryStatus === 'manual_required').sort((a,b)=>a.remindAt.localeCompare(b.remindAt))[0]?.id || '';
   }
   const now = new Date().toISOString();
   const updated = current.map(item => {
     if (!planIds.has(item.id)) return item;
     if (status === 'accepted') {
-      return item.id === selectedId ? { ...item, authorizationStatus:'accepted' as const, subscriptionTemplateId:templateId, updatedAt:now } : item;
+      return item.id === selectedId ? { ...item, authorizationStatus:'accepted' as const, subscriptionTemplateId:templateId, ...(item.deliveryStatus === 'manual_required' ? { deliveryStatus:'pending' as const, retryCount:0, lastError:undefined } : {}), updatedAt:now } : item;
     }
     return item.authorizationStatus === 'accepted' ? item : { ...item, authorizationStatus:status, updatedAt:now };
   });
@@ -250,13 +288,37 @@ export function applyReminderAuthorization(plans: ReminderRecord[], status: Auth
 
 export function requestReminderAuthorization(templateId: string): Promise<AuthorizationStatus> {
   if (!templateId || typeof wx.requestSubscribeMessage !== 'function') return Promise.resolve('unavailable');
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     wx.requestSubscribeMessage({
       tmplIds: [templateId],
-      success: (result: Record<string, string>) => resolve(result[templateId] === 'accept' ? 'accepted' : 'rejected'),
-      fail: () => resolve('rejected'),
+      success: (result: Record<string, string>) => {
+        console.info('reminder subscription result', { templateId, status: result[templateId], errMsg: result.errMsg });
+        if (result[templateId] === 'ban' || result[templateId] === 'filter') {
+          reject(new Error('微信提醒模板不可用，提醒未保存'));
+          return;
+        }
+        resolve(result[templateId] === 'accept' ? 'accepted' : 'rejected');
+      },
+      fail: (error: any) => {
+        console.error('reminder subscription failed', { templateId, errCode: error.errCode, errMsg: error.errMsg });
+        const message = Number(error.errCode) === 20001 ? '微信提醒模板不存在，提醒未保存'
+          : Number(error.errCode) === 20004 ? '微信通知开关已关闭，请在小程序设置中开启'
+          : '微信授权请求失败，请稍后重试';
+        reject(new Error(message));
+      },
     });
   });
+}
+
+export async function saveReminderPlansWithAuthorization(input: ReminderPlanInput, templateId: string): Promise<{ status: AuthorizationStatus; plans: ReminderRecord[] }> {
+  validateReminderPlans(input);
+  if (new Set(input.presets).size + (input.customAt ? 1 : 0) > 1) throw new Error('每次请选择一个提醒时间，再保存授权');
+  const owner = getCurrentUserId();
+  const status = await requestReminderAuthorization(templateId);
+  assertAccount(owner);
+  if (status !== 'accepted') return { status, plans: [] };
+  const plans = saveReminderPlans(input, templateId);
+  return { status, plans };
 }
 
 export function removeReminder(id: string) {
@@ -278,7 +340,9 @@ export function syncReminderTarget(record: ReminderRecord, targetAt: string, cha
   if (record.deliveryStatus !== 'pending' || (record.targetAt === targetAt && record.scheduleChangeStatus === changeStatus)) return record;
   const target = new Date(targetAt);
   if (Number.isNaN(target.getTime())) return record;
-  const remindAt = new Date(target.getTime() - record.offsetMs);
+  // 用户自定义的是绝对时间，赛事日期变化不能悄悄移动用户选择的提醒。
+  const remindAt = record.advanceKey === 'custom' ? new Date(record.remindAt) : new Date(target.getTime() - record.offsetMs);
+  if (Number.isNaN(remindAt.getTime())) return record;
   const updated: ReminderRecord = {
     ...record,
     targetAt,

@@ -2,32 +2,32 @@
 <view class="page">
   <view class="hero">
     <view class="search-row">
-      <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事名称、主办单位或专业（如：计算机、土木工程）" />
+      <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事名称、主办单位或专业" />
       <button bindtap="onSearch" size="mini">搜索</button>
     </view>
   </view>
 
   <view class="filter-panel">
+    <view class="quick-chip all-filter-chip {{region || preferenceProvince || competitionCategories.length || professionIndex || statusIndex ? '' : 'quick-chip-active'}}" bindtap="onComprehensiveTap" role="button" aria-label="全部，清除地区、专业大类和报名状态，保留搜索及其他筛选">全部</view>
     <scroll-view class="filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
       <view class="filter-track">
-        <view class="quick-chip comprehensive-chip {{selectedConditions.length ? '' : 'quick-chip-active'}}" bindtap="onComprehensiveTap" role="button" aria-label="综合，清除筛选条件">综合</view>
+        <picker class="quick-picker" range="{{regionOptions}}" value="{{regionIndex}}" bindchange="onRegionChange">
+          <view class="quick-chip {{region ? 'quick-chip-active' : ''}}">{{region || '地区'}}<text class="chip-arrow">⌄</text></view>
+        </picker>
+        <picker class="quick-picker" range="{{professionOptions}}" value="{{professionIndex}}" bindchange="onProfessionChange">
+          <view class="quick-chip {{competitionCategories.length ? 'quick-chip-active' : ''}}">{{competitionCategories.length > 1 ? '专业大类（' + competitionCategories.length + '）' : professionIndex ? professionOptions[professionIndex] : '专业大类'}}<text class="chip-arrow">⌄</text></view>
+        </picker>
         <picker class="quick-picker" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
           <view class="quick-chip {{statusIndex ? 'quick-chip-active' : ''}}">{{statusIndex ? statusOptions[statusIndex] : '报名状态'}}<text class="chip-arrow">⌄</text></view>
         </picker>
-        <picker class="quick-picker" range="{{levelOptions}}" value="{{levelIndex}}" bindchange="onLevelChange">
-          <view class="quick-chip {{levelIndex ? 'quick-chip-active' : ''}}">{{levelIndex ? levelOptions[levelIndex] : '赛事级别'}}<text class="chip-arrow">⌄</text></view>
-        </picker>
-        <picker class="quick-picker" range="{{professionOptions}}" value="{{professionIndex}}" bindchange="onProfessionChange">
-          <view class="quick-chip {{professionIndex ? 'quick-chip-active' : ''}}">{{professionIndex ? professionOptions[professionIndex] : '适合专业'}}<text class="chip-arrow">⌄</text></view>
-        </picker>
       </view>
     </scroll-view>
-    <view class="filter-trigger {{moreFilterCount ? 'filter-trigger-active' : ''}}" bindtap="openMoreFilters" role="button" aria-label="更多筛选">
+    <view class="filter-trigger {{moreFilterCount ? 'filter-trigger-active' : ''}}" bindtap="openMoreFilters" role="button" aria-label="其他筛选">
       <image src="/assets/filter.svg" mode="aspectFit" aria-hidden="true" />
       <text wx:if="{{moreFilterCount}}" class="filter-count">{{moreFilterCount}}</text>
     </view>
   </view>
-  <view class="result-meta"><text>找到 {{total}} 场</text><text class="clear" bindtap="clearFilters">清空条件</text></view>
+  <view class="result-meta"><text>找到 {{total}} 场</text></view>
 
   <view wx:if="{{loading && items.length === 0}}">
     <view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view>
@@ -38,23 +38,50 @@
     <view class="competition card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
       <view class="card-head">
         <text class="status {{item.statusClass}}">{{item.registrationStatus}}</text>
-        <view class="card-meta">
-          <text class="verified">核验 {{item.lastVerifiedDate}}</text>
-          <text class="favorite-button {{item.isFavorite ? 'favorite-active' : ''}}" data-id="{{item.id}}" catchtap="toggleFavorite">{{item.isFavorite ? '★' : '☆'}}</text>
-        </view>
+        <text class="favorite-button {{item.isFavorite ? 'favorite-active' : ''}}" data-id="{{item.id}}" catchtap="toggleFavorite">{{item.isFavorite ? '★' : '☆'}}</text>
       </view>
       <view class="competition-name">{{item.name}}</view>
+      <view class="competition-edition" wx:if="{{item.editionName || item.editionYear}}">{{item.editionOrdinal ? item.editionOrdinal + ' · ' + item.editionYear : item.editionName || item.editionYear}}</view>
       <view class="tags"><text class="tag">{{item.eventLevel}}</text><text class="tag" wx:for="{{item.displayProfessions}}" wx:key="*this">{{item}}</text></view>
-      <view class="recommendation" wx:if="{{item.recommendationLevel}}"><text>{{item.recommendationLevel}}</text><text class="reference">仅供参考</text></view>
-      <view class="reason" wx:if="{{item.recommendationLevel && item.recommendationReasons.length}}">{{item.recommendationReasons[0]}}</view>
+      <view class="recommendation" wx:if="{{item.recommendationLevel}}"><text>{{item.recommendationLevel}}</text></view>
       <view class="deadline archived-hint" wx:if="{{item.dataStatus === 'archived'}}">
         <!-- 下一届的推算时间只在后台显示，不给学生看（2026-10-03，用户定） -->
         <text>已过报名日期</text>
       </view>
-      <view class="deadline" wx:elif="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}</view>
+      <view class="deadline" wx:elif="{{item.registrationEndDate}}">报名截止 {{item.registrationEndDate}}{{item.registrationEndNote ? '（' + item.registrationEndNote + '）' : ''}}</view>
+      <view class="deadline" wx:elif="{{item.registrationEndNote}}">报名截止 {{item.registrationEndNote}}</view>
       <view class="deadline" wx:else>报名时间待官方公布</view>
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>
+  </view>
+
+  <view wx:if="{{surveyVisible}}" class="survey-overlay">
+    <view class="survey-mask" catchtouchmove="blockPanelTap" catchtap="blockPanelTap"></view>
+    <view class="survey-card" role="dialog" aria-label="找到适合你的比赛">
+      <view class="survey-heading">找到适合你的比赛</view>
+      <view class="survey-back-row"><text wx:if="{{surveyStep > 0}}" bindtap="previousPreferenceSurveyStep">‹ 上一步</text></view>
+      <scroll-view class="survey-scroll" scroll-y>
+        <block wx:if="{{surveyStep === 0}}">
+        <view class="survey-question">你所在的地区是哪里？</view>
+        <picker-view class="survey-wheel" value="{{[surveyProvinceIndex]}}" bindchange="onSurveyProvinceChange" indicator-style="height:72rpx;" aria-label="上下滑动选择地区">
+          <picker-view-column><view class="survey-wheel-option" wx:for="{{surveyProvinceOptions}}" wx:key="*this">{{item}}</view></picker-view-column>
+        </picker-view>
+        </block>
+        <block wx:else>
+        <view class="survey-question">你想参加哪些专业大类的比赛？（可多选）</view>
+        <picker-view class="survey-wheel" value="{{surveyCategoryWheelIndex}}" bindchange="onSurveyCategoryChange" indicator-style="height:72rpx;" aria-label="上下滑动选择专业大类">
+          <picker-view-column><view class="survey-wheel-option {{item.selected ? 'survey-wheel-selected' : ''}}" wx:for="{{surveyCategoryOptions}}" wx:key="label" data-value="{{item.value}}" bindtap="selectSurveyCategory">{{item.label}}{{item.selected ? ' ✓' : ''}}</view></picker-view-column>
+        </picker-view>
+        <view class="survey-selected-categories" wx:if="{{surveyCategories.length}}">
+          <view class="survey-selected-tags"><view class="option-chip option-active" wx:for="{{surveyCategories}}" wx:key="*this" data-value="{{item}}" bindtap="selectSurveyCategory">{{item}} ×</view></view>
+        </view>
+        </block>
+      </scroll-view>
+      <view class="survey-footer">
+        <checkbox-group bindchange="onSurveyDontShowAgainChange"><label class="survey-optout"><checkbox value="hide" checked="{{surveyDontShowAgain}}" color="#1765d9" /><text>不再显示此弹窗</text></label></checkbox-group>
+        <view class="survey-actions"><button class="survey-skip" bindtap="skipPreferenceSurvey">跳过调查</button><button class="survey-complete" bindtap="confirmPreferenceSurveyStep">{{surveyStep < 1 ? '确定，下一步' : '确定，完成'}}</button></view>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{morePanelVisible}}" class="filter-mask" bindtap="closeMoreFilters">
@@ -64,7 +91,7 @@
         <scroll-view class="filter-sidebar" scroll-y>
           <view class="filter-category {{activeFilterCategoryIndex === index ? 'filter-category-active' : ''}}" wx:for="{{filterCategories}}" wx:key="*this" data-index="{{index}}" bindtap="selectFilterCategory">
             <text class="category-label">{{item}}</text>
-            <text class="category-dot" wx:if="{{(index === 0 && draftParticipationFormat) || (index === 1 && draftTeamSizeCategory) || (index === 2 && draftFeeType) || (index === 3 && draftRegistrationOrganization) || (index === 4 && draftRegistrationWithin) || (index === 5 && (draftSortBy || draftSortOrder))}}"></text>
+            <text class="category-dot" wx:if="{{(index === 0 && draftParticipationFormat) || (index === 1 && draftTeamSizeCategory) || (index === 2 && draftFeeType) || (index === 3 && draftRegistrationOrganization) || (index === 4 && draftEventLevel) || (index === 5 && draftRegistrationWithin) || (index === 6 && (draftSortBy || draftSortOrder))}}"></text>
           </view>
         </scroll-view>
         <scroll-view class="filter-options" scroll-y>
@@ -82,10 +109,13 @@
             <view class="option-list"><view class="option-chip {{draftRegistrationOrganization === item ? 'option-active' : ''}}" wx:for="{{registrationOrganizationOptions}}" wx:key="*this" data-kind="registrationOrganization" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
           </block>
           <block wx:elif="{{activeFilterCategoryIndex === 4}}">
+            <view class="option-list"><view class="option-chip {{((index === 0 && !draftEventLevel) || draftEventLevel === item) ? 'option-active' : ''}}" wx:for="{{levelOptions}}" wx:key="*this" data-kind="eventLevel" data-value="{{index === 0 ? '' : item}}" bindtap="selectMoreOption">{{item}}</view></view>
+          </block>
+          <block wx:elif="{{activeFilterCategoryIndex === 5}}">
             <view class="option-list"><view class="option-chip {{draftRegistrationWithin === registrationWithinValues[index] ? 'option-active' : ''}}" wx:for="{{registrationWithinOptions}}" wx:key="*this" wx:for-index="index" data-kind="registrationWithin" data-value="{{registrationWithinValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
             <view class="source-tip">“已截止”的赛事若已经归档，可按推算的下一届时间查找。</view>
           </block>
-          <block wx:else>
+          <block wx:elif="{{activeFilterCategoryIndex === 6}}">
             <view class="option-subheading">排序依据</view>
             <view class="option-list"><view class="option-chip {{draftSortBy === sortByValues[index] ? 'option-active' : ''}}" wx:for="{{sortByOptions}}" wx:key="*this" wx:for-index="index" data-kind="sortBy" data-value="{{sortByValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
             <view class="option-subheading secondary-heading">时间顺序</view>

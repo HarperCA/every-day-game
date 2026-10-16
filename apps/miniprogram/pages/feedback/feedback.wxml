@@ -26,7 +26,7 @@
   </view>
   <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在提交…' : '提交纠错'}}</button>
 
-  <view class="records card">
+  <view wx:if="{{!lockedCompetition}}" class="records card">
     <view class="records-head">我的纠错<text wx:if="{{records.length}}">{{records.length}} 条</text></view>
     <view wx:if="{{recordsHint}}" class="records-empty">{{recordsHint}}</view>
     <view wx:elif="{{recordsLoading && !records.length}}" class="records-empty">正在加载…</view>

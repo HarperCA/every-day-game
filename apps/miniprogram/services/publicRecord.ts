@@ -15,19 +15,33 @@ export function fieldText(value: unknown): string {
   return !text || MISSING_TEXT.test(text) ? INSUFFICIENT : text;
 }
 
+export function reminderTarget(value: unknown, boundary: 'start' | 'end'): string {
+  if (typeof value !== 'string' || !value) return '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T${boundary === 'end' ? '23:59:59+08:00' : '00:00:00+08:00'}` : value;
+}
+
 export function hydratePublic(item: any) {
   const registrationStatus = item.registration_status;
+  const eligibilityText = String(item.eligibility || '').trim();
+  // 参赛资格单独成行的条件：有实际内容、不是“暂未明确”之类，且跟参赛对象写的不是同一句话
+  const showEligibility = fieldText(eligibilityText) !== INSUFFICIENT
+    && eligibilityText.replace(/\s+/g, '') !== String(item.participants || '').replace(/\s+/g, '');
   return {
     id:item.id, eventId:item.event_id, name:item.name, editionName:item.edition_name,
     editionYear:item.edition_year || '', editionOrdinal:item.edition_ordinal || '',
     aliases:item.aliases || [], organizer:item.organizer || '', eventLevel:item.event_level,
     objectiveTags:item.objective_tags || [], professions:item.professions || [], displayProfessions:(item.professions || []).slice(0, 2),
-    participants:item.participants || '', eligibility:item.eligibility || '', formatAndRules:item.format_and_rules || '', teamSize:item.team_size || '',
+    participants:item.participants || '', eligibility:item.eligibility || '', showEligibility, formatAndRules:item.format_and_rules || '', teamSize:item.team_size || '',
     participationFormat:item.participation_format, teamSizeCategory:item.team_size_category, feeType:item.fee_type, registrationOrganization:item.registration_organization,
     registrationMethod:item.registration_method || '', registrationUrl:item.registration_url || '', fees:item.fees || '',
     registrationStatus, statusClass:STATUS_CLASS[registrationStatus] || 'status-closed',
-    registrationStart:item.registration_start || '', registrationEnd:item.registration_end || '',
-    registrationStartDate:item.registration_start ? item.registration_start.substring(0, 10) : '', registrationEndDate:item.registration_end ? item.registration_end.substring(0, 10) : '',
+    registrationStart:reminderTarget(item.registration_start, 'start'), registrationEnd:reminderTarget(item.registration_end, 'end'),
+    registrationStartDate:item.registration_start ? item.registration_start.substring(0, 10) : '', registrationEndDate:item.registration_end ? item.registration_end.substring(0, 10) : '', registrationEndNote:String(item.registration_end_note || ''),
+    // 时间说明（如“各省赛区自行确定报名时间”），详情页关键时间卡片里原样多行显示
+    timeNote:String(item.time_note || '').trim(),
+    // 奖项：亮点标签 + 文字说明，两者都没有时详情页不显示这一块
+    rewards:String(item.rewards || '').trim(), rewardHighlights:Array.isArray(item.reward_highlights) ? item.reward_highlights : [],
     competitionStartDate:item.competition_start ? item.competition_start.substring(0, 10) : '', competitionEndDate:item.competition_end ? item.competition_end.substring(0, 10) : '',
     scheduleChangeStatus:'normal', lastVerifiedDate:item.last_verified_at ? item.last_verified_at.substring(0, 10) : '待核验',
     track:{ name:item.track_name || '以当届官方通知为准' }, sources:item.sources || [],
@@ -38,7 +52,7 @@ export function hydratePublic(item: any) {
     fieldText:{
       organizer:fieldText(item.organizer), participants:fieldText(item.participants), eligibility:fieldText(item.eligibility),
       teamSize:fieldText(item.team_size), formatAndRules:fieldText(item.format_and_rules), fees:fieldText(item.fees),
-      registrationMethod:fieldText(item.registration_method),
+      registrationMethod:fieldText(item.registration_method), rewards:fieldText(item.rewards),
     },
     // 已发布记录由云函数算好，直接读，避免两处逻辑漂移
     schoolTimingDependent:Boolean(item.school_timing_dependent), schoolTimingNote:item.school_timing_note || '',

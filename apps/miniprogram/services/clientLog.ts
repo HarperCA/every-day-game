@@ -6,7 +6,7 @@
 //
 // 只记：时间、页面、在做什么、错误信息、耗时、网络类型、手机系统和微信版本、小程序版本。
 // 不记 IP、微信身份或任何个人信息。上报本身出错一律静默，不能反过来影响用户使用。
-import { CLOUD_ENV_ID } from '../config/cloud';
+import { API_BASE_URL, BEIJING_BACKEND_ENABLED, CLOUD_ENV_ID } from '../config/cloud';
 
 export type IssueKind =
   | 'cloud_fallback'   // 上海读取失败，已自动退回美国服务器（用户可能没感觉）
@@ -81,13 +81,20 @@ function writePending(items: any[]) {
 // 发出去；发不出去（比如手机完全断网）就存在手机里，下次打开小程序或下次出错时补发
 // 待发的都在手机存储里；发成功只删掉发出去的那几条（发的过程中可能又记了新的，不能整体覆盖）
 async function flush() {
-  if (!ensureCloud()) return;
+  if (!BEIJING_BACKEND_ENABLED && !ensureCloud()) return;
   for (let round = 0; round < 3; round += 1) {
     const batch = readPending().slice(0, 20);
     if (!batch.length) return;
     try {
-      const response = await wx.cloud.callFunction({ name: 'clientLog', data: { events: batch } });
-      if (response?.result?.ok !== true) return;
+      if (BEIJING_BACKEND_ENABLED) {
+        const accepted = await new Promise<boolean>(resolve => {
+          wx.request({ url:`${API_BASE_URL}/api/clientLog`, method:'POST', timeout:15000, header:{ 'content-type':'application/json' }, data:{ events:batch }, success:(response:any) => resolve(response.statusCode >= 200 && response.statusCode < 300 && response.data?.ok === true), fail:() => resolve(false) });
+        });
+        if (!accepted) return;
+      } else {
+        const response = await wx.cloud.callFunction({ name: 'clientLog', data: { events:batch } });
+        if (response?.result?.ok !== true) return;
+      }
       const sent = new Set(batch.map((item: any) => item.id));
       writePending(readPending().filter((item: any) => !sent.has(item.id)));
     } catch {

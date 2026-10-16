@@ -6,6 +6,7 @@ export const participationFormatOptions = ['个人赛', '团队赛', '个人或�
 export const teamSizeOptions = ['1人', '2～3人', '4～5人', '6人及以上', '人数范围不固定', '暂未明确'];
 export const feeTypeOptions = ['免费', '收费', '不同赛项费用不同', '暂未公布'];
 export const registrationOrganizationOptions = ['自行报名', '学校统一报名', '两种方式均可', '需先校内选拔', '以赛区或学校通知为准', '暂未明确'];
+export const regionAllOption = '不限';
 // 显示文案 → 传给接口的值。"不限"/"推荐排序" 对应空字符串，即不传这个筛选项。
 export const registrationWithinOptions = ['不限', '半年以内', '3个月以内', '1个月以内'];
 export const registrationWithinValues = ['', '6m', '3m', '1m'];

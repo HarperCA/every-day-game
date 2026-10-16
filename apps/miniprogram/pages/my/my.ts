@@ -63,6 +63,10 @@ Page({
     }
   },
   openFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
+  openGeneralFeedback() { wx.navigateTo({ url: '/pages/general-feedback/general-feedback' }); },
+  openCompetitionPreferences() {
+    wx.navigateTo({ url:'/pages/preferences/preferences' });
+  },
   openRecommendationGuide() { wx.navigateTo({ url: '/pages/info/info?type=recommendation' }); },
   openPrivacyGuide() { wx.navigateTo({ url: '/pages/info/info?type=privacy' }); },
   openAbout() { wx.navigateTo({ url: '/pages/info/info?type=about' }); },
