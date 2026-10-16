@@ -1,0 +1,59 @@
+<!-- 赛事助手：上面是对话，下面常驻快捷问题和输入框 -->
+<view class="chat-page">
+  <scroll-view class="feed" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="feed-inner">
+      <view class="assistant-head">
+        <image class="avatar" src="/assets/radar.svg" mode="aspectFit" aria-hidden="true" />
+        <text>赛事助手</text>
+      </view>
+
+      <block wx:for="{{messages}}" wx:key="id" wx:for-item="message">
+        <view id="{{message.id}}" class="row {{message.role === 'user' ? 'row-user' : 'row-bot'}}">
+          <view class="bubble {{message.role === 'user' ? 'bubble-user' : 'bubble-bot'}} {{message.error ? 'bubble-error' : ''}}"><text user-select>{{message.text}}</text></view>
+          <text wx:if="{{message.aiGenerated}}" class="ai-mark">AI 生成</text>
+
+          <!-- 查到的比赛：合在一张卡里，一行一场。卡片内容全部来自赛事库 -->
+          <view wx:if="{{message.cards.length}}" class="result-card">
+            <view wx:for="{{message.cards}}" wx:key="id" wx:for-item="card" class="result-row" data-id="{{card.id}}" bindtap="openDetail" role="button" aria-label="查看{{card.name}}详情">
+              <view class="result-text">
+                <text class="result-name">{{card.name}}</text>
+                <text class="result-sub">{{card.deadline}}<text wx:if="{{card.left}}"> · </text><text class="{{card.soon ? 'days-soon' : 'days'}}">{{card.left}}</text></text>
+              </view>
+              <view class="bell {{card.hasReminder ? 'bell-on' : ''}}" data-id="{{card.id}}" catchtap="openReminder" role="button" aria-label="{{card.hasReminder ? '已设提醒' : '加入提醒'}}">
+                <image src="{{card.hasReminder ? '/assets/bell-active.svg' : '/assets/bell.svg'}}" mode="aspectFit" aria-hidden="true" />
+              </view>
+              <text class="chev" aria-hidden="true">›</text>
+            </view>
+            <view wx:if="{{message.moreText}}" class="result-more" data-message-id="{{message.id}}" bindtap="openIndexWithFilters" role="button">
+              <text>{{message.moreText}}</text><text class="chev chev-accent" aria-hidden="true">›</text>
+            </view>
+          </view>
+
+          <!-- 追问的选项：点过一次就不能再点 -->
+          <view wx:if="{{message.options.length}}" class="options">
+            <button wx:for="{{message.options}}" wx:key="*this" wx:for-item="option" class="option" size="mini" disabled="{{message.optionsUsed || sending}}" data-message-id="{{message.id}}" data-text="{{option}}" bindtap="onOption">{{option}}</button>
+          </view>
+
+          <button wx:if="{{message.error}}" class="retry" size="mini" data-text="{{message.retryText}}" bindtap="onRetry">重新发送</button>
+        </view>
+      </block>
+
+      <view wx:if="{{sending}}" id="typing" class="row row-bot">
+        <view class="bubble bubble-bot typing" aria-label="正在回答"><view class="dot" /><view class="dot" /><view class="dot" /></view>
+      </view>
+      <view id="feed-end" class="feed-end" />
+    </view>
+  </scroll-view>
+
+  <view class="dock">
+    <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="chip-track">
+        <view wx:for="{{quickQuestions}}" wx:key="*this" class="chip" data-text="{{item}}" bindtap="onQuickQuestion" role="button">{{item}}</view>
+      </view>
+    </scroll-view>
+    <view class="composer">
+      <input class="composer-input" value="{{input}}" bindinput="onInput" bindconfirm="onSubmit" confirm-type="send" maxlength="300" placeholder="说说你的专业、年级和想找的比赛" aria-label="向助手提问" />
+      <button class="send" disabled="{{sending || !input}}" bindtap="onSubmit" aria-label="发送"><image src="/assets/send.svg" mode="aspectFit" aria-hidden="true" /></button>
+    </view>
+  </view>
+</view>

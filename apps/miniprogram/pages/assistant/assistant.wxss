@@ -1,0 +1,56 @@
+/* 赛事助手。颜色取 app.wxss 的全局变量；尺寸按设计稿（360px 宽）×2 换成 rpx */
+page { height: 100%; }
+.chat-page { height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.feed { flex: 1; min-height: 0; }
+.feed-inner { padding: 24rpx 24rpx 16rpx; display: flex; flex-direction: column; gap: 24rpx; }
+.feed-end { height: 8rpx; }
+
+.assistant-head { display: flex; align-items: center; gap: 16rpx; font-size: 24rpx; color: var(--muted); }
+.avatar { width: 52rpx; height: 52rpx; border-radius: 50%; background: var(--accent-soft); padding: 10rpx; box-sizing: border-box; }
+
+.row { display: flex; flex-direction: column; align-items: flex-start; gap: 12rpx; }
+.row-user { align-items: flex-end; }
+.bubble { max-width: 88%; padding: 18rpx 26rpx; border-radius: 28rpx; font-size: 28rpx; line-height: 1.6; word-break: break-all; }
+.bubble-bot { background: var(--surface); border: 1rpx solid var(--line); border-top-left-radius: 8rpx; }
+.bubble-user { background: var(--accent); color: #fff; border-top-right-radius: 8rpx; }
+.bubble-error { background: #fdeceb; border-color: transparent; }
+.ai-mark { font-size: 22rpx; color: var(--muted); padding-left: 8rpx; }
+
+/* 列表行卡片（设计稿 D 样式） */
+.result-card { align-self: stretch; background: var(--surface); border: 1rpx solid var(--line); border-radius: 28rpx; overflow: hidden; }
+.result-row { display: flex; align-items: center; gap: 20rpx; padding: 22rpx 24rpx 22rpx 28rpx; }
+.result-row + .result-row { border-top: 1rpx solid var(--line); }
+.result-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.result-name { font-size: 29rpx; font-weight: 600; line-height: 1.45; }
+.result-sub { font-size: 24rpx; color: var(--muted); }
+.days { color: var(--accent); }
+.days-soon { color: #d64545; }
+.bell { flex: none; width: 60rpx; height: 60rpx; border-radius: 50%; border: 1rpx solid var(--line); display: flex; align-items: center; justify-content: center; }
+.bell image { width: 32rpx; height: 32rpx; }
+.bell-on { border-color: var(--accent); background: var(--accent-soft); }
+.chev { flex: none; color: var(--muted); font-size: 36rpx; }
+.chev-accent { color: var(--accent); }
+.result-more { display: flex; align-items: center; gap: 16rpx; padding: 22rpx 24rpx 22rpx 28rpx; border-top: 1rpx solid var(--line); color: var(--accent); font-size: 26rpx; }
+.result-more text:first-child { flex: 1; }
+
+.options { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.option { margin: 0 !important; border: 1rpx solid var(--accent) !important; color: var(--accent) !important; background: var(--surface) !important; border-radius: 999rpx !important; font-size: 26rpx !important; padding: 0 26rpx !important; }
+.option[disabled] { opacity: .45; }
+.retry { margin: 0 !important; background: var(--surface) !important; border: 1rpx solid var(--line) !important; font-size: 26rpx !important; }
+
+.typing { display: flex; gap: 8rpx; padding: 24rpx 28rpx; }
+.dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.dot:nth-child(2) { animation-delay: .15s; }
+.dot:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+/* 底部：快捷问题 + 输入框 */
+.dock { flex: none; background: var(--surface); border-top: 1rpx solid var(--line); padding: 16rpx 24rpx calc(20rpx + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16rpx; }
+.chips { white-space: nowrap; }
+.chip-track { display: inline-flex; gap: 16rpx; }
+.chip { display: inline-block; padding: 10rpx 24rpx; border-radius: 999rpx; border: 1rpx solid var(--line); background: var(--bg); font-size: 25rpx; }
+.composer { display: flex; gap: 16rpx; align-items: center; }
+.composer-input { flex: 1; min-width: 0; height: 80rpx; padding: 0 24rpx; border-radius: 24rpx; border: 1rpx solid var(--line); background: var(--bg); font-size: 28rpx; }
+.send { flex: none; width: 80rpx !important; height: 80rpx; padding: 0 !important; margin: 0 !important; border-radius: 24rpx !important; background: var(--accent) !important; display: flex; align-items: center; justify-content: center; }
+.send[disabled] { background: var(--line) !important; }
+.send image { width: 38rpx; height: 38rpx; }

@@ -18,6 +18,7 @@ import fs from 'node:fs';
 const TOKEN_URL = 'https://api.weixin.qq.com/cgi-bin/token';
 const SESSION_URL = 'https://api.weixin.qq.com/sns/jscode2session';
 const SUBSCRIBE_URL = 'https://api.weixin.qq.com/cgi-bin/message/subscribe/send';
+const MSG_SEC_CHECK_URL = 'https://api.weixin.qq.com/wxa/msg_sec_check';
 
 // 微信给的 access_token 有效期 7200 秒。提前 5 分钟换，避免卡在过期边界上
 // 出现「刚判断还没过期、请求到微信那边已经过期」。
@@ -121,6 +122,24 @@ export class WeChatClient {
     if (payload.errcode) throw new Error(`wechat_subscribe_failed:${payload.errcode}:${payload.errmsg || ''}`);
     return payload;
   }
+
+  // 文本内容安全 2.0（官方文档：小程序安全 / 内容安全 / 文本内容安全识别）。
+  // 返回微信的原始结果 { errcode, errmsg, result:{ suggest, label }, detail, trace_id }。
+  async msgSecCheck({ openid, scene, version = 2, content }) {
+    const token = await this.accessToken();
+    const response = await this.request(`${MSG_SEC_CHECK_URL}?access_token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openid, scene, version, content }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error(`wechat_http_error:${response.status}`);
+    const payload = await response.json();
+    // 40001 / 42001 = token 无效或过期：清掉缓存，下次重新换；这一次照样算失败
+    if (payload.errcode === 40001 || payload.errcode === 42001) this.cachedToken = null;
+    if (payload.errcode) throw new Error(`wechat_msg_sec_check_failed:${payload.errcode}:${payload.errmsg || ''}`);
+    return payload;
+  }
 }
 
 // 装进 CloudBase 外壳的 openapi 位置，让 sendReminders 里
@@ -129,6 +148,10 @@ export function createOpenApi(client) {
   return {
     subscribeMessage: {
       send: options => client.sendSubscribeMessage(options),
+    },
+    // 赛事助手（assistant 云函数）检测用户提问和 AI 回答；写法和云开发的 cloud.openapi.security.msgSecCheck 一致
+    security: {
+      msgSecCheck: options => client.msgSecCheck(options),
     },
   };
 }

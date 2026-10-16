@@ -10,7 +10,8 @@
     "pages/my/my",
     "pages/profile/profile",
     "pages/preferences/preferences",
-    "pages/info/info"
+    "pages/info/info",
+    "pages/assistant/assistant"
   ],
   "lazyCodeLoading": "requiredComponents",
   "window": {

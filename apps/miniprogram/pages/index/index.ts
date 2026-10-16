@@ -93,6 +93,7 @@ Page({
   onShow() {
     if (takePreferenceSurveyRequest()) this.openPreferenceSurvey();
     this.refreshCompetitionPreferences();
+    this.applyAssistantFilters();
     this.refreshFavoriteState();
     const ready = getApp<any>().globalData.userDataReady;
     if (ready) ready.then(()=>{ this.refreshFavoriteState(); this.refreshCompetitionPreferences(); }).catch(()=>undefined);
@@ -327,7 +328,28 @@ Page({
   retry() { this.load(true); },
   openDetail(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` }); },
   // 赛事助手还没上线：先放入口，点了只提示（2026-10 改版，用户定）
-  openAssistant() { wx.showToast({ title: '赛事助手即将上线', icon: 'none' }); },
+  openAssistant() { wx.navigateTo({ url: '/pages/assistant/assistant' }); },
+  // 从赛事助手点“去找比赛页看全部”过来：换成助手用的那组条件（见 services/assistant.ts 的 filtersForIndexPage）。
+  // 只用一次，取走就清掉；没有带条件就什么都不做。
+  applyAssistantFilters() {
+    const app = getApp<any>();
+    const filters = app.globalData.assistantFilters;
+    if (!filters) return;
+    app.globalData.assistantFilters = null;
+    const categories: string[] = filters.competitionCategories || [];
+    this.setData({
+      keyword: filters.keyword, appliedKeyword: filters.keyword,
+      competitionCategories: categories,
+      professionIndex: categories.length === 1 ? Math.max(0, professionOptions.indexOf(categories[0])) : 0,
+      preferenceProvince: '',
+      region: filters.region, draftRegion: filters.region,
+      statusIndex: Math.max(0, statusOptions.indexOf(filters.registrationStatus)),
+      levelIndex: Math.max(0, levelOptions.indexOf(filters.eventLevel)),
+      participationFormat: filters.participationFormat, teamSizeCategory: '', feeType: filters.feeType, registrationOrganization: '',
+      registrationWithin: filters.registrationWithin, sortBy: filters.sortBy, sortOrder: '',
+      morePanelVisible: false,
+    }, () => { this.updateSelectedConditions(); this.load(true); });
+  },
   async toggleFavorite(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id || '');
     if (!id) return;

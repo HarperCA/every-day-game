@@ -58,12 +58,12 @@ function resultData<T>(response: any): T {
 // 后端已迁到自有服务器（见 docs/migration-to-self-hosted.md）。
 // wx.request 的目标域名必须先在微信公众平台登记「服务器域名」，
 // 且必须是 HTTPS——这是微信平台的硬性要求，和后端放在哪无关。
-function requestSelfHosted<T>(path: string, data: Record<string, unknown>, origin = API_BASE_URL): Promise<T> {
+function requestSelfHosted<T>(path: string, data: Record<string, unknown>, origin = API_BASE_URL, timeout = 15000): Promise<T> {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${origin}${path}`,
       method: 'POST',
-      timeout: 15000,
+      timeout,
       header: { 'content-type': 'application/json' },
       data,
       success(response: any) {
@@ -204,6 +204,29 @@ export async function callUserData<T>(action: string, payload: Record<string, un
   const response = await wx.cloud.callFunction({ name: 'userData', data: { ...payload, action } });
   if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
   return resultData<T>(response);
+}
+
+// 赛事助手（体验版）：只在自有服务器上，需要登录会话。服务器一轮最多 20 秒（模型最多调 3 次），客户端等 25 秒。
+// 会话过期时和 callUserData 一样：清掉旧会话，重新登录后再试一次。
+const ASSISTANT_TIMEOUT_MS = 25000;
+export async function callAssistant<T>(payload: Record<string, unknown>): Promise<T> {
+  if (!sessionReady) throw new Error('微信登录尚未完成');
+  const generation = loginGeneration;
+  const origin = FEEDBACK_API_BASE_URL;
+  const send = async () => {
+    const userSessionToken = await ensureServerUserSession(origin);
+    if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+    const result = await requestSelfHosted<T>('/api/assistant', { ...payload, action:'ask', userSessionToken }, origin, ASSISTANT_TIMEOUT_MS);
+    if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+    return result;
+  };
+  try { return await send(); }
+  catch (error) {
+    if (generation !== loginGeneration) throw new Error('账号已变化，请重新操作');
+    if (!(error instanceof Error) || error.message !== 'user_session_expired') throw error;
+    sessionFor(origin).token = '';
+    return send();
+  }
 }
 
 // 浏览赛事、搜索、看详情（公开数据，不需要身份）。
