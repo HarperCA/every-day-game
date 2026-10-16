@@ -106,7 +106,10 @@ const publishable = {
   feeType:'免费', registrationOrganization:'自行报名', registrationUrl:'https://example.com/register',
   schedule:{ registration_start:'2026-08-01T00:00:00.000Z', registration_end:'2026-09-30T00:00:00.000Z', status_override:null },
   recommendation:{ recommendation:'值得参加', reasons:[] }, lastVerifiedAt:'2026-08-30T00:00:00.000Z',
-  sources:[{ id:'source-1', source_type:'authority_notice', is_official:true, validity_status:'valid', url:'https://example.com/notice' }],
+  sources:[{ id:'source-1', source_type:'authority_notice', is_official:true, validity_status:'valid', url:'https://example.com/notice',
+    last_verified_at:'2026-08-30T00:00:00Z', title:'测试竞赛正式通知', content_summary:'说明当届赛事和报名安排',
+    evidence_excerpt:'测试竞赛报名时间为2026年8月1日至9月30日', supports_fields:['赛事名称','报名时间'],
+    review_reason:'人工已核对主办方当届通知' }],
   dataStatus:'published', systemValidation:'passed', manualReview:'passed',
 };
 const at = new Date('2026-08-31T00:00:00.000Z');

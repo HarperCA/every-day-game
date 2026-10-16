@@ -28,6 +28,17 @@ describe('找同名的已有记录', () => {
   it('隔离的也找得出来（调用方据此不新增，但不改它）', () => {
     expect(findSameNameRecord('某某大学生创新大赛', records)?.dataStatus).toBe('quarantined');
   });
+  it('明确不同届或不同年份时不能把新届只当成旧届的新来源', () => {
+    const old = record('old', '挑战杯全国大学生课外学术科技作品竞赛', {
+      editionName:'第十九届挑战杯全国大学生课外学术科技作品竞赛（2025）',
+      editionYear:'2025', editionOrdinal:'第十九届',
+    });
+    expect(findSameNameRecord('第二十届挑战杯全国大学生课外学术科技作品竞赛（2026）', [old])).toBeNull();
+    expect(findSameNameRecord(old.name, [old], { name:old.name, editionYear:'2026' })).toBeNull();
+    expect(findSameNameRecord(old.name, [old], { name:old.name, editionOrdinal:'第二十届' })).toBeNull();
+    expect(findSameNameRecord(old.name, [old], { name:old.name, editionYear:'2025', editionOrdinal:'第十九届' })?.id).toBe('old');
+    expect(findSameNameRecord(old.name, [old], { name:old.name, editionYear:'2025', editionOrdinal:'第19届' })?.id).toBe('old');
+  });
 });
 
 describe('补来源', () => {

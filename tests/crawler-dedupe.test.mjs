@@ -163,6 +163,13 @@ describe('classification buckets', () => {
     expect(buckets.new).toHaveLength(1);
     expect(buckets.invalid).toHaveLength(1);
   });
+  it('deduplicates the same URL within one source batch', () => {
+    const first = { externalId:'one', name:'全国大学生示例竞赛', detailUrl:'https://example.org/contest/' };
+    const second = { externalId:'two', name:'第十届全国大学生示例竞赛', detailUrl:'http://www.example.org/contest' };
+    const buckets = classifyCandidates([first, second], []);
+    expect(buckets.new.map(item => item.candidate.externalId)).toEqual(['one']);
+    expect(buckets.duplicate.map(item => item.candidate.externalId)).toEqual(['two']);
+  });
 });
 
 // 2026-10-01：通知正文里写出的官网只按网址判重

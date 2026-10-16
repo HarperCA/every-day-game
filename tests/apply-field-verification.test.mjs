@@ -16,23 +16,25 @@ function draftRecord(overrides = {}) {
 
 const now = new Date('2026-09-19T00:00:00.000Z');
 
-describe('applyFieldVerification — auto-correcting a fresh draft, not just noting the problem', () => {
-  it('auto-publishes when all three checks pass and professions are confident', () => {
+describe('applyFieldVerification — AI suggestions remain pending human evidence review', () => {
+  it('keeps a draft and unverified sources even when all three AI checks pass', () => {
     const verification = {
       all_correct: true, name_correct: true,
       registration_start_status: 'confirmed_correct', registration_end_status: 'confirmed_correct', registration_url_correct: true,
       professions_confident: true, professions: ['计算机与AI'],
     };
     const result = applyFieldVerification(draftRecord(), verification, now);
-    expect(result.dataStatus).toBe('published');
-    expect(result.manualReview).toBe('passed');
-    expect(result.sources[0].is_official).toBe(true);
-    expect(result.sources[0].validity_status).toBe('valid');
+    expect(result.dataStatus).toBe('draft');
+    expect(result.manualReview).toBe('pending');
+    expect(result.systemValidation).toBe('not_run');
+    expect(result.sources[0].is_official).toBe(false);
+    expect(result.sources[0].validity_status).toBe('unchecked');
+    expect(result.qualityIssues.join()).toContain('人工对照官方原文');
   });
 
-  it('applies a usable correction and still auto-publishes — this is the actual fix, not just a note', () => {
+  it('applies a usable draft correction without granting publication approval', () => {
     // 实测场景：天池链接读到正文后，名称/链接/截止时间都对，只有开始时间不对，
-    // 但 Kimi 给出了具体的修正值——这种情况不该卡在草稿等人工，应该直接改上去发布。
+    // Kimi 给出了具体的修正值，但还需核实是否为该届次的官方原文。
     const verification = {
       all_correct: false,
       name_correct: true,
@@ -42,14 +44,14 @@ describe('applyFieldVerification — auto-correcting a fresh draft, not just not
       professions_confident: true, professions: ['计算机与AI'],
     };
     const result = applyFieldVerification(draftRecord(), verification, now);
-    expect(result.dataStatus).toBe('published');
+    expect(result.dataStatus).toBe('draft');
     expect(result.schedule.registration_start).toBe('2026-07-19T00:00:00.000Z');
-    expect(result.manualReviewReason).toContain('自动修正');
+    expect(result.manualReview).toBe('pending');
   });
 
   // 用户明确要求的行为：不是一定要有报名时间，只要知道有这个比赛、即将
   // 报名就可以了——来源没写日期不该拦住发布，应该落回"时间待公布"。
-  it('publishes with the date cleared to "pending announcement" when the source never mentions it, instead of staying stuck', () => {
+  it('keeps the date as pending announcement when the source does not mention it', () => {
     const verification = {
       all_correct: true, name_correct: true,
       registration_start_status: 'not_specified', registration_end_status: 'not_specified',
@@ -57,7 +59,7 @@ describe('applyFieldVerification — auto-correcting a fresh draft, not just not
       professions_confident: true, professions: ['计算机与AI'],
     };
     const result = applyFieldVerification(draftRecord(), verification, now);
-    expect(result.dataStatus).toBe('published');
+    expect(result.dataStatus).toBe('draft');
     expect(result.schedule.registration_start).toBeNull();
     expect(result.schedule.registration_end).toBeNull();
     expect(result.schedule.pending_announcement).toBe(true);
@@ -71,7 +73,7 @@ describe('applyFieldVerification — auto-correcting a fresh draft, not just not
       professions_confident: true, professions: ['计算机与AI'],
     };
     const result = applyFieldVerification(draftRecord(), verification, now);
-    expect(result.dataStatus).toBe('published');
+    expect(result.dataStatus).toBe('draft');
     expect(result.schedule.registration_start).toBeNull();
     expect(result.schedule.registration_end).toBe('2026-09-01T00:00:00.000Z');
     expect(result.schedule.pending_announcement).toBe(false);
@@ -86,7 +88,7 @@ describe('applyFieldVerification — auto-correcting a fresh draft, not just not
       professions_confident: true, professions: ['计算机与AI'],
     };
     const result = applyFieldVerification(draftRecord(), verification, now);
-    expect(result.dataStatus).toBe('published');
+    expect(result.dataStatus).toBe('draft');
     expect(result.name).toBe('第二届某某挑战赛');
   });
 
@@ -110,6 +112,18 @@ describe('applyFieldVerification — auto-correcting a fresh draft, not just not
     const record = draftRecord({sources:[...draftRecord().sources,{id:'notice',url:'https://school.edu/notice',source_type:'discovery_notice',is_official:false,validity_status:'unchecked'}]});
     const result = applyFieldVerification(record, verification, now);
     expect(result.sources[1]).toMatchObject({source_type:'discovery_notice',is_official:false,validity_status:'unchecked'});
+  });
+
+  it('keeps a school notice and an AI-suggested registration URL as unverified evidence', () => {
+    const record = draftRecord({sources:[{id:'school',url:'https://school.edu/notice',source_type:'school_notice',is_official:false,validity_status:'unchecked'}]});
+    const verification = {name_correct:true,registration_start_status:'not_specified',registration_end_status:'not_specified',registration_url_correct:false,
+      registration_url_correction:'https://organizer.example/entry',professions_confident:true,professions:['计算机与AI'],source_scope:'school_notice',
+      evidence_status:[{url:'https://school.edu/notice',status:'reachable',chars:1000}]};
+    const result = applyFieldVerification(record,verification,now);
+    expect(result.dataStatus).toBe('draft');
+    expect(result.registrationUrl).toBe('https://organizer.example/entry');
+    expect(result.sources[0]).toEqual(record.sources[0]);
+    expect(result.qualityIssues.join()).toContain('来源是否为赛事主办方');
   });
 
   it('stays a draft when professions cannot be confidently assigned, even if the three checks pass', () => {

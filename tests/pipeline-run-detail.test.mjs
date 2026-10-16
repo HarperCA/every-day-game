@@ -27,6 +27,24 @@ const files = {
   'ingest-report.json':{ added:0, failureReasons:{ '标题不是一场具体比赛':1 } },
 };
 
+describe('判重跳过：区分“已在库”和“近 30 天处理过”', () => {
+  const rowOf = (extra, url = 'https://a/1') => composeRunDetail('2026-10-03T17-00-00-653Z', { ...files, ...extra }).rows.find(row => row.url === url);
+  it('网址在近 30 天处理清单里：写明处理过及原因，不说成已在库', () => {
+    const row = rowOf({ 'memory-skipped.json':{ skipped:[{ url:'http://www.a/1/', reason:'已追溯上级赛事：某大赛', stage:'通知追溯' }] } }, 'https://a/1');
+    expect(row.final).toBe('判重跳过：近 30 天已处理过（已追溯上级赛事：某大赛），本轮不再处理');
+    expect(row.dup).toBe('近 30 天已处理过');
+  });
+  it('有清单但这条不在里面：确实是和库里重名', () => {
+    const row = rowOf({ 'memory-skipped.json':{ skipped:[] } });
+    expect(row.reason).toBe('判重时与库里已有赛事重名或疑似重名，本轮跳过');
+  });
+  it('老运行记录没有清单：只说两种可能，不下结论', () => {
+    const row = rowOf({});
+    expect(row.reason).toContain('近 30 天处理过的网址');
+    expect(row.reason).toContain('没有保存具体原因');
+  });
+});
+
 describe('单轮抓取明细', () => {
   const detail = composeRunDetail('2026-09-28T17-00-00-614Z', files);
   const byUrl = Object.fromEntries(detail.rows.map(row => [row.url, row]));
@@ -81,7 +99,7 @@ describe('每条比赛的路径与流程图', () => {
     expect(path(byUrl['https://a/4'])).toBe('search:ok > dedupe:new > rule:pass > jev:fetch > read:ok > extract:ok > same_name:new > scope:pass > gate:written > end_written:');
     expect(byUrl['https://a/4'].trail.find(entry => entry.n === 'gate').note).toContain('归档');
     expect(byUrl['https://f/1']).toMatchObject({ source:'通知追溯', final:'读了详情页，未入库：发现时已过报名截止时间' });
-    expect(path(byUrl['https://f/1'])).toBe('trace:found > followup:read > read:ok > extract:ok > same_name:new > scope:pass > gate:skip > end_scope:');
+    expect(path(byUrl['https://f/1'])).toBe('trace:found > read:ok > extract:ok > same_name:new > scope:pass > gate:skip > end_scope:');
   });
   it('读取失败、判重跳过、前置筛选各自落在对应的结束环节', () => {
     expect(path(byUrl['https://a/5'])).toBe('search:ok > dedupe:new > rule:pass > jev:fetch > read:fail > end_readfail:');
@@ -101,7 +119,7 @@ describe('每条比赛的路径与流程图', () => {
     expect(node('end_written').in).toBe(1);
     expect(edge('read>extract')).toBe(2);
     // 从“通知追溯”出来的页面连线（虚拟路径）算连线，但不算追溯环节处理了它
-    expect(edge('trace>followup')).toBeGreaterThanOrEqual(1);
+    expect(edge('trace>read')).toBeGreaterThanOrEqual(1);
     expect(node('trace').in).toBe(detail.rows.filter(row => row.trail.some(entry => entry.n === 'trace' && !entry.virtual)).length);
   });
   it('老的运行没有入库明细时不报错，按原来的判断显示', () => {
@@ -169,10 +187,12 @@ describe('通知追溯没找到的几种原因、追溯页面没读的几种原�
     expect(finalOf('https://n/5')).toBe('追溯没找到（标题提不出合法赛事名，没搜）');
   });
   it('追溯页面没读：把握低 / 通知类 / 新闻 / 重复，各有各的出口', () => {
-    expect(stepOf('https://o/1', 'followup')).toBe('skip_low');
-    expect(stepOf('https://o/2', 'followup')).toBe('skip_notice');
-    expect(stepOf('https://o/3', 'followup')).toBe('skip_news');
-    expect(stepOf('https://o/4', 'followup')).toBe('skip_dup');
+    // 2026-10-10 起“追溯页面筛选”并进 AI 代理：没读的页面从“AI 代理”直接到“找到后不读”
+    expect(stepOf('https://o/1', 'trace')).toBe('skip_low');
+    expect(stepOf('https://o/2', 'trace')).toBe('skip_notice');
+    expect(stepOf('https://o/3', 'trace')).toBe('skip_news');
+    expect(stepOf('https://o/4', 'trace')).toBe('skip_dup');
+    expect(detail.rows.find(row => row.url === 'https://o/4').trail.at(-1).n).toBe('end_trace_skip');
   });
   it('图上各出口的数字对得上', () => {
     const trace = detail.flow.nodes.find(node => node.id === 'trace');

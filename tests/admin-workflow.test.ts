@@ -13,11 +13,16 @@ const validRecord = {
   fees: '不收取报名费',
   registrationOrganization: '自行报名',
   registrationMethod: '参赛者通过官网报名',
+  participants: '在校大学生',
   registrationUrl: 'https://example.com/register',
+  schedule: {registration_start:'2026-08-01', registration_end:'2026-09-30', pending_announcement:false},
   lastVerifiedAt: '2026-08-21T00:00:00.000Z',
   professions: ['计算机与AI'],
   qualityIssues: [],
-  sources: [{ is_official: true, url: 'https://example.com/notice', validity_status:'valid' }],
+  sources: [{ id:'source-1', source_type:'authority_notice', is_official: true, url: 'https://example.com/notice', validity_status:'valid',
+    last_verified_at:'2026-08-21T00:00:00Z', title:'测试竞赛正式通知', content_summary:'说明当届赛事与报名日期',
+    evidence_excerpt:'测试竞赛报名时间为2026年8月1日至9月30日', supports_fields:['赛事名称','届次','报名开始时间'],
+    review_reason:'人工已核对主办方当届通知' }],
   systemValidation: 'not_run',
   manualReview: 'pending',
   recommendation: { published_cache: false },
@@ -83,5 +88,38 @@ describe('admin review and publish workflow', () => {
   it('builds and normalizes a stable profession catalog', () => {
     expect(buildProfessionCatalog([{ professions: ['电子信息', '计算机与AI'] }, { professions: ['计算机与AI'] }])).toEqual(['电子信息', '计算机与AI']);
     expect(normalizeProfessions([' 计算机与AI ', '', '计算机与AI', '经管与商科'])).toEqual(['计算机与AI', '经管与商科']);
+  });
+
+  it('matches server publication requirements for scope and official source identity', () => {
+    const reviewed = { ...validRecord, systemValidation:'passed', manualReview:'passed' };
+    expect(getPublishBlockers({...reviewed, name:'某省中小学生编程竞赛'})).toContain('赛事范围不符合大学生竞赛要求');
+    expect(getPublishBlockers({...reviewed, sources:[{is_official:true, source_type:'authority_notice', validity_status:'valid', url:'https://example.com'}]}))
+      .toContain('缺少已核验有效的官方来源');
+  });
+
+  it('blocks an official-looking URL without reviewed source content or with another edition ID', () => {
+    const reviewed = { ...validRecord, systemValidation:'passed', manualReview:'passed' };
+    const source = validRecord.sources[0];
+    expect(getPublishBlockers({...reviewed, sources:[{...source, evidence_excerpt:''}]})).toContain('缺少已核验有效的官方来源');
+    expect(getPublishBlockers({...reviewed, sources:[{...source, edition_id:'another-edition'}]})).toContain('缺少已核验有效的官方来源');
+  });
+
+  it('blocks missing, invalid and reversed registration dates before publishing', () => {
+    const reviewed = { ...validRecord, systemValidation:'passed', manualReview:'passed' };
+    expect(getPublishBlockers({...reviewed, schedule:null})).toContain('缺少时间安排记录');
+    expect(getSystemReviewIssues({...validRecord, schedule:{registration_start:'2026-02-30', registration_end:'2026-03-01'}}))
+      .toContain('报名开始时间格式无效');
+    expect(getPublishBlockers({...reviewed, schedule:{registration_start:'2026-10-04', registration_end:'2026-10-03'}}))
+      .toContain('报名开始时间晚于报名截止时间');
+    expect(getPublishBlockers({...reviewed, schedule:{registration_start:null, registration_end:null, pending_announcement:false}}))
+      .toContain('报名起止时间均缺失，请核实或说明尚未公布');
+  });
+
+  it('keeps an old pending-date issue until a valid official source supports that field', () => {
+    const reviewed = { ...validRecord, systemValidation:'passed', manualReview:'passed', qualityIssues:['registration_end_pending'] };
+    expect(getPublishBlockers(reviewed)).toContain('报名截止时间待官方确认');
+    const withEvidence = {...reviewed, sources:[{...validRecord.sources[0], supports_fields:['报名截止时间']}]};
+    expect(getPublishBlockers(withEvidence)).toEqual([]);
+    expect(getSystemReviewIssues(withEvidence)).toEqual([]);
   });
 });

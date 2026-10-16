@@ -67,6 +67,19 @@ describe('competition AI review', () => {
     await expect(pending).resolves.toHaveLength(2);
   });
 
+  it('reads official sources first and up to five, so an official notice listed last is not skipped', async () => {
+    const read = [];
+    const request = url => {
+      if (url.endsWith('/robots.txt')) return Promise.resolve({ ok:false, status:404, headers:{ get:() => '' }, text:async () => '' });
+      read.push(url);
+      return Promise.resolve({ ok:true, headers:{ get:() => 'text/html' }, text:async () => '<p>x</p>' });
+    };
+    const school = n => ({ url:`https://school${n}.example/`, is_official:false, validity_status:'valid' });
+    await collectEvidence({ sources:[school(1), school(2), school(3), school(4), school(5), { url:'https://gov.example/', is_official:true, validity_status:'valid' }] }, request);
+    expect(read).toHaveLength(5);
+    expect(read[0]).toBe('https://gov.example/');
+  });
+
   it('prefers an injected request client over the runtime default', () => {
     const injected = () => {};
     expect(resolveRequest(injected)).toBe(injected);

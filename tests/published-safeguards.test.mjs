@@ -43,8 +43,10 @@ describe('已发布赛事：AI 身份结论只标记，不隔离', () => {
     expect(clean.needsManualReview).toBe(false);
   });
 
-  it('草稿照旧隔离', () => {
-    expect(isolateMisimport({ ...published, dataStatus:'draft', aiReview:identityReview }, now).dataStatus).toBe('quarantined');
+  it('草稿也不再隔离，留着身份问题交给处置代理（2026-10-09 起）', () => {
+    const draft = isolateMisimport({ ...published, dataStatus:'draft', aiReview:identityReview }, now);
+    expect(draft.dataStatus).toBe('draft');
+    expect(draft.aiReview).toEqual(identityReview);
   });
 });
 

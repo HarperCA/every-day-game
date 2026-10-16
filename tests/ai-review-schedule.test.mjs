@@ -139,3 +139,35 @@ describe('field verification scheduling', () => {
     expect(nextFieldVerificationFailureMark({ fieldVerificationFailure:first }, 'again', new Date(NOW)).count).toBe(2);
   });
 });
+
+
+describe('unresolved Kimi decision recovery queue',()=>{
+ const failed={id:'failed-today',dataStatus:'published',aiReview:{decision:'needs_changes',reviewed_at:daysAgo(0)}};
+ it('selects a recent unresolved rejection before stale routine work',()=>{
+ expect(selectStaleRecords([{id:'never'},failed],{now:NOW,limit:1}).map(x=>x.id)).toEqual([failed.id]);
+ });
+ it('respects infrastructure backoff on the recovery queue',()=>{
+ expect(selectStaleRecords([{...failed,aiReviewFailure:{count:1,lastAt:daysAgo(0)}}],{now:NOW})).toEqual([]);
+ expect(selectStaleRecords([{...failed,fieldVerificationFailure:{count:1,lastAt:daysAgo(0)}}],{now:NOW})).toEqual([]);
+ });
+ it('does not resolve an old rejection already cleared by the agent',()=>{
+ expect(selectStaleRecords([{...failed,aiResolution:{outcome:'published',reviewed_at:daysAgo(0)}}],{now:NOW})).toEqual([]);
+ });
+ it('does not rerun the agent on a kept draft until seven days after the agent ran',()=>{
+ const oldFailure={...failed,dataStatus:'draft',aiReview:{decision:'insufficient_evidence',reviewed_at:daysAgo(12)}};
+ expect(selectStaleRecords([{...oldFailure,aiResolution:{outcome:'draft',reviewed_at:daysAgo(1)}}],{now:NOW})).toEqual([]);
+ expect(selectStaleRecords([{...oldFailure,aiResolution:{outcome:'draft',reviewed_at:daysAgo(8)}}],{now:NOW})).toHaveLength(1);
+ });
+ it('accepts a later successful independent official field review',()=>{
+ expect(selectStaleRecords([{...failed,fieldVerification:{all_correct:true,source_scope:'official',reviewed_at:daysAgo(0)}}],{now:NOW})).toEqual([]);
+ expect(selectStaleRecords([{...failed,fieldVerification:{all_correct:true,source_scope:'school_notice',reviewed_at:daysAgo(0)}}],{now:NOW})).toHaveLength(1);
+ });
+ it('accepts a later explicit human review, not an automated timestamp update',()=>{
+ const corrected={...failed,manualReview:'passed',reviewedAt:daysAgo(0),updatedBy:'super_admin'};
+ expect(selectStaleRecords([corrected],{now:NOW})).toEqual([]);
+ expect(selectStaleRecords([{...corrected,updatedBy:'kimi-scheduled-review'}],{now:NOW})).toHaveLength(1);
+ });
+ it('does not accept an older success as resolving a newer failed assessment',()=>{
+ expect(selectStaleRecords([{...failed,fieldVerification:{all_correct:true,source_scope:'official',reviewed_at:daysAgo(1)}}],{now:NOW})).toHaveLength(1);
+ });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocate, buildPlan, normalizeName, planGapQueries, planProbeQueries, planTraceTargets, queryBytes, updateCooldown, NOTICE_FOLLOWUP_CALLS } from '../scripts/server/search-plan.mjs';
+import { allocate, buildPlan, normalizeName, planGapQueries, planProbeQueries, planTraceTargets, queryBytes, updateCooldown, NOTICE_FOLLOWUP_CALLS, DEFAULT_BUDGET } from '../scripts/server/search-plan.mjs';
 import { nextTask, pickLeads } from '../scripts/server/trace-drafts.mjs';
 import { queriesFromPlan } from '../scripts/server/search-baidu.mjs';
 
@@ -9,6 +9,8 @@ const official = [{ url:'https://org.cn/notice', source_type:'organizer_notice',
 describe('次日搜索计划', () => {
   it('按 60/25/15 分配额度，合计等于总额度', () => {
     expect(allocate(45)).toEqual({ 追溯线索与主办方监测:27, 覆盖空白:11, 新词试探:7 });
+    // 2026-10-10：自动任务每天最多 30 次百度，全部给细分专业（allocate 只在关掉 ALL_TO_MAJORS 时用）
+    expect(DEFAULT_BUDGET).toBe(30);
     expect(Object.values(allocate(50)).reduce((a, b) => a + b, 0)).toBe(50);
   });
 
@@ -80,12 +82,14 @@ describe('次日搜索计划', () => {
 
   it('整份计划不超额度，搜索脚本能读出查询和路线', () => {
     const records = Array.from({ length:40 }, (_, i) => ({ id:`r${i}`, name:`测试竞赛${i}`, dataStatus:'draft', sources:[] }));
-    const plan = buildPlan({ records, directoryEntries:[{ name:'湖南省大学生物理竞赛', list:'湖南省' }], state:{ queries:{} }, now, budget:45 });
-    expect(plan.trace.drafts).toHaveLength(27 - NOTICE_FOLLOWUP_CALLS);
-    expect(NOTICE_FOLLOWUP_CALLS + plan.trace.drafts.length + plan.search.length + plan.unused).toBe(45);
+    const plan = buildPlan({ records, directoryEntries:[{ name:'湖南省大学生物理竞赛', list:'湖南省' }], state:{ queries:{} }, now, budget:30 });
+    // 2026-10-10 起 30 次全给细分专业：不分记录追溯、新词试探，通知追溯代理不用百度
+    expect(NOTICE_FOLLOWUP_CALLS).toBe(0);
+    expect(plan.trace.drafts).toHaveLength(0);
+    expect(NOTICE_FOLLOWUP_CALLS + plan.trace.drafts.length + plan.search.length + plan.unused).toBe(30);
     const queries = queriesFromPlan(plan);
-    expect(queries.every(q => ['覆盖空白', '新词试探'].includes(q.route))).toBe(true);
-    expect(queries.find(q => q.route === '新词试探').query).toContain('湖南省大学生物理竞赛');
+    expect(queries).toHaveLength(30);
+    expect(queries.every(q => q.route === '覆盖空白')).toBe(true);
   });
 });
 
@@ -115,5 +119,40 @@ describe('记录追溯', () => {
     expect(Date.parse(failed.nextCheckAt) - now.getTime()).toBe(86400000);
     expect(failed.leads).toHaveLength(1);
     expect(failed.firstAttemptAt).toBe(found.firstAttemptAt);
+  });
+});
+
+describe('细分专业轮换（2026-10-10 用户定：门类人数少的先，同门类新增→特设→基本）', async () => {
+  const { planMajorQueries, loadMajors, majorQuery, orderMajors, buildPlan } = await import('../scripts/server/search-plan.mjs');
+  const majors = loadMajors();
+  const now = new Date('2026-10-11T00:30:00+08:00');
+  it('词库是教育部 2026 年目录的 883 个专业，其中今年新增 38 个', () => {
+    expect(majors).toHaveLength(883);
+    expect(majors.filter(m => m.new2026)).toHaveLength(38);
+    expect(majors.find(m => m.code === '0502106TK')).toMatchObject({ name:'计算语言学', new2026:true });
+  });
+  it('门类在校生人数从少到多：交叉学科（无统计）→ 哲学 → 历史学 …… 工学最后', () => {
+    const gates = [...new Set(orderMajors(majors).map(m => m.gate))];
+    expect(gates.slice(0, 4)).toEqual(['交叉学科', '哲学', '历史学', '农学']);
+    expect(gates.at(-1)).toBe('工学');
+  });
+  it('同一门类里先今年新增，再特设（T），最后基本专业', () => {
+    const law = orderMajors(majors).filter(m => m.gate === '法学');
+    const tier = m => m.new2026 ? 0 : /T/.test(m.code) ? 1 : 2;
+    expect(law.map(tier)).toEqual([...law.map(tier)].sort((a, b) => a - b));
+    expect(tier(law[0])).toBe(0);
+    expect(tier(law.at(-1))).toBe(2);
+  });
+  it('每晚 30 个，每个专业一次，30 天内不重复，搜索词不超长', () => {
+    const first = planMajorQueries(majors, 30, { queries:{} }, now, 2026);
+    expect(first).toHaveLength(30);
+    expect(new Set(first.map(item => item.query)).size).toBe(30);
+    expect(first[0].query).toBe('具身智能 大学生 竞赛 2026 报名'); // 交叉学科里今年新增的排前面
+    for (const item of first) expect(Buffer.byteLength(item.query.replace(/[^ -]/g, 'xx'))).toBeLessThanOrEqual(72);
+    const state = { queries:Object.fromEntries(first.map(item => [item.query, { lastRunAt:'2026-10-10T17:00:00Z' }])) };
+    const second = planMajorQueries(majors, 30, state, now, 2026);
+    expect(second.some(item => first.some(f => f.query === item.query))).toBe(false);
+    const old = { queries:{ [majorQuery('具身智能', 2026)]:{ lastRunAt:'2026-09-01T00:00:00Z' } } };
+    expect(planMajorQueries(majors, 1, old, now, 2026)[0].major).toBe('具身智能');
   });
 });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { appendAuditEntry, loadAuditEntries } from '../apps/admin/src/dataStore';
-import { changedOperationFields, loadAiJobs, loadFeedbacks, persistAiJobs, persistFeedbacks, validateAiJobRecord, validateFeedbackRecord } from '../apps/admin/src/operationsStore';
+import { changedOperationFields, hydrateOperationStores, loadAiJobs, loadFeedbacks, persistAiJobs, persistFeedbacks, validateAiJobRecord, validateFeedbackRecord } from '../apps/admin/src/operationsStore';
 
 const values = new Map<string,string>();
 
@@ -16,6 +16,12 @@ beforeEach(() => {
 });
 
 describe('admin operation stores', () => {
+  it('keeps server empty feedback and AI queues empty after login',()=>{
+    expect(loadFeedbacks().length).toBeGreaterThan(0);
+    hydrateOperationStores([],[]);
+    expect(loadFeedbacks()).toEqual([]);
+    expect(loadAiJobs()).toEqual([]);
+  });
   it('persists feedback review state', () => {
     const feedbacks = loadFeedbacks();
     expect(feedbacks.some(item=>item.status==='ai_passed')).toBe(true);
@@ -43,7 +49,8 @@ describe('admin operation stores', () => {
     const edited = { ...original, content:'报名截止时间应以赛区最新通知为准。', evidenceUrl:'https://example.com/notice' };
     expect(validateFeedbackRecord(edited)).toEqual([]);
     expect(changedOperationFields(original,edited,['content','evidenceUrl','status'])).toEqual(['content','evidenceUrl']);
-    expect(validateFeedbackRecord({ ...edited, content:'短', evidenceUrl:'invalid' })).toEqual(expect.arrayContaining(['纠错内容至少填写5个字','证据链接必须以 http:// 或 https:// 开头']));
+    expect(validateFeedbackRecord({...edited,content:'短'})).toEqual([]);
+    expect(validateFeedbackRecord({ ...edited, content:' ', evidenceUrl:'invalid' })).toEqual(expect.arrayContaining(['纠错内容不能为空','证据链接必须以 http:// 或 https:// 开头']));
   });
 
   it('validates editable AI retry configuration before persistence', () => {

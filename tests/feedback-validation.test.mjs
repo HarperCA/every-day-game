@@ -17,7 +17,8 @@ describe('feedback cloud validation', () => {
 
   it('rejects invalid categories, short content and unsafe evidence URLs', () => {
     expect(() => validateFeedbackInput({ editionId:'e1', competitionName:'赛事', category:'unknown', content:'报名截止时间需要复核。' })).toThrow('invalid_category');
-    expect(() => validateFeedbackInput({ editionId:'e1', competitionName:'赛事', category:'time', content:'太短' })).toThrow('invalid_content_length');
+    expect(validateFeedbackInput({ editionId:'e1', competitionName:'赛事', category:'time', content:'错' }).content).toBe('错');
+    expect(() => validateFeedbackInput({ editionId:'e1', competitionName:'赛事', category:'time', content:'  ' })).toThrow('invalid_content');
     expect(() => validateFeedbackInput({ editionId:'e1', competitionName:'赛事', category:'time', content:'报名截止时间需要复核。', evidenceUrl:'javascript:alert(1)' })).toThrow('invalid_evidence_url');
   });
 });

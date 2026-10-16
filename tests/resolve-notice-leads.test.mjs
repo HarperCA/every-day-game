@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { competitionNameFromNotice, coreMatches, selectLeads, followupCandidatesFromReport } from '../scripts/server/resolve-notice-leads.mjs';
+import { competitionNameFromNotice, coreMatches, selectLeads, followupCandidatesFromReport, noticeFollowupCompleted } from '../scripts/server/resolve-notice-leads.mjs';
+
+it('counts an official URL found in a notice snippet as a completed followup', () => {
+  expect(noticeFollowupCompleted({ leads:[{ url:'https://contest.example.org/', fromNoticeText:true }], pageVisit:{ found:0 } })).toBe(true);
+  expect(noticeFollowupCompleted({ leads:[], pageVisit:{ found:0 } })).toBe(false);
+});
 
 describe('formal notice leads', () => {
   it('extracts the actual contest name from a nested notice title', () => {

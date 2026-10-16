@@ -30,9 +30,36 @@ describe('public competition query', () => {
   it('refreshes time-based status when records are read', () => {
     expect(currentRegistrationStatus({ registration_start:'2026-09-10T00:00:00Z' }, new Date('2026-08-31T00:00:00Z'))).toBe('即将报名');
     expect(currentRegistrationStatus({ registration_status_override:'时间待公布', registration_start:'2026-01-01T00:00:00Z' })).toBe('时间待公布');
+    expect(currentRegistrationStatus({ registration_status_override:'报名中', registration_end:'2026-09-30' }, new Date('2026-10-04T00:00:00Z'))).toBe('已截止');
     // 只有截止日期的往届：截止已过是已截止，未过才是时间待公布
     expect(currentRegistrationStatus({ registration_end:'2025-03-31T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('已截止');
     expect(currentRegistrationStatus({ registration_end:'2026-10-10T23:59:59+08:00' }, new Date('2026-09-24T00:00:00Z'))).toBe('时间待公布');
+  });
+
+  it('已开始、没有统一截止日：算报名中；比赛已开始或已结束的不算', () => {
+    const now = new Date('2026-10-09T00:00:00Z');
+    expect(currentRegistrationStatus({ registration_start:'2026-06-02T00:00:00+08:00' }, now)).toBe('报名中');
+    expect(currentRegistrationStatus({ registration_start:'2026-06-02', competition_start:'2026-11-01' }, now)).toBe('报名中');
+    expect(currentRegistrationStatus({ registration_start:'2026-06-02', competition_start:'2026-09-01' }, now)).toBe('时间待公布');
+    // 2026-10-10：没有报名截止日、比赛结束日已过的算已截止（会被归档），报名开始为空也一样
+    expect(currentRegistrationStatus({ registration_start:'2026-06-02', competition_end:'2026-10-01' }, now)).toBe('已截止');
+    expect(currentRegistrationStatus({ competition_start:'2026-09-22', competition_end:'2026-09-27' }, now)).toBe('已截止');
+    expect(currentRegistrationStatus({ registration_start:'2025-12-17', competition_start:'2026-04-12', competition_end:'2026-04-12' }, now)).toBe('已截止');
+    // 比赛结束日当天（北京时间）还没过完，仍算报名中
+    expect(currentRegistrationStatus({ registration_start:'2026-06-02', competition_end:'2026-10-09' }, now)).toBe('报名中');
+  });
+
+  it('keeps a date-only deadline open through the Beijing calendar day', () => {
+    const item = { registration_start:'2026-10-01', registration_end:'2026-10-03' };
+    expect(currentRegistrationStatus(item, new Date('2026-10-03T15:59:59.000Z'))).toBe('报名中');
+    expect(currentRegistrationStatus(item, new Date('2026-10-03T16:00:00.000Z'))).toBe('已截止');
+    expect(currentRegistrationStatus({ registration_start:'2026-10-01' }, new Date('2026-10-02T00:00:00Z'))).toBe('报名中');
+  });
+
+  it('never puts an archived edition in the open-registration filter', () => {
+    const item = {...base, id:'archived', data_status:'archived', registration_start:'2026-10-01', registration_end:'2026-10-31', search_text:'归档赛事'};
+    expect(currentRegistrationStatus(item, new Date('2026-10-03T00:00:00Z'))).toBe('已截止');
+    expect(filterPublicRecords([item], {registrationStatus:'报名中'}, new Date('2026-10-03T00:00:00Z')).items).toEqual([]);
   });
 
   it('shows an archived record by default, ranked after everything still open (2026-10-01)', () => {

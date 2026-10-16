@@ -25,7 +25,8 @@ describe('what the detail page shows', () => {
   });
 
   it('distinguishes a school-controlled date from an unconfirmed one', () => {
-    expect(wxml).toContain('以上日期不是你要赶的时间');
+    expect(wxml).toContain('{{item.schoolTimingNote}}');
+    expect(wxml).not.toContain('以上日期不是你要赶的时间');
     expect(wxml).toContain('以上日期未经确认');
     expect(wxss).toContain('.timing-school_controlled');
     expect(wxss).toContain('.timing-unverified');

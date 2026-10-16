@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectChangedFields, fromDateTimeLocal, linesToList } from '../apps/admin/src/editorUtils';
+import { collectChangedFields, fromDateTimeLocal, linesToList, toDateTimeLocal } from '../apps/admin/src/editorUtils';
 
 describe('admin full editor utilities', () => {
   it('collects top-level and nested content changes', () => {
@@ -17,5 +17,12 @@ describe('admin full editor utilities', () => {
     expect(linesToList('计算机\n\n 电子信息 ')).toEqual(['计算机', '电子信息']);
     expect(fromDateTimeLocal('2026-09-01T12:30')).toBe('2026-09-01T12:30:00+08:00');
     expect(fromDateTimeLocal('')).toBeNull();
+  });
+
+  it('shows stored competition dates in Beijing time for datetime-local inputs', () => {
+    expect(toDateTimeLocal('2025-10-31T00:00:00+00:00')).toBe('2025-10-31T08:00');
+    expect(toDateTimeLocal('2025-11-03T00:00:00+00:00')).toBe('2025-11-03T08:00');
+    expect(toDateTimeLocal('2025-10-31')).toBe('2025-10-31T00:00');
+    expect(toDateTimeLocal(null)).toBe('');
   });
 });

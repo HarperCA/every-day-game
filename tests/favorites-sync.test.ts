@@ -31,6 +31,25 @@ beforeEach(() => {
 });
 
 describe('account-bound favorite data', () => {
+  it('does not merge an old account response into the next account', async () => {
+    let finish!: (value: any) => void;
+    cloud.callUserData.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const syncing = initializeFavoritesCloudSync();
+    const rejected = expect(syncing).rejects.toThrow('账号已变更');
+    await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+    cloud.userId = 'wechat-b';
+    finish([{ editionId: 'a-only', createdAt: '2026-10-13T00:00:00Z' }]);
+    await rejected;
+    expect(getFavoriteIds()).toEqual([]);
+    expect(storage.has('competition-favorites-v1:wechat-b')).toBe(false);
+  });
+
+  it('does not send a queued favorite operation under another account', async () => {
+    toggleFavorite('a-only');
+    cloud.userId = 'wechat-b';
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(cloud.callUserData).not.toHaveBeenCalled();
+  });
   it('shows no favorites before login and does not import unscoped device data', async () => {
     storage.set('competition-favorites-v1', [{ editionId: 'old-device-record', createdAt: '2026-08-20T00:00:00.000Z' }]);
     cloud.ready = false;

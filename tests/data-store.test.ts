@@ -7,7 +7,7 @@ const cloudMocks = vi.hoisted(() => ({
 
 vi.mock('../apps/admin/src/adminCloud', () => cloudMocks);
 
-import { replaceAdminRecordCache, resetAdminRecords } from '../apps/admin/src/dataStore';
+import { mergeSeedSourceContext, replaceAdminRecordCache, resetAdminRecords } from '../apps/admin/src/dataStore';
 
 const values = new Map<string, string>();
 
@@ -45,5 +45,20 @@ describe('admin data store', () => {
     expect(cloudMocks.queueCloudRecords).toHaveBeenCalledOnce();
     expect(cloudMocks.queueCloudRecords).toHaveBeenCalledWith(restored, expect.objectContaining({ action:'reset', recordId:'*' }));
     expect(cloudMocks.queueCloudAudit).not.toHaveBeenCalled();
+  });
+
+  it('adds missing source review context without overwriting cloud edits', () => {
+    const seed = [{ id:'edition-1', sources:[{ id:'source-1', url:'https://example.org', title:'种子标题', content_summary:'种子摘要', review_reason:'种子原因' }] }];
+    const cloud = [{ id:'edition-1', sources:[{ id:'source-1', url:'https://example.org', title:'管理员标题' }] }];
+    expect(mergeSeedSourceContext(cloud, seed)[0].sources[0]).toMatchObject({ title:'管理员标题', content_summary:'种子摘要', review_reason:'种子原因' });
+    const changedUrl = [{ id:'edition-1', sources:[{ id:'source-1', url:'https://another.org' }] }];
+    expect(mergeSeedSourceContext(changedUrl, seed)).toEqual(changedUrl);
+  });
+
+  it('replaces only the known duplicated Challenge Cup homepage with its competition entry page', () => {
+    const id = 'source-cmp002-2025-registration';
+    const seed = [{ id:'edition-cmp002-2025', sources:[{ id, url:'https://2025.tiaozhanbei.net/d49/matches/', title:'比赛入口列表' }] }];
+    const cloud = [{ id:'edition-cmp002-2025', sources:[{ id, url:'https://2025.tiaozhanbei.net/' }] }];
+    expect(mergeSeedSourceContext(cloud, seed)[0].sources[0]).toMatchObject({ url:'https://2025.tiaozhanbei.net/d49/matches/', title:'比赛入口列表' });
   });
 });

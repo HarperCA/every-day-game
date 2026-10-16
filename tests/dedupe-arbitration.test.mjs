@@ -112,7 +112,10 @@ describe('新一届替代旧的：公开缓存', () => {
     participationFormat:'团队赛', teamSizeCategory:'2～3人', feeType:'免费', registrationOrganization:'自行报名', registrationUrl:'https://example.com/register',
     schedule:{ registration_start:'2026-08-01T00:00:00.000Z', registration_end:'2026-09-30T00:00:00.000Z', status_override:null },
     recommendation:{ recommendation:'值得参加', reasons:['官方资料完整'] }, lastVerifiedAt:'2026-08-30T00:00:00.000Z',
-    sources:[{ id:'source-1', source_type:'authority_notice', is_official:true, validity_status:'valid', url:'https://example.com/notice' }],
+    sources:[{ id:'source-1', source_type:'authority_notice', is_official:true, validity_status:'valid', url:'https://example.com/notice',
+      last_verified_at:'2026-08-30T00:00:00Z', title:'正式通知', content_summary:'说明当届赛事和报名安排',
+      evidence_excerpt:'报名时间为2026年8月1日至9月30日', supports_fields:['赛事名称','报名时间'],
+      review_reason:'人工已核对主办方当届通知' }],
     systemValidation:'passed', manualReview:'passed',
   };
   const oldArchived = { ...base, id:'edition-2025', dataStatus:'archived', archivedAt:'2026-01-01T00:00:00.000Z', nextEditionEstimate:null };

@@ -14,7 +14,7 @@ vi.mock('../apps/miniprogram/services/cloudSession', () => ({
   getCurrentUserId: cloud.getCurrentUserId,
 }));
 
-import { getReminderRecords, initializeRemindersCloudSync, saveReminderPlans } from '../apps/miniprogram/services/reminders';
+import { getReminderRecords, initializeRemindersCloudSync, saveReminderPlans, saveReminderPlansWithAuthorization, syncReminderTarget } from '../apps/miniprogram/services/reminders';
 
 const storage = new Map<string, unknown>();
 const reminder = {
@@ -38,6 +38,25 @@ beforeEach(() => {
 });
 
 describe('account-bound reminder data', () => {
+  it('does not save a notification consent callback to a different account', async () => {
+    let authorize: any;
+    (wx as any).requestSubscribeMessage = (options: any) => { authorize = options.success; };
+    const saving = saveReminderPlansWithAuthorization({ editionId: 'a-only', competitionName: '测试', eventType: 'registration_end', eventLabel: '报名截止', targetAt: reminder.targetAt, presets: [], customAt: reminder.remindAt }, 'template-id');
+    const rejected = expect(saving).rejects.toThrow('账号已变更');
+    cloud.userId = 'wechat-b';
+    authorize({ 'template-id': 'accept' });
+    await rejected;
+    expect(getReminderRecords()).toEqual([]);
+    expect(cloud.callUserData).not.toHaveBeenCalled();
+  });
+
+  it('preserves the absolute time chosen by the user when an event moves', () => {
+    const custom = { ...reminder, advanceKey: 'custom' };
+    storage.set('competition-reminders-v1:wechat-a', [custom]);
+    const updated = syncReminderTarget(custom, '2099-08-30T10:00:00Z');
+    expect(updated.remindAt).toBe(custom.remindAt);
+    expect(updated.targetAt).toBe('2099-08-30T10:00:00Z');
+  });
   it('shows zero before login and does not import unscoped device reminders', async () => {
     storage.set('competition-reminders-v1', [reminder]);
     cloud.ready = false;

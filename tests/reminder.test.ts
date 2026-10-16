@@ -5,12 +5,14 @@ vi.mock('../apps/miniprogram/services/cloudSession', () => ({
   isCloudSessionReady: () => true,
   getCurrentUserId: () => 'test-user',
 }));
-import { applyReminderAuthorization, buildReminderTaskName, calculatePresetReminder, getReminderRecords, saveReminderPlans } from '../apps/miniprogram/services/reminders';
+import { applyReminderAuthorization, buildReminderTaskName, calculatePresetReminder, getReminderRecords, saveReminderPlans, saveReminderPlansWithAuthorization } from '../apps/miniprogram/services/reminders';
+import { callUserData } from '../apps/miniprogram/services/cloudSession';
 
 const storage = new Map<string, unknown>();
 
 beforeEach(() => {
   storage.clear();
+  vi.mocked(callUserData).mockClear();
   (globalThis as any).wx = {
     getStorageSync: (key: string) => storage.get(key),
     setStorageSync: (key: string, value: unknown) => { storage.set(key, value); },
@@ -48,5 +50,43 @@ describe('reminder rules', () => {
 
   it('rejects a custom reminder that is not before the target', () => {
     expect(() => saveReminderPlans({ editionId: 'edition-1', competitionName:'测试竞赛', eventType: 'registration_start', eventLabel: '报名开始', targetAt: '2099-08-20T10:00:00+08:00', presets: [], customAt: '2099-08-21T10:00:00+08:00' })).toThrow('必须早于目标事件');
+  });
+
+  it('asks for notification permission before saving and saves only when accepted', async () => {
+    const requestSubscribeMessage = vi.fn(({ success }) => {
+      expect(getReminderRecords()).toHaveLength(0);
+      success({ 'template-id': 'accept' });
+    });
+    (globalThis as any).wx.requestSubscribeMessage = requestSubscribeMessage;
+    const result = await saveReminderPlansWithAuthorization({ editionId:'edition-1', competitionName:'测试竞赛', eventType:'registration_end', eventLabel:'报名截止', targetAt:'2099-08-20T10:00:00+08:00', presets:['1d'] }, 'template-id');
+    expect(requestSubscribeMessage).toHaveBeenCalledOnce();
+    expect(result.status).toBe('accepted');
+    expect(getReminderRecords()).toHaveLength(1);
+    expect(getReminderRecords()[0].authorizationStatus).toBe('accepted');
+    await vi.waitFor(() => expect(vi.mocked(callUserData).mock.calls.some(([action, payload]: any) => action === 'replaceReminderEvent' && payload.records.every((record: any) => record.authorizationStatus === 'accepted' && record.subscriptionTemplateId === 'template-id'))).toBe(true));
+    expect(vi.mocked(callUserData).mock.calls.some(([action]) => action === 'upsertReminders')).toBe(false);
+  });
+
+  it('does not create extra unauthorized plans from one subscription', async () => {
+    const request = vi.fn();
+    (globalThis as any).wx.requestSubscribeMessage = request;
+    await expect(saveReminderPlansWithAuthorization({ editionId:'edition-1', competitionName:'测试竞赛', eventType:'registration_end', eventLabel:'报名截止', targetAt:'2099-08-20T10:00:00+08:00', presets:['1d','7d'] }, 'template-id')).rejects.toThrow('一个提醒时间');
+    expect(request).not.toHaveBeenCalled();
+    expect(getReminderRecords()).toHaveLength(0);
+  });
+
+  it('distinguishes a missing template from a user refusal without saving', async () => {
+    (globalThis as any).wx.requestSubscribeMessage = ({ fail }: any) => fail({errCode:20001,errMsg:'No template data return'});
+    await expect(saveReminderPlansWithAuthorization({editionId:'edition-1',competitionName:'测试竞赛',eventType:'registration_end',eventLabel:'报名截止',targetAt:'2099-08-20T10:00:00+08:00',presets:[],customAt:'2099-08-19T10:00:00+08:00'},'template-id')).rejects.toThrow('模板不存在');
+    expect(getReminderRecords()).toHaveLength(0);
+  });
+
+  it('does not save when notification permission is denied or unavailable', async () => {
+    const input = { editionId:'edition-1', competitionName:'测试竞赛', eventType:'registration_end' as const, eventLabel:'报名截止', targetAt:'2099-08-20T10:00:00+08:00', presets:['1d'] };
+    (globalThis as any).wx.requestSubscribeMessage = ({ success }: any) => success({ 'template-id': 'reject' });
+    expect((await saveReminderPlansWithAuthorization(input, 'template-id')).status).toBe('rejected');
+    expect(getReminderRecords()).toHaveLength(0);
+    expect((await saveReminderPlansWithAuthorization(input, '')).status).toBe('unavailable');
+    expect(getReminderRecords()).toHaveLength(0);
   });
 });

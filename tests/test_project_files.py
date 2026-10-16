@@ -63,7 +63,8 @@ class ProjectFileTests(unittest.TestCase):
         logic = (MINI / "pages/index/index.ts").read_text(encoding="utf-8")
         self.assertNotIn("已选条件", page)
         self.assertNotIn('bindtap="removeCondition"', page)
-        self.assertIn('bindtap="clearFilters"', page)
+        self.assertNotIn('bindtap="clearFilters"', page)
+        self.assertIn('bindtap="resetMoreFilters"', page)
         self.assertIn('bindtap="onComprehensiveTap"', page)
         self.assertIn("selectedConditions", logic)
 
@@ -80,13 +81,21 @@ class ProjectFileTests(unittest.TestCase):
         repository = (MINI / "services/repository.ts").read_text(encoding="utf-8")
         self.assertIn("全部筛选", page)
         self.assertIn("确定 · {{morePreviewCount}}场赛事", page)
-        for label in ("参赛形式", "队伍人数", "报名费用", "报名方式"):
+        for label in ("参赛形式", "队伍人数", "报名费用", "报名方式", "赛事地区"):
             self.assertIn(label, logic)
-        for field in ("participationFormat", "teamSizeCategory", "feeType", "registrationOrganization"):
+        for field in ("participationFormat", "teamSizeCategory", "feeType", "registrationOrganization", "region"):
             self.assertIn(field, logic)
             self.assertIn(field, repository)
         self.assertIn("moreFilterCount", logic)
         self.assertIn("pageSize: 8", logic)
+
+    def test_admin_competition_list_has_region_filter(self):
+        admin = (ROOT / "apps/admin/src/App.tsx").read_text(encoding="utf-8")
+        region = (ROOT / "apps/admin/src/competitionRegion.ts").read_text(encoding="utf-8")
+        self.assertIn("全部赛事地区", admin)
+        self.assertIn("competitionRegion(item) !== region", admin)
+        self.assertIn("records.map(competitionRegion)", admin)
+        self.assertIn("不参考主办学校所在地", region)
 
     def test_admin_has_separate_more_filter_editor(self):
         admin = (ROOT / "apps/admin/src/App.tsx").read_text(encoding="utf-8")
@@ -98,7 +107,7 @@ class ProjectFileTests(unittest.TestCase):
             self.assertIn(section, editor)
         self.assertIn("window.confirm", admin)
         self.assertIn("是否确定保存本次更改", admin)
-        self.assertIn("persistAdminRecords", admin)
+        self.assertIn("await saveManualRecords", admin)
         self.assertIn("最近操作记录", admin)
         self.assertIn("发布和下架只能在“审核发布”模块执行", admin)
         self.assertIn("已进入公开缓存（只读）", editor)
@@ -111,8 +120,9 @@ class ProjectFileTests(unittest.TestCase):
             self.assertIn(label, admin)
         for action in ("采纳并进入资料复核", "重试", "转人工", "导出 JSON"):
             self.assertIn(action, modules)
-        self.assertIn("persistFeedbacks", modules)
-        self.assertIn("persistAiJobs", modules)
+        self.assertIn("await saveOperationState", modules)
+        self.assertIn("replaceFeedbackCache", modules)
+        self.assertIn("replaceAiJobCache", modules)
         self.assertIn("开发环境未配置AI Provider", store)
         for label in ("待AI审核", "问题待人工审核", "AI通过抽查池", "抽查正确", "抽查有误"):
             self.assertIn(label, modules)

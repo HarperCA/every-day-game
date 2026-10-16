@@ -1,6 +1,39 @@
 // 通知追溯的搜索引擎：百度 → Kimi → DeepSeek 依次补位，每次都留下“用了哪个、返回了什么”
 import { describe, expect, it, vi } from 'vitest';
-import { baiduEngine, createSearcher, deepseekEngine, kimiEngine } from '../scripts/server/search-engines.mjs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { baiduEngine, createSearcher, deepseekEngine, kimiEngine, takeBaiduQuota } from '../scripts/server/search-engines.mjs';
+
+// 百度调用会记共享用量文件：测试写到临时目录，不碰仓库
+process.env.BAIDU_USAGE_FILE = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'baidu-usage-')), 'baidu-usage.json');
+
+describe('百度每天自动任务最多 30 次，剩下的留给测试', () => {
+  const file = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'baidu-q-')), 'u.json');
+  it('自动任务到 30 次就领不到，跨程序共用同一个计数', () => {
+    const f = file();
+    const now = new Date('2026-10-10T17:00:00Z');
+    for (let i = 0; i < 30; i += 1) expect(takeBaiduQuota({ file:f, now, caller:i < 20 ? 'nightly' : 'trace', manual:false }).ok).toBe(true);
+    expect(takeBaiduQuota({ file:f, now, manual:false }).ok).toBe(false);
+    expect(JSON.parse(fs.readFileSync(f, 'utf8')).byCaller).toEqual({ nightly:20, trace:10 });
+  });
+  it('手动测试单独记，不受 30 次限制；北京时间换日后重新计数', () => {
+    const f = file();
+    const now = new Date('2026-10-10T15:59:00Z');
+    for (let i = 0; i < 30; i += 1) takeBaiduQuota({ file:f, now, manual:false });
+    expect(takeBaiduQuota({ file:f, now, manual:true }).ok).toBe(true);
+    expect(takeBaiduQuota({ file:f, now:new Date('2026-10-10T16:00:00Z'), manual:false })).toMatchObject({ ok:true, used:1 });
+  });
+  it('额度用完时百度引擎不发请求，搜索链换下一个引擎', async () => {
+    const f = file();
+    for (let i = 0; i < 30; i += 1) takeBaiduQuota({ file:f, manual:false });
+    process.env.BAIDU_USAGE_FILE = f;
+    const fetchImpl = vi.fn();
+    await expect(baiduEngine({ key:'k', fetchImpl }).search('q')).rejects.toThrow('baidu_daily_auto_limit');
+    expect(fetchImpl).not.toHaveBeenCalled();
+    process.env.BAIDU_USAGE_FILE = file();
+  });
+});
 import { decideByProbabilities } from '../scripts/crawler/lib/jevCandidateFilter.mjs';
 
 const ok = body => ({ ok:true, status:200, json:async () => body, text:async () => JSON.stringify(body) });
@@ -39,6 +72,23 @@ describe('三个引擎把返回统一成同一个形状', () => {
   });
   it('HTTP 出错抛错', async () => {
     await expect(kimiEngine({ key:'k', fetchImpl:async () => fail(429) }).search('q')).rejects.toThrow('http_429');
+  });
+  it('Kimi 报 500 时重试一次，第二次成功就用第二次的结果', async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(fail(500)).mockResolvedValueOnce(ok({ search_results:[{ title:'t', url:'https://k/1' }] }));
+    const result = await kimiEngine({ key:'k', fetchImpl, retryDelayMs:0 }).search('q');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(result.references).toHaveLength(1);
+  });
+  it('Kimi 带 site: 的搜索重试后仍是 500，按没有结果返回；不带 site: 的仍报错', async () => {
+    const fetchImpl = vi.fn(async () => fail(500));
+    await expect(kimiEngine({ key:'k', fetchImpl, retryDelayMs:0 }).search('site:zjedu.gov.cn "多媒体作品设计竞赛"')).resolves.toEqual({ references:[] });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    await expect(kimiEngine({ key:'k', fetchImpl, retryDelayMs:0 }).search('多媒体作品设计竞赛')).rejects.toThrow('http_500');
+  });
+  it('Kimi 4xx 不重试', async () => {
+    const fetchImpl = vi.fn(async () => fail(429));
+    await expect(kimiEngine({ key:'k', fetchImpl, retryDelayMs:0 }).search('site:a.cn q')).rejects.toThrow('http_429');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -139,5 +189,28 @@ describe('保存搜索接口的原始返回（SEARCH_RAW_FILE）', () => {
       const line = JSON.parse(fs.readFileSync(file, 'utf8').trim());
       expect(line).toMatchObject({ engine:'kimi', query:'全国大学生生命科学竞赛报名入口', status:200, body:JSON.stringify(body) });
     } finally { delete process.env.SEARCH_RAW_FILE; fs.rmSync(file, { force:true }); }
+  });
+});
+
+describe('百度搜索范围参数（2026-10-10，通知追溯代理可选用）', async () => {
+  const { baiduSearchBody, normalizeSite } = await import('../scripts/server/search-engines.mjs');
+  it('限定网站和近期结果按官方参数名写进请求', () => {
+    const body = baiduSearchBody('第十二届 通知', { site:'https://www.culsc.cn/#/Home', recent:'semiyear' });
+    expect(body.search_filter).toEqual({ match:{ site:['www.culsc.cn'] } });
+    expect(body.search_recency_filter).toBe('semiyear');
+    expect(body.query_policy).toEqual({ enable_rewrite:true });
+    expect(body.block_websites).toContain('mp.weixin.qq.com');
+  });
+  it('不认识的取值不带上，不传就是普通搜索', () => {
+    const body = baiduSearchBody('q', { site:'不是域名', recent:'day' });
+    expect(body.search_filter).toBeUndefined();
+    expect(body.search_recency_filter).toBeUndefined();
+    expect(normalizeSite('jyt.ah.gov.cn/tsdw/x.html')).toBe('jyt.ah.gov.cn');
+  });
+  it('搜索链把范围参数交给引擎', async () => {
+    const seen = [];
+    const searcher = createSearcher([{ engine:{ name:'baidu', label:'百度', key:'k', search:async (q, options) => { seen.push(options); return refs(1); } }, budget:1 }]);
+    await searcher.search('q', { site:'culsc.cn', recent:'year' });
+    expect(seen).toEqual([{ site:'culsc.cn', recent:'year' }]);
   });
 });
