@@ -32,7 +32,9 @@ Page({
       if (ready) await ready.catch(() => undefined);
       const item = await getCompetition(id);
       this.setData({ item, isFavorite: checkFavorite(id), reminderCount: getRemindersForEdition(id).length, loading: false }, () => {
-        if (openEventType) this.openReminderPanel(openEventType);
+        // 从助手的铃铛、我的提醒的“编辑”进来：等页面进入动画和首次渲染完成再打开面板。
+        // 缓存命中时这里几乎立刻执行，真机上会赶在页面还没稳定时打开，面板显示不出来。
+        if (openEventType) setTimeout(() => this.openReminderPanel(openEventType), 350);
       });
     } catch (error) { this.setData({ loading: false, error: error instanceof Error ? error.message : '加载失败' }); }
   },
