@@ -109,7 +109,7 @@
         </view>
         <view class="reminder-section">
           <view class="reminder-label">自定义时间</view>
-          <view class="custom-row"><picker mode="date" value="{{customDate}}" start="{{customMinDate}}" bindchange="onCustomDateChange"><view>{{customDate || '选择日期'}}</view></picker><picker mode="time" value="{{customTime}}" bindchange="onCustomTimeChange"><view>{{customTime}}</view></picker></view>
+          <view class="custom-row"><picker mode="date" value="{{customDate}}" start="{{customMinDate}}" end="{{customMaxDate}}" bindchange="onCustomDateChange"><view>{{customDate || '选择日期'}}</view></picker><picker mode="time" value="{{customTime}}" start="{{customMinTime}}" end="{{customMaxTime}}" bindchange="onCustomTimeChange"><view>{{customTime}}</view></picker></view>
         </view>
         <view class="reminder-tip">每次选择一个提醒时间，点击保存后直接申请微信通知授权，同意后自动保存。</view>
       </scroll-view>

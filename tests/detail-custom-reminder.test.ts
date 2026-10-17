@@ -39,3 +39,25 @@ it('keeps the editor open and input intact when authorization is denied',async()
   await instance.saveReminder();
   expect(instance.data).toMatchObject({reminderPanelVisible:true,customDate:'2099-12-29',customTime:'10:30',savingReminder:false});
 });
+
+// 自定义提醒的可选范围（2026-10-17）：今天到截止日；今天从现在往后；截止日当天到截止时刻之前；超出范围自动挪回
+it('limits the custom reminder to between now and the deadline',()=>{
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-10-17T19:40:00'));
+  try {
+    const instance=page();
+    instance.data.reminderEvents=[{value:'registration_end',available:true,label:'报名截止',targetAt:'2026-10-20T18:00:00'}];
+    instance.applyCustomBounds('2026-10-18','09:00');
+    expect(instance.data).toMatchObject({customMinDate:'2026-10-17',customMaxDate:'2026-10-20',customMinTime:'00:00',customMaxTime:'23:59',customDate:'2026-10-18',customTime:'09:00'});
+    instance.onCustomDateChange({detail:{value:'2026-10-17'}});
+    expect(instance.data).toMatchObject({customDate:'2026-10-17',customMinTime:'19:41',customTime:'19:41'});
+    instance.onCustomDateChange({detail:{value:'2026-10-20'}});
+    expect(instance.data).toMatchObject({customDate:'2026-10-20',customMinTime:'00:00',customMaxTime:'17:59',customTime:'17:59'});
+    instance.onCustomTimeChange({detail:{value:'23:30'}});
+    expect(instance.data.customTime).toBe('17:59');
+    instance.onCustomDateChange({detail:{value:'2026-10-25'}});
+    expect(instance.data.customDate).toBe('2026-10-20');
+    instance.onCustomDateChange({detail:{value:'2026-10-01'}});
+    expect(instance.data.customDate).toBe('2026-10-17');
+  } finally { vi.useRealTimers(); }
+});

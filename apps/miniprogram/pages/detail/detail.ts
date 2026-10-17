@@ -13,7 +13,7 @@ Page({
     recommendationExpanded: false, rulesExpanded: false, officialInfoExpanded: false,
     reminderPanelVisible: false, reminderEventType: 'registration_end',
     reminderEvents: [] as any[],
-    customDate: '', customTime: '09:00', customMinDate: '', savingReminder: false,
+    customDate: '', customTime: '09:00', customMinDate: '', customMaxDate: '', customMinTime: '00:00', customMaxTime: '23:59', savingReminder: false,
   },
   onLoad(options: Record<string, string>) {
     if (!options.id) { this.setData({ loading: false, error: '缺少赛事标识' }); return; }
@@ -96,10 +96,28 @@ Page({
     const defaultAt = Number.isFinite(target) && target > now
       ? Math.min(now + 86400000, now + (target - now) / 2) : now + 3600000;
     const parts = localDateParts(new Date(existing[0]?.remindAt || defaultAt));
-    this.setData({ customDate: parts.date, customTime: parts.time });
+    this.applyCustomBounds(parts.date, parts.time);
   },
-  onCustomDateChange(event: WechatMiniprogram.PickerChange) { this.setData({ customDate: String(event.detail.value) }); },
-  onCustomTimeChange(event: WechatMiniprogram.PickerChange) { this.setData({ customTime: String(event.detail.value) }); },
+  // 自定义提醒时间的可选范围（2026-10-17，用户定）：
+  // 日期在“今天”到“截止日”之间；选今天时，时间从现在往后；选截止日当天时，时间到截止时刻之前。
+  // 选出范围的日期或时间会被挪回范围内。保存时 validateReminderPlans 仍会再检查一次。
+  applyCustomBounds(date: string, time: string) {
+    const event = this.data.reminderEvents.find((item: any) => item.value === this.data.reminderEventType);
+    const earliest = localDateParts(new Date(Date.now() + 60000));
+    const target = new Date(event?.targetAt || '').getTime();
+    const latest = Number.isFinite(target) ? localDateParts(new Date(target - 60000)) : null;
+    const minDate = earliest.date;
+    const maxDate = latest && latest.date >= minDate ? latest.date : '';
+    let pickedDate = date < minDate ? minDate : date;
+    if (maxDate && pickedDate > maxDate) pickedDate = maxDate;
+    const minTime = pickedDate === minDate ? earliest.time : '00:00';
+    const maxTime = maxDate && pickedDate === maxDate ? latest!.time : '23:59';
+    let pickedTime = time < minTime ? minTime : time;
+    if (pickedTime > maxTime) pickedTime = maxTime;
+    this.setData({ customDate: pickedDate, customTime: pickedTime, customMinDate: minDate, customMaxDate: maxDate, customMinTime: minTime, customMaxTime: maxTime });
+  },
+  onCustomDateChange(event: WechatMiniprogram.PickerChange) { this.applyCustomBounds(String(event.detail.value), this.data.customTime); },
+  onCustomTimeChange(event: WechatMiniprogram.PickerChange) { this.applyCustomBounds(this.data.customDate, String(event.detail.value)); },
   async saveReminder() {
     if (this.data.savingReminder) return;
     const event = this.data.reminderEvents.find((item: any) => item.value === this.data.reminderEventType);
