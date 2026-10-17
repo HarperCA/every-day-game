@@ -80,6 +80,9 @@ export async function getCompetition(id: string) {
   return hydratePublic(await callPublicData<any>('get', { id }));
 }
 
+// 给用户选的专业大类：不含“综合/不限专业”。选任何一个专业时，不限专业的比赛本来就会一起显示
+// （competitionPreferences.ts 的 matchesCompetitionPreferences），单独选它没有意义（2026-10-17，用户定）。
+// 比赛本身的这个标签和后端校验的 13 类清单不变。
 export function getProfessionOptions(): string[] {
-  return PROFESSION_CATEGORIES;
+  return PROFESSION_CATEGORIES.filter(name => name !== '综合/不限专业');
 }
