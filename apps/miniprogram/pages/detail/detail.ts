@@ -41,7 +41,12 @@ Page({
   copyRegistrationUrl() {
     const item = this.data.item;
     if (!item?.registrationUrlUsable) { wx.showToast({ title: '官方报名链接待更新', icon: 'none' }); return; }
-    wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content: '链接已复制，请在浏览器中打开并核对主办单位。', showCancel: false }) });
+    // 有些报名链接是平台首页（如慕测平台），打开后还要按步骤找报名入口：把库里的报名方式一起写在提示里（2026-10-18，用户定）
+    const method = item.fieldText?.registrationMethod;
+    const content = method && method !== '信息不足'
+      ? `请在浏览器中打开并核对主办单位。\n报名方式：${method}`
+      : '链接已复制，请在浏览器中打开并核对主办单位。';
+    wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content, showCancel: false }) });
   },
   async favorite() {
     const id = this.data.item?.id;

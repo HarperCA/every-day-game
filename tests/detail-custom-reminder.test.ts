@@ -77,3 +77,16 @@ it('cancels existing reminders with one tap and opens the editor when there are 
   expect(mocks.remove).not.toHaveBeenCalled();
   expect(opened).toHaveBeenCalled();
 });
+
+// 复制报名链接后的提示里带上报名方式（2026-10-18）
+it('shows the registration method after copying the link',()=>{
+  const instance=page();
+  const modal=vi.fn();
+  vi.stubGlobal('wx',{showToast:vi.fn(),showModal:modal,setClipboardData:({success}:any)=>success()});
+  instance.data.item={id:'event',name:'比赛',registrationUrl:'http://www.mooctest.net/',registrationUrlUsable:true,fieldText:{registrationMethod:'进入慕测平台，选择“测试大赛”报名'}};
+  instance.copyRegistrationUrl();
+  expect(modal.mock.calls[0][0].content).toContain('报名方式：进入慕测平台，选择“测试大赛”报名');
+  instance.data.item.fieldText.registrationMethod='信息不足';
+  instance.copyRegistrationUrl();
+  expect(modal.mock.calls[1][0].content).toBe('链接已复制，请在浏览器中打开并核对主办单位。');
+});
