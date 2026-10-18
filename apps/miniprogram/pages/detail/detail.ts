@@ -65,6 +65,18 @@ Page({
     this.setData({ isFavorite: favorited });
     wx.showToast({ title: favorited ? '已收藏' : '已取消收藏', icon: favorited ? 'success' : 'none' });
   },
+  // 底部铃铛（2026-10-18，用户定）：已有提醒时点一下直接取消这场比赛的全部提醒；没有提醒时打开设置面板
+  async toggleReminder() {
+    const id = this.data.item?.id;
+    if (!id) return;
+    if (!this.data.reminderCount) { this.openReminderPanel(); return; }
+    try {
+      if (!await getApp<any>().requestWechatLogin()) return;
+    } catch (_error) { return; }
+    removeRemindersForEdition(id);
+    this.setData({ reminderCount: getRemindersForEdition(id).length });
+    wx.showToast({ title: '已取消提醒', icon: 'none' });
+  },
   async openReminderPanel(preferredEventType = '') {
     const item = this.data.item;
     if (!item) return;

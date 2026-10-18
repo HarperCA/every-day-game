@@ -1,8 +1,8 @@
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ records:vi.fn(), save:vi.fn() }));
+const mocks = vi.hoisted(() => ({ records:vi.fn(), save:vi.fn(), remove:vi.fn() }));
 vi.mock('../apps/miniprogram/services/repository', () => ({getCompetition:vi.fn()}));
 vi.mock('../apps/miniprogram/services/favorites', () => ({isFavorite:()=>false,toggleFavorite:vi.fn()}));
-vi.mock('../apps/miniprogram/services/reminders', () => ({getRemindersForEdition:mocks.records,removeRemindersForEdition:vi.fn(),saveReminderPlansWithAuthorization:mocks.save}));
+vi.mock('../apps/miniprogram/services/reminders', () => ({getRemindersForEdition:mocks.records,removeRemindersForEdition:mocks.remove,saveReminderPlansWithAuthorization:mocks.save}));
 let definition:any;
 beforeAll(async () => {
   vi.stubGlobal('Page',(page:any)=>{definition=page;});
@@ -60,4 +60,20 @@ it('limits the custom reminder to between now and the deadline',()=>{
     instance.onCustomDateChange({detail:{value:'2026-10-01'}});
     expect(instance.data.customDate).toBe('2026-10-17');
   } finally { vi.useRealTimers(); }
+});
+
+// 底部铃铛（2026-10-18）：已有提醒时点一下直接取消；没有提醒时打开设置面板
+it('cancels existing reminders with one tap and opens the editor when there are none',async()=>{
+  const instance=page();
+  instance.data.reminderCount=2;
+  mocks.records.mockReturnValue([]);
+  await instance.toggleReminder();
+  expect(mocks.remove).toHaveBeenCalledWith('event');
+  expect(instance.data.reminderCount).toBe(0);
+  expect(wx.showToast).toHaveBeenCalledWith({title:'已取消提醒',icon:'none'});
+  mocks.remove.mockClear();
+  const opened=vi.fn();instance.openReminderPanel=opened;
+  await instance.toggleReminder();
+  expect(mocks.remove).not.toHaveBeenCalled();
+  expect(opened).toHaveBeenCalled();
 });
