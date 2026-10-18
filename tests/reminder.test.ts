@@ -89,4 +89,12 @@ describe('reminder rules', () => {
     expect((await saveReminderPlansWithAuthorization(input, '')).status).toBe('unavailable');
     expect(getReminderRecords()).toHaveLength(0);
   });
+
+  // 微信要求订阅授权必须在用户点按的同一时刻发出，中间不能先等别的：调用后不等待就应该已经发出申请
+  it('asks for notification permission in the same tick as the save tap', () => {
+    const request = vi.fn();
+    (globalThis as any).wx.requestSubscribeMessage = request;
+    void saveReminderPlansWithAuthorization({ editionId:'edition-1', competitionName:'测试竞赛', eventType:'registration_end', eventLabel:'报名截止', targetAt:'2099-08-20T10:00:00+08:00', presets:['1d'] }, 'template-id');
+    expect(request).toHaveBeenCalledOnce();
+  });
 });

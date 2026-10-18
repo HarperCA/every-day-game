@@ -90,3 +90,11 @@ it('shows the registration method after copying the link',()=>{
   instance.copyRegistrationUrl();
   expect(modal.mock.calls[1][0].content).toBe('链接已复制，请在浏览器中打开并核对主办单位。');
 });
+
+// 点“保存提醒”到发出微信授权申请之间不能有等待（微信只认点按当下发出的申请）
+it('calls the authorizing save in the same tick as the tap',()=>{
+  const instance=page();
+  Object.assign(instance.data,{customDate:'2099-12-29',customTime:'10:30'});
+  void instance.saveReminder();
+  expect(mocks.save).toHaveBeenCalledOnce();
+});
