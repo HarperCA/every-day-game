@@ -1,6 +1,7 @@
 const cloud = require('wx-server-sdk');
 const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
 const { forwardIfConfigured } = require('./cloudBridge');
+const { slimList } = require('./listFields');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -106,7 +107,8 @@ exports.main = async rawEvent => {
     if (event?.action === 'list') {
       // 访问计数和读数据同时进行，不再读完才开始写计数
       const [records] = await Promise.all([loadPublishedRecordsCached(), countLoad('list')]);
-      return { ok:true, data:filterCached(records, event.query || {}) };
+      // 列表只返回卡片要用的字段（listFields.js），否则全部比赛超过小程序链路 1MB 的上限；详情走 get，仍是完整记录
+      return { ok:true, data:slimList(filterCached(records, event.query || {})) };
     }
     if (event?.action === 'get') {
       const id = normalizePublicRecordId(event.id);

@@ -88,6 +88,11 @@ describe('first-entry competition preference survey', () => {
     expect(match({professions:['设计与艺术'],region:'广东省'},[],'')).toBe(true);
     expect(match({professions:['综合/不限专业'],region:'华东'},categories,'安徽省')).toBe(true);
     expect(match({professions:['综合/不限专业'],region:'广东省'},categories,'安徽省')).toBe(false);
+    expect(match({professions:['计算机与AI'],region:'全国'},categories,'全国')).toBe(true);
+    expect(match({professions:['计算机与AI'],region:'国际'},categories,'全国')).toBe(true);
+    expect(match({professions:['计算机与AI'],region:''},categories,'全国')).toBe(true);
+    expect(match({professions:['计算机与AI'],region:'福建省'},categories,'全国')).toBe(false);
+    expect(match({professions:['计算机与AI'],region:'华北地区'},categories,'全国')).toBe(false);
   });
 
   it('filters the complete candidate set before pagination so matches beyond the first server page remain visible', async () => {
@@ -100,5 +105,22 @@ describe('first-entry competition preference survey', () => {
     expect(result).toEqual({items:[matches[0]],total:2,hasMore:true});
     expect(callPublicData.mock.calls[1][1].query).toMatchObject({page:2,pageSize:100});
     expect(callPublicData.mock.calls[0][1].query.competitionCategories).toBeUndefined();
+  });
+
+  it('selecting 全国 keeps national, international and unspecified regions so a province never shows fewer than 全国', async () => {
+    const items = [
+      {id:'national',professions:['计算机与AI'],region:'全国'},
+      {id:'intl',professions:['计算机与AI'],region:'国际'},
+      {id:'blank',professions:['综合/不限专业'],region:''},
+      {id:'fujian',professions:['计算机与AI'],region:'福建省'},
+      {id:'liaoning',professions:['计算机与AI'],region:'辽宁省'},
+    ];
+    callPublicData.mockResolvedValue({items,total:items.length,hasMore:false});
+    const {listCompetitions} = await import('../apps/miniprogram/services/repository');
+    const national = await listCompetitions({competitionCategories:['计算机与AI'],region:'全国',page:1,pageSize:20});
+    const fujian = await listCompetitions({competitionCategories:['计算机与AI'],region:'福建省',page:1,pageSize:20});
+    expect(national.items.map((item:any) => item.id)).toEqual(['national','intl','blank']);
+    expect(fujian.items.map((item:any) => item.id)).toEqual(['national','intl','blank','fujian']);
+    expect(callPublicData.mock.calls[0][1].query.region).toBe('');
   });
 });

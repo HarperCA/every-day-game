@@ -59,8 +59,9 @@ export async function listCompetitions(query: Query):Promise<{items:Array<Return
     return { items:ordered.slice(0, visible), total:ordered.length, hasMore:visible < ordered.length };
   }
   // 选择所在省份时，查询该省、所属大区及全国可参加的赛事。
+  // 选“全国”时查询不限地区的赛事（全国、国际、全球、不限、未填地区），不再要求地区一字不差等于“全国”（2026-10-18，用户定）。
   // 先去除服务端地区的严格相等条件，使用同一套偏好地区匹配规则。
-  if (query.region && surveyProvinceOptions.slice(1).includes(query.region)) {
+  if (query.region && surveyProvinceOptions.includes(query.region)) {
     query = { ...query, preferenceProvince: query.region, region: '' };
   }
   if (query.competitionCategories?.length || query.preferenceProvince) {

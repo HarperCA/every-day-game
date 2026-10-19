@@ -78,10 +78,23 @@ describe('account-bound reminder data', () => {
   });
 
   it('uploads only the current account local reminders in bounded batches', async () => {
-    storage.set('competition-reminders-v1:wechat-a', Array.from({ length: 25 }, (_, index) => ({ ...reminder, id: `reminder-${index}`, editionId: `edition-${index}` })));
+    storage.set('competition-reminders-v1:wechat-a', Array.from({ length: 25 }, (_, index) => ({ ...reminder, authorizationStatus: 'accepted' as const, id: `reminder-${index}`, editionId: `edition-${index}` })));
     storage.set('competition-reminders-v1:wechat-b', [{ ...reminder, id: 'other-account' }]);
     await initializeRemindersCloudSync();
     const batches = cloud.callUserData.mock.calls.filter(([action]) => action === 'mergeReminders').map(([, payload]) => payload.records.length);
     expect(batches).toEqual([10, 10, 5]);
+  });
+
+  // 2026-10-18 起没授权微信通知就不保存提醒：旧版本留下的未授权提醒在同步时删掉（本机和云端）
+  it('removes reminders that were never authorized during sync', async () => {
+    storage.set('competition-reminders-v1:wechat-a', [
+      { ...reminder, id: 'old-unauthorized', authorizationStatus: 'not_requested' as const },
+      { ...reminder, id: 'old-rejected', editionId: 'edition-2', authorizationStatus: 'rejected' as const },
+      { ...reminder, id: 'kept', editionId: 'edition-3', authorizationStatus: 'accepted' as const },
+    ]);
+    await initializeRemindersCloudSync();
+    expect(storage.get('competition-reminders-v1:wechat-a').map((item: any) => item.id)).toEqual(['kept']);
+    const removed = cloud.callUserData.mock.calls.filter(([action]) => action === 'removeReminder').map(([, payload]) => payload.id).sort();
+    expect(removed).toEqual(['old-rejected', 'old-unauthorized']);
   });
 });

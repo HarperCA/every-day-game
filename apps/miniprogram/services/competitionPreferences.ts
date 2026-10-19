@@ -121,6 +121,8 @@ export function matchesCompetitionPreferences(item: any, categories: string[] = 
   const region = String(item.region || '').trim();
   // 没有明确地区限制的记录继续显示，避免把全国赛事或待核实地区误排除。
   if (!region || /全国|不限|全球|国际/.test(region)) return true;
+  // 选“全国”只要上面这些不限地区的赛事，各省和大区的赛事不算。
+  if (province === '全国') return false;
   const short = province.replace(/壮族自治区|回族自治区|维吾尔自治区|特别行政区|自治区|省|市/g, '');
   if (region.includes(short)) return true;
   const regions: Record<string, string[]> = {

@@ -41,7 +41,12 @@ Page({
   copyRegistrationUrl() {
     const item = this.data.item;
     if (!item?.registrationUrlUsable) { wx.showToast({ title: '官方报名链接待更新', icon: 'none' }); return; }
-    wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content: '链接已复制，请在浏览器中打开并核对主办单位。', showCancel: false }) });
+    // 有些报名链接是平台首页（如慕测平台），打开后还要按步骤找报名入口：把库里的报名方式一起写在提示里（2026-10-18，用户定）
+    const method = item.fieldText?.registrationMethod;
+    const content = method && method !== '信息不足'
+      ? `请在浏览器中打开并核对主办单位。\n报名方式：${method}`
+      : '链接已复制，请在浏览器中打开并核对主办单位。';
+    wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content, showCancel: false }) });
   },
   async favorite() {
     const id = this.data.item?.id;
@@ -64,6 +69,18 @@ Page({
     const favorited = toggleFavorite(id);
     this.setData({ isFavorite: favorited });
     wx.showToast({ title: favorited ? '已收藏' : '已取消收藏', icon: favorited ? 'success' : 'none' });
+  },
+  // 底部铃铛（2026-10-18，用户定）：已有提醒时点一下直接取消这场比赛的全部提醒；没有提醒时打开设置面板
+  async toggleReminder() {
+    const id = this.data.item?.id;
+    if (!id) return;
+    if (!this.data.reminderCount) { this.openReminderPanel(); return; }
+    try {
+      if (!await getApp<any>().requestWechatLogin()) return;
+    } catch (_error) { return; }
+    removeRemindersForEdition(id);
+    this.setData({ reminderCount: getRemindersForEdition(id).length });
+    wx.showToast({ title: '已取消提醒', icon: 'none' });
   },
   async openReminderPanel(preferredEventType = '') {
     const item = this.data.item;

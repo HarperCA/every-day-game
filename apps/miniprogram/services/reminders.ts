@@ -139,6 +139,14 @@ export async function initializeRemindersCloudSync(): Promise<void> {
     const previous = merged.get(item.id);
     if (!previous || item.updatedAt > previous.updatedAt) merged.set(item.id, item);
   }
+  // 2026-10-18 起“没授权微信通知就不保存提醒”（用户定）。旧版本先保存后授权，留下了没授权的提醒：
+  // 同步时统一删掉（本机和云端），按普通删除处理，云端这次没删成功下次登录会再删。
+  for (const item of [...merged.values()]) {
+    if (item.authorizationStatus === 'accepted') continue;
+    merged.delete(item.id);
+    deletedIds.add(item.id);
+    markPendingDeletion(DELETED_IDS_KEY, item.id);
+  }
   const records = [...merged.values()].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
   writeRecords(records);
   for (const id of deletedIds) await runReminderCloud('removeReminder', { id });

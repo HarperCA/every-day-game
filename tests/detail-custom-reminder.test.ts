@@ -1,8 +1,8 @@
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ records:vi.fn(), save:vi.fn() }));
+const mocks = vi.hoisted(() => ({ records:vi.fn(), save:vi.fn(), remove:vi.fn() }));
 vi.mock('../apps/miniprogram/services/repository', () => ({getCompetition:vi.fn()}));
 vi.mock('../apps/miniprogram/services/favorites', () => ({isFavorite:()=>false,toggleFavorite:vi.fn()}));
-vi.mock('../apps/miniprogram/services/reminders', () => ({getRemindersForEdition:mocks.records,removeRemindersForEdition:vi.fn(),saveReminderPlansWithAuthorization:mocks.save}));
+vi.mock('../apps/miniprogram/services/reminders', () => ({getRemindersForEdition:mocks.records,removeRemindersForEdition:mocks.remove,saveReminderPlansWithAuthorization:mocks.save}));
 let definition:any;
 beforeAll(async () => {
   vi.stubGlobal('Page',(page:any)=>{definition=page;});
@@ -60,4 +60,41 @@ it('limits the custom reminder to between now and the deadline',()=>{
     instance.onCustomDateChange({detail:{value:'2026-10-01'}});
     expect(instance.data.customDate).toBe('2026-10-17');
   } finally { vi.useRealTimers(); }
+});
+
+// 底部铃铛（2026-10-18）：已有提醒时点一下直接取消；没有提醒时打开设置面板
+it('cancels existing reminders with one tap and opens the editor when there are none',async()=>{
+  const instance=page();
+  instance.data.reminderCount=2;
+  mocks.records.mockReturnValue([]);
+  await instance.toggleReminder();
+  expect(mocks.remove).toHaveBeenCalledWith('event');
+  expect(instance.data.reminderCount).toBe(0);
+  expect(wx.showToast).toHaveBeenCalledWith({title:'已取消提醒',icon:'none'});
+  mocks.remove.mockClear();
+  const opened=vi.fn();instance.openReminderPanel=opened;
+  await instance.toggleReminder();
+  expect(mocks.remove).not.toHaveBeenCalled();
+  expect(opened).toHaveBeenCalled();
+});
+
+// 复制报名链接后的提示里带上报名方式（2026-10-18）
+it('shows the registration method after copying the link',()=>{
+  const instance=page();
+  const modal=vi.fn();
+  vi.stubGlobal('wx',{showToast:vi.fn(),showModal:modal,setClipboardData:({success}:any)=>success()});
+  instance.data.item={id:'event',name:'比赛',registrationUrl:'http://www.mooctest.net/',registrationUrlUsable:true,fieldText:{registrationMethod:'进入慕测平台，选择“测试大赛”报名'}};
+  instance.copyRegistrationUrl();
+  expect(modal.mock.calls[0][0].content).toContain('报名方式：进入慕测平台，选择“测试大赛”报名');
+  instance.data.item.fieldText.registrationMethod='信息不足';
+  instance.copyRegistrationUrl();
+  expect(modal.mock.calls[1][0].content).toBe('链接已复制，请在浏览器中打开并核对主办单位。');
+});
+
+// 点“保存提醒”到发出微信授权申请之间不能有等待（微信只认点按当下发出的申请）
+it('calls the authorizing save in the same tick as the tap',()=>{
+  const instance=page();
+  Object.assign(instance.data,{customDate:'2099-12-29',customTime:'10:30'});
+  void instance.saveReminder();
+  expect(mocks.save).toHaveBeenCalledOnce();
 });

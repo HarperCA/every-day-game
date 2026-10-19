@@ -92,7 +92,7 @@
     <view class="icon-action {{isFavorite ? 'fav-on' : ''}}" bindtap="favorite" role="button" aria-label="{{isFavorite ? '取消收藏' : '收藏赛事'}}">
       <text class="icon-glyph">{{isFavorite ? '★' : '☆'}}</text><text>{{isFavorite ? '已收藏' : '收藏'}}</text>
     </view>
-    <view class="icon-action {{reminderCount ? 'rem-on' : ''}}" bindtap="openReminderPanel" role="button" aria-label="{{reminderCount ? '管理提醒' : '设置提醒'}}">
+    <view class="icon-action {{reminderCount ? 'rem-on' : ''}}" bindtap="toggleReminder" role="button" aria-label="{{reminderCount ? '取消提醒' : '设置提醒'}}">
       <image class="icon-img" src="{{reminderCount ? '/assets/detail-bell-on.svg' : '/assets/detail-bell.svg'}}" mode="aspectFit" aria-hidden="true" /><text>{{reminderCount ? '已提醒' : '提醒'}}</text>
     </view>
     <button class="cta" disabled="{{!item.registrationUrlUsable}}" bindtap="copyRegistrationUrl">{{item.registrationUrlUsable ? '复制官方报名链接' : '官方报名链接待更新'}}</button>
