@@ -89,6 +89,7 @@ const handlers = {
   sendReminders: loadFunction('sendReminders'),
   clientLog: loadFunction('clientLog'),
   publicSync: loadFunction('publicSync'),
+  assistant: loadFunction('assistant'),
 };
 
 // —— HTTP 层 ——
@@ -164,6 +165,8 @@ const deriveUserContext = (req, event) => {
   return identity;
 };
 mount('userData', handlers.userData, { deriveContext: deriveUserContext });
+// 赛事助手（体验版）：同样只认登录会话；云函数里再按测试名单放行
+mount('assistant', handlers.assistant, { deriveContext: deriveUserContext });
 mount('sendReminders', handlers.sendReminders);
 
 // Shanghai compatibility functions sign the identity from getWXContext, never

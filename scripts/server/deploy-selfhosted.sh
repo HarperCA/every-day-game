@@ -26,7 +26,7 @@ echo "  src/ migrate/ vendor/ package.json"
 
 echo "--- 同步云函数源码（业务逻辑，原样跑） ---"
 ssh "$SERVER" "mkdir -p $REMOTE/functions"
-for fn in adminData publicData userData login sendReminders; do
+for fn in adminData publicData userData login sendReminders assistant; do
   # node_modules 不传：服务器上统一由 server/node_modules 提供依赖
   tar -czf - -C apps/miniprogram/cloudfunctions --exclude=node_modules "$fn" \
     | ssh "$SERVER" "rm -rf $REMOTE/functions/$fn && tar -xzf - -C $REMOTE/functions"
