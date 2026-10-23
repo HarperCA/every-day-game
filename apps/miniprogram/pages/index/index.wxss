@@ -27,6 +27,14 @@
 .clear { color:var(--accent); }
 /* 加载、没结果、出错 */
 .state { text-align:center; padding:70rpx 30rpx; border:0; border-radius:32rpx; }.state-title{font-size:30rpx;font-weight:700;margin-bottom:12rpx}.state button{margin-top:24rpx}.load-more{text-align:center;padding:20rpx;color:var(--muted);font-size:24rpx}.skeleton{padding:30rpx 32rpx;margin-bottom:24rpx;border:0;border-radius:32rpx}.skeleton view{height:24rpx;background:var(--chip);border-radius:12rpx;margin:16rpx 0}.skeleton view:first-child{width:78%;height:30rpx}.skeleton view:last-child{width:52%}
+/* 双列卡片的样式在 app.wxss（首页、收藏页共用） */
+/* 没结果时的推荐搜索词 */
+.suggest { display:flex; flex-wrap:wrap; justify-content:center; gap:14rpx; margin-top:24rpx; }
+.suggest-chip { padding:10rpx 24rpx; border-radius:28rpx; background:var(--accent-soft); color:var(--accent); font-size:25rpx; }
+.skeleton-grid { display:grid; grid-template-columns:1fr 1fr; gap:16rpx; }
+.skeleton-grid .skeleton { margin:0; padding:0 0 20rpx; border-radius:16rpx; overflow:hidden; }
+.skeleton-grid .skeleton view { margin:16rpx 18rpx; }
+.skeleton-grid .skeleton .skeleton-poster { width:auto; height:193rpx; margin:0; border-radius:0; }
 .filter-mask { position:fixed; z-index:1000; inset:0; background:rgba(15,23,42,.48); display:flex; align-items:flex-end; }
 .filter-sheet { width:100%; height:88vh; background:#fff; border-radius:30rpx 30rpx 0 0; display:flex; flex-direction:column; overflow:hidden; }
 .sheet-head { position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; height:104rpx; border-bottom:1rpx solid #edf0f4; }

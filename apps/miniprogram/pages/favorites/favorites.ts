@@ -2,6 +2,7 @@ import { getCurrentUserId } from '../../services/cloudSession';
 import { getCompetition } from '../../services/repository';
 import { getFavoriteRecords, removeFavorite } from '../../services/favorites';
 import { getRemindersForEdition, removeRemindersForEdition } from '../../services/reminders';
+import { withCard } from '../../services/cardCover';
 
 Page({
   data: {
@@ -44,18 +45,20 @@ Page({
       const results = await Promise.all(records.map(async (record) => {
         try {
           const item = await getCompetition(record.editionId);
-          return {
+          return withCard({
             ...item,
+            isFavorite: true,
             favoriteAt: record.createdAt.substring(0, 10),
             isEnded: item.dataStatus === 'archived' || item.registrationStatus === '已截止',
-          };
+          });
         } catch (_error) {
-          return {
+          return withCard({
             id: record.editionId,
             name: '赛事暂不可读取或已下架',
+            isFavorite: true,
             favoriteAt: record.createdAt.substring(0, 10),
             unavailable: true,
-          };
+          });
         }
       }));
       if ((this as any).loadRequestId !== requestId || getCurrentUserId() !== owner) return;
@@ -114,6 +117,16 @@ Page({
         wx.showToast({ title: '已取消收藏', icon: 'success' });
       },
     });
+  },
+
+  // 卡片右上角实心星标（共用模板里叫 onStarTap）= 取消收藏
+  onStarTap(event: any) { this.cancelFavorite(event); },
+
+  // 海报加载失败：只把这一张卡片改成文字封面
+  onPosterError(event: any) {
+    const { id, index } = event.currentTarget.dataset;
+    const at = this.data.items[index]?.id === id ? Number(index) : this.data.items.findIndex((item: any) => item.id === id);
+    if (at >= 0) this.setData({ [`items[${at}].posterFailed`]: true });
   },
 
   // 空状态标题旁的“?”：点一下显示说明，再点收起

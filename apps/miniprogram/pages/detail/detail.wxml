@@ -12,6 +12,8 @@
       <text wx:if="{{item.eventLevel}}">{{item.eventLevel}}</text>
     </view>
     <view class="hero-tags" wx:if="{{item.professions.length}}"><text wx:for="{{item.professions}}" wx:key="*this">{{item}}</text></view>
+    <!-- 信息可信度（2026-10，用户定）：最近一次核验日期；信息都来自主办方公开资料 -->
+    <view class="verify-line" wx:if="{{item.lastVerifiedDate && item.lastVerifiedDate !== '待核验'}}">✓ {{item.lastVerifiedDate}} 已核验 · 信息来自主办方公开资料</view>
   </view>
 
   <view class="body">

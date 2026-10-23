@@ -87,7 +87,8 @@ class ProjectFileTests(unittest.TestCase):
             self.assertIn(field, logic)
             self.assertIn(field, repository)
         self.assertIn("moreFilterCount", logic)
-        self.assertIn("pageSize: 8", logic)
+        # 2026-10 首页改双列瀑布流：一页 16 张，和原来单列 8 张差不多高
+        self.assertIn("pageSize: 16", logic)
 
     def test_admin_competition_list_has_region_filter(self):
         admin = (ROOT / "apps/admin/src/App.tsx").read_text(encoding="utf-8")

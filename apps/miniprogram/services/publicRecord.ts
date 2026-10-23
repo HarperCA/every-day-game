@@ -29,6 +29,8 @@ export function hydratePublic(item: any) {
     && eligibilityText.replace(/\s+/g, '') !== String(item.participants || '').replace(/\s+/g, '');
   return {
     id:item.id, eventId:item.event_id, name:item.name, editionName:item.edition_name,
+    // 赛事海报：接口暂未提供时为空，卡片显示文字封面
+    posterUrl:String(item.posterUrl || item.poster_url || ''),
     editionYear:item.edition_year || '', editionOrdinal:item.edition_ordinal || '',
     aliases:item.aliases || [], organizer:item.organizer || '', eventLevel:item.event_level,
     objectiveTags:item.objective_tags || [], professions:item.professions || [], displayProfessions:(item.professions || []).slice(0, 2),

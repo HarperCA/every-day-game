@@ -1,3 +1,5 @@
+<import src="/templates/poster-card.wxml" />
+
 <!-- 吸顶区：品牌栏、搜索框、筛选栏一起固定在顶部（2026-10 改版） -->
 <view class="sticky-head">
   <brand-nav inline="{{true}}" />
@@ -38,27 +40,18 @@
 <view class="page">
   <view class="result-meta"><text>找到 {{total}} 场</text></view>
 
-  <view wx:if="{{loading && items.length === 0}}">
-    <view class="skeleton card" wx:for="{{[1,2,3]}}" wx:key="*this"><view></view><view></view><view></view></view>
+  <view wx:if="{{loading && items.length === 0}}" class="skeleton-grid">
+    <view class="skeleton card" wx:for="{{[1,2,3,4]}}" wx:key="*this"><view class="skeleton-poster"></view><view></view><view></view><view></view></view>
   </view>
   <view wx:elif="{{error}}" class="state card"><view>{{error}}</view><button bindtap="retry" size="mini">重新加载</button></view>
-  <view wx:elif="{{items.length === 0}}" class="state card"><view class="state-title">没有匹配的比赛</view><view class="muted">试试清除部分筛选条件或更换关键词。</view></view>
+  <view wx:elif="{{items.length === 0}}" class="state card">
+    <view class="state-title">没有匹配的比赛</view><view class="muted">试试清除部分筛选条件或更换关键词。</view>
+    <view class="suggest"><text class="suggest-chip" wx:for="{{suggestKeywords}}" wx:key="*this" data-keyword="{{item}}" bindtap="searchSuggestion">{{item}}</text></view>
+  </view>
   <view wx:else>
-    <!-- 卡片只留名称、收藏、报名状态、截止和推荐等级；届次、级别、专业在详情页看（2026-10 改版，用户定） -->
-    <view class="ccard" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
-      <view class="ccard-r1">
-        <text class="ccard-name">{{item.name}}</text>
-        <text class="ccard-star {{item.isFavorite ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFavorite">{{item.isFavorite ? '★' : '☆'}}</text>
-      </view>
-      <view class="ccard-r2">
-        <text class="st {{item.statusClass}}">{{item.registrationStatus}}</text>
-        <!-- 下一届的推算时间只在后台显示，不给学生看（2026-10-03，用户定） -->
-        <text wx:if="{{item.dataStatus === 'archived'}}" class="ccard-dl arch">已过报名日期</text>
-        <text wx:elif="{{item.registrationEndDate}}" class="ccard-dl">截止 {{item.registrationEndDate}}{{item.registrationEndNote ? '（' + item.registrationEndNote + '）' : ''}}</text>
-        <text wx:elif="{{item.registrationEndNote}}" class="ccard-dl">截止 {{item.registrationEndNote}}</text>
-        <text wx:else class="ccard-dl">报名时间待官方公布</text>
-        <text wx:if="{{item.recommendationLevel}}" class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
-      </view>
+    <!-- 双列卡片（2026-10 淘宝风格改版）：海报或文字封面 + 报名状态、级别、推荐等级 + 截止倒计时；每行两张顶部对齐、一样高（用户定，不要错落） -->
+    <view class="card-grid">
+      <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item, index}}" />
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>
   </view>

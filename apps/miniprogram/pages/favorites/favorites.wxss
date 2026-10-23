@@ -1,9 +1,6 @@
-/* 我的收藏（2026-10 改版）。卡片样式 .ccard 在 app.wxss */
+/* 我的收藏（2026-10 改版）。双列卡片样式 .pcard 在 app.wxss，和首页共用 */
 .fav-page { min-height: 100vh; padding: 24rpx 24rpx 48rpx; box-sizing: border-box; }
 .count { margin: 0 8rpx 20rpx; font-size: 25rpx; color: var(--muted); }
-.ccard.ended .ccard-name { color: var(--ink2); }
-.since { margin-top: 12rpx; font-size: 23rpx; color: var(--muted); }
-.gone { margin-top: 12rpx; font-size: 26rpx; color: var(--muted); line-height: 1.6; }
 .state { background: var(--surface); border-radius: 32rpx; padding: 72rpx 40rpx; text-align: center; display: flex; flex-direction: column; align-items: center; }
 .state-title { font-size: 31rpx; font-weight: 700; }
 .state-sub { margin-top: 12rpx; font-size: 26rpx; color: var(--muted); line-height: 1.65; }
