@@ -118,7 +118,8 @@ describe('publicData 云函数入口', () => {
     const result = await main({ action:'list', query:{} });
     expect(result.ok).toBe(true);
     expect(result.data.total).toBe(2);
-    for (const item of result.data.items) expect(Object.keys(item).every(key => LIST_FIELDS.includes(key))).toBe(true);
+    // 2026-10-24 起列表统一走新流程，卡片多带一个 list_group
+    for (const item of result.data.items) expect(Object.keys(item).every(key => key === 'list_group' || LIST_FIELDS.includes(key))).toBe(true);
     expect(result.data.items.map(item => item.id).sort()).toEqual(['edition-1', 'edition-2']);
   });
 
