@@ -20,6 +20,7 @@ let latestPreviewRequestId = 0;
 
 Page({
   preferenceSnapshot: '',
+  pendingLoadMore: false,
   data: {
     surveyVisible: false,
     surveyStep: 0,
@@ -173,7 +174,13 @@ Page({
         () => { this.updateSelectedConditions(); this.load(true); });
     } catch (_error) { wx.showToast({title:'保存失败，请重试', icon:'none'}); }
   },
-  onReachBottom() { if (this.data.hasMore && !this.data.loading && !this.data.morePanelVisible && !this.data.surveyVisible) this.load(false); },
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.morePanelVisible || this.data.surveyVisible) return;
+    // 到底时正在加载：先记下，加载完再接着取下一页。微信只在“进入”底部区域时触发一次，
+    // 页面没变高就不会再触发——双列瀑布流一屏能放下的卡片多，第一页刚加载完常常还停在底部区域（2026-10）
+    if (this.data.loading) { this.pendingLoadMore = true; return; }
+    this.load(false);
+  },
   onKeywordInput(event: WechatMiniprogram.Input) { this.setData({ keyword: event.detail.value }); },
   onSearch() {
     const keyword = this.data.keyword.trim();
@@ -356,6 +363,7 @@ Page({
   async load(reset: boolean) {
     const requestId = ++latestListRequestId;
     const page = reset ? 1 : this.data.page + 1;
+    if (reset) this.pendingLoadMore = false;
     this.setData({ loading: true, error: '' });
     try {
       const result = await listCompetitions({
@@ -375,7 +383,8 @@ Page({
         sortBy: this.data.sortBy as any,
         sortOrder: this.data.sortOrder as any,
         page,
-        pageSize: 8,
+        // 双列瀑布流一页 16 张，和原来单列 8 张差不多高，第一屏能滚得动
+        pageSize: 16,
       });
       if (requestId !== latestListRequestId) return;
       const favoriteIds = new Set(getFavoriteIds());
@@ -386,8 +395,13 @@ Page({
         page,
         loading: false,
       });
+      if (this.pendingLoadMore) {
+        this.pendingLoadMore = false;
+        if (result.hasMore) this.load(false);
+      }
     } catch (error) {
       if (requestId !== latestListRequestId) return;
+      this.pendingLoadMore = false;
       this.setData({ loading: false, error: error instanceof Error ? error.message : '加载失败，请重试' });
     }
   },
