@@ -1,8 +1,8 @@
 const cloud = require('wx-server-sdk');
-const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
+const { assertPublicRecordCapacity, currentRegistrationStatus, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
 const { forwardIfConfigured } = require('./cloudBridge');
-const { slimList, slimListV2 } = require('./listFields');
-const { buildPublicList, isListV2, personalizePage, publicQueryKey } = require('./listOrder');
+const { slimListV2 } = require('./listFields');
+const { buildPublicList, personalizePage, publicQueryKey } = require('./listOrder');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -38,11 +38,7 @@ function memo(key, compute) {
   return data;
 }
 
-function filterCached(records, query) {
-  return memo(JSON.stringify(query), () => filterPublicRecords(records, query));
-}
-
-// 新版列表：缓存的只是公共部分（筛选 + 公共顺序），键里不含收藏、提醒编号和页码；
+// 列表：缓存的只是公共部分（筛选 + 公共顺序），键里不含收藏、提醒编号和页码；
 // 组内分档在缓存结果的副本上做（personalizePage 不改入参），不会把一个人的收藏顺序带给下一个人。
 function listV2(records, query) {
   const publicList = memo(`v2:${publicQueryKey(query)}`, () => buildPublicList(records, query));
@@ -119,9 +115,8 @@ exports.main = async rawEvent => {
       // 访问计数和读数据同时进行，不再读完才开始写计数
       const [records] = await Promise.all([loadPublishedRecordsCached(), countLoad('list')]);
       // 列表只返回卡片要用的字段（listFields.js），否则全部比赛超过小程序链路 1MB 的上限；详情走 get，仍是完整记录
-      const query = event.query || {};
-      if (isListV2(query)) return { ok:true, data:slimListV2(listV2(records, query)) };
-      return { ok:true, data:slimList(filterCached(records, query)) };
+      // 2026-10-24 起新旧版小程序统一走新的筛选和排序（listOrder.js）；旧版不带收藏、提醒编号，组内分档对它不起作用
+      return { ok:true, data:slimListV2(listV2(records, event.query || {})) };
     }
     if (event?.action === 'get') {
       const id = normalizePublicRecordId(event.id);
