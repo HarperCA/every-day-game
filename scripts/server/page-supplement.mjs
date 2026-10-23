@@ -181,26 +181,33 @@ export function looksLikePoster(size, bytes) {
   return size.width >= MIN_POSTER_WIDTH && ratio >= 1.2 && ratio <= 4 && (!bytes || bytes >= MIN_POSTER_BYTES);
 }
 
-// 依次下载候选图片的前 64KB 量尺寸，第一张像海报的就用；都不像返回 null
-export async function findPagePoster({ html = '', pageUrl = '', contestName = '' } = {}, { fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+// 下载图片前 64KB 量尺寸；像海报返回尺寸，否则（下载失败、不是图片、太小、方图、细长条）返回 null
+export async function measurePoster(url, pageUrl, { fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+  try {
+    const res = await fetchImpl(url, { headers:{ range:'bytes=0-65535', referer:pageUrl }, signal:AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    const type = (res.headers.get('content-type') || '').toLowerCase();
+    if (type && !/^image\/(?:png|jpe?g|webp)/.test(type)) return null;
+    const total = Number(/\/(\d+)$/.exec(res.headers.get('content-range') || '')?.[1] || res.headers.get('content-length') || 0);
+    const size = imageSize(Buffer.from(await res.arrayBuffer()));
+    return looksLikePoster(size, total) ? { width:size.width, height:size.height } : null;
+  } catch { return null; }
+}
+
+// 依次量候选图片，第一张像海报的就用；都不像返回 null
+export async function findPagePoster({ html = '', pageUrl = '', contestName = '' } = {}, options = {}) {
   for (const candidate of pageImageCandidates({ html, pageUrl, contestName })) {
-    try {
-      const res = await fetchImpl(candidate.url, { headers:{ range:'bytes=0-65535', referer:pageUrl }, signal:AbortSignal.timeout(timeoutMs) });
-      if (!res.ok) continue;
-      const type = (res.headers.get('content-type') || '').toLowerCase();
-      if (type && !/^image\/(?:png|jpe?g|webp)/.test(type)) continue;
-      const total = Number(/\/(\d+)$/.exec(res.headers.get('content-range') || '')?.[1] || res.headers.get('content-length') || 0);
-      const size = imageSize(Buffer.from(await res.arrayBuffer()));
-      if (looksLikePoster(size, total)) return { url:candidate.url, width:size.width, height:size.height };
-    } catch { /* 下载失败换下一张 */ }
+    const size = await measurePoster(candidate.url, pageUrl, options);
+    if (size) return { url:candidate.url, ...size };
   }
   return null;
 }
 
-// 一个官网页面找海报：先用页面声明的封面图，没有再找页面上的赛事大图。source 记来源，后台可据此复核
+// 一个官网页面找海报：先用页面声明的封面图，没有再找页面上的赛事大图。source 记来源，后台可据此复核。
+// 声明的封面图也要量尺寸：实测不少平台给所有页面声明同一张方形 logo（天池 640×640），或者写了个打不开的地址
 export async function findPoster({ html = '', pageUrl = '', contestName = '' } = {}, options = {}) {
   const declared = pickPosterImage({ html, pageUrl });
-  if (declared) return { url:declared, source:'declared' };
+  if (declared && await measurePoster(declared, pageUrl, options)) return { url:declared, source:'declared' };
   const page = await findPagePoster({ html, pageUrl, contestName }, options);
   return page ? { url:page.url, source:'page_image' } : null;
 }

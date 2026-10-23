@@ -86,6 +86,13 @@ describe('官网没声明封面图时，找页面上的赛事大图', () => {
     expect(await findPoster({ html, pageUrl:PAGE, contestName:'全国大学生测试设计大赛' }, { fetchImpl })).toEqual({ url:'https://www.example-contest.cn/upload/2026kv.jpg', source:'page_image' });
     expect(await findPoster({ html:'<p>没有图</p>', pageUrl:PAGE }, { fetchImpl })).toBeNull();
   });
+  it('声明的封面图也量尺寸：方形 logo、打不开的地址不算，改找页面大图', async () => {
+    const withOg = `<meta property="og:image" content="https://img.alicdn.com/logo-640-640.png">${html}`;
+    const fetchImpl = async url => url.includes('alicdn') ? imageReply(pngHead(640, 640), 50000) : imageReply(pngHead(1500, 600), 300000);
+    expect(await findPoster({ html:withOg, pageUrl:PAGE, contestName:'全国大学生测试设计大赛' }, { fetchImpl })).toEqual({ url:'https://www.example-contest.cn/upload/2026kv.jpg', source:'page_image' });
+    const broken = async url => url.includes('alicdn') ? { ok:false, status:404, headers:new Headers() } : imageReply(pngHead(1500, 600), 300000);
+    expect((await findPoster({ html:withOg, pageUrl:PAGE, contestName:'全国大学生测试设计大赛' }, { fetchImpl:broken })).source).toBe('page_image');
+  });
 });
 
 describe('给已有赛事补海报', () => {
