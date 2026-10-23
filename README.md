@@ -1,5 +1,9 @@
 # 大学生竞赛推荐微信小程序 MVP
 
+## AI 协作与分支维护要求
+
+修改代码或审查提交前，请先阅读 [AGENTS.md](AGENTS.md)。只维护 `main` 一条主线，AI 赛事助手也在主线里，不再单独维护助手分支。GitHub Copilot 的入口说明见 [.github/copilot-instructions.md](.github/copilot-instructions.md)。
+
 本仓库已实现首轮可运行纵向切片：30场Excel底稿规范化、发布门槛校验、原生微信小程序列表/搜索/三筛选/排序/详情/推荐/复制链接，以及独立React管理后台基础工程。
 
 ## 环境
