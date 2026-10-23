@@ -9,13 +9,8 @@
 # dispatchSecret 走 sendReminders 自己的鉴权（见 reminderDelivery.js 的 isAuthorizedDispatch），跟 ADMIN_TOKEN 是两套密钥。
 set -uo pipefail
 
-SHANGHAI_ENDPOINT="https://daily-contest-dev-d8dbbhc653e221-1428353397.ap-shanghai.app.tcloudbase.com/send-reminders"
-SHANGHAI_SECRET="$(cat /opt/daily-contest/.dispatch-secret-shanghai)"
-printf '上海：'
-curl -s -m 60 -X POST "$SHANGHAI_ENDPOINT" \
-  -H "Content-Type: application/json" \
-  -d "{\"action\":\"dispatch\",\"dispatchSecret\":\"${SHANGHAI_SECRET}\"}"
-echo
+# 2026-10-24 起上海的提醒改由常驻服务 daily-contest-reminder-dispatcher 发送（上海推送 + 每小时对账），
+# 这里不再每 5 分钟调用上海 sendReminders（经 HTTP 触发时它用不了云调用，一直报 -501001）。
 
 if [ "${SKIP_LOCAL_REMINDERS:-0}" != "1" ] && [ ! -f /opt/daily-contest/.reminders-local-off ]; then
   SECRET="$(cat /opt/daily-contest/.dispatch-secret)"

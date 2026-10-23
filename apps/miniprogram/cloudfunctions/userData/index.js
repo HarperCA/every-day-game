@@ -7,6 +7,7 @@ const { normalizeReminderInput, normalizeReminderBatch, requireReminderEventType
 const { normalizeFavoriteBatch, requireFavoriteFlag, requireFavoriteId } = require('./favoriteValidation');
 const { normalizePreferenceInput } = require('./preferenceValidation');
 const { forwardIfConfigured } = require('./cloudBridge');
+const { pushReminders } = require('./reminderPush');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -246,6 +247,7 @@ async function handle(action, event, userId) {
     const records = requireRecordArray(event.records, MAX_REMINDER_WRITE_BATCH, 'reminders');
     const databaseRecords = normalizeReminderBatch(records).map(item => reminderToDatabase(item, userId));
     const result = await upsertRemindersAtomically(databaseRecords);
+    await pushReminders(await loadReminderDocumentsByIds(userId, databaseRecords.map(item => item.id)));
     return { merged:records.length, preserved:result.preserved };
   }
   if (action === 'replaceReminderEvent') {
@@ -285,6 +287,7 @@ async function handle(action, event, userId) {
       }
       return { removed, preserved };
     });
+    await pushReminders(await loadReminderDocumentsByIds(userId, databaseRecords.map(item => item.id)));
     return { saved:records.length, removed:result.removed, preserved:result.preserved };
   }
   if (action === 'removeReminder') {

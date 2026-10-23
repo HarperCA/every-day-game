@@ -1,35 +1,24 @@
 const cloud = require('wx-server-sdk');
-const { assertScheduledInvocation, failureDeliveryStatus, isDeliverableScheduleStatus } = require('./reminderDelivery');
+const {
+  assertScheduledInvocation, buildSubscribePayload, failureDeliveryStatus, isDeliverableScheduleStatus, requireReminderKey, upcomingWindowMs,
+} = require('./reminderDelivery');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const command = db.command;
 const TEMPLATE_ID = 'Hdc1YLawcLjHfgiAjZYF6fJMkAMTwcPCHZYqLyvo2mY';
-const configuredBatchSize = Number(process.env.REMINDER_BATCH_SIZE || 1);
-const BATCH_SIZE = Number.isInteger(configuredBatchSize) ? Math.min(50, Math.max(1, configuredBatchSize)) : 1;
 const MAX_RETRIES = 3;
 const STALE_REMINDER_MS = 24 * 60 * 60 * 1000;
 const CLAIM_TIMEOUT_MS = 15 * 60 * 1000;
+const MAX_UPCOMING = 200;
 const INVOCATION_LOG_DOC = 'reminder_runs';
+const DELIVERABLE_SCHEDULES = ['normal', 'time_updated', 'postponed'];
 
 function truncate(value, limit) {
   return Array.from(String(value || '')).slice(0, limit).join('');
 }
 
-function formatShanghaiTime(value) {
-  const date = new Date(value);
-  const local = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-  const pad = part => String(part).padStart(2, '0');
-  return `${local.getUTCFullYear()}年${pad(local.getUTCMonth() + 1)}月${pad(local.getUTCDate())}日 ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
-}
-
-function errorText(error) {
-  const code = error && (error.errCode || error.errcode || error.code);
-  const message = error && (error.errMsg || error.errmsg || error.message);
-  return truncate([code, message].filter(Boolean).join(': ') || 'subscribe_message_send_failed', 500);
-}
-
-// 探针：记录最近一次调用，用于确认定时触发器是否真的在触发。
+// 探针：记录最近一次调用，用于确认是谁在调用这个函数。
 // 这个函数超时只有 3 秒，所以只做一次覆盖写，不读取历史。
 async function logInvocation(event, context, outcome) {
   try {
@@ -37,6 +26,7 @@ async function logInvocation(event, context, outcome) {
       at:new Date().toISOString(),
       eventType:(event && event.Type) || null,
       triggerName:(event && event.TriggerName) || null,
+      action:(event && event.action) || null,
       hasOpenid:Boolean(context && context.OPENID),
       outcome,
     } } });
@@ -48,7 +38,7 @@ async function logInvocation(event, context, outcome) {
 async function recoverTimedOutClaims(now) {
   const expiredClaimAt = new Date(now.getTime() - CLAIM_TIMEOUT_MS).toISOString();
   await db.collection('reminder').where({ delivery_status:'queued', updated_at:command.lte(expiredClaimAt) }).update({
-    // 已调用微信但未写回状态也会留下 queued，自动重试可能重复通知。
+    // 已交给发送方但没回写结果也会留下 queued，自动重试可能重复通知。
     data:{ delivery_status:'manual_required', last_error:'send_claim_timeout_delivery_unknown', updated_at:now.toISOString() },
   });
 }
@@ -64,35 +54,86 @@ async function claimReminder(item, now) {
   return Boolean(result.stats && result.stats.updated === 1);
 }
 
-async function sendReminder(item, now) {
-  const user = await db.collection('user_account').doc(item.user_id).get();
-  if (!user.data || !user.data.openid) throw new Error('user_openid_not_found');
-  const taskName = truncate(item.task_name || `${item.competition_name || '大学生竞赛'}·${item.event_label || '报名'}提醒`, 20);
-  await cloud.openapi.subscribeMessage.send({
-    touser:user.data.openid,
-    templateId:item.subscription_template_id || TEMPLATE_ID,
-    page:`pages/detail/detail?id=${encodeURIComponent(item.edition_id)}`,
-    miniprogramState:process.env.MINIPROGRAM_STATE || 'developer',
-    lang:'zh_CN',
-    data:{
-      thing1:{ value:taskName },
-      time3:{ value:formatShanghaiTime(item.remind_at) },
-      thing5:{ value:truncate(`请查看${item.event_label || '报名'}安排，以官方通知为准`, 20) },
-    },
-  });
+async function readReminder(key) {
   try {
-    await db.collection('reminder').doc(item._id).update({
-      data:{ delivery_status:'sent', sent_at:now.toISOString(), last_error:null, updated_at:now.toISOString() },
-    });
+    const result = await db.collection('reminder').doc(key).get();
+    return result.data ? { ...result.data, _id:result.data._id || key } : null;
   } catch (error) {
-    // 通知已经发出，数据库写回失败必须区别于发送失败。
-    error.reminderAlreadySent = true;
+    if (error && (error.errCode === -1 || /not exist|not found/i.test(error.message || ''))) return null;
     throw error;
   }
 }
 
+// 2026-10-24 起：云函数经 HTTP 访问服务触发时用不了云调用（subscribeMessage.send 报 -501001 invalid wx openapi access_token），
+// 所以这里只管提醒数据，真正发微信由美国服务器的 reminder-dispatcher 用小程序凭证完成：
+//   listUpcoming：列出接下来一段时间要到期（含过期 24 小时内没发出）的提醒，供美国服务器排计划和对账；
+//   claim：到点时领取一条提醒，校验仍然有效后标成 queued，交回发送内容（含 openid）；
+//   report：回写发送结果。
+async function listUpcoming(now, event) {
+  const until = new Date(now.getTime() + upcomingWindowMs(event.withinMs)).toISOString();
+  const since = new Date(now.getTime() - STALE_REMINDER_MS).toISOString();
+  const result = await db.collection('reminder').where({
+    authorization_status:'accepted',
+    delivery_status:command.in(['pending', 'failed']),
+    schedule_change_status:command.in(DELIVERABLE_SCHEDULES),
+    remind_at:command.lte(until),
+  }).orderBy('remind_at', 'asc').limit(MAX_UPCOMING).get();
+  // 过期超过 24 小时的交给 claim 标成 expired，这里也一并列出，让发送方去领取一次以便清理
+  return { items:result.data.map(item => ({ key:item._id, remindAt:item.remind_at, stale:item.remind_at < since })) };
+}
+
+async function claim(now, event) {
+  const item = await readReminder(requireReminderKey(event.key));
+  if (!item) return { status:'missing' };
+  if (item.authorization_status !== 'accepted' || !['pending', 'failed'].includes(item.delivery_status)
+    || !isDeliverableScheduleStatus(item.schedule_change_status)) {
+    return { status:'skip', reason:`state_${item.authorization_status}_${item.delivery_status}_${item.schedule_change_status}` };
+  }
+  const remindAt = new Date(item.remind_at).getTime();
+  // 提醒时间改到以后了：告诉发送方按新时间重排（允许 5 秒时钟误差）
+  if (remindAt > now.getTime() + 5000) return { status:'reschedule', remindAt:item.remind_at };
+  const retries = Number(item.retry_count || 0);
+  if (retries >= MAX_RETRIES) {
+    await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'manual_required', updated_at:now.toISOString() } });
+    return { status:'skip', reason:'retries_exhausted' };
+  }
+  if (now.getTime() - remindAt > STALE_REMINDER_MS) {
+    await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'expired', updated_at:now.toISOString() } });
+    return { status:'skip', reason:'expired' };
+  }
+  const user = await db.collection('user_account').doc(item.user_id).get().catch(() => ({ data:null }));
+  if (!user.data || !user.data.openid) {
+    const retryCount = retries + 1;
+    await db.collection('reminder').doc(item._id).update({ data:{
+      delivery_status:failureDeliveryStatus(retryCount, MAX_RETRIES), retry_count:retryCount, last_error:'user_openid_not_found', updated_at:now.toISOString(),
+    } });
+    return { status:'skip', reason:'user_openid_not_found' };
+  }
+  if (!await claimReminder(item, now)) return { status:'skip', reason:'claim_conflict' };
+  return {
+    status:'ready',
+    payload:buildSubscribePayload(item, user.data.openid, { templateId:TEMPLATE_ID, miniprogramState:process.env.MINIPROGRAM_STATE }),
+  };
+}
+
+async function report(now, event) {
+  const item = await readReminder(requireReminderKey(event.key));
+  if (!item) return { status:'missing' };
+  // 只回写本轮领取过的提醒，防止旧结果覆盖用户新改的提醒
+  if (item.delivery_status !== 'queued') return { status:'ignored', reason:`state_${item.delivery_status}` };
+  if (event.ok === true) {
+    await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'sent', sent_at:now.toISOString(), last_error:null, updated_at:now.toISOString() } });
+    return { status:'sent' };
+  }
+  const retryCount = Number(item.retry_count || 0) + 1;
+  const deliveryStatus = event.uncertain === true ? 'manual_required' : failureDeliveryStatus(retryCount, MAX_RETRIES);
+  await db.collection('reminder').doc(item._id).update({ data:{
+    delivery_status:deliveryStatus, retry_count:retryCount, last_error:truncate(event.error || 'subscribe_message_send_failed', 500), updated_at:now.toISOString(),
+  } });
+  return { status:deliveryStatus };
+}
+
 // 经腾讯云 HTTP 访问服务（/send-reminders）调用时，参数在 event.body（JSON 字符串）里。
-// 2026-10-01 起提醒数据在上海，由服务器每 5 分钟经 HTTP 派发（云开发定时触发器在这个环境不执行）。
 function readParams(event) {
   if (!event || typeof event.body !== 'string') return event;
   const raw = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
@@ -112,41 +153,9 @@ exports.main = async rawEvent => {
   await logInvocation(event, wxContext, `accepted:${via}`);
   const now = new Date();
   await recoverTimedOutClaims(now);
-  const due = await db.collection('reminder').where({
-    authorization_status:'accepted',
-    delivery_status:command.in(['pending','failed']),
-    schedule_change_status:command.in(['normal','time_updated','postponed']),
-    remind_at:command.lte(now.toISOString()),
-  }).orderBy('remind_at', 'asc').limit(BATCH_SIZE).get();
-  const summary = { scanned:due.data.length, sent:0, failed:0, manualRequired:0, expired:0, skipped:0 };
-  for (const item of due.data) {
-    if (!isDeliverableScheduleStatus(item.schedule_change_status)) { summary.skipped += 1; continue; }
-    const retries = Number(item.retry_count || 0);
-    if (retries >= MAX_RETRIES) {
-      await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'manual_required', updated_at:now.toISOString() } });
-      summary.manualRequired += 1;
-      continue;
-    }
-    if (now.getTime() - new Date(item.remind_at).getTime() > STALE_REMINDER_MS) {
-      await db.collection('reminder').doc(item._id).update({ data:{ delivery_status:'expired', updated_at:now.toISOString() } });
-      summary.expired += 1;
-      continue;
-    }
-    if (!await claimReminder(item, now)) { summary.skipped += 1; continue; }
-    try {
-      await sendReminder(item, now);
-      summary.sent += 1;
-    } catch (error) {
-      const retryCount = retries + 1;
-      const deliveryStatus = error.reminderAlreadySent ? 'manual_required' : failureDeliveryStatus(retryCount, MAX_RETRIES);
-      await db.collection('reminder').doc(item._id).update({
-        data:{ delivery_status:deliveryStatus, retry_count:retryCount, last_error:error.reminderAlreadySent ? `sent_but_state_update_failed: ${errorText(error)}` : errorText(error), updated_at:now.toISOString() },
-      });
-      if (deliveryStatus === 'manual_required') summary.manualRequired += 1;
-      else summary.failed += 1;
-      console.error('send reminder failed', { reminderId:item.id, retryCount, error });
-    }
-  }
-  console.log('send reminders completed', summary);
-  return summary;
+  if (event.action === 'listUpcoming') return listUpcoming(now, event);
+  if (event.action === 'claim') return claim(now, event);
+  if (event.action === 'report') return report(now, event);
+  // 旧的 dispatch 和定时触发：不再在这里发送（见上方说明），只做超时回收。
+  return { delegated:true };
 };

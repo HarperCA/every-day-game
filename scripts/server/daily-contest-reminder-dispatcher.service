@@ -1,0 +1,20 @@
+[Unit]
+Description=竞赛雷达提醒发送服务（接收上海推送，按时间点发微信订阅消息，每小时对账）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/daily-contest
+# WECHAT_APPID、WECHAT_APPSECRET_FILE 写在这个文件里（与 daily-contest-api 用同一套小程序凭证），不进仓库
+EnvironmentFile=/opt/daily-contest/.reminder-dispatcher.env
+Environment=PORT=8790
+Environment=HOST=127.0.0.1
+Environment=SHANGHAI_ENDPOINT=https://daily-contest-dev-d8dbbhc653e221-1428353397.ap-shanghai.app.tcloudbase.com/send-reminders
+Environment=DISPATCH_SECRET_FILE=/opt/daily-contest/.dispatch-secret-shanghai
+ExecStart=/usr/bin/node /opt/daily-contest/reminder-dispatcher.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
