@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { findPagePoster, findPoster, imageSize, looksLikePoster, pageImageCandidates, pickPosterImage } from '../scripts/server/page-supplement.mjs';
 import { applyPosters, pagesOf, parseArgs } from '../scripts/server/backfill-posters.mjs';
 import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
-import { coverOf, withCover } from '../apps/miniprogram/services/cardCover';
+import { closingSoon, coverOf, deadlineOf, withCard, withCover } from '../apps/miniprogram/services/cardCover';
 
 const require = createRequire(import.meta.url);
 const { candidateToRecord } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
@@ -171,6 +171,39 @@ describe('没有海报时的文字封面', () => {
     expect(first.coverKicker).toBe('大学生竞赛');
     expect(coverOf({ id:'edition-x', name:'某大赛' }).coverTone).toBe(first.coverTone);
     expect(['indigo', 'blue', 'teal', 'purple']).toContain(first.coverTone);
+  });
+  it('截止倒计时按北京时间的日历天数算', () => {
+    const now = new Date('2026-10-23T22:30:00+08:00');
+    const open = end => deadlineOf({ registrationStatus:'报名中', registrationEnd:end }, now);
+    expect(open('2026-10-23T23:59:59+08:00')).toEqual({ text:'今天截止', tone:'urgent' });
+    expect(open('2026-10-24T09:00:00+08:00')).toEqual({ text:'明天截止', tone:'urgent' });
+    expect(open('2026-10-30T23:59:59+08:00')).toEqual({ text:'还剩 7 天', tone:'urgent' });
+    expect(open('2026-11-15T23:59:59+08:00')).toEqual({ text:'还剩 23 天', tone:'' });
+  });
+  it('即将报名、已截止、只有截止说明、什么都没有', () => {
+    const now = new Date('2026-10-23T10:00:00+08:00');
+    expect(deadlineOf({ registrationStatus:'即将报名', registrationStart:'2026-10-26T00:00:00+08:00' }, now).text).toBe('3 天后开始报名');
+    expect(deadlineOf({ registrationStatus:'已截止', registrationEnd:'2026-10-01T23:59:59+08:00' }, now)).toEqual({ text:'已过报名日期', tone:'muted' });
+    expect(deadlineOf({ registrationStatus:'报名中', dataStatus:'archived' }, now).text).toBe('已过报名日期');
+    expect(deadlineOf({ registrationStatus:'报名中', registrationEndNote:'各赛区自定' }, now).text).toBe('截止 各赛区自定');
+    expect(deadlineOf({ registrationStatus:'时间待公布' }, now)).toEqual({ text:'报名时间待公布', tone:'muted' });
+  });
+  it('卡片带上级别和推荐等级；未明确的级别不显示', () => {
+    const now = new Date('2026-10-23T10:00:00+08:00');
+    expect(withCard({ id:'a', name:'某大赛', eventLevel:'省级/区域级', recommendationLevel:'值得参加' }, now)).toMatchObject({ levelTag:'省级', recClass:'r2' });
+    expect(withCard({ id:'b', name:'某大赛', eventLevel:'其他/未明确', recommendationLevel:'' }, now)).toMatchObject({ levelTag:'', recClass:'' });
+  });
+  it('即将截止：报名中、7 天内截止，按截止时间排', () => {
+    const now = new Date('2026-10-23T10:00:00+08:00');
+    const items = [
+      { id:'later', name:'甲', registrationStatus:'报名中', registrationEnd:'2026-10-29T23:59:59+08:00' },
+      { id:'today', name:'乙', registrationStatus:'报名中', registrationEnd:'2026-10-23T23:59:59+08:00' },
+      { id:'far', name:'丙', registrationStatus:'报名中', registrationEnd:'2026-12-01T23:59:59+08:00' },
+      { id:'past', name:'丁', registrationStatus:'报名中', registrationEnd:'2026-10-20T23:59:59+08:00' },
+      { id:'upcoming', name:'戊', registrationStatus:'即将报名', registrationEnd:'2026-10-25T23:59:59+08:00' },
+      { id:'nodate', name:'己', registrationStatus:'报名中' },
+    ];
+    expect(closingSoon(items, { now }).map(item => [item.id, item.deadlineText])).toEqual([['today', '今天截止'], ['later', '还剩 6 天']]);
   });
   it('withCover 保留原字段', () => {
     expect(withCover({ id:'a', name:'全国大学生数学建模竞赛', posterUrl:'' })).toMatchObject({ id:'a', posterUrl:'', coverTitle:'全国大学生数学建模竞赛' });

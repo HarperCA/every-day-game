@@ -91,6 +91,31 @@ it('shows the registration method after copying the link',()=>{
   expect(modal.mock.calls[1][0].content).toBe('链接已复制，请在浏览器中打开并核对主办单位。');
 });
 
+// 报名链接是公众号文章时直接在小程序里打开；接口不在或打开失败退回复制（2026-10）
+it('opens WeChat article links directly and falls back to copying',()=>{
+  const instance=page();
+  const open=vi.fn();const copy=vi.fn();
+  vi.stubGlobal('wx',{showToast:vi.fn(),showModal:vi.fn(),setClipboardData:copy,openOfficialAccountArticle:open});
+  instance.data.item={id:'event',name:'比赛',registrationUrl:'https://mp.weixin.qq.com/s/abc',registrationUrlUsable:true,registrationUrlIsWechatArticle:true,fieldText:{}};
+  instance.copyRegistrationUrl();
+  expect(open).toHaveBeenCalledWith(expect.objectContaining({url:'https://mp.weixin.qq.com/s/abc'}));
+  expect(copy).not.toHaveBeenCalled();
+  open.mock.calls[0][0].fail();
+  expect(copy).toHaveBeenCalledWith(expect.objectContaining({data:'https://mp.weixin.qq.com/s/abc'}));
+  vi.stubGlobal('wx',{showToast:vi.fn(),showModal:vi.fn(),setClipboardData:copy});
+  instance.copyRegistrationUrl();
+  expect(copy).toHaveBeenCalledTimes(2);
+});
+
+// 分享给同学：分享出去是这场比赛的详情页
+it('shares the competition detail page',()=>{
+  const instance=page();
+  instance.data.item={id:'edition 1',name:'全国大学生数学建模竞赛',registrationStatus:'报名中'};
+  expect(instance.onShareAppMessage()).toEqual({title:'全国大学生数学建模竞赛（报名中）',path:'/pages/detail/detail?id=edition%201'});
+  instance.data.item=null;
+  expect(instance.onShareAppMessage().path).toBe('/pages/index/index');
+});
+
 // 点“保存提醒”到发出微信授权申请之间不能有等待（微信只认点按当下发出的申请）
 it('calls the authorizing save in the same tick as the tap',()=>{
   const instance=page();

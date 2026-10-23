@@ -23,6 +23,13 @@ Page({
     const id = this.data.item?.id;
     if (id) this.setData({ isFavorite: checkFavorite(id), reminderCount: getRemindersForEdition(id).length });
   },
+  // 分享给同学、队友（2026-10，用户定）：分享出去是这场比赛的详情页
+  onShareAppMessage() {
+    const item = this.data.item;
+    return item?.id
+      ? { title: item.registrationStatus === '报名中' ? `${item.name}（报名中）` : item.name, path: `/pages/detail/detail?id=${encodeURIComponent(item.id)}` }
+      : { title: '竞赛雷达：找适合你的大学生竞赛', path: '/pages/index/index' };
+  },
   toggleRules() { this.setData({ rulesExpanded: !this.data.rulesExpanded }); },
   toggleOfficialInfo() { this.setData({ officialInfoExpanded: !this.data.officialInfoExpanded }); },
   toggleRecommendation() { this.setData({ recommendationExpanded: !this.data.recommendationExpanded }); },
@@ -41,6 +48,15 @@ Page({
   copyRegistrationUrl() {
     const item = this.data.item;
     if (!item?.registrationUrlUsable) { wx.showToast({ title: '官方报名链接待更新', icon: 'none' }); return; }
+    // 公众号文章可以在小程序里直接打开（2026-10，用户定）；接口不存在（基础库太旧）或打开失败时退回复制链接
+    const openArticle = (wx as any).openOfficialAccountArticle;
+    if (item.registrationUrlIsWechatArticle && typeof openArticle === 'function') {
+      openArticle({ url: item.registrationUrl, fail: () => this.copyLink(item) });
+      return;
+    }
+    this.copyLink(item);
+  },
+  copyLink(item: any) {
     // 有些报名链接是平台首页（如慕测平台），打开后还要按步骤找报名入口：把库里的报名方式一起写在提示里（2026-10-18，用户定）
     const method = item.fieldText?.registrationMethod;
     const content = method && method !== '信息不足'

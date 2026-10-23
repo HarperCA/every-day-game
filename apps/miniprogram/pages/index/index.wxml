@@ -1,25 +1,4 @@
-<!-- 瀑布流卡片：整张可点，进详情页；没有海报或海报加载失败时显示按赛事名称排的文字封面 -->
-<template name="poster-card">
-  <view class="pcard" data-id="{{item.id}}" bindtap="openDetail">
-    <view class="pcard-poster">
-      <image wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-img" src="{{item.posterUrl}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-index="{{index}}" binderror="onPosterError" />
-      <view wx:else class="cover cover-{{item.coverTone}}">
-        <text class="cover-kicker">{{item.coverKicker}}</text>
-        <text class="cover-title">{{item.coverTitle}}</text>
-      </view>
-      <text class="pcard-star {{item.isFavorite ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFavorite">{{item.isFavorite ? '★' : '☆'}}</text>
-    </view>
-    <view class="pcard-body">
-      <text class="pcard-name">{{item.name}}</text>
-      <view class="pcard-tags"><text class="pcard-status {{item.statusClass}}">{{item.registrationStatus}}</text></view>
-      <!-- 下一届的推算时间只在后台显示，不给学生看（2026-10-03，用户定） -->
-      <text wx:if="{{item.dataStatus === 'archived'}}" class="pcard-dl arch">已过报名日期</text>
-      <text wx:elif="{{item.registrationEndDate}}" class="pcard-dl">截止 {{item.registrationEndDate}}</text>
-      <text wx:elif="{{item.registrationEndNote}}" class="pcard-dl">截止 {{item.registrationEndNote}}</text>
-      <text wx:else class="pcard-dl">报名时间待公布</text>
-    </view>
-  </view>
-</template>
+<import src="/templates/poster-card.wxml" />
 
 <!-- 吸顶区：品牌栏、搜索框、筛选栏一起固定在顶部（2026-10 改版） -->
 <view class="sticky-head">
@@ -56,15 +35,30 @@
   </view>
 </view>
 <view class="page">
+  <!-- 即将截止（2026-10，用户定）：按当前地区、专业筛选，7 天内截止的报名中赛事；搜索时不显示 -->
+  <view wx:if="{{closingSoon.length && !appliedKeyword}}" class="soon">
+    <view class="soon-head"><text class="soon-title">即将截止</text><text class="soon-sub">7 天内报名截止</text></view>
+    <scroll-view class="soon-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="soon-track">
+        <view class="soon-card" wx:for="{{closingSoon}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+          <view class="soon-name">{{item.name}}</view>
+          <view class="soon-left">{{item.deadlineText}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
   <view class="result-meta"><text>找到 {{total}} 场</text></view>
 
   <view wx:if="{{loading && items.length === 0}}" class="skeleton-grid">
     <view class="skeleton card" wx:for="{{[1,2,3,4]}}" wx:key="*this"><view class="skeleton-poster"></view><view></view><view></view><view></view></view>
   </view>
   <view wx:elif="{{error}}" class="state card"><view>{{error}}</view><button bindtap="retry" size="mini">重新加载</button></view>
-  <view wx:elif="{{items.length === 0}}" class="state card"><view class="state-title">没有匹配的比赛</view><view class="muted">试试清除部分筛选条件或更换关键词。</view></view>
+  <view wx:elif="{{items.length === 0}}" class="state card">
+    <view class="state-title">没有匹配的比赛</view><view class="muted">试试清除部分筛选条件或更换关键词。</view>
+    <view class="suggest"><text class="suggest-chip" wx:for="{{suggestKeywords}}" wx:key="*this" data-keyword="{{item}}" bindtap="searchSuggestion">{{item}}</text></view>
+  </view>
   <view wx:else>
-    <!-- 双列卡片（2026-10 淘宝风格改版）：海报 16:9 + 名称（占两行）+ 报名状态 + 截止时间；每行两张顶部对齐、一样高（用户定，不要错落） -->
+    <!-- 双列卡片（2026-10 淘宝风格改版）：海报或文字封面 + 报名状态、级别、推荐等级 + 截止倒计时；每行两张顶部对齐、一样高（用户定，不要错落） -->
     <view class="card-grid">
       <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item, index}}" />
     </view>

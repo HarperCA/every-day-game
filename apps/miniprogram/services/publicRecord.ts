@@ -50,6 +50,8 @@ export function hydratePublic(item: any) {
     recommendationLevel:RECOMMENDATION_LEVELS.includes(item.recommendation) ? item.recommendation : '', recommendationReasons:item.recommendation_reasons || [],
     recommendation:{ recommendation:RECOMMENDATION_LEVELS.includes(item.recommendation) ? item.recommendation : '', suitable_for:item.recommendation_suitable_for || '', reasons:item.recommendation_reasons || [], limitations:item.recommendation_limitations || [], preparation:item.recommendation_preparation || '', confidence:item.recommendation_confidence || '' },
     registrationUrlUsable:/^https?:\/\//.test(item.registration_url || ''), qualityIssues:[],
+    // 报名链接是微信公众号文章：详情页可以在小程序里直接打开（wx.openOfficialAccountArticle），不用复制到浏览器
+    registrationUrlIsWechatArticle:/^https?:\/\/mp\.weixin\.qq\.com\//i.test(item.registration_url || ''),
     // 详情页各字段的显示文字：缺的写“信息不足”
     fieldText:{
       organizer:fieldText(item.organizer), participants:fieldText(item.participants), eligibility:fieldText(item.eligibility),

@@ -1,4 +1,5 @@
-<!-- 我的收藏（2026-10 改版）：卡片和首页一样；右上角实心星标 = 取消收藏 -->
+<!-- 我的收藏（2026-10 改版）：卡片和首页一样（共用 templates/poster-card.wxml）；右上角实心星标 = 取消收藏 -->
+<import src="/templates/poster-card.wxml" />
 <view class="fav-page">
   <view class="count" wx:if="{{!loginRequired && !error && items.length}}">共 {{items.length}} 场</view>
 
@@ -18,22 +19,7 @@
     <button class="state-btn" bindtap="goFindCompetition">去发现赛事</button>
   </view>
 
-  <view wx:else>
-    <view class="ccard {{item.isEnded ? 'ended' : ''}}" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">
-      <view class="ccard-r1">
-        <text class="ccard-name">{{item.name}}</text>
-        <text class="ccard-star on" data-id="{{item.id}}" catchtap="cancelFavorite" role="button" aria-label="取消收藏">★</text>
-      </view>
-      <view wx:if="{{item.unavailable}}" class="gone">赛事资料暂时打不开，收藏仍保留。可以下拉刷新，或点星标取消收藏。</view>
-      <view wx:else class="ccard-r2">
-        <text class="st {{item.statusClass}}">{{item.registrationStatus}}</text>
-        <text wx:if="{{item.isEnded}}" class="ccard-dl arch">已过报名日期</text>
-        <text wx:elif="{{item.registrationEndDate}}" class="ccard-dl">截止 {{item.registrationEndDate}}{{item.registrationEndNote ? '（' + item.registrationEndNote + '）' : ''}}</text>
-        <text wx:elif="{{item.registrationEndNote}}" class="ccard-dl">截止 {{item.registrationEndNote}}</text>
-        <text wx:else class="ccard-dl">报名时间待官方公布</text>
-        <text wx:if="{{item.recommendationLevel}}" class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
-      </view>
-      <view class="since">收藏于 {{item.favoriteAt}}</view>
-    </view>
+  <view wx:else class="card-grid">
+    <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item, index}}" />
   </view>
 </view>
