@@ -1,8 +1,12 @@
-<!-- 瀑布流卡片：整张可点，进详情页；没有海报或海报加载失败时显示统一占位图 -->
+<!-- 瀑布流卡片：整张可点，进详情页；没有海报或海报加载失败时显示按赛事名称排的文字封面 -->
 <template name="poster-card">
   <view class="pcard" data-id="{{item.id}}" bindtap="openDetail">
     <view class="pcard-poster">
-      <image class="pcard-img" src="{{item.posterUrl && !item.posterFailed ? item.posterUrl : posterPlaceholder}}" mode="aspectFill" lazy-load data-id="{{item.id}}" binderror="onPosterError" />
+      <image wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-img" src="{{item.posterUrl}}" mode="aspectFill" lazy-load data-id="{{item.id}}" binderror="onPosterError" />
+      <view wx:else class="cover cover-{{item.coverTone}}">
+        <text class="cover-kicker">{{item.coverKicker}}</text>
+        <text class="cover-title">{{item.coverTitle}}</text>
+      </view>
       <text class="pcard-star {{item.isFavorite ? 'on' : ''}}" data-id="{{item.id}}" catchtap="toggleFavorite">{{item.isFavorite ? '★' : '☆'}}</text>
     </view>
     <view class="pcard-body">
@@ -63,10 +67,10 @@
     <!-- 双列瀑布流（2026-10 淘宝风格改版）：海报 16:9 + 名称（最多两行）+ 报名状态 + 截止时间；左右两列按估算高度分配 -->
     <view class="waterfall">
       <view class="wf-col">
-        <template is="poster-card" wx:for="{{leftItems}}" wx:key="id" data="{{item, posterPlaceholder}}" />
+        <template is="poster-card" wx:for="{{leftItems}}" wx:key="id" data="{{item}}" />
       </view>
       <view class="wf-col">
-        <template is="poster-card" wx:for="{{rightItems}}" wx:key="id" data="{{item, posterPlaceholder}}" />
+        <template is="poster-card" wx:for="{{rightItems}}" wx:key="id" data="{{item}}" />
       </view>
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>

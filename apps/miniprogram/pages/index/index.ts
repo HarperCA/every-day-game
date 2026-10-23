@@ -2,7 +2,7 @@ import { getProfessionOptions, listCompetitions } from '../../services/repositor
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
 import { loadCompetitionPreferences, saveCompetitionPreferences, saveSurveyStatus, shouldShowPreferenceSurvey, takePreferenceSurveyRequest, surveyProvinceOptions, uploadCompetitionPreferences } from '../../services/competitionPreferences';
 import { statusOptions, levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, regionAllOption, registrationWithinOptions, registrationWithinValues, sortByOptions, sortByValues, sortOrderOptions, sortOrderValues } from '../../services/filterOptions';
-import { POSTER_PLACEHOLDER, splitColumns } from '../../services/waterfall';
+import { splitColumns, withCover } from '../../services/waterfall';
 
 const professionOptions = ['全部专业大类', ...getProfessionOptions()];
 const moreFieldMap: Record<string, string> = {
@@ -78,7 +78,6 @@ Page({
     items: [] as any[],
     leftItems: [] as any[],
     rightItems: [] as any[],
-    posterPlaceholder: POSTER_PLACEHOLDER,
     total: 0,
     page: 1,
     hasMore: false,
@@ -344,11 +343,12 @@ Page({
     const favoriteIds = new Set(getFavoriteIds());
     this.setItems(this.data.items.map((item: any) => ({ ...item, isFavorite: favoriteIds.has(item.id) })));
   },
-  // 列表整体和左右两列一起更新，瀑布流始终跟 items 保持一致
+  // 列表整体和左右两列一起更新，瀑布流始终跟 items 保持一致；每张卡片带上文字封面，没海报时用
   setItems(items: any[], extra: Record<string, unknown> = {}) {
-    this.setData({ items, ...splitColumns(items), ...extra });
+    const withCovers = items.map(withCover);
+    this.setData({ items: withCovers, ...splitColumns(withCovers), ...extra });
   },
-  // 海报加载失败：这张卡片改用统一占位图
+  // 海报加载失败：这张卡片改用文字封面
   onPosterError(event: WechatMiniprogram.TouchEvent) {
     const id = event.currentTarget.dataset.id;
     this.setItems(this.data.items.map((item: any) => item.id === id ? { ...item, posterFailed: true } : item));

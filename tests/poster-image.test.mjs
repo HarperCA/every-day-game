@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { pickPosterImage } from '../scripts/server/page-supplement.mjs';
 import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
-import { estimateCardHeight, splitColumns } from '../apps/miniprogram/services/waterfall';
+import { coverOf, coverTitleOf, estimateCardHeight, splitColumns, withCover } from '../apps/miniprogram/services/waterfall';
 
 const require = createRequire(import.meta.url);
 const { candidateToRecord } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
@@ -68,6 +68,43 @@ describe('海报一路传到小程序', () => {
     expect(listItem.poster_url).toBe('https://cdn.example.com/p.jpg');
     expect(hydratePublic(listItem).posterUrl).toBe('https://cdn.example.com/p.jpg');
     expect(hydratePublic({}).posterUrl).toBe('');
+  });
+});
+
+describe('没有海报时的文字封面', () => {
+  it('主标题去掉年份、届次、杯名和“全国大学生”这类通用前缀', () => {
+    expect(coverTitleOf('全国大学生市场调查与分析大赛')).toBe('市场调查与分析大赛');
+    expect(coverTitleOf('“批改网杯”全国大学生英语翻译大赛')).toBe('英语翻译大赛');
+    expect(coverTitleOf('中国大学生广告艺术节学院奖')).toBe('广告艺术节学院奖');
+    expect(coverTitleOf('全国高校计算机能力挑战赛')).toBe('计算机能力挑战赛');
+    expect(coverTitleOf('2026年第八届全国大学生计算机设计竞赛')).toBe('计算机设计竞赛');
+    expect(coverTitleOf('2026—2027赛季华为ICT大赛')).toBe('华为ICT大赛');
+  });
+  it('不带引号、紧跟“全国/中国”的杯名也放进角标', () => {
+    expect(coverOf({ name:'蓝桥杯全国大学生软件和信息技术大赛', professions:['计算机与AI'] })).toEqual({ coverTitle:'软件和信息技术大赛', coverKicker:'蓝桥杯', coverTone:'blue' });
+    expect(coverOf({ name:'全国大学生统计建模大赛', professions:['数学与统计'] })).toMatchObject({ coverKicker:'数学与统计', coverTone:'indigo' });
+  });
+  it('前缀去掉后太短就停，不剩光秃秃的“创新大赛”', () => {
+    expect(coverTitleOf('中国国际大学生创新大赛')).toBe('大学生创新大赛');
+    expect(coverTitleOf('全国大学生数学竞赛')).toBe('大学生数学竞赛');
+  });
+  it('去完前缀不剩什么时用原名', () => {
+    expect(coverTitleOf('全国大学生')).toBe('全国大学生');
+    expect(coverTitleOf('')).toBe('');
+  });
+  it('角标优先杯名，其次专业大类；颜色按专业大类', () => {
+    expect(coverOf({ name:'“批改网杯”全国大学生英语翻译大赛', professions:['外语与教育'] })).toEqual({ coverTitle:'英语翻译大赛', coverKicker:'批改网杯', coverTone:'rose' });
+    expect(coverOf({ name:'全国大学生市场调查与分析大赛', professions:['经管与商科'] })).toMatchObject({ coverKicker:'经管与商科', coverTone:'orange' });
+    expect(coverOf({ name:'某大赛', professions:['综合/不限专业', '计算机与AI'] })).toMatchObject({ coverKicker:'计算机与AI', coverTone:'blue' });
+  });
+  it('没有专业大类时按 id 固定取一种颜色，每次一样', () => {
+    const first = coverOf({ id:'edition-x', name:'某大赛' });
+    expect(first.coverKicker).toBe('大学生竞赛');
+    expect(coverOf({ id:'edition-x', name:'某大赛' }).coverTone).toBe(first.coverTone);
+    expect(['indigo', 'blue', 'teal', 'purple']).toContain(first.coverTone);
+  });
+  it('withCover 保留原字段', () => {
+    expect(withCover({ id:'a', name:'全国大学生数学建模竞赛', posterUrl:'' })).toMatchObject({ id:'a', posterUrl:'', coverTitle:'数学建模竞赛' });
   });
 });
 
