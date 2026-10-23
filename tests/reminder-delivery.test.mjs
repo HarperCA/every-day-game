@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { MIN_DISPATCH_SECRET_LENGTH, assertScheduledInvocation, failureDeliveryStatus, isAuthorizedDispatch, isDeliverableScheduleStatus } = require('../apps/miniprogram/cloudfunctions/sendReminders/reminderDelivery.js');
+const { MIN_DISPATCH_SECRET_LENGTH, assertScheduledInvocation, failureDeliveryStatus, isAuthorizedDispatch, isDeliverableScheduleStatus, miniprogramStateOf } = require('../apps/miniprogram/cloudfunctions/sendReminders/reminderDelivery.js');
 
 const SECRET = 'a'.repeat(MIN_DISPATCH_SECRET_LENGTH);
 const dispatch = (secret = SECRET) => ({ action:'dispatch', dispatchSecret:secret });
@@ -51,6 +51,15 @@ describe('reminder delivery worker guards', () => {
 
   it('moves exhausted failures out of the due queue', () => {
     expect(failureDeliveryStatus(3, 3)).toBe('manual_required');
+  });
+
+  // 正式版已发布（2026-10）：用户点提醒通知默认打开正式版，环境变量可改成开发版、体验版测试
+  it('opens the released mini program by default when a user taps the notification', () => {
+    expect(miniprogramStateOf(undefined)).toBe('formal');
+    expect(miniprogramStateOf('')).toBe('formal');
+    expect(miniprogramStateOf('typo')).toBe('formal');
+    expect(miniprogramStateOf(' Developer ')).toBe('developer');
+    expect(miniprogramStateOf('trial')).toBe('trial');
   });
 
   it('never delivers a reminder for a cancelled or unknown schedule', () => {

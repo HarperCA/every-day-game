@@ -1,5 +1,5 @@
 const cloud = require('wx-server-sdk');
-const { assertScheduledInvocation, failureDeliveryStatus, isDeliverableScheduleStatus } = require('./reminderDelivery');
+const { assertScheduledInvocation, failureDeliveryStatus, isDeliverableScheduleStatus, miniprogramStateOf } = require('./reminderDelivery');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -72,7 +72,7 @@ async function sendReminder(item, now) {
     touser:user.data.openid,
     templateId:item.subscription_template_id || TEMPLATE_ID,
     page:`pages/detail/detail?id=${encodeURIComponent(item.edition_id)}`,
-    miniprogramState:process.env.MINIPROGRAM_STATE || 'developer',
+    miniprogramState:miniprogramStateOf(process.env.MINIPROGRAM_STATE),
     lang:'zh_CN',
     data:{
       thing1:{ value:taskName },

@@ -45,6 +45,11 @@ describe('reminder delivery ambiguity and concurrent edits', () => {
     expect(test.updates.at(-1).last_error).toContain('sent_but_state_update_failed');
     expect(test.updates[0].delivery_status).toBe('manual_required');
   });
+  it('sends the notification so tapping it opens the released version', async () => {
+    const test = worker();
+    await test.main(timer);
+    expect(test.send).toHaveBeenCalledWith(expect.objectContaining({ miniprogramState:'formal', page:'pages/detail/detail?id=e1' }));
+  });
   it('checks reminder time and authorization as part of the atomic claim and skips stale records', async () => {
     const test = worker({ claimSucceeds:false });
     const result = await test.main(timer);

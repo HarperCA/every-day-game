@@ -39,4 +39,12 @@ function isDeliverableScheduleStatus(status) {
   return status === 'normal' || status === 'time_updated' || status === 'postponed';
 }
 
-module.exports = { MIN_DISPATCH_SECRET_LENGTH, assertScheduledInvocation, failureDeliveryStatus, isAuthorizedDispatch, isDeliverableScheduleStatus, isScheduledTimer };
+// 用户点订阅消息后打开哪个版本。正式版已经发布（2026-10），默认 formal；
+// 原先默认 developer，普通用户点通知打不开（开发版只有开发者能进）。测试时可用环境变量 MINIPROGRAM_STATE 改成 developer 或 trial
+const MINIPROGRAM_STATES = ['developer', 'trial', 'formal'];
+function miniprogramStateOf(value) {
+  const state = String(value || '').trim().toLowerCase();
+  return MINIPROGRAM_STATES.includes(state) ? state : 'formal';
+}
+
+module.exports = { MIN_DISPATCH_SECRET_LENGTH, assertScheduledInvocation, failureDeliveryStatus, isAuthorizedDispatch, isDeliverableScheduleStatus, isScheduledTimer, miniprogramStateOf };
