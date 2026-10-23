@@ -2,7 +2,7 @@
 <template name="poster-card">
   <view class="pcard" data-id="{{item.id}}" bindtap="openDetail">
     <view class="pcard-poster">
-      <image wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-img" src="{{item.posterUrl}}" mode="aspectFill" lazy-load data-id="{{item.id}}" binderror="onPosterError" />
+      <image wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-img" src="{{item.posterUrl}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-index="{{index}}" binderror="onPosterError" />
       <view wx:else class="cover cover-{{item.coverTone}}">
         <text class="cover-kicker">{{item.coverKicker}}</text>
         <text class="cover-title">{{item.coverTitle}}</text>
@@ -66,7 +66,7 @@
   <view wx:else>
     <!-- 双列卡片（2026-10 淘宝风格改版）：海报 16:9 + 名称（占两行）+ 报名状态 + 截止时间；每行两张顶部对齐、一样高（用户定，不要错落） -->
     <view class="card-grid">
-      <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item}}" />
+      <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item, index}}" />
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>
   </view>

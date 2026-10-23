@@ -348,14 +348,16 @@ Page({
     const favoriteIds = new Set(getFavoriteIds());
     this.setItems(this.data.items.map((item: any) => ({ ...item, isFavorite: favoriteIds.has(item.id) })));
   },
-  // 更新列表：每张卡片带上文字封面，没海报时用
+  // 更新列表：每张卡片带上文字封面，没海报时用；翻页时保留已知加载失败的海报，不再重试一遍
   setItems(items: any[], extra: Record<string, unknown> = {}) {
-    this.setData({ items: items.map(withCover), ...extra });
+    const failed = new Set(this.data.items.filter((item: any) => item.posterFailed).map((item: any) => item.id));
+    this.setData({ items: items.map(item => withCover(failed.has(item.id) ? { ...item, posterFailed: true } : item)), ...extra });
   },
-  // 海报加载失败：这张卡片改用文字封面
+  // 海报加载失败：只把这一张卡片改成文字封面，不重传整个列表（几张同时失败时整表重绘会卡）
   onPosterError(event: WechatMiniprogram.TouchEvent) {
-    const id = event.currentTarget.dataset.id;
-    this.setItems(this.data.items.map((item: any) => item.id === id ? { ...item, posterFailed: true } : item));
+    const { id, index } = event.currentTarget.dataset;
+    const at = this.data.items[index]?.id === id ? Number(index) : this.data.items.findIndex((item: any) => item.id === id);
+    if (at >= 0) this.setData({ [`items[${at}].posterFailed`]: true });
   },
   async load(reset: boolean) {
     const requestId = ++latestListRequestId;

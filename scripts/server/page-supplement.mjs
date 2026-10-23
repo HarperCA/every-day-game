@@ -194,9 +194,9 @@ export async function measurePoster(url, pageUrl, { fetchImpl = globalThis.fetch
   } catch { return null; }
 }
 
-// 依次量候选图片，第一张像海报的就用；都不像返回 null
-export async function findPagePoster({ html = '', pageUrl = '', contestName = '' } = {}, options = {}) {
-  for (const candidate of pageImageCandidates({ html, pageUrl, contestName })) {
+// 依次量候选图片，第一张像海报的就用；都不像返回 null。maxCandidates 限制最多量几张（夜间流水线有时长上限）
+export async function findPagePoster({ html = '', pageUrl = '', contestName = '' } = {}, { maxCandidates = 6, ...options } = {}) {
+  for (const candidate of pageImageCandidates({ html, pageUrl, contestName }).slice(0, maxCandidates)) {
     const size = await measurePoster(candidate.url, pageUrl, options);
     if (size) return { url:candidate.url, ...size };
   }

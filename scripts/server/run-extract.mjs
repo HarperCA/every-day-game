@@ -56,6 +56,8 @@ const MAX_SUPPLEMENTS = 20;
 let supplements = 0;
 const noticeSearcher = createSearcher([{ engine:baiduEngine({ caller:'formal-notice' }), budget:0 }, { engine:kimiEngine(), budget:10 }, { engine:deepseekEngine(), budget:10 }]);
 const PAGE_LIMIT = 6000; // 抽取模块只看正文前 6000 字（competitionExtract.js 的 PAGE_TEXT_LIMIT）
+const POSTER_MAX_CANDIDATES = 3;
+const POSTER_TIMEOUT_MS = 8000;
 
 // 读一个网页的正文：先直接读（遵守 robots），只有骨架时再用 Kimi 读网页接口；PDF、Word 附件也能读（page-reader.mjs，和通知追溯共用）
 const readPageText = createPageReader({ fetcher:evidenceFetcher, extract:{ extractText, extractPdfText, extractDocxText, findNoticeLinks }, maxChars:8000 });
@@ -154,8 +156,10 @@ async function sourceTextFor(candidate) {
   if (page.status !== 'ok') return '';
   if (!/html/i.test(page.contentType || '')) return binarySourceText(page, url);
   candidate.pageHtml = page.text;
-  // 顺便找赛事海报：官网声明的封面图，没有再找页面上的赛事大图；都没有就留空（page-supplement.mjs 的 findPoster）
-  const poster = await findPoster({ html:page.text, pageUrl:page.finalUrl || url, contestName:String(candidate.name || '') }).catch(() => null);
+  // 顺便找赛事海报：官网声明的封面图，没有再找页面上的赛事大图；都没有就留空（page-supplement.mjs 的 findPoster）。
+  // 每晚有 3 小时上限：页面大图最多量 3 张、每张等 8 秒，单条最坏多花约 30 秒；补不全的由 backfill-posters.mjs 慢慢补
+  const poster = await findPoster({ html:page.text, pageUrl:page.finalUrl || url, contestName:String(candidate.name || '') },
+    { maxCandidates:POSTER_MAX_CANDIDATES, timeoutMs:POSTER_TIMEOUT_MS }).catch(() => null);
   candidate.posterUrl = poster?.url || '';
   candidate.posterSource = poster?.source || '';
   const links = evidenceLinks(page.text, page.finalUrl || url);

@@ -80,6 +80,10 @@ describe('官网没声明封面图时，找页面上的赛事大图', () => {
       .toEqual({ url:'https://www.example-contest.cn/upload/banner-bg.jpg', width:1500, height:600 });
     expect(await findPagePoster({ html, pageUrl:PAGE }, { fetchImpl:async () => imageReply(pngHead(300, 300), 9000) })).toBeNull();
   });
+  it('maxCandidates 限制最多量几张（夜间流水线用 3）', async () => {
+    const fetchImpl = async url => url.endsWith('2026kv.jpg') ? imageReply(pngHead(700, 700), 90000) : imageReply(pngHead(1500, 600), 300000);
+    expect(await findPagePoster({ html, pageUrl:PAGE, contestName:'全国大学生测试设计大赛' }, { fetchImpl, maxCandidates:1 })).toBeNull();
+  });
   it('findPoster：有声明的封面图就不再找页面大图，并记下来源', async () => {
     const fetchImpl = async () => imageReply(pngHead(1500, 600), 300000);
     expect(await findPoster({ html:`<meta property="og:image" content="https://cdn.example.com/og.jpg">${html}`, pageUrl:PAGE }, { fetchImpl })).toEqual({ url:'https://cdn.example.com/og.jpg', source:'declared' });
