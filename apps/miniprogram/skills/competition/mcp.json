@@ -1,0 +1,65 @@
+{
+  "apis": [
+    {
+      "name": "askAssistant",
+      "description": "按用户的描述找适合报名的大学生比赛（学科竞赛、创新创业、设计、英语等），返回符合条件的比赛和报名截止时间；也能回答“最近要截止的比赛”“能组队的国家级比赛”这类问题。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "用户找比赛的问题，保留专业、年级、地区、个人或组队、级别、截止时间等条件，例如“计算机专业能报的国家级比赛”“广东省本月截止的设计类比赛”。"
+          }
+        },
+        "required": ["question"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "description": "answered 已回答；clarify 需要追问；empty 没找到；blocked 不在服务范围" },
+          "total": { "type": "number", "description": "符合条件的比赛总数" },
+          "competitions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "description": "比赛编号，查看详情时传给 getCompetitionDetail" },
+                "name": { "type": "string", "description": "比赛名称" },
+                "eventLevel": { "type": "string", "description": "级别" },
+                "registrationStatus": { "type": "string", "description": "报名状态" },
+                "deadline": { "type": "string", "description": "报名截止说明" },
+                "pagePath": { "type": "string", "format": "page-link", "x-link-text-field": "name" }
+              }
+            }
+          }
+        }
+      },
+      "_meta": {
+        "context": {
+          "query": { "desc": "本轮用户原文，原样交给竞赛雷达的赛事助手理解条件" }
+        }
+      }
+    },
+    {
+      "name": "getCompetitionDetail",
+      "description": "查看某一场比赛的详细信息：主办方、报名时间、参赛对象、比赛形式、报名方式和费用。只在用户追问某场比赛时调用。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "比赛编号，取自 askAssistant 返回列表里的 id，不要自己编" }
+        },
+        "required": ["id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string", "description": "比赛名称" },
+          "registrationStatus": { "type": "string" },
+          "registrationEnd": { "type": "string" },
+          "pagePath": { "type": "string", "format": "page-link", "x-link-text-field": "name" }
+        }
+      }
+    }
+  ]
+}

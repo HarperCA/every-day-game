@@ -14,6 +14,15 @@
     "pages/assistant/assistant"
   ],
   "lazyCodeLoading": "requiredComponents",
+  "subPackages": [
+    {"root": "skills", "independent": true, "pages": []}
+  ],
+  "agent": {
+    "instruction": "skills/AGENTS.md",
+    "skills": [
+      {"name": "competitionSkill", "description": "找大学生比赛：按专业、地区、组队方式和截止时间推荐比赛，查看比赛详情", "path": "skills/competition"}
+    ]
+  },
   "window": {
     "navigationBarTitleText": "大学生竞赛助手",
     "navigationBarBackgroundColor": "#ffffff",
