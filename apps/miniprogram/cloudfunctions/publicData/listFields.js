@@ -27,4 +27,9 @@ function slimList(result) {
   return { ...result, items:(result.items || []).map(toListItem) };
 }
 
-module.exports = { LIST_FIELDS, toListItem, slimList };
+// 新版列表（listVersion 2）多带一个 list_group（报名中 / 时间待公布 / 比赛中 / 比赛已结束），手机按它显示“比赛中”“比赛已结束”
+function slimListV2(result) {
+  return { ...result, items:(result.items || []).map(item => ({ ...toListItem(item), list_group:item.list_group })) };
+}
+
+module.exports = { LIST_FIELDS, toListItem, slimList, slimListV2 };

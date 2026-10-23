@@ -1,7 +1,8 @@
 const cloud = require('wx-server-sdk');
 const { assertPublicRecordCapacity, currentRegistrationStatus, filterPublicRecords, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
 const { forwardIfConfigured } = require('./cloudBridge');
-const { slimList } = require('./listFields');
+const { slimList, slimListV2 } = require('./listFields');
+const { buildPublicList, isListV2, personalizePage, publicQueryKey } = require('./listOrder');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -28,14 +29,24 @@ async function loadPublishedRecordsCached({ refresh = false } = {}) {
 // 时间花在 137 条记录的排序打分上（128MB 的实例分到的 CPU 很少）；首页默认查询人人相同，缓存后几乎不用再算。
 const listMemo = new Map();
 const LIST_MEMO_MAX = 200;
-function filterCached(records, query) {
-  if (!CACHE_MS) return filterPublicRecords(records, query);
-  const key = JSON.stringify(query);
+function memo(key, compute) {
+  if (!CACHE_MS) return compute();
   if (listMemo.has(key)) return listMemo.get(key);
-  const data = filterPublicRecords(records, query);
+  const data = compute();
   if (listMemo.size >= LIST_MEMO_MAX) listMemo.delete(listMemo.keys().next().value);
   listMemo.set(key, data);
   return data;
+}
+
+function filterCached(records, query) {
+  return memo(JSON.stringify(query), () => filterPublicRecords(records, query));
+}
+
+// 新版列表：缓存的只是公共部分（筛选 + 公共顺序），键里不含收藏、提醒编号和页码；
+// 组内分档在缓存结果的副本上做（personalizePage 不改入参），不会把一个人的收藏顺序带给下一个人。
+function listV2(records, query) {
+  const publicList = memo(`v2:${publicQueryKey(query)}`, () => buildPublicList(records, query));
+  return personalizePage(publicList, query);
 }
 
 async function loadPublishedRecords() {
@@ -108,7 +119,9 @@ exports.main = async rawEvent => {
       // 访问计数和读数据同时进行，不再读完才开始写计数
       const [records] = await Promise.all([loadPublishedRecordsCached(), countLoad('list')]);
       // 列表只返回卡片要用的字段（listFields.js），否则全部比赛超过小程序链路 1MB 的上限；详情走 get，仍是完整记录
-      return { ok:true, data:slimList(filterCached(records, event.query || {})) };
+      const query = event.query || {};
+      if (isListV2(query)) return { ok:true, data:slimListV2(listV2(records, query)) };
+      return { ok:true, data:slimList(filterCached(records, query)) };
     }
     if (event?.action === 'get') {
       const id = normalizePublicRecordId(event.id);
