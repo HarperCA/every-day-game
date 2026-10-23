@@ -26,16 +26,6 @@
 /* 加载、没结果、出错 */
 .state { text-align:center; padding:70rpx 30rpx; border:0; border-radius:32rpx; }.state-title{font-size:30rpx;font-weight:700;margin-bottom:12rpx}.state button{margin-top:24rpx}.load-more{text-align:center;padding:20rpx;color:var(--muted);font-size:24rpx}.skeleton{padding:30rpx 32rpx;margin-bottom:24rpx;border:0;border-radius:32rpx}.skeleton view{height:24rpx;background:var(--chip);border-radius:12rpx;margin:16rpx 0}.skeleton view:first-child{width:78%;height:30rpx}.skeleton view:last-child{width:52%}
 /* 双列卡片的样式在 app.wxss（首页、收藏页共用） */
-/* 即将截止：横向滑动的小卡片 */
-.soon { margin:0 -24rpx 24rpx; }
-.soon-head { display:flex; align-items:baseline; gap:12rpx; padding:0 28rpx 14rpx; }
-.soon-title { font-size:30rpx; font-weight:700; color:var(--ink); }
-.soon-sub { font-size:23rpx; color:var(--muted); }
-.soon-scroll { white-space:nowrap; }
-.soon-track { display:inline-flex; gap:16rpx; padding:0 24rpx; }
-.soon-card { flex:none; width:300rpx; box-sizing:border-box; padding:20rpx 22rpx; background:var(--surface); border-radius:16rpx; box-shadow:0 2rpx 4rpx rgba(23,32,51,.04), 0 8rpx 24rpx -12rpx rgba(23,32,51,.16); white-space:normal; }
-.soon-name { height:78rpx; font-size:26rpx; font-weight:600; line-height:1.5; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
-.soon-left { margin-top:12rpx; font-size:24rpx; font-weight:700; color:#d2481c; }
 /* 没结果时的推荐搜索词 */
 .suggest { display:flex; flex-wrap:wrap; justify-content:center; gap:14rpx; margin-top:24rpx; }
 .suggest-chip { padding:10rpx 24rpx; border-radius:28rpx; background:var(--accent-soft); color:var(--accent); font-size:25rpx; }

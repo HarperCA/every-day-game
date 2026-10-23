@@ -2,7 +2,7 @@ import { getProfessionOptions, listCompetitions } from '../../services/repositor
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
 import { loadCompetitionPreferences, saveCompetitionPreferences, saveSurveyStatus, shouldShowPreferenceSurvey, takePreferenceSurveyRequest, surveyProvinceOptions, uploadCompetitionPreferences } from '../../services/competitionPreferences';
 import { statusOptions, levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, regionAllOption, registrationWithinOptions, registrationWithinValues, sortByOptions, sortByValues, sortOrderOptions, sortOrderValues } from '../../services/filterOptions';
-import { closingSoon, withCard } from '../../services/cardCover';
+import { withCard } from '../../services/cardCover';
 
 const professionOptions = ['全部专业大类', ...getProfessionOptions()];
 const moreFieldMap: Record<string, string> = {
@@ -17,7 +17,6 @@ const moreFieldMap: Record<string, string> = {
 };
 let latestListRequestId = 0;
 let latestPreviewRequestId = 0;
-let latestSoonRequestId = 0;
 
 Page({
   preferenceSnapshot: '',
@@ -78,7 +77,6 @@ Page({
     morePreviewCount: 0,
     selectedConditions: [] as Array<{ kind: string; label: string }>,
     items: [] as any[],
-    closingSoon: [] as any[],
     // 没结果时推荐的搜索词：覆盖理工、经管、语言、设计、双创几类常见方向
     suggestKeywords: ['数学建模', '程序设计', '创新创业', '英语', '设计'],
     total: 0,
@@ -365,23 +363,6 @@ Page({
     const keyword = String(event.currentTarget.dataset.keyword || '');
     if (keyword) this.setData({ keyword, appliedKeyword: keyword }, () => this.load(true));
   },
-  // 即将截止：和当前地区、专业大类筛选一致，取报名中的赛事，挑 7 天内截止的；失败就不显示，不影响列表
-  async loadClosingSoon() {
-    const requestId = ++latestSoonRequestId;
-    try {
-      const result = await listCompetitions({
-        competitionCategories: this.data.competitionCategories,
-        preferenceProvince: this.data.region ? '' : this.data.preferenceProvince,
-        region: this.data.region,
-        registrationStatus: '报名中',
-        page: 1,
-        pageSize: 100,
-      });
-      if (requestId === latestSoonRequestId) this.setData({ closingSoon: closingSoon(result.items) });
-    } catch (_error) {
-      if (requestId === latestSoonRequestId) this.setData({ closingSoon: [] });
-    }
-  },
   // 海报加载失败：只把这一张卡片改成文字封面，不重传整个列表（几张同时失败时整表重绘会卡）
   onPosterError(event: WechatMiniprogram.TouchEvent) {
     const { id, index } = event.currentTarget.dataset;
@@ -423,8 +404,6 @@ Page({
         page,
         loading: false,
       });
-      // 列表出来后再取“即将截止”，不跟列表抢网络；筛选变了它也跟着变，搜索时不显示就不取
-      if (reset && !this.data.appliedKeyword) this.loadClosingSoon();
       if (this.pendingLoadMore) {
         this.pendingLoadMore = false;
         if (result.hasMore) this.load(false);

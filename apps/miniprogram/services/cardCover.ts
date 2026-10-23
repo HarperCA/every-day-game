@@ -73,14 +73,3 @@ export function withCard<T extends { id?: string; name?: string; professions?: s
     recClass:REC_CLASS[any.recommendationLevel] || '',
   };
 }
-
-// 首页“即将截止”：报名中、几天内截止的，按截止时间排，最多 limit 张
-export function closingSoon(items: any[], { days = URGENT_DAYS, limit = 10, now = new Date() } = {}) {
-  return items
-    .filter(item => item.registrationStatus === '报名中' && item.dataStatus !== 'archived' && item.registrationEnd)
-    .map(item => ({ item, left:daysUntil(item.registrationEnd, now) }))
-    .filter(({ left }) => left !== null && left >= 0 && left <= days)
-    .sort((a, b) => Date.parse(a.item.registrationEnd) - Date.parse(b.item.registrationEnd))
-    .slice(0, limit)
-    .map(({ item }) => withCard(item, now));
-}

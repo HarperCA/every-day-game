@@ -35,18 +35,6 @@
   </view>
 </view>
 <view class="page">
-  <!-- 即将截止（2026-10，用户定）：按当前地区、专业筛选，7 天内截止的报名中赛事；搜索时不显示 -->
-  <view wx:if="{{closingSoon.length && !appliedKeyword}}" class="soon">
-    <view class="soon-head"><text class="soon-title">即将截止</text><text class="soon-sub">7 天内报名截止</text></view>
-    <scroll-view class="soon-scroll" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="soon-track">
-        <view class="soon-card" wx:for="{{closingSoon}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
-          <view class="soon-name">{{item.name}}</view>
-          <view class="soon-left">{{item.deadlineText}}</view>
-        </view>
-      </view>
-    </scroll-view>
-  </view>
   <view class="result-meta"><text>找到 {{total}} 场</text></view>
 
   <view wx:if="{{loading && items.length === 0}}" class="skeleton-grid">

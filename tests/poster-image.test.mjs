@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { findPagePoster, findPoster, imageSize, looksLikePoster, pageImageCandidates, pickPosterImage } from '../scripts/server/page-supplement.mjs';
 import { applyPosters, pagesOf, parseArgs } from '../scripts/server/backfill-posters.mjs';
 import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
-import { closingSoon, coverOf, deadlineOf, withCard, withCover } from '../apps/miniprogram/services/cardCover';
+import { coverOf, deadlineOf, withCard, withCover } from '../apps/miniprogram/services/cardCover';
 
 const require = createRequire(import.meta.url);
 const { candidateToRecord } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
@@ -192,18 +192,6 @@ describe('没有海报时的文字封面', () => {
     const now = new Date('2026-10-23T10:00:00+08:00');
     expect(withCard({ id:'a', name:'某大赛', eventLevel:'省级/区域级', recommendationLevel:'值得参加' }, now)).toMatchObject({ levelTag:'省级', recClass:'r2' });
     expect(withCard({ id:'b', name:'某大赛', eventLevel:'其他/未明确', recommendationLevel:'' }, now)).toMatchObject({ levelTag:'', recClass:'' });
-  });
-  it('即将截止：报名中、7 天内截止，按截止时间排', () => {
-    const now = new Date('2026-10-23T10:00:00+08:00');
-    const items = [
-      { id:'later', name:'甲', registrationStatus:'报名中', registrationEnd:'2026-10-29T23:59:59+08:00' },
-      { id:'today', name:'乙', registrationStatus:'报名中', registrationEnd:'2026-10-23T23:59:59+08:00' },
-      { id:'far', name:'丙', registrationStatus:'报名中', registrationEnd:'2026-12-01T23:59:59+08:00' },
-      { id:'past', name:'丁', registrationStatus:'报名中', registrationEnd:'2026-10-20T23:59:59+08:00' },
-      { id:'upcoming', name:'戊', registrationStatus:'即将报名', registrationEnd:'2026-10-25T23:59:59+08:00' },
-      { id:'nodate', name:'己', registrationStatus:'报名中' },
-    ];
-    expect(closingSoon(items, { now }).map(item => [item.id, item.deadlineText])).toEqual([['today', '今天截止'], ['later', '还剩 6 天']]);
   });
   it('withCover 保留原字段', () => {
     expect(withCover({ id:'a', name:'全国大学生数学建模竞赛', posterUrl:'' })).toMatchObject({ id:'a', posterUrl:'', coverTitle:'全国大学生数学建模竞赛' });
