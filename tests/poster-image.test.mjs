@@ -1,9 +1,9 @@
-// 赛事海报（2026-10，首页双列瀑布流）：抓取取官网封面图 → 草稿 → 公开缓存 → 列表接口 → 小程序卡片
+// 赛事海报（2026-10，首页双列卡片）：抓取取官网封面图 → 草稿 → 公开缓存 → 列表接口 → 小程序卡片
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { pickPosterImage } from '../scripts/server/page-supplement.mjs';
 import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
-import { coverOf, estimateCardHeight, splitColumns, withCover } from '../apps/miniprogram/services/waterfall';
+import { coverOf, withCover } from '../apps/miniprogram/services/cardCover';
 
 const require = createRequire(import.meta.url);
 const { candidateToRecord } = require('../apps/miniprogram/cloudfunctions/adminData/candidateToRecord.js');
@@ -90,18 +90,5 @@ describe('没有海报时的文字封面', () => {
   });
   it('withCover 保留原字段', () => {
     expect(withCover({ id:'a', name:'全国大学生数学建模竞赛', posterUrl:'' })).toMatchObject({ id:'a', posterUrl:'', coverTitle:'全国大学生数学建模竞赛' });
-  });
-});
-
-describe('首页瀑布流分列', () => {
-  it('两行名称的卡片比一行的高', () => {
-    expect(estimateCardHeight({ name:'全国大学生市场调查与分析大赛' })).toBeGreaterThan(estimateCardHeight({ name:'跨境电商大赛' }));
-  });
-  it('每张卡片放进当前较矮的一列，顺序不丢', () => {
-    const items = [{ id:'a', name:'全国大学生市场调查与分析大赛' }, { id:'b', name:'短名' }, { id:'c', name:'短名二' }, { id:'d', name:'短名三' }];
-    const { leftItems, rightItems } = splitColumns(items);
-    expect(leftItems.map(item => item.id)).toEqual(['a', 'd']);
-    expect(rightItems.map(item => item.id)).toEqual(['b', 'c']);
-    expect(splitColumns([])).toEqual({ leftItems:[], rightItems:[] });
   });
 });

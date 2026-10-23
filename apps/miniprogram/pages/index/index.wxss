@@ -25,10 +25,9 @@
 .clear { color:var(--accent); }
 /* 加载、没结果、出错 */
 .state { text-align:center; padding:70rpx 30rpx; border:0; border-radius:32rpx; }.state-title{font-size:30rpx;font-weight:700;margin-bottom:12rpx}.state button{margin-top:24rpx}.load-more{text-align:center;padding:20rpx;color:var(--muted);font-size:24rpx}.skeleton{padding:30rpx 32rpx;margin-bottom:24rpx;border:0;border-radius:32rpx}.skeleton view{height:24rpx;background:var(--chip);border-radius:12rpx;margin:16rpx 0}.skeleton view:first-child{width:78%;height:30rpx}.skeleton view:last-child{width:52%}
-/* 双列瀑布流（2026-10 淘宝风格改版）：两列各自往下排，卡片高度随名称行数不同而错落 */
-.waterfall { display:flex; align-items:flex-start; gap:16rpx; }
-.wf-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:16rpx; }
-.pcard { background:var(--surface); border-radius:16rpx; overflow:hidden; box-shadow:0 2rpx 4rpx rgba(23,32,51,.04), 0 8rpx 24rpx -12rpx rgba(23,32,51,.16); }
+/* 双列卡片（2026-10 淘宝风格改版）：整齐网格，每行两张顶部对齐、一样高 */
+.card-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16rpx; }
+.pcard { display:flex; flex-direction:column; background:var(--surface); border-radius:16rpx; overflow:hidden; box-shadow:0 2rpx 4rpx rgba(23,32,51,.04), 0 8rpx 24rpx -12rpx rgba(23,32,51,.16); }
 .pcard-poster { position:relative; width:100%; height:193rpx; background:var(--accent-soft); }
 .pcard-img { display:block; width:100%; height:100%; }
 /* 没有海报时的文字封面：完整赛事名称做主标题（最多三行），颜色按专业大类 */
@@ -47,8 +46,9 @@
 .cover-indigo { background:linear-gradient(135deg, #5b6fd8, #3946a8); }
 .pcard-star { position:absolute; top:10rpx; right:10rpx; width:52rpx; height:52rpx; border-radius:50%; background:rgba(255,255,255,.88); color:var(--muted); font-size:32rpx; line-height:52rpx; text-align:center; }
 .pcard-star.on { color:var(--star); }
-.pcard-body { padding:16rpx 18rpx 20rpx; display:flex; flex-direction:column; gap:12rpx; }
-.pcard-name { font-size:28rpx; font-weight:600; line-height:1.45; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
+.pcard-body { flex:1; padding:16rpx 18rpx 20rpx; display:flex; flex-direction:column; gap:12rpx; }
+/* 名称固定占两行高度，一行的名字也一样高，所有卡片高度一致 */
+.pcard-name { min-height:82rpx; font-size:28rpx; font-weight:600; line-height:1.45; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
 .pcard-tags { display:flex; }
 .pcard-status { padding:4rpx 12rpx; border-radius:8rpx; font-size:21rpx; font-weight:600; line-height:1.4; }
 .pcard-status.status-open { color:var(--accent); background:var(--accent-soft); }

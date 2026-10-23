@@ -64,14 +64,9 @@
   <view wx:elif="{{error}}" class="state card"><view>{{error}}</view><button bindtap="retry" size="mini">重新加载</button></view>
   <view wx:elif="{{items.length === 0}}" class="state card"><view class="state-title">没有匹配的比赛</view><view class="muted">试试清除部分筛选条件或更换关键词。</view></view>
   <view wx:else>
-    <!-- 双列瀑布流（2026-10 淘宝风格改版）：海报 16:9 + 名称（最多两行）+ 报名状态 + 截止时间；左右两列按估算高度分配 -->
-    <view class="waterfall">
-      <view class="wf-col">
-        <template is="poster-card" wx:for="{{leftItems}}" wx:key="id" data="{{item}}" />
-      </view>
-      <view class="wf-col">
-        <template is="poster-card" wx:for="{{rightItems}}" wx:key="id" data="{{item}}" />
-      </view>
+    <!-- 双列卡片（2026-10 淘宝风格改版）：海报 16:9 + 名称（占两行）+ 报名状态 + 截止时间；每行两张顶部对齐、一样高（用户定，不要错落） -->
+    <view class="card-grid">
+      <template is="poster-card" wx:for="{{items}}" wx:key="id" data="{{item}}" />
     </view>
     <view class="load-more muted">{{hasMore ? (loading ? '加载中…' : '继续上拉加载') : '已显示全部结果'}}</view>
   </view>

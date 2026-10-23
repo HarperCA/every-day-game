@@ -2,7 +2,7 @@ import { getProfessionOptions, listCompetitions } from '../../services/repositor
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
 import { loadCompetitionPreferences, saveCompetitionPreferences, saveSurveyStatus, shouldShowPreferenceSurvey, takePreferenceSurveyRequest, surveyProvinceOptions, uploadCompetitionPreferences } from '../../services/competitionPreferences';
 import { statusOptions, levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, regionAllOption, registrationWithinOptions, registrationWithinValues, sortByOptions, sortByValues, sortOrderOptions, sortOrderValues } from '../../services/filterOptions';
-import { splitColumns, withCover } from '../../services/waterfall';
+import { withCover } from '../../services/cardCover';
 
 const professionOptions = ['全部专业大类', ...getProfessionOptions()];
 const moreFieldMap: Record<string, string> = {
@@ -77,8 +77,6 @@ Page({
     morePreviewCount: 0,
     selectedConditions: [] as Array<{ kind: string; label: string }>,
     items: [] as any[],
-    leftItems: [] as any[],
-    rightItems: [] as any[],
     total: 0,
     page: 1,
     hasMore: false,
@@ -177,7 +175,7 @@ Page({
   onReachBottom() {
     if (!this.data.hasMore || this.data.morePanelVisible || this.data.surveyVisible) return;
     // 到底时正在加载：先记下，加载完再接着取下一页。微信只在“进入”底部区域时触发一次，
-    // 页面没变高就不会再触发——双列瀑布流一屏能放下的卡片多，第一页刚加载完常常还停在底部区域（2026-10）
+    // 页面没变高就不会再触发——双列卡片一屏能放下的多，第一页刚加载完常常还停在底部区域（2026-10）
     if (this.data.loading) { this.pendingLoadMore = true; return; }
     this.load(false);
   },
@@ -350,10 +348,9 @@ Page({
     const favoriteIds = new Set(getFavoriteIds());
     this.setItems(this.data.items.map((item: any) => ({ ...item, isFavorite: favoriteIds.has(item.id) })));
   },
-  // 列表整体和左右两列一起更新，瀑布流始终跟 items 保持一致；每张卡片带上文字封面，没海报时用
+  // 更新列表：每张卡片带上文字封面，没海报时用
   setItems(items: any[], extra: Record<string, unknown> = {}) {
-    const withCovers = items.map(withCover);
-    this.setData({ items: withCovers, ...splitColumns(withCovers), ...extra });
+    this.setData({ items: items.map(withCover), ...extra });
   },
   // 海报加载失败：这张卡片改用文字封面
   onPosterError(event: WechatMiniprogram.TouchEvent) {
@@ -383,7 +380,7 @@ Page({
         sortBy: this.data.sortBy as any,
         sortOrder: this.data.sortOrder as any,
         page,
-        // 双列瀑布流一页 16 张，和原来单列 8 张差不多高，第一屏能滚得动
+        // 双列卡片一页 16 张，和原来单列 8 张差不多高，第一屏能滚得动
         pageSize: 16,
       });
       if (requestId !== latestListRequestId) return;
