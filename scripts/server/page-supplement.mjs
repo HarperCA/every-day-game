@@ -79,6 +79,38 @@ export function imageCandidates({ html = '', pageUrl = '', renderedImages = [] }
     .slice(0, MAX_IMAGES * 2); // 下载后还会按大小再筛一次
 }
 
+// ---- 赛事海报（2026-10，小程序首页瀑布流卡片用）----
+// 只认官网自己在 <head> 里声明的封面图（og:image、twitter:image、image_src），不从正文 <img> 里猜：
+// 正文大图多半是广告横幅、日程图，猜错了比没有更糟，没有时小程序显示统一占位图。
+// 只收 https：小程序真机加载 http 图片常常失败。
+const POSTER_KEYS = ['og:image:secure_url', 'og:image', 'twitter:image', 'twitter:image:src', 'image'];
+
+const attrOf = (tag, name) => {
+  const match = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i').exec(tag);
+  return match ? (match[1] ?? match[2] ?? match[3] ?? '').trim() : '';
+};
+
+export function pickPosterImage({ html = '', pageUrl = '' } = {}) {
+  const head = String(html || '').slice(0, 200000);
+  const found = new Map();
+  for (const [tag] of head.matchAll(/<meta\b[^>]*>/gi)) {
+    const key = (attrOf(tag, 'property') || attrOf(tag, 'name') || attrOf(tag, 'itemprop')).toLowerCase();
+    const content = attrOf(tag, 'content');
+    if (POSTER_KEYS.includes(key) && content && !found.has(key)) found.set(key, content);
+  }
+  for (const [tag] of head.matchAll(/<link\b[^>]*>/gi)) {
+    if (/\bimage_src\b/i.test(attrOf(tag, 'rel')) && attrOf(tag, 'href') && !found.has('image_src')) found.set('image_src', attrOf(tag, 'href'));
+  }
+  for (const key of [...POSTER_KEYS, 'image_src']) {
+    const raw = found.get(key);
+    if (!raw) continue;
+    let url = '';
+    try { url = new URL(raw.replace(/&amp;/g, '&'), pageUrl).href; } catch { continue; }
+    if (/^https:\/\//i.test(url) && !SKIP_IMAGE.test(url) && url.length <= 500) return url;
+  }
+  return '';
+}
+
 const readKey = file => { try { return fs.readFileSync(path.join(HERE, file), 'utf8').trim(); } catch { return ''; } };
 const OCR_PROMPT = '逐字识别这张图片里的所有文字，按从上到下、从左到右的顺序原样输出，不要解释、不要补充图片里没有的字。图片里没有文字就只回复“无文字”。';
 

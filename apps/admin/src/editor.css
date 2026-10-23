@@ -46,6 +46,7 @@
 .collapsible-editor-field summary { cursor:pointer; font-weight:700; font-size:13px; }
 .collapsible-editor-field textarea { width:100%; margin-top:10px; }
 .editor-grid .wide { grid-column:1/-1; }
+.editor-grid .poster-preview { display:block; width:240px; aspect-ratio:16/9; margin-top:8px; object-fit:cover; border:1px solid #d9e1e7; border-radius:8px; background:#f2f5f7; }
 .editor-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:22px; }
 .editor-actions button { border:1px solid #d4dce3; border-radius:9px; background:#fff; padding:10px 18px; }
 .editor-actions .primary { border-color:#087e8b; background:#087e8b; }

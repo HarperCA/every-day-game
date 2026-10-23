@@ -102,6 +102,8 @@ function candidateToRecord(candidate, extractionResult, { now = new Date() } = {
     registrationMethod:extracted?.registration_method?.value || '',
     registrationOrganization:extracted?.registration_organization?.value || '暂未明确',
     registrationUrl:String(candidate.detailUrl || ''),
+    // 赛事海报：抽取时从官网 <head> 声明的封面图取（run-extract.mjs），不是模型产出，抽取失败也照用
+    posterUrl:String(extractionResult?.posterUrl || candidate.posterUrl || '').slice(0, 500),
     fees:extracted?.fees?.value || '',
     feeType:extracted?.fees?.value ? (/免费|不收|免收|无报名费/.test(extracted.fees.value) ? '免费' : /\d\s*元|收费|报名费/.test(extracted.fees.value) ? '收费' : '暂未公布') : '暂未公布',
     lastVerifiedAt:timestamp,

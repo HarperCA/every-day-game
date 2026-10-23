@@ -125,6 +125,8 @@ function toPublicCache(record, now = new Date(), gateOptions = {}) {
     team_size:String(record.teamSize || ''),
     registration_method:String(record.registrationMethod || ''),
     registration_url:String(record.registrationUrl || ''),
+    // 赛事海报（2026-10，首页瀑布流卡片用）：只发 https 地址，其余留空，小程序显示统一占位图
+    poster_url:/^https:\/\//i.test(record.posterUrl || '') ? String(record.posterUrl).slice(0, 500) : '',
     fees:String(record.fees || ''),
     track_name:String(record.track?.name || ''),
     registration_status:status,

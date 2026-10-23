@@ -14,6 +14,8 @@ const LIST_FIELDS = [
   'registration_status', 'registration_start', 'registration_end', 'registration_end_note',
   'data_status', 'next_edition_estimate', 'last_verified_at',
   'recommendation', 'recommendation_reasons',
+  // 2026-10 首页改双列瀑布流，卡片上方显示赛事海报
+  'poster_url',
 ];
 
 function toListItem(item) {

@@ -6,7 +6,7 @@ export function createCompetitionDraft() {
     eventLevel: '其他/未明确', aliases: [], objectiveTags: [], professions: [],
     participants: '', eligibility: '', formatAndRules: '', teamSize: '',
     participationFormat: '暂未明确', teamSizeCategory: '暂未明确',
-    registrationMethod: '', registrationOrganization: '暂未明确', registrationUrl: '',
+    registrationMethod: '', registrationOrganization: '暂未明确', registrationUrl: '', posterUrl: '',
     fees: '', feeType: '暂未公布', lastVerifiedAt: null,
     dataStatus: 'draft', systemValidation: 'not_run', manualReview: 'pending', qualityIssues: [],
     schedule: { id: `schedule-${id}`, edition_id: id, track_id: null,

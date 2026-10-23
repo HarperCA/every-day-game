@@ -18,6 +18,7 @@
     "team_size": {"type": "string"},
     "registration_method": {"type": "string"},
     "registration_url": {"type": "string", "format": "uri"},
+    "poster_url": {"type": "string", "maxLength": 500, "description": "赛事海报图片地址，只收 https；空串表示没有，小程序显示统一占位图。"},
     "fees": {"type": "string"},
     "track_name": {"type": "string"},
     "registration_status": {"enum": ["时间待公布", "即将报名", "报名中", "已截止"]},

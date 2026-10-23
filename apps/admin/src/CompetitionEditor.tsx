@@ -84,6 +84,10 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <label>报名费用<select value={editing.feeType} onChange={e=>set('feeType',e.target.value)}>{feeTypes.map(value=><option key={value}>{value}</option>)}</select></label>
         <CollapsibleField label="官方报名方式原文" value={editing.registrationMethod} onChange={value=>set('registrationMethod',value)}/>
         <label className="wide">报名网址<input type="url" value={editing.registrationUrl} onChange={e=>set('registrationUrl',e.target.value)}/></label>
+        {/* 赛事海报：抓取时自动取官网封面图，可手动改；只有 https 地址会发布到小程序，空着显示统一占位图 */}
+        <label className="wide">海报图片网址（https）<input type="url" placeholder="https://…" value={editing.posterUrl || ''} onChange={e=>set('posterUrl',e.target.value.trim())}/>
+          {/^https:\/\//i.test(editing.posterUrl || '') && <img className="poster-preview" src={editing.posterUrl} alt="海报预览" referrerPolicy="no-referrer"/>}
+        </label>
         <CollapsibleField label="费用说明原文" value={editing.fees} onChange={value=>set('fees',value)}/>
       </div></fieldset>
 
