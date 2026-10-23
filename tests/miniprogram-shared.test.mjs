@@ -6,10 +6,14 @@ import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
 
 const require = createRequire(import.meta.url);
 const { PROFESSION_TAXONOMY } = require('../apps/miniprogram/cloudfunctions/adminData/competitionAiReview.js');
+const { PROFESSION_CATEGORIES:ASSISTANT_PROFESSIONS } = require('../apps/miniprogram/cloudfunctions/assistant/askValidation.js');
 
 describe('小程序共用代码', () => {
   it('专业筛选的十三类与后端 AI 审核用的完全一致', () => {
     expect(PROFESSION_CATEGORIES).toEqual([...PROFESSION_TAXONOMY].sort());
+  });
+  it('赛事助手用的十三类也完全一致', () => {
+    expect([...ASSISTANT_PROFESSIONS].sort()).toEqual(PROFESSION_CATEGORIES);
   });
   it('筛选项与字段转换可以脱离微信环境使用', () => {
     expect(statusOptions[0]).toBe('全部报名状态');

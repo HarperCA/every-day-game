@@ -8,6 +8,9 @@
       <input value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="onSearch" confirm-type="search" placeholder="赛事名称、主办单位或专业" />
       <button bindtap="onSearch" size="mini">搜索</button>
     </view>
+    <view class="assistant-button" bindtap="openAssistant" role="button" aria-label="问问助手">
+      <image src="/assets/radar.svg" mode="aspectFit" aria-hidden="true" /><text>助手</text>
+    </view>
   </view>
 
   <view class="filter-panel">
