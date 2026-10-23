@@ -111,6 +111,100 @@ export function pickPosterImage({ html = '', pageUrl = '' } = {}) {
   return '';
 }
 
+// ---- 没有声明封面图时：官网页面上和赛事有关的大图（2026-10，用户定）----
+// 只要“看着像赛事主视觉”的：文件名、alt、class 里带海报/横幅/主视觉/赛事字样，或 alt 写着赛事名；
+// 再真的下载图片头部量尺寸：横版、够大才收（宽 ≥ 600，宽高比 1.2～4），挡掉图标、二维码、竖条广告。
+const POSTER_HINT = /poster|banner|haibao|kv\b|key-?visual|cover|海报|横幅|主视觉|主题|大赛|竞赛|比赛|挑战赛|contest|competition/i;
+const MIN_POSTER_WIDTH = 600;
+const MIN_POSTER_BYTES = 20 * 1024;
+
+export function pageImageCandidates({ html = '', pageUrl = '', contestName = '' } = {}) {
+  const core = squash(contestName).replace(/^(?:\d{4}年?|第[一二三四五六七八九十百\d]+届)/, '').slice(0, 12);
+  const found = [];
+  const push = (raw, context, declared = {}) => {
+    if (!raw || /^data:/i.test(raw)) return;
+    let url = '';
+    try { url = new URL(raw.replace(/&amp;/g, '&'), pageUrl).href; } catch { return; }
+    if (!/^https:\/\//i.test(url) || SKIP_IMAGE.test(url) || /\.(?:svg|gif)(?:$|[?#])/i.test(url) || url.length > 500) return;
+    if ((declared.width && declared.width < 300) || (declared.height && declared.height < 120)) return;
+    let score = 0;
+    // 只看路径不看域名：赛事官网域名里常带 contest、dasai，按域名算每张图都会被当成赛事图
+    let pathname = new URL(url).pathname;
+    try { pathname = decodeURIComponent(pathname); } catch { /* 坏的百分号编码就按原样比 */ }
+    if (POSTER_HINT.test(`${pathname} ${context}`)) score += 2;
+    if (core.length >= 4 && squash(context).includes(core.slice(0, 6))) score += 3;
+    if (declared.width >= MIN_POSTER_WIDTH) score += 1;
+    if (score > 0 && !found.some(item => item.url === url)) found.push({ url, score, order:found.length });
+  };
+  const body = String(html || '').slice(0, 400000);
+  for (const [tag] of body.matchAll(/<img\b[^>]*>/gi)) {
+    const raw = attrOf(tag, 'data-original') || attrOf(tag, 'data-src') || attrOf(tag, 'src');
+    push(raw, `${attrOf(tag, 'alt')} ${attrOf(tag, 'title')} ${attrOf(tag, 'class')}`,
+      { width:Number(attrOf(tag, 'width')) || 0, height:Number(attrOf(tag, 'height')) || 0 });
+  }
+  // 横幅常写成背景图：<div class="banner" style="background-image:url(...)">
+  for (const [tag] of body.matchAll(/<[a-z]+\b[^>]*style\s*=\s*["'][^"']*background(?:-image)?\s*:[^"']*url\([^)]*\)[^>]*>/gi)) {
+    const raw = /url\(\s*["']?([^"')]+)["']?\s*\)/i.exec(tag)?.[1];
+    push(raw, `${attrOf(tag, 'class')} ${attrOf(tag, 'id')}`);
+  }
+  return found.sort((a, b) => b.score - a.score || a.order - b.order).slice(0, 6);
+}
+
+// 从图片文件头读宽高：PNG、JPEG、WebP；读不出返回 null
+export function imageSize(buffer) {
+  const b = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || []);
+  if (b.length >= 24 && b.readUInt32BE(0) === 0x89504e47) return { width:b.readUInt32BE(16), height:b.readUInt32BE(20), type:'png' };
+  if (b.length >= 30 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') {
+    const kind = b.toString('latin1', 12, 16);
+    if (kind === 'VP8X') return { width:1 + b.readUIntLE(24, 3), height:1 + b.readUIntLE(27, 3), type:'webp' };
+    if (kind === 'VP8 ') return { width:b.readUInt16LE(26) & 0x3fff, height:b.readUInt16LE(28) & 0x3fff, type:'webp' };
+    if (kind === 'VP8L') { const bits = b.readUInt32LE(21); return { width:1 + (bits & 0x3fff), height:1 + ((bits >> 14) & 0x3fff), type:'webp' }; }
+  }
+  if (b.length >= 4 && b[0] === 0xff && b[1] === 0xd8) {
+    let offset = 2;
+    while (offset + 9 < b.length) {
+      if (b[offset] !== 0xff) { offset += 1; continue; }
+      const marker = b[offset + 1];
+      const length = b.readUInt16BE(offset + 2);
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return { width:b.readUInt16BE(offset + 7), height:b.readUInt16BE(offset + 5), type:'jpeg' };
+      }
+      offset += 2 + length;
+    }
+  }
+  return null;
+}
+
+export function looksLikePoster(size, bytes) {
+  if (!size || !size.width || !size.height) return false;
+  const ratio = size.width / size.height;
+  return size.width >= MIN_POSTER_WIDTH && ratio >= 1.2 && ratio <= 4 && (!bytes || bytes >= MIN_POSTER_BYTES);
+}
+
+// 依次下载候选图片的前 64KB 量尺寸，第一张像海报的就用；都不像返回 null
+export async function findPagePoster({ html = '', pageUrl = '', contestName = '' } = {}, { fetchImpl = globalThis.fetch, timeoutMs = 15000 } = {}) {
+  for (const candidate of pageImageCandidates({ html, pageUrl, contestName })) {
+    try {
+      const res = await fetchImpl(candidate.url, { headers:{ range:'bytes=0-65535', referer:pageUrl }, signal:AbortSignal.timeout(timeoutMs) });
+      if (!res.ok) continue;
+      const type = (res.headers.get('content-type') || '').toLowerCase();
+      if (type && !/^image\/(?:png|jpe?g|webp)/.test(type)) continue;
+      const total = Number(/\/(\d+)$/.exec(res.headers.get('content-range') || '')?.[1] || res.headers.get('content-length') || 0);
+      const size = imageSize(Buffer.from(await res.arrayBuffer()));
+      if (looksLikePoster(size, total)) return { url:candidate.url, width:size.width, height:size.height };
+    } catch { /* 下载失败换下一张 */ }
+  }
+  return null;
+}
+
+// 一个官网页面找海报：先用页面声明的封面图，没有再找页面上的赛事大图。source 记来源，后台可据此复核
+export async function findPoster({ html = '', pageUrl = '', contestName = '' } = {}, options = {}) {
+  const declared = pickPosterImage({ html, pageUrl });
+  if (declared) return { url:declared, source:'declared' };
+  const page = await findPagePoster({ html, pageUrl, contestName }, options);
+  return page ? { url:page.url, source:'page_image' } : null;
+}
+
 const readKey = file => { try { return fs.readFileSync(path.join(HERE, file), 'utf8').trim(); } catch { return ''; } };
 const OCR_PROMPT = '逐字识别这张图片里的所有文字，按从上到下、从左到右的顺序原样输出，不要解释、不要补充图片里没有的字。图片里没有文字就只回复“无文字”。';
 

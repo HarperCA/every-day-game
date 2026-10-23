@@ -18,7 +18,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { baiduEngine, createSearcher, deepseekEngine, kimiEngine, kimiFetchPage } from './search-engines.mjs';
 import { createPageReader } from './page-reader.mjs';
-import { fieldsFromImages, findNoticeTitles, imageCandidates, keyFieldCount, missingKeyFields, ocrImage, ocrRelevance, pickOfficialNotice, pickPosterImage } from './page-supplement.mjs';
+import { fieldsFromImages, findNoticeTitles, findPoster, imageCandidates, keyFieldCount, missingKeyFields, ocrImage, ocrRelevance, pickOfficialNotice } from './page-supplement.mjs';
 
 // 服务器部署时 crawler/ 在脚本旁；仓库里则是 scripts/crawler/。
 const crawlerModule = name => import(`./crawler/lib/${name}.mjs`).catch(() => import(`../crawler/lib/${name}.mjs`));
@@ -154,8 +154,10 @@ async function sourceTextFor(candidate) {
   if (page.status !== 'ok') return '';
   if (!/html/i.test(page.contentType || '')) return binarySourceText(page, url);
   candidate.pageHtml = page.text;
-  // 顺便取官网声明的封面图作赛事海报；没有就留空（page-supplement.mjs 的 pickPosterImage）
-  candidate.posterUrl = pickPosterImage({ html:page.text, pageUrl:page.finalUrl || url });
+  // 顺便找赛事海报：官网声明的封面图，没有再找页面上的赛事大图；都没有就留空（page-supplement.mjs 的 findPoster）
+  const poster = await findPoster({ html:page.text, pageUrl:page.finalUrl || url, contestName:String(candidate.name || '') }).catch(() => null);
+  candidate.posterUrl = poster?.url || '';
+  candidate.posterSource = poster?.source || '';
   const links = evidenceLinks(page.text, page.finalUrl || url);
   const ranked = await rankEvidenceLinks(links, { apiKey:readOpenRouterKey(), contestName:String(candidate.name || '') });
   candidate.discoveredEvidence = ranked;
@@ -293,7 +295,7 @@ async function main() {
       supplement.missingAfter = outcome.ok ? missingKeyFields(outcome.extracted) : supplement.missingBefore;
     }
     const elapsed = Date.now() - started;
-    results.push({ name, url, elapsedMs:elapsed, retried, posterUrl:candidate.posterUrl || '', discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...(rendered ? { rendered } : {}), ...(supplement ? { supplement } : {}), ...outcome });
+    results.push({ name, url, elapsedMs:elapsed, retried, posterUrl:candidate.posterUrl || '', posterSource:candidate.posterSource || '', discoveredEvidence:candidate.discoveredEvidence || [], evidenceDiscoveryError:candidate.evidenceDiscoveryError || null, ...(rendered ? { rendered } : {}), ...(supplement ? { supplement } : {}), ...outcome });
     const thought = outcome.reasoning?.chars ? ` 思考${outcome.reasoning.chars}字` : '';
     const suffix = (outcome.ok
       ? `建议${outcome.suggestions?.length ?? 0}条 丢弃${outcome.droppedCount ?? 0}条`

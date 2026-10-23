@@ -25,6 +25,7 @@ done
 echo "--- 同步批量抽取脚本 ---"
 scp -q scripts/server/run-extract.mjs "$SERVER:$REMOTE/run-extract.mjs"
 scp -q scripts/server/page-supplement.mjs "$SERVER:$REMOTE/page-supplement.mjs"
+scp -q scripts/server/backfill-posters.mjs "$SERVER:$REMOTE/backfill-posters.mjs"
 scp -q scripts/server/ingest-candidates.mjs "$SERVER:$REMOTE/ingest-candidates.mjs"
 scp -q scripts/server/rescore-review-drafts.mjs "$SERVER:$REMOTE/rescore-review-drafts.mjs"
 scp -q scripts/server/arbitrate-dedupe.mjs "$SERVER:$REMOTE/arbitrate-dedupe.mjs"
