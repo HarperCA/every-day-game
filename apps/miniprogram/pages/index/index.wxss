@@ -25,6 +25,27 @@
 .clear { color:var(--accent); }
 /* 加载、没结果、出错 */
 .state { text-align:center; padding:70rpx 30rpx; border:0; border-radius:32rpx; }.state-title{font-size:30rpx;font-weight:700;margin-bottom:12rpx}.state button{margin-top:24rpx}.load-more{text-align:center;padding:20rpx;color:var(--muted);font-size:24rpx}.skeleton{padding:30rpx 32rpx;margin-bottom:24rpx;border:0;border-radius:32rpx}.skeleton view{height:24rpx;background:var(--chip);border-radius:12rpx;margin:16rpx 0}.skeleton view:first-child{width:78%;height:30rpx}.skeleton view:last-child{width:52%}
+/* 双列瀑布流（2026-10 淘宝风格改版）：两列各自往下排，卡片高度随名称行数不同而错落 */
+.waterfall { display:flex; align-items:flex-start; gap:16rpx; }
+.wf-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:16rpx; }
+.pcard { background:var(--surface); border-radius:16rpx; overflow:hidden; box-shadow:0 2rpx 4rpx rgba(23,32,51,.04), 0 8rpx 24rpx -12rpx rgba(23,32,51,.16); }
+.pcard-poster { position:relative; width:100%; height:193rpx; background:var(--accent-soft); }
+.pcard-img { display:block; width:100%; height:100%; }
+.pcard-star { position:absolute; top:10rpx; right:10rpx; width:52rpx; height:52rpx; border-radius:50%; background:rgba(255,255,255,.88); color:var(--muted); font-size:32rpx; line-height:52rpx; text-align:center; }
+.pcard-star.on { color:var(--star); }
+.pcard-body { padding:16rpx 18rpx 20rpx; display:flex; flex-direction:column; gap:12rpx; }
+.pcard-name { font-size:28rpx; font-weight:600; line-height:1.45; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
+.pcard-tags { display:flex; }
+.pcard-status { padding:4rpx 12rpx; border-radius:8rpx; font-size:21rpx; font-weight:600; line-height:1.4; }
+.pcard-status.status-open { color:var(--accent); background:var(--accent-soft); }
+.pcard-status.status-upcoming { color:var(--amber); background:#fdf1e2; }
+.pcard-status.status-pending, .pcard-status.status-closed { color:var(--muted); background:var(--chip); }
+.pcard-dl { font-size:22rpx; color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pcard-dl.arch { color:var(--amber); }
+.skeleton-grid { display:grid; grid-template-columns:1fr 1fr; gap:16rpx; }
+.skeleton-grid .skeleton { margin:0; padding:0 0 20rpx; border-radius:16rpx; overflow:hidden; }
+.skeleton-grid .skeleton view { margin:16rpx 18rpx; }
+.skeleton-grid .skeleton .skeleton-poster { width:auto; height:193rpx; margin:0; border-radius:0; }
 .filter-mask { position:fixed; z-index:1000; inset:0; background:rgba(15,23,42,.48); display:flex; align-items:flex-end; }
 .filter-sheet { width:100%; height:88vh; background:#fff; border-radius:30rpx 30rpx 0 0; display:flex; flex-direction:column; overflow:hidden; }
 .sheet-head { position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; height:104rpx; border-bottom:1rpx solid #edf0f4; }
