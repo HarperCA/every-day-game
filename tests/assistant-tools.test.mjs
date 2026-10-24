@@ -112,6 +112,13 @@ describe('赛事助手：给模型看的结果和卡片', () => {
     expect(compact.shown[0]).not.toHaveProperty('sources');
   });
 
+  // 2026-10-24：用户问“谁主办的”，原先模型拿不到主办方，只能答“库里没有”
+  it('给模型的结果带主办方（最多 120 字），没有时为空字符串', () => {
+    const compact = tools.compactForModel({ total:1, items:[{ id:'a', name:'比赛', organizer:'教育部高等学校计算机类专业教学指导委员会'.repeat(10) }] });
+    expect(compact.shown[0].organizer).toHaveLength(120);
+    expect(tools.compactForModel({ total:1, items:[{ id:'b', name:'比赛' }] }).shown[0].organizer).toBe('');
+  });
+
   it('卡片字段齐全，剩余天数按北京时间当天结束计算', () => {
     const card = tools.toCard({ ...publicRecord(), registration_status:'报名中' }, NOW);
     expect(card).toEqual({ id:'edition-a', name:'全国大学生智能汽车竞赛', editionName:'第二十一届', eventLevel:'国家级',

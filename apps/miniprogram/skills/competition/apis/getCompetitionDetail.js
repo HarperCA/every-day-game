@@ -46,6 +46,8 @@ async function getCompetitionDetail({ id } = {}) {
       registrationEnd: item.registration_end || '',
       pagePath: `${DETAIL_PAGE}?id=${encodeURIComponent(item.id)}`,
     },
+    // 接力页面（2026-10-24）：用户点“账号卡片”进入这场比赛的详情页，页面按 id 读详情（pages/detail/detail 的 onLoad）
+    handoff: () => ({ query: `id=${encodeURIComponent(item.id)}` }),
   };
 }
 
