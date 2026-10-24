@@ -9,6 +9,8 @@ Page({
     quickQuestions: QUICK_QUESTIONS,
     input: '',
     inputLines: 1,
+    // 键盘高度（px）：底部输入栏抬到键盘上方，不整页上推
+    keyboardHeight: 0,
     sending: false,
     scrollInto: '',
     sessionId: '',
@@ -36,8 +38,21 @@ Page({
   // 输入框行数变了就跟着改高度，最多 5 行
   onInputLineChange(event: any) {
     const lines = Math.min(5, Math.max(1, Number(event.detail.lineCount) || 1));
-    if (lines !== this.data.inputLines) this.setData({ inputLines: lines });
+    if (lines === this.data.inputLines) return;
+    this.setData({ inputLines: lines });
+    if (this.data.keyboardHeight) this.scrollToEnd();
   },
+  // 键盘弹起或收起（2026-10-24）：输入框关掉了微信默认的“整页上推”——字多了框变高时，整页会被再推一次，
+  // 上面的对话被推出屏幕变成一片空白。改成只把底部输入栏垫高到键盘上方，对话区跟着变矮，并滚到最新一条。
+  onKeyboardHeightChange(event: any) {
+    const height = Math.max(0, Math.round(Number(event.detail?.height) || 0));
+    if (height === this.data.keyboardHeight) return;
+    this.setData({ keyboardHeight: height });
+    if (height) this.scrollToEnd();
+  },
+  onInputBlur() { if (this.data.keyboardHeight) this.setData({ keyboardHeight: 0 }); },
+  // scroll-into-view 只在值变化时才滚：先清空再设
+  scrollToEnd() { this.setData({ scrollInto: '' }, () => this.setData({ scrollInto: 'feed-end' })); },
   onSubmit() { return this.send(this.data.input); },
   onQuickQuestion(event: WechatMiniprogram.TouchEvent) { return this.send(String(event.currentTarget.dataset.text || '')); },
   onOption(event: WechatMiniprogram.TouchEvent) {

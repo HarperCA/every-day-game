@@ -45,7 +45,7 @@
     </view>
   </scroll-view>
 
-  <view class="dock">
+  <view class="dock" style="{{keyboardHeight ? 'padding-bottom:' + (keyboardHeight + 8) + 'px' : ''}}">
     <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}">
       <view class="chip-track">
         <view wx:for="{{quickQuestions}}" wx:key="*this" class="chip" data-text="{{item}}" bindtap="onQuickQuestion" role="button">{{item}}</view>
@@ -54,7 +54,7 @@
     <view class="composer">
       <!-- 多行输入框：高度按行数算，最多 5 行；键盘上的“发送”键直接发出，不能手动换行 -->
       <view class="composer-box">
-        <textarea class="composer-input" style="height:{{inputLines * 40}}rpx" value="{{input}}" bindinput="onInput" bindlinechange="onInputLineChange" bindconfirm="onSubmit" confirm-type="send" show-confirm-bar="{{false}}" disable-default-padding maxlength="300" cursor-spacing="24" placeholder="说说你的专业、年级和想找的比赛" aria-label="向助手提问" />
+        <textarea class="composer-input" style="height:{{inputLines * 40}}rpx" value="{{input}}" bindinput="onInput" bindlinechange="onInputLineChange" bindconfirm="onSubmit" bindkeyboardheightchange="onKeyboardHeightChange" bindblur="onInputBlur" adjust-position="{{false}}" confirm-type="send" show-confirm-bar="{{false}}" disable-default-padding maxlength="300" cursor-spacing="24" placeholder="说说你的专业、年级和想找的比赛" aria-label="向助手提问" />
       </view>
       <button class="send" disabled="{{sending || !input}}" bindtap="onSubmit" aria-label="发送"><image src="/assets/send.svg" mode="aspectFit" aria-hidden="true" /></button>
     </view>
