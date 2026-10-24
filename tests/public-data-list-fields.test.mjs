@@ -24,7 +24,8 @@ const publishable = {
   dataStatus:'published', systemValidation:'passed', manualReview:'passed',
 };
 const NOW = new Date('2026-08-31T00:00:00.000Z');
-const published = toPublicCache(publishable, NOW);
+// 海报链接 poster_url 是同步到上海时才写上的（scripts/server/sync-public-cache.mjs 的 withPosterUrls），公开缓存里只有 poster_file
+const published = { ...toPublicCache(publishable, NOW), poster_url:'' };
 const archived = toPublicCache({ ...publishable, id:'edition-2', name:'某往届大赛', dataStatus:'archived', nextEditionEstimate:'2027-03-01T00:00:00.000Z', archivedAt:'2026-10-01T00:00:00.000Z' }, NOW);
 
 describe('toListItem', () => {
@@ -35,7 +36,7 @@ describe('toListItem', () => {
   it('只留清单里的字段，长文本都不带', () => {
     const item = toListItem(published);
     expect(Object.keys(item).sort()).toEqual([...LIST_FIELDS].sort());
-    for (const dropped of ['format_and_rules', 'eligibility', 'participants', 'sources', 'registration_url', 'search_text', 'registration_method', 'time_note', 'value_scores', 'rewards', '_id']) {
+    for (const dropped of ['format_and_rules', 'eligibility', 'participants', 'sources', 'registration_url', 'search_text', 'registration_method', 'time_note', 'value_scores', 'rewards', '_id', 'poster_file']) {
       expect(item).not.toHaveProperty(dropped);
     }
     expect(item).toMatchObject({ id:'edition-1', name:'全国大学生计算机设计竞赛', professions:['计算机与AI'], recommendation:'值得参加', data_status:'published' });

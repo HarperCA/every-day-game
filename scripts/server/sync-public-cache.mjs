@@ -7,6 +7,8 @@
 //   - 只推有变化的条目（按每条内容的哈希比对），没有变化就一个请求都不发；
 //   - 服务器这边已下架、删除的，在上海也删掉；
 //   - 每 24 小时整体重推、整体核对一次，防止两边慢慢走样。
+//   - 海报（2026-10-24）：公开数据里带 poster_file（图片总库里的文件名）的，先把还没推过的海报一张一请求推到上海云存储，
+//     换回 https 链接，以 poster_url 写进推给上海的数据；不再被用到的海报，在上海也删掉。
 // 用法：node sync-public-cache.mjs [--full] [--dry-run]
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -21,6 +23,9 @@ const COLLECTION = 'event_edition_public_cache';
 // 腾讯云 HTTP 访问服务对请求体有上限（一批 40 条、约 80KB 时返回 413），按大小分批，每批不超过 50KB
 const MAX_BATCH_BYTES = 50 * 1024;
 const FULL_EVERY_MS = 24 * 60 * 60 * 1000;
+// 图片总库：后台上传的海报存在这里（adminData/posterImage.js 的 posterDir，两边要一致）
+const POSTER_DIR = process.env.POSTER_DIR || path.join(HERE, 'server', 'data', 'posters');
+const POSTER_FILE = /^[0-9a-f]{64}\.jpg$/;
 
 // 跟上海 publicData 读取时的条件一致：只推可以公开的
 export const isPublic = doc => ['published', 'archived'].includes(doc?.data_status)
@@ -57,6 +62,55 @@ export function planSync(docs, state = {}, { full = false, now = Date.now() } = 
   return { upserts, removed, prune:fullDue || removed.length > 0, fullDue, hashes:current, keepIds:Object.keys(current) };
 }
 
+// 海报：哪些要推上去、哪些已经不用了。posters = { 文件名: { fileID, url } }，存在同步状态里
+export function planPosters(docs, posters = {}) {
+  const wanted = new Set(docs.map(doc => doc.poster_file).filter(file => typeof file === 'string' && POSTER_FILE.test(file)));
+  return {
+    upload:[...wanted].filter(file => !posters[file]?.fileID),
+    stale:Object.keys(posters).filter(file => !wanted.has(file)),
+  };
+}
+
+// 推给上海的数据带上海报的云存储文件 ID；上海 publicData 返回列表时再换成 10 分钟有效的链接（2026-10-24 用户定：不升级套餐，存储是私有的）。
+// 还没推成功的海报先不带，小程序显示文字封面，下次同步再补
+export function withPosterUrls(docs, posters = {}) {
+  return docs.map(doc => ({ ...doc, poster_file_id:(POSTER_FILE.test(doc.poster_file || '') && posters[doc.poster_file]?.fileID) || '' }));
+}
+
+async function syncPosters(endpoint, secret, docs, posters) {
+  const plan = planPosters(docs, posters);
+  const next = { ...posters };
+  let uploaded = 0;
+  for (const file of plan.upload) {
+    try {
+      const data = fs.readFileSync(path.join(POSTER_DIR, file)).toString('base64');
+      const result = await callSync(endpoint, secret, { action:'uploadPoster', file, data });
+      next[file] = { fileID:result.fileID, url:result.url };
+      uploaded += 1;
+    } catch (error) {
+      // 一张失败不影响比赛数据同步，这张下次再试
+      console.error(`${new Date().toISOString()} 海报 ${file} 推送失败：${String(error?.message || error).slice(0, 160)}`);
+    }
+  }
+  return { posters:next, uploaded, stale:plan.stale };
+}
+
+async function deleteStalePosters(endpoint, secret, posters, stale) {
+  const next = { ...posters };
+  let removed = 0;
+  for (let index = 0; index < stale.length; index += 50) {
+    const files = stale.slice(index, index + 50);
+    const fileIDs = files.map(file => posters[file]?.fileID).filter(Boolean);
+    try {
+      if (fileIDs.length) removed += (await callSync(endpoint, secret, { action:'deletePosters', fileIDs })).removed || 0;
+      for (const file of files) delete next[file];
+    } catch (error) {
+      console.error(`${new Date().toISOString()} 删除旧海报失败：${String(error?.message || error).slice(0, 160)}`);
+    }
+  }
+  return { posters:next, removed };
+}
+
 function readConfig(name) {
   try { return fs.readFileSync(path.join(HERE, name), 'utf8').trim(); } catch { return ''; }
 }
@@ -90,15 +144,23 @@ async function main() {
   const secret = readConfig('.sync-secret');
   if (!endpoint || !secret) throw new Error('缺少 .sync-endpoint 或 .sync-secret');
 
-  const docs = loadPublicDocs();
+  const localDocs = loadPublicDocs();
   // 防误删：本地一条公开数据都读不到，多半是数据库出问题，不能拿空列表去把上海清空
-  if (!docs.length) throw new Error('本地公开数据为 0 条，疑似读库出错，本次不同步');
+  if (!localDocs.length) throw new Error('本地公开数据为 0 条，疑似读库出错，本次不同步');
   const stateFile = sourceStateFile(path.join(HERE, 'plans'), 'public-sync', endpoint);
   const state = readSourceState(stateFile, endpoint);
-  const plan = planSync(docs, state, { full:args.full });
   const stamp = new Date().toISOString();
-  if (!plan.upserts.length && !plan.prune) { console.log(`${stamp} 公开数据 ${docs.length} 条，无变化`); return; }
-  if (args.dryRun) { console.log(`${stamp} [dry-run] 要推 ${plan.upserts.length} 条，删 ${plan.removed.length} 条，整体核对：${plan.prune}`); return; }
+  if (args.dryRun) {
+    const posterPlan = planPosters(localDocs, state.posters);
+    const plan = planSync(withPosterUrls(localDocs, state.posters), state, { full:args.full });
+    console.log(`${stamp} [dry-run] 要推 ${plan.upserts.length} 条，删 ${plan.removed.length} 条，整体核对：${plan.prune}；海报要推 ${posterPlan.upload.length} 张，要删 ${posterPlan.stale.length} 张`);
+    return;
+  }
+  // 先推海报，拿到链接再算哪些比赛数据有变化（链接变了也算变化）
+  const posterSync = await syncPosters(endpoint, secret, localDocs, state.posters || {});
+  const docs = withPosterUrls(localDocs, posterSync.posters);
+  const plan = planSync(docs, state, { full:args.full });
+  if (!plan.upserts.length && !plan.prune && !posterSync.uploaded && !posterSync.stale.length) { console.log(`${stamp} 公开数据 ${docs.length} 条，无变化`); return; }
 
   let saved = 0;
   for (const batch of batchBySize(plan.upserts)) {
@@ -108,9 +170,11 @@ async function main() {
   }
   let removed = 0;
   if (plan.prune) removed = (await callSync(endpoint, secret, { action:'prune', keepIds:plan.keepIds })).removed || 0;
+  // 比赛数据已经换成新海报以后，再删上海不再用的旧海报
+  const posterClean = await deleteStalePosters(endpoint, secret, posterSync.posters, posterSync.stale);
 
-  writeSourceState(stateFile, endpoint, { hashes:plan.hashes, lastSyncAt:stamp, lastFullAt:plan.fullDue ? stamp : state.lastFullAt });
-  console.log(`${stamp} 公开数据 ${docs.length} 条：推送 ${saved} 条，目标删除 ${removed} 条${plan.fullDue ? '（整体核对）' : ''}`);
+  writeSourceState(stateFile, endpoint, { hashes:plan.hashes, posters:posterClean.posters, lastSyncAt:stamp, lastFullAt:plan.fullDue ? stamp : state.lastFullAt });
+  console.log(`${stamp} 公开数据 ${docs.length} 条：推送 ${saved} 条，目标删除 ${removed} 条${plan.fullDue ? '（整体核对）' : ''}；海报推送 ${posterSync.uploaded} 张，删除 ${posterClean.removed} 张`);
 }
 
 // 让上海的 publicData 保持运行（2026-10-01）：云开发自己的定时触发器在这个环境不执行，

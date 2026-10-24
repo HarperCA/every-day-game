@@ -285,6 +285,10 @@ export interface AiReviewConfigStatus {
 
 export const requestAiReviewConfig = () => callAdmin<AiReviewConfigStatus>('aiReviewConfig');
 
+// 比赛海报（2026-10-24）：图片先存进服务器的图片总库，返回文件名；记录里的海报和候选列表随“保存修改”一起存
+export const uploadPosterImage = (data:string, kind:'poster'|'candidate') => callAdmin<{file:string;width:number;height:number;bytes:number;ratioOk:boolean}>('uploadPosterImage', { data, kind });
+export const getPosterImage = (file:string) => callAdmin<{file:string;dataUrl:string}>('posterImage', { file });
+
 export interface PipelineRun {
   id:string; startedAt:string | null; finishedAt:string; status:string;
   sources:Array<{source:string; fetched:number; new:number; duplicate:number; likelyDuplicate:number; uncertain:number}>;
