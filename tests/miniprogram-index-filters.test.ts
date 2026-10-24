@@ -48,7 +48,7 @@ beforeEach(() => {
   listHomeCompetitions.mockReset().mockResolvedValue(empty);
   favoriteIds = [];
   reminderRecords = [];
-  vi.stubGlobal('wx', { getStorageSync: vi.fn(() => undefined), setStorageSync: vi.fn(), showToast: vi.fn(), createSelectorQuery: () => selectorQuery });
+  vi.stubGlobal('wx', { getStorageSync: vi.fn(() => undefined), setStorageSync: vi.fn(), showToast: vi.fn(), showLoading: vi.fn(), hideLoading: vi.fn(), pageScrollTo: vi.fn(), createSelectorQuery: () => selectorQuery });
 });
 afterEach(() => { vi.useRealTimers(); });
 
@@ -327,6 +327,50 @@ describe('首页收藏、提醒快照和请求顺序', () => {
     expect(lastQuery().favoriteIds).toEqual(['fav-1']);
     page.onSearch();
     expect(lastQuery().favoriteIds).toEqual(['fav-1', 'fav-2']);
+  });
+
+  it('屏幕上有旧卡片时重新筛选，从点下去起超过 1 秒才弹“加载中”，结果回来就收起', async () => {
+    vi.useFakeTimers();
+    const pending: Array<(value: unknown) => void> = [];
+    listHomeCompetitions.mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+    const page = makePage();
+    page.slowHintTimer = 0; page.slowHintShown = false;
+    page.data.items = [{ id:'old' }];
+    page.onStatusTab(tap({index:1}));
+    await vi.advanceTimersByTimeAsync(999);
+    expect(wx.showLoading).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(wx.showLoading).toHaveBeenCalledWith({ title:'加载中' });
+    pending[0]({ ...empty, items:[{ id:'new' }], total:1 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(wx.hideLoading).toHaveBeenCalledTimes(1);
+  });
+
+  it('1 秒内回来不弹；列表为空、翻页、下拉刷新都不弹', async () => {
+    vi.useFakeTimers();
+    const page = makePage();
+    page.slowHintTimer = 0; page.slowHintShown = false;
+    page.data.items = [{ id:'old' }];
+    await page.load(true, true);
+    await vi.advanceTimersByTimeAsync(2000);
+    await page.load(false);
+    await page.load(true, false, true);
+    page.data.items = [];
+    await page.load(true, true);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(wx.showLoading).not.toHaveBeenCalled();
+    expect(wx.hideLoading).not.toHaveBeenCalled();
+  });
+
+  it('换标签、换筛选、搜索后列表回到顶部；翻页和下拉刷新不动', async () => {
+    const page = makePage();
+    await page.load(false);
+    await page.load(true, false, true);
+    expect(wx.pageScrollTo).not.toHaveBeenCalled();
+    page.onSearch();
+    await vi.waitFor(() => expect(wx.pageScrollTo).toHaveBeenCalledWith({ scrollTop:0, duration:0 }));
+    page.applyMoreFilters();
+    await vi.waitFor(() => expect(wx.pageScrollTo).toHaveBeenCalledTimes(2));
   });
 
   it('keeps the newest list result when an older filter request returns later', async () => {

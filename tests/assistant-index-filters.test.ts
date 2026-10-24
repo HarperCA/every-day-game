@@ -18,7 +18,7 @@ beforeAll(async () => {
 beforeEach(() => {
   listHomeCompetitions.mockReset().mockResolvedValue({ items: [], total: 0, hasMore: false, appliedCategories: null });
   app.globalData = {};
-  vi.stubGlobal('wx', { getStorageSync: vi.fn(() => undefined), setStorageSync: vi.fn(), showToast: vi.fn(), navigateTo: vi.fn() });
+  vi.stubGlobal('wx', { getStorageSync: vi.fn(() => undefined), setStorageSync: vi.fn(), showToast: vi.fn(), navigateTo: vi.fn(), pageScrollTo: vi.fn() });
 });
 
 describe('首页接收赛事助手的条件', () => {

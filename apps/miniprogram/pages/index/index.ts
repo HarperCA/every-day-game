@@ -25,6 +25,8 @@ const PANEL_FIELDS = ['eventLevel', 'participationFormat', 'teamSizeCategory', '
 const draftField = (field: string) => `draft${field[0].toUpperCase()}${field.slice(1)}`;
 const MAX_MARKED_IDS = 200;
 const TAB_DEBOUNCE_MS = 300;
+// 重新筛选超过 1 秒还没回来，就弹微信官方的“加载中”（2026-10-24，用户定）
+const SLOW_HINT_MS = 1000;
 let latestListRequestId = 0;
 let latestPreviewRequestId = 0;
 
@@ -51,6 +53,8 @@ Page({
   pendingLoadMore: false,
   marked: { favoriteIds:[] as string[], reminderIds:[] as string[] },
   tabTimer: 0 as any,
+  slowHintTimer: 0 as any,
+  slowHintShown: false,
   sectionTops: [] as number[],
   optionsHeight: 0,
   spyLockedUntil: 0,
@@ -129,7 +133,7 @@ Page({
     const ready = getApp<any>().globalData.userDataReady;
     if (ready) ready.then(()=>{ this.refreshFavoriteState(); this.refreshCompetitionPreferences(); }).catch(()=>undefined);
   },
-  onUnload() { clearTimeout(this.tabTimer); },
+  onUnload() { clearTimeout(this.tabTimer); this.hideSlowHint(); },
   openPreferencesEditor() { wx.navigateTo({ url:'/pages/preferences/preferences' }); },
   // 改了偏好就按最新偏好筛（第一步规则：以最后一次改动为准）
   refreshCompetitionPreferences() {
@@ -140,7 +144,7 @@ Page({
     this.setData({ categories:saved.categories, region:saved.province }, () => { this.updateFilterCount(); this.load(true, true); });
   },
   // 下拉刷新沿用这一轮的收藏、提醒快照
-  onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
+  onPullDownRefresh() { this.load(true, false, true).finally(() => wx.stopPullDownRefresh()); },
   openPreferenceSurvey() {
     const saved = loadCompetitionPreferences();
     this.setData({surveyVisible:true, surveyStep:0, morePanelVisible:false,
@@ -208,6 +212,7 @@ Page({
     if (!Number.isInteger(index) || index < 0 || index >= STATUS_TABS.length) return;
     if (index === this.data.statusTab && !this.data.appliedKeyword) return;
     this.setData({ statusTab: index, keyword: '', appliedKeyword: '', searchCategories: [], loading: true });
+    if (this.data.items.length) this.startSlowHint();
     clearTimeout(this.tabTimer);
     this.tabTimer = setTimeout(() => this.load(true, true), TAB_DEBOUNCE_MS);
   },
@@ -378,12 +383,32 @@ Page({
     const at = this.data.items[index]?.id === id ? Number(index) : this.data.items.findIndex((item: any) => item.id === id);
     if (at >= 0) this.setData({ [`items[${at}].posterFailed`]: true });
   },
-  // reset：从第 1 页重来；snapshot：重新拍收藏、提醒快照（筛选、搜索、改偏好时拍，翻页和下拉刷新沿用）
-  async load(reset: boolean, snapshot = false) {
+  // 屏幕上还留着旧卡片时，看不出在重新筛选：超过 1 秒弹“加载中”。
+  // 列表为空时有骨架屏、翻页时底部有“加载中…”、下拉刷新有微信自带的提示，这三种不弹。
+  // 从用户点下去开始算：已经在计时或已经弹出就不重来（连续换条件时不会越拖越晚）
+  startSlowHint() {
+    if (this.slowHintTimer || this.slowHintShown) return;
+    this.slowHintTimer = setTimeout(() => {
+      this.slowHintTimer = 0;
+      this.slowHintShown = true;
+      wx.showLoading({ title: '加载中' });
+    }, SLOW_HINT_MS);
+  },
+  hideSlowHint() {
+    clearTimeout(this.slowHintTimer);
+    this.slowHintTimer = 0;
+    if (!this.slowHintShown) return;
+    this.slowHintShown = false;
+    wx.hideLoading();
+  },
+  // reset：从第 1 页重来；snapshot：重新拍收藏、提醒快照（筛选、搜索、改偏好时拍，翻页和下拉刷新沿用）；quiet：不弹“加载中”
+  async load(reset: boolean, snapshot = false, quiet = false) {
     clearTimeout(this.tabTimer);
     const requestId = ++latestListRequestId;
     const page = reset ? 1 : this.data.page + 1;
     if (reset) this.pendingLoadMore = false;
+    if (reset && !quiet && this.data.items.length) this.startSlowHint();
+    else this.hideSlowHint();
     if (snapshot) this.marked = markedSnapshot();
     this.setData({ loading: true, error: '' });
     const d = this.data as any;
@@ -397,6 +422,7 @@ Page({
     try {
       const result = await listHomeCompetitions(query);
       if (requestId !== latestListRequestId) return;
+      this.hideSlowHint();
       const favoriteIds = new Set(getFavoriteIds());
       const resultItems = result.items.map((item: any) => ({ ...item, isFavorite: favoriteIds.has(item.id) }));
       this.setItems(resultItems, {
@@ -406,12 +432,15 @@ Page({
         loading: false,
         ...(result.appliedCategories ? { searchCategories: result.appliedCategories } : {}),
       });
+      // 换标签、换筛选、搜索（都会重拍快照）后新结果从头看：列表回到顶部（2026-10-24，用户定）；下拉刷新、翻页不动
+      if (reset && snapshot) wx.pageScrollTo({ scrollTop: 0, duration: 0 });
       if (this.pendingLoadMore) {
         this.pendingLoadMore = false;
         if (result.hasMore) this.load(false);
       }
     } catch (error) {
       if (requestId !== latestListRequestId) return;
+      this.hideSlowHint();
       this.pendingLoadMore = false;
       this.setData({ loading: false, error: error instanceof Error ? error.message : '加载失败，请重试' });
     }
