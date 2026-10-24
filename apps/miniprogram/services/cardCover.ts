@@ -62,11 +62,19 @@ export function deadlineOf(item: any, now = new Date()): { text: string; tone: '
 }
 
 // 首页、收藏页卡片要的全部显示字段：封面 + 倒计时 + 级别 + 推荐等级
+// 卡片上的状态标签：报名已截止的按服务器分组写“比赛中”或“已结束”（2026-10-24，用户定）；其余照旧写报名状态
+export function statusTextOf(item: any) {
+  if (item.listGroup === '比赛中') return '比赛中';
+  if (item.listGroup === '比赛已结束') return '已结束';
+  return String(item.registrationStatus || '');
+}
+
 export function withCard<T extends { id?: string; name?: string; professions?: string[] }>(item: T, now = new Date()) {
   const any = item as any;
   const deadline = deadlineOf(any, now);
   return {
     ...withCover(item),
+    statusText:statusTextOf(any),
     deadlineText:deadline.text,
     deadlineTone:deadline.tone,
     levelTag:any.eventLevel && any.eventLevel !== '其他/未明确' ? String(any.eventLevel).replace('/区域级', '') : '',

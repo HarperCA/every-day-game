@@ -1,7 +1,7 @@
 // 首页、收藏页双列卡片的显示字段（2026-10，取自 design/ui-tweaks，海报链路的测试没拿）
 import { describe, expect, it } from 'vitest';
 import { hydratePublic } from '../apps/miniprogram/services/publicRecord';
-import { coverOf, deadlineOf, withCard, withCover } from '../apps/miniprogram/services/cardCover';
+import { coverOf, deadlineOf, statusTextOf, withCard, withCover } from '../apps/miniprogram/services/cardCover';
 
 it('接口没给海报时 posterUrl 为空，卡片显示文字封面', () => { expect(hydratePublic({}).posterUrl).toBe(''); });
 
@@ -46,4 +46,13 @@ describe('没有海报时的文字封面', () => {
   it('withCover 保留原字段', () => {
     expect(withCover({ id:'a', name:'全国大学生数学建模竞赛', posterUrl:'' })).toMatchObject({ id:'a', posterUrl:'', coverTitle:'全国大学生数学建模竞赛' });
   });
+});
+
+// 卡片状态标签：报名已截止的按服务器分组写“比赛中”或“已结束”（2026-10-24）
+it('状态标签：比赛中、已结束按分组写，其余照旧写报名状态', () => {
+  expect(statusTextOf({ registrationStatus:'已截止', listGroup:'比赛中' })).toBe('比赛中');
+  expect(statusTextOf({ registrationStatus:'已截止', listGroup:'比赛已结束' })).toBe('已结束');
+  expect(statusTextOf({ registrationStatus:'即将报名', listGroup:'时间待公布' })).toBe('即将报名');
+  expect(statusTextOf({ registrationStatus:'已截止' })).toBe('已截止');
+  expect(withCard({ id:'a', name:'某大赛', registrationStatus:'报名中', listGroup:'报名中' } as any).statusText).toBe('报名中');
 });

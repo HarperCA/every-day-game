@@ -1,26 +1,57 @@
-import { getProfessionOptions, listCompetitions } from '../../services/repository';
+import { getProfessionOptions, listHomeCompetitions } from '../../services/repository';
 import { getFavoriteIds, toggleFavorite } from '../../services/favorites';
+import { getReminderRecords } from '../../services/reminders';
 import { loadCompetitionPreferences, saveCompetitionPreferences, saveSurveyStatus, shouldShowPreferenceSurvey, takePreferenceSurveyRequest, surveyProvinceOptions, uploadCompetitionPreferences } from '../../services/competitionPreferences';
-import { statusOptions, levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, regionAllOption, registrationWithinOptions, registrationWithinValues, sortByOptions, sortByValues, sortOrderOptions, sortOrderValues } from '../../services/filterOptions';
+import { levelOptions, participationFormatOptions, teamSizeOptions, feeTypeOptions, registrationOrganizationOptions, registrationWithinOptions, registrationWithinValues } from '../../services/filterOptions';
 import { withCard } from '../../services/cardCover';
 
-const professionOptions = ['全部专业大类', ...getProfessionOptions()];
-const moreFieldMap: Record<string, string> = {
-  participationFormat: 'draftParticipationFormat',
-  teamSizeCategory: 'draftTeamSizeCategory',
-  feeType: 'draftFeeType',
-  registrationOrganization: 'draftRegistrationOrganization',
-  eventLevel: 'draftEventLevel',
-  registrationWithin: 'draftRegistrationWithin',
-  sortBy: 'draftSortBy',
-  sortOrder: 'draftSortOrder',
-};
+// 首页筛选（2026-10-24 改版，用户定）：
+// - 筛选栏左边三个状态标签，一定有一个选中（默认报名中）；右边“筛选”打开面板。
+// - 地区、专业大类放进面板，和级别、参赛形式等连成一长列，往下滑时左边高亮跟着走。
+// - 有搜索词时搜索第一优先，不分标签、不按偏好筛；搜索后再改筛选（点标签也算）就清空搜索框。
+// - 一次请求走新版列表（listVersion 2），收藏、提醒用每轮筛选或搜索时拍的快照，翻页时顺序不跳。
+export const STATUS_TABS = [
+  { label:'报名中', groups:['报名中'] },
+  { label:'未开始', groups:['时间待公布'] },
+  { label:'已截止', groups:['比赛中', '比赛已结束'] },
+];
+const ALL = '不限';
+const regionOptions = [ALL, ...surveyProvinceOptions];
+const categoryOptions = [ALL, ...getProfessionOptions()];
+export const FILTER_SECTIONS = ['地区', '专业大类', '赛事级别', '参赛形式', '队伍人数', '报名费用', '报名方式', '报名时间'];
+const PANEL_FIELDS = ['eventLevel', 'participationFormat', 'teamSizeCategory', 'feeType', 'registrationOrganization', 'registrationWithin'] as const;
+const draftField = (field: string) => `draft${field[0].toUpperCase()}${field.slice(1)}`;
+const MAX_MARKED_IDS = 200;
+const TAB_DEBOUNCE_MS = 300;
 let latestListRequestId = 0;
 let latestPreviewRequestId = 0;
+
+// 收藏和“已授权、还没到时间”的提醒对应的比赛编号
+function markedSnapshot() {
+  const reminderIds = getReminderRecords()
+    .filter(item => item.authorizationStatus === 'accepted' && (item.deliveryStatus === 'pending' || item.deliveryStatus === 'queued'))
+    .map(item => item.editionId);
+  return {
+    favoriteIds:[...new Set(getFavoriteIds())].slice(0, MAX_MARKED_IDS),
+    reminderIds:[...new Set(reminderIds)].slice(0, MAX_MARKED_IDS),
+  };
+}
+
+// 助手带过来的报名状态换成标签：没有或认不出时用默认的“报名中”
+function tabForStatus(status: string) {
+  if (status === '即将报名' || status === '时间待公布') return 1;
+  if (status === '已截止') return 2;
+  return 0;
+}
 
 Page({
   preferenceSnapshot: '',
   pendingLoadMore: false,
+  marked: { favoriteIds:[] as string[], reminderIds:[] as string[] },
+  tabTimer: 0 as any,
+  sectionTops: [] as number[],
+  optionsHeight: 0,
+  spyLockedUntil: 0,
   data: {
     surveyVisible: false,
     surveyStep: 0,
@@ -31,51 +62,46 @@ Page({
     surveyProvinceOptions,
     surveyProvinceIndex: 0,
     surveyDontShowAgain: false,
-    competitionCategories: [] as string[],
-    preferenceProvince: '',
+    statusTabs: STATUS_TABS.map(tab => tab.label),
+    statusTab: 0,
     keyword: '',
     appliedKeyword: '',
-    statusOptions,
-    levelOptions,
-    professionOptions,
-    participationFormatOptions,
-    teamSizeOptions,
-    feeTypeOptions,
-    registrationOrganizationOptions,
-    regionOptions: ['全国', ...surveyProvinceOptions.slice(1)],
-    registrationWithinOptions,
-    registrationWithinValues,
-    sortByOptions,
-    sortByValues,
-    sortOrderOptions,
-    sortOrderValues,
-    regionIndex: 0,
-    statusIndex: 0,
-    levelIndex: 0,
-    professionIndex: 0,
+    // 搜索词映射出的专业大类（服务器给的），搜索时打开面板显示它
+    searchCategories: [] as string[],
+    // 当前生效的条件：地区为空 = 不限；地区、专业大类没改过面板时来自偏好
+    region: '',
+    categories: [] as string[],
+    eventLevel: '',
     participationFormat: '',
     teamSizeCategory: '',
     feeType: '',
     registrationOrganization: '',
-    region: '',
-    registrationWithin: '' as string,
-    sortBy: '' as string,
-    sortOrder: '' as string,
+    registrationWithin: '',
+    // 面板里还没点“确定”的条件
+    draftRegion: '',
+    draftCategories: [] as string[],
+    draftEventLevel: '',
     draftParticipationFormat: '',
     draftTeamSizeCategory: '',
     draftFeeType: '',
     draftRegistrationOrganization: '',
-    draftEventLevel: '',
-    draftRegion: '',
-    draftRegistrationWithin: '' as string,
-    draftSortBy: '' as string,
-    draftSortOrder: '' as string,
+    draftRegistrationWithin: '',
+    regionOptions,
+    categoryOptions,
+    levelOptions: levelOptions.slice(1),
+    participationFormatOptions,
+    teamSizeOptions,
+    feeTypeOptions,
+    registrationOrganizationOptions,
+    registrationWithinOptions,
+    registrationWithinValues,
+    filterSections: FILTER_SECTIONS,
+    sectionMarks: FILTER_SECTIONS.map(() => false),
+    activeSection: 0,
+    sectionScrollInto: '',
     morePanelVisible: false,
-    filterCategories: ['参赛形式', '队伍人数', '报名费用', '报名方式', '赛事级别', '报名时间', '排序方式'],
-    activeFilterCategoryIndex: 0,
-    moreFilterCount: 0,
+    filterCount: 0,
     morePreviewCount: 0,
-    selectedConditions: [] as Array<{ kind: string; label: string }>,
     items: [] as any[],
     // 没结果时推荐的搜索词：覆盖理工、经管、语言、设计、双创几类常见方向
     suggestKeywords: ['数学建模', '程序设计', '创新创业', '英语', '设计'],
@@ -88,10 +114,8 @@ Page({
   onLoad() {
     const saved = loadCompetitionPreferences();
     this.preferenceSnapshot = JSON.stringify(saved);
-    this.setData({professionIndex:saved.categories.length === 1 ? Math.max(0, professionOptions.indexOf(saved.categories[0])) : 0, competitionCategories:saved.categories, preferenceProvince:saved.province, region:saved.province, draftRegion:saved.province});
-    this.updateSelectedConditions();
-    this.load(true);
-    this.loadRegionOptions();
+    this.setData({ categories:saved.categories, region:saved.province }, () => this.updateFilterCount());
+    this.load(true, true);
     if (shouldShowPreferenceSurvey()) this.openPreferenceSurvey();
   },
   onShow() {
@@ -102,29 +126,18 @@ Page({
     const ready = getApp<any>().globalData.userDataReady;
     if (ready) ready.then(()=>{ this.refreshFavoriteState(); this.refreshCompetitionPreferences(); }).catch(()=>undefined);
   },
+  onUnload() { clearTimeout(this.tabTimer); },
   openPreferencesEditor() { wx.navigateTo({ url:'/pages/preferences/preferences' }); },
+  // 改了偏好就按最新偏好筛（第一步规则：以最后一次改动为准）
   refreshCompetitionPreferences() {
     const saved = loadCompetitionPreferences();
     const snapshot = JSON.stringify(saved);
     if (!this.preferenceSnapshot || snapshot === this.preferenceSnapshot) return;
     this.preferenceSnapshot = snapshot;
-    this.setData({professionIndex:saved.categories.length === 1 ? Math.max(0, professionOptions.indexOf(saved.categories[0])) : 0,
-      competitionCategories:saved.categories, preferenceProvince:saved.province, region:saved.province, draftRegion:saved.province},
-      () => { this.updateSelectedConditions(); this.load(true); });
+    this.setData({ categories:saved.categories, region:saved.province }, () => { this.updateFilterCount(); this.load(true, true); });
   },
+  // 下拉刷新沿用这一轮的收藏、提醒快照
   onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
-  async loadRegionOptions() {
-    try {
-      const result = await listCompetitions({ page: 5, pageSize: 100 });
-      const regions = [...new Set(result.items.map((item: any) => String(item.region || '').trim()).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, 'zh-CN'));
-      const regionOptions = [...new Set(['全国', ...surveyProvinceOptions.slice(1), ...regions.filter(value => value !== regionAllOption)])];
-      if (this.data.region && !regionOptions.includes(this.data.region)) regionOptions.push(this.data.region);
-      this.setData({ regionOptions, regionIndex: Math.max(0, regionOptions.indexOf(this.data.region)) });
-    } catch (_error) {
-      // 地区列表加载失败时保留“不限”，不影响其余筛选条件。
-    }
-  },
   openPreferenceSurvey() {
     const saved = loadCompetitionPreferences();
     this.setData({surveyVisible:true, surveyStep:0, morePanelVisible:false,
@@ -170,9 +183,8 @@ Page({
       this.preferenceSnapshot = JSON.stringify(loadCompetitionPreferences());
       saveSurveyStatus('completed');
       uploadCompetitionPreferences('completed').catch(() => {});
-      this.setData({surveyVisible:false, professionIndex:this.data.surveyCategories.length === 1 ? Math.max(0, professionOptions.indexOf(this.data.surveyCategories[0])) : 0,
-        competitionCategories:this.data.surveyCategories, preferenceProvince:province, region:province, draftRegion:province},
-        () => { this.updateSelectedConditions(); this.load(true); });
+      this.setData({surveyVisible:false, categories:this.data.surveyCategories, region:province},
+        () => { this.updateFilterCount(); this.load(true, true); });
     } catch (_error) { wx.showToast({title:'保存失败，请重试', icon:'none'}); }
   },
   onReachBottom() {
@@ -185,151 +197,114 @@ Page({
   onKeywordInput(event: WechatMiniprogram.Input) { this.setData({ keyword: event.detail.value }); },
   onSearch() {
     const keyword = this.data.keyword.trim();
-    this.setData({ keyword, appliedKeyword: keyword }, () => this.load(true));
+    this.setData({ keyword, appliedKeyword: keyword, searchCategories: [] }, () => this.load(true, true));
   },
-  onStatusChange(event: WechatMiniprogram.PickerChange) {
-    this.setData({ statusIndex: Number(event.detail.value) }, () => { this.updateSelectedConditions(); this.load(true); });
+  // 点状态标签：搜索中点也算改筛选，清空搜索；连续快速点只按停手 0.3 秒后的那一个发请求
+  onStatusTab(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || index < 0 || index >= STATUS_TABS.length) return;
+    if (index === this.data.statusTab && !this.data.appliedKeyword) return;
+    this.setData({ statusTab: index, keyword: '', appliedKeyword: '', searchCategories: [], loading: true });
+    clearTimeout(this.tabTimer);
+    this.tabTimer = setTimeout(() => this.load(true, true), TAB_DEBOUNCE_MS);
   },
-  onComprehensiveTap() {
-    if (!this.data.region && !this.data.preferenceProvince && !this.data.competitionCategories.length && !this.data.professionIndex && !this.data.statusIndex) return;
-    this.setData({
-      statusIndex: 0, professionIndex: 0, regionIndex: 0,
-      competitionCategories: [], preferenceProvince:'',
-      region: '', draftRegion: '',
-    }, () => { this.updateSelectedConditions(); this.load(true); });
+  updateFilterCount() {
+    const filterCount = [this.data.region, this.data.categories.length, ...PANEL_FIELDS.map(field => (this.data as any)[field])].filter(Boolean).length;
+    this.setData({ filterCount });
   },
-  onRegionChange(event: WechatMiniprogram.PickerChange) {
-    const index = Number(event.detail.value);
-    const region = this.data.regionOptions[index] || '';
-    this.setData({ region, draftRegion: region, preferenceProvince: '' }, () => { this.updateSelectedConditions(); this.load(true); });
+  updateSectionMarks() {
+    const d = this.data as any;
+    this.setData({ sectionMarks: [d.draftRegion, d.draftCategories.length, ...PANEL_FIELDS.map(field => d[draftField(field)])].map(Boolean) });
   },
-  onLevelChange(event: WechatMiniprogram.PickerChange) {
-    this.setData({ levelIndex: Number(event.detail.value) }, () => { this.updateSelectedConditions(); this.load(true); });
-  },
-  onProfessionChange(event: WechatMiniprogram.PickerChange) {
-    const professionIndex = Number(event.detail.value);
-    this.setData({ professionIndex, competitionCategories: professionIndex ? [professionOptions[professionIndex]] : [] }, () => { this.updateSelectedConditions(); this.load(true); });
-  },
-  updateSelectedConditions() {
-    const selectedConditions: Array<{ kind: string; label: string }> = [];
-    if (this.data.competitionCategories.length) selectedConditions.push({kind:'competitionCategories', label:`专业大类：${this.data.competitionCategories.join('、')}`});
-    if (this.data.preferenceProvince && !this.data.region) selectedConditions.push({kind:'preferenceProvince', label:`地区：${this.data.preferenceProvince}及全国赛事`});
-    if (this.data.statusIndex) selectedConditions.push({ kind: 'status', label: statusOptions[this.data.statusIndex] });
-    if (this.data.levelIndex) selectedConditions.push({ kind: 'level', label: levelOptions[this.data.levelIndex] });
-    if (this.data.participationFormat) selectedConditions.push({ kind: 'participationFormat', label: `参赛形式：${this.data.participationFormat}` });
-    if (this.data.teamSizeCategory) selectedConditions.push({ kind: 'teamSizeCategory', label: `队伍人数：${this.data.teamSizeCategory}` });
-    if (this.data.feeType) selectedConditions.push({ kind: 'feeType', label: `报名费用：${this.data.feeType}` });
-    if (this.data.registrationOrganization) selectedConditions.push({ kind: 'registrationOrganization', label: `报名组织：${this.data.registrationOrganization}` });
-    if (this.data.region) selectedConditions.push({ kind: 'region', label: `赛事地区：${this.data.region}` });
-    if (this.data.registrationWithin) {
-      const label = registrationWithinOptions[registrationWithinValues.indexOf(this.data.registrationWithin)];
-      selectedConditions.push({ kind: 'registrationWithin', label: `距离报名：${label}` });
-    }
-    if (this.data.sortBy || this.data.sortOrder) {
-      const byLabel = this.data.sortBy ? sortByOptions[sortByValues.indexOf(this.data.sortBy)] : '推荐排序';
-      const orderLabel = this.data.sortOrder ? `·${sortOrderOptions[sortOrderValues.indexOf(this.data.sortOrder)]}` : '';
-      selectedConditions.push({ kind: 'sort', label: `排序：${byLabel}${orderLabel}` });
-    }
-    const moreFilterCount = [
-      this.data.participationFormat, this.data.teamSizeCategory, this.data.feeType, this.data.registrationOrganization,
-      this.data.levelIndex, this.data.registrationWithin, this.data.sortBy, this.data.sortOrder,
-    ].filter(Boolean).length;
-    this.setData({ selectedConditions, moreFilterCount, regionIndex: Math.max(0, this.data.regionOptions.indexOf(this.data.region)) });
-  },
-  clearFilters() {
-    this.setData({
-      levelIndex: 0,
-      participationFormat: '', teamSizeCategory: '', feeType: '', registrationOrganization: '',
-      registrationWithin: '', sortBy: '', sortOrder: '',
-      draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
-      draftEventLevel: '', draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
-      morePanelVisible: false,
-    }, () => { this.updateSelectedConditions(); this.load(true); });
-  },
+  // 打开面板：搜索时显示搜索实际用的条件（不限地区 + 搜索词映射出的专业大类），否则显示当前条件
   openMoreFilters() {
-    this.setData({
-      draftParticipationFormat: this.data.participationFormat,
-      draftTeamSizeCategory: this.data.teamSizeCategory,
-      draftFeeType: this.data.feeType,
-      draftRegistrationOrganization: this.data.registrationOrganization,
-      draftEventLevel: this.data.levelIndex ? levelOptions[this.data.levelIndex] : '',
-      draftRegion: this.data.region,
-      draftRegistrationWithin: this.data.registrationWithin,
-      draftSortBy: this.data.sortBy,
-      draftSortOrder: this.data.sortOrder,
-      activeFilterCategoryIndex: 0,
-      morePanelVisible: true,
-    }, () => this.refreshMorePreview());
+    const searching = Boolean(this.data.appliedKeyword);
+    const drafts: Record<string, unknown> = {
+      draftRegion: searching ? '' : this.data.region,
+      draftCategories: searching ? this.data.searchCategories : this.data.categories,
+    };
+    for (const field of PANEL_FIELDS) drafts[draftField(field)] = (this.data as any)[field];
+    this.sectionTops = [];
+    this.setData({ ...drafts, activeSection: 0, sectionScrollInto: '', morePanelVisible: true }, () => {
+      this.updateSectionMarks();
+      this.refreshMorePreview();
+      this.measureSections();
+    });
   },
   closeMoreFilters() { this.setData({ morePanelVisible: false }); },
   blockPanelTap() {},
-  selectFilterCategory(event: WechatMiniprogram.TouchEvent) {
-    const index = Number(event.currentTarget.dataset.index);
-    if (Number.isInteger(index) && index >= 0 && index < this.data.filterCategories.length) {
-      this.setData({ activeFilterCategoryIndex: index });
-    }
+  // 记下每一类小标题在右侧滚动区里的位置，滑动时据此高亮左边
+  measureSections() {
+    const query = wx.createSelectorQuery().in(this as any);
+    query.select('.filter-options').boundingClientRect();
+    query.selectAll('.filter-section').boundingClientRect();
+    query.exec((res: any) => {
+      const box = res?.[0];
+      const sections = res?.[1] || [];
+      if (!box || !sections.length) return;
+      this.optionsHeight = box.height;
+      this.sectionTops = sections.map((rect: any) => rect.top - box.top);
+    });
   },
+  // 点左边某一类：右边滚到这一类；滚动途中不让滑动高亮来回跳
+  selectFilterSection(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || index < 0 || index >= FILTER_SECTIONS.length) return;
+    this.spyLockedUntil = Date.now() + 600;
+    this.setData({ activeSection: index, sectionScrollInto: `fsec-${index}` });
+  },
+  onFilterScroll(event: any) {
+    if (Date.now() < this.spyLockedUntil || !this.sectionTops.length) return;
+    const { scrollTop, scrollHeight } = event.detail;
+    let active = 0;
+    this.sectionTops.forEach((top, index) => { if (top <= scrollTop + 24) active = index; });
+    // 滑到底时最后几类到不了顶上，直接高亮最后一类
+    if (this.optionsHeight && scrollTop + this.optionsHeight >= scrollHeight - 4) active = FILTER_SECTIONS.length - 1;
+    if (active !== this.data.activeSection) this.setData({ activeSection: active });
+  },
+  // 面板里单选的条件：再点一次取消
   selectMoreOption(event: WechatMiniprogram.TouchEvent) {
     const kind = String(event.currentTarget.dataset.kind || '');
     const value = String(event.currentTarget.dataset.value || '');
-    const field = moreFieldMap[kind];
-    if (!field) return;
-    const current = String((this.data as any)[field] || '');
-    const next = current === value ? '' : value;
-    // 时间顺序只有在按报名时间排序时才有意义，避免界面显示已选而查询没有变化。
-    if (kind === 'sortOrder') {
-      this.setData({ draftSortOrder: next, ...(next ? { draftSortBy: 'time' } : {}) }, () => this.refreshMorePreview());
+    if (kind === 'region') {
+      this.setData({ draftRegion: value === ALL || value === this.data.draftRegion ? '' : value }, () => { this.updateSectionMarks(); this.refreshMorePreview(); });
       return;
     }
-    if (kind === 'sortBy') {
-      this.setData({ draftSortBy: next, draftSortOrder: next ? this.data.draftSortOrder : '' }, () => this.refreshMorePreview());
+    // 专业大类可以多选；点“不限”清空
+    if (kind === 'categories') {
+      const current = this.data.draftCategories;
+      const next = value === ALL ? [] : current.includes(value) ? current.filter(item => item !== value) : [...current, value];
+      this.setData({ draftCategories: next }, () => { this.updateSectionMarks(); this.refreshMorePreview(); });
       return;
     }
-    this.setData({ [field]: next }, () => this.refreshMorePreview());
+    if (!(PANEL_FIELDS as readonly string[]).includes(kind)) return;
+    const field = draftField(kind);
+    const next = String((this.data as any)[field] || '') === value ? '' : value;
+    this.setData({ [field]: next }, () => { this.updateSectionMarks(); this.refreshMorePreview(); });
   },
+  // 清空选择：面板里的全部条件，包括地区和专业大类
   resetMoreFilters() {
-    this.setData({
-      draftParticipationFormat: '', draftTeamSizeCategory: '', draftFeeType: '', draftRegistrationOrganization: '',
-      draftEventLevel: '', draftRegistrationWithin: '', draftSortBy: '', draftSortOrder: '',
-    }, () => this.refreshMorePreview());
+    const drafts: Record<string, unknown> = { draftRegion: '', draftCategories: [] };
+    for (const field of PANEL_FIELDS) drafts[draftField(field)] = '';
+    this.setData(drafts, () => { this.updateSectionMarks(); this.refreshMorePreview(); });
   },
+  // 点“确定”：按面板条件筛；搜索中改筛选就清空搜索框
   applyMoreFilters() {
-    this.setData({
-      participationFormat: this.data.draftParticipationFormat,
-      teamSizeCategory: this.data.draftTeamSizeCategory,
-      feeType: this.data.draftFeeType,
-      registrationOrganization: this.data.draftRegistrationOrganization,
-      levelIndex: Math.max(0, levelOptions.indexOf(this.data.draftEventLevel)),
-      region: this.data.draftRegion,
-      preferenceProvince: this.data.draftRegion ? '' : this.data.preferenceProvince,
-      registrationWithin: this.data.draftRegistrationWithin,
-      sortBy: this.data.draftSortBy,
-      sortOrder: this.data.draftSortOrder,
-      morePanelVisible: false,
-    }, () => { this.updateSelectedConditions(); this.load(true); });
+    const applied: Record<string, unknown> = { region: this.data.draftRegion, categories: this.data.draftCategories };
+    for (const field of PANEL_FIELDS) applied[field] = (this.data as any)[draftField(field)];
+    this.setData({ ...applied, keyword: '', appliedKeyword: '', searchCategories: [], morePanelVisible: false }, () => {
+      this.updateFilterCount();
+      this.load(true, true);
+    });
   },
+  // 面板底部“确定 · N 场赛事”：按点确定以后的条件（不带搜索词、当前标签）算
   async refreshMorePreview() {
     const requestId = ++latestPreviewRequestId;
+    const d = this.data as any;
+    const query: Record<string, any> = { categories: d.draftCategories, province: d.draftRegion, listGroups: STATUS_TABS[d.statusTab].groups, page: 1, pageSize: 1 };
+    for (const field of PANEL_FIELDS) query[field] = d[draftField(field)];
     try {
-      const result = await listCompetitions({
-        searchUnion: true,
-        competitionCategories:this.data.competitionCategories,
-        preferenceProvince:this.data.draftRegion ? '' : this.data.preferenceProvince,
-        keyword: this.data.appliedKeyword,
-        registrationStatus: this.data.statusIndex ? statusOptions[this.data.statusIndex] : '',
-        eventLevel: this.data.draftEventLevel,
-        profession: '',
-        participationFormat: this.data.draftParticipationFormat,
-        teamSizeCategory: this.data.draftTeamSizeCategory,
-        feeType: this.data.draftFeeType,
-        registrationOrganization: this.data.draftRegistrationOrganization,
-        region: this.data.draftRegion,
-        registrationWithin: this.data.draftRegistrationWithin as any,
-        sortBy: this.data.draftSortBy as any,
-        sortOrder: this.data.draftSortOrder as any,
-        page: 1,
-        pageSize: 1000,
-      });
+      const result = await listHomeCompetitions(query);
       if (requestId === latestPreviewRequestId && this.data.morePanelVisible) this.setData({ morePreviewCount: result.total });
     } catch (_error) {
       if (requestId === latestPreviewRequestId && this.data.morePanelVisible) this.setData({ morePreviewCount: 0 });
@@ -337,29 +312,26 @@ Page({
   },
   retry() { this.load(true); },
   openDetail(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` }); },
-  // 赛事助手还没上线：先放入口，点了只提示（2026-10 改版，用户定）
   openAssistant() { wx.navigateTo({ url: '/pages/assistant/assistant' }); },
   // 从赛事助手点“去找比赛页看全部”过来：换成助手用的那组条件（见 services/assistant.ts 的 filtersForIndexPage）。
-  // 只用一次，取走就清掉；没有带条件就什么都不做。
+  // 只用一次，取走就清掉；没有带条件就什么都不做。首页没有排序方式了，助手的排序不带过来。
   applyAssistantFilters() {
     const app = getApp<any>();
     const filters = app.globalData.assistantFilters;
     if (!filters) return;
     app.globalData.assistantFilters = null;
-    const categories: string[] = filters.competitionCategories || [];
     this.setData({
-      keyword: filters.keyword, appliedKeyword: filters.keyword,
-      competitionCategories: categories,
-      professionIndex: categories.length === 1 ? Math.max(0, professionOptions.indexOf(categories[0])) : 0,
-      preferenceProvince: '',
-      region: filters.region, draftRegion: filters.region,
-      statusIndex: Math.max(0, statusOptions.indexOf(filters.registrationStatus)),
-      levelIndex: Math.max(0, levelOptions.indexOf(filters.eventLevel)),
-      participationFormat: filters.participationFormat, teamSizeCategory: '', feeType: filters.feeType, registrationOrganization: '',
-      registrationWithin: filters.registrationWithin, sortBy: filters.sortBy, sortOrder: '',
+      keyword: filters.keyword || '', appliedKeyword: filters.keyword || '', searchCategories: [],
+      categories: filters.competitionCategories || [],
+      region: filters.region || '',
+      statusTab: tabForStatus(filters.registrationStatus || ''),
+      eventLevel: filters.eventLevel || '',
+      participationFormat: filters.participationFormat || '', teamSizeCategory: '', feeType: filters.feeType || '', registrationOrganization: '',
+      registrationWithin: filters.registrationWithin || '',
       morePanelVisible: false,
-    }, () => { this.updateSelectedConditions(); this.load(true); });
+    }, () => { this.updateFilterCount(); this.load(true, true); });
   },
+  // 点收藏不马上重排：只改星标，下一次筛选或搜索时才按新的收藏排
   async toggleFavorite(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id || '');
     if (!id) return;
@@ -385,7 +357,7 @@ Page({
   // 没结果时点推荐词：按这个词重新搜
   searchSuggestion(event: WechatMiniprogram.TouchEvent) {
     const keyword = String(event.currentTarget.dataset.keyword || '');
-    if (keyword) this.setData({ keyword, appliedKeyword: keyword }, () => this.load(true));
+    if (keyword) this.setData({ keyword, appliedKeyword: keyword, searchCategories: [] }, () => this.load(true, true));
   },
   // 海报加载失败：只把这一张卡片改成文字封面，不重传整个列表（几张同时失败时整表重绘会卡）
   onPosterError(event: WechatMiniprogram.TouchEvent) {
@@ -393,32 +365,24 @@ Page({
     const at = this.data.items[index]?.id === id ? Number(index) : this.data.items.findIndex((item: any) => item.id === id);
     if (at >= 0) this.setData({ [`items[${at}].posterFailed`]: true });
   },
-  async load(reset: boolean) {
+  // reset：从第 1 页重来；snapshot：重新拍收藏、提醒快照（筛选、搜索、改偏好时拍，翻页和下拉刷新沿用）
+  async load(reset: boolean, snapshot = false) {
+    clearTimeout(this.tabTimer);
     const requestId = ++latestListRequestId;
     const page = reset ? 1 : this.data.page + 1;
     if (reset) this.pendingLoadMore = false;
+    if (snapshot) this.marked = markedSnapshot();
     this.setData({ loading: true, error: '' });
+    const d = this.data as any;
+    const query: Record<string, any> = {
+      keyword: d.appliedKeyword, categories: d.categories, province: d.region, listGroups: STATUS_TABS[d.statusTab].groups,
+      ...this.marked, page,
+      // 双列卡片一页 16 张，和原来单列 8 张差不多高，第一屏能滚得动
+      pageSize: 16,
+    };
+    for (const field of PANEL_FIELDS) query[field] = d[field];
     try {
-      const result = await listCompetitions({
-        searchUnion: true,
-        competitionCategories:this.data.competitionCategories,
-        preferenceProvince:this.data.region ? '' : this.data.preferenceProvince,
-        keyword: this.data.appliedKeyword,
-        registrationStatus: this.data.statusIndex ? statusOptions[this.data.statusIndex] : '',
-        eventLevel: this.data.levelIndex ? levelOptions[this.data.levelIndex] : '',
-        profession: '',
-        participationFormat: this.data.participationFormat,
-        teamSizeCategory: this.data.teamSizeCategory,
-        feeType: this.data.feeType,
-        registrationOrganization: this.data.registrationOrganization,
-        region: this.data.region,
-        registrationWithin: this.data.registrationWithin as any,
-        sortBy: this.data.sortBy as any,
-        sortOrder: this.data.sortOrder as any,
-        page,
-        // 双列卡片一页 16 张，和原来单列 8 张差不多高，第一屏能滚得动
-        pageSize: 16,
-      });
+      const result = await listHomeCompetitions(query);
       if (requestId !== latestListRequestId) return;
       const favoriteIds = new Set(getFavoriteIds());
       const resultItems = result.items.map((item: any) => ({ ...item, isFavorite: favoriteIds.has(item.id) }));
@@ -427,6 +391,7 @@ Page({
         hasMore: result.hasMore,
         page,
         loading: false,
+        ...(result.appliedCategories ? { searchCategories: result.appliedCategories } : {}),
       });
       if (this.pendingLoadMore) {
         this.pendingLoadMore = false;

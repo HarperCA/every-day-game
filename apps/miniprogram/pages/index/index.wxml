@@ -15,24 +15,14 @@
     </view>
   </view>
 
+  <!-- 筛选栏（2026-10-24 改版，用户定）：左边状态标签，选中的加粗、下面一条蓝线；搜索时不分标签，都不显示选中 -->
   <view class="filter-panel">
-    <view class="quick-chip all-filter-chip {{region || preferenceProvince || competitionCategories.length || professionIndex || statusIndex ? '' : 'quick-chip-active'}}" bindtap="onComprehensiveTap" role="button" aria-label="全部，清除地区、专业大类和报名状态，保留搜索及其他筛选">全部</view>
-    <scroll-view class="filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="filter-track">
-        <picker class="quick-picker" range="{{regionOptions}}" value="{{regionIndex}}" bindchange="onRegionChange">
-          <view class="quick-chip {{region ? 'quick-chip-active' : ''}}">{{region || '地区'}}<text class="chip-arrow">⌄</text></view>
-        </picker>
-        <picker class="quick-picker" range="{{professionOptions}}" value="{{professionIndex}}" bindchange="onProfessionChange">
-          <view class="quick-chip {{competitionCategories.length ? 'quick-chip-active' : ''}}">{{competitionCategories.length > 1 ? '专业大类（' + competitionCategories.length + '）' : professionIndex ? professionOptions[professionIndex] : '专业大类'}}<text class="chip-arrow">⌄</text></view>
-        </picker>
-        <picker class="quick-picker" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
-          <view class="quick-chip {{statusIndex ? 'quick-chip-active' : ''}}">{{statusIndex ? statusOptions[statusIndex] : '报名状态'}}<text class="chip-arrow">⌄</text></view>
-        </picker>
-      </view>
-    </scroll-view>
-    <view class="filter-trigger {{moreFilterCount ? 'filter-trigger-active' : ''}}" bindtap="openMoreFilters" role="button" aria-label="其他筛选">
-      <image src="/assets/filter.svg" mode="aspectFit" aria-hidden="true" />
-      <text wx:if="{{moreFilterCount}}" class="filter-count">{{moreFilterCount}}</text>
+    <view class="status-tabs" role="tablist">
+      <view wx:for="{{statusTabs}}" wx:key="*this" class="status-tab {{!appliedKeyword && statusTab === index ? 'status-tab-active' : ''}}" data-index="{{index}}" bindtap="onStatusTab" role="tab" aria-selected="{{!appliedKeyword && statusTab === index}}">{{item}}</view>
+    </view>
+    <view class="filter-trigger {{filterCount ? 'filter-trigger-active' : ''}}" bindtap="openMoreFilters" role="button" aria-label="筛选">
+      <image src="/assets/filter.svg" mode="aspectFit" aria-hidden="true" /><text>筛选</text>
+      <text wx:if="{{filterCount}}" class="filter-count">{{filterCount}}</text>
     </view>
   </view>
   </view>
@@ -88,40 +78,49 @@
   <view wx:if="{{morePanelVisible}}" class="filter-mask" bindtap="closeMoreFilters">
     <view class="filter-sheet" catchtap="blockPanelTap">
       <view class="sheet-head"><text class="sheet-title">全部筛选</text><text class="sheet-close" bindtap="closeMoreFilters" role="button" aria-label="关闭筛选">×</text></view>
+      <!-- 左边大类，右边所有大类连成一长列：往下滑左边高亮跟着走，点左边滚到那一类（2026-10-24，用户定） -->
       <view class="filter-body">
         <scroll-view class="filter-sidebar" scroll-y>
-          <view class="filter-category {{activeFilterCategoryIndex === index ? 'filter-category-active' : ''}}" wx:for="{{filterCategories}}" wx:key="*this" data-index="{{index}}" bindtap="selectFilterCategory">
+          <view class="filter-category {{activeSection === index ? 'filter-category-active' : ''}}" wx:for="{{filterSections}}" wx:key="*this" data-index="{{index}}" bindtap="selectFilterSection">
             <text class="category-label">{{item}}</text>
-            <text class="category-dot" wx:if="{{(index === 0 && draftParticipationFormat) || (index === 1 && draftTeamSizeCategory) || (index === 2 && draftFeeType) || (index === 3 && draftRegistrationOrganization) || (index === 4 && draftEventLevel) || (index === 5 && draftRegistrationWithin) || (index === 6 && (draftSortBy || draftSortOrder))}}"></text>
+            <text class="category-dot" wx:if="{{sectionMarks[index]}}"></text>
           </view>
         </scroll-view>
-        <scroll-view class="filter-options" scroll-y>
-          <view class="options-heading">{{filterCategories[activeFilterCategoryIndex]}}</view>
-          <block wx:if="{{activeFilterCategoryIndex === 0}}">
+        <scroll-view class="filter-options" scroll-y scroll-into-view="{{sectionScrollInto}}" scroll-with-animation bindscroll="onFilterScroll">
+          <view id="fsec-0" class="filter-section">
+            <view class="options-heading">地区</view>
+            <view class="option-list option-list-3"><view class="option-chip {{(index === 0 && !draftRegion) || draftRegion === item ? 'option-active' : ''}}" wx:for="{{regionOptions}}" wx:key="*this" data-kind="region" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+            <view class="source-tip">选省份时，同时显示这个省所在大区和全国性的比赛；选“全国”只看不限地区的比赛。</view>
+          </view>
+          <view id="fsec-1" class="filter-section">
+            <view class="options-heading">专业大类<text class="heading-note">可多选</text></view>
+            <view class="option-list"><view class="option-chip {{(index === 0 && !draftCategories.length) || (index > 0 && draftCategories.indexOf(item) >= 0) ? 'option-active' : ''}}" wx:for="{{categoryOptions}}" wx:key="*this" data-kind="categories" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+          </view>
+          <view id="fsec-2" class="filter-section">
+            <view class="options-heading">赛事级别</view>
+            <view class="option-list"><view class="option-chip {{draftEventLevel === item ? 'option-active' : ''}}" wx:for="{{levelOptions}}" wx:key="*this" data-kind="eventLevel" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+          </view>
+          <view id="fsec-3" class="filter-section">
+            <view class="options-heading">参赛形式</view>
             <view class="option-list"><view class="option-chip {{draftParticipationFormat === item ? 'option-active' : ''}}" wx:for="{{participationFormatOptions}}" wx:key="*this" data-kind="participationFormat" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 1}}">
+          </view>
+          <view id="fsec-4" class="filter-section">
+            <view class="options-heading">队伍人数</view>
             <view class="option-list"><view class="option-chip {{draftTeamSizeCategory === item ? 'option-active' : ''}}" wx:for="{{teamSizeOptions}}" wx:key="*this" data-kind="teamSizeCategory" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 2}}">
+          </view>
+          <view id="fsec-5" class="filter-section">
+            <view class="options-heading">报名费用</view>
             <view class="option-list"><view class="option-chip {{draftFeeType === item ? 'option-active' : ''}}" wx:for="{{feeTypeOptions}}" wx:key="*this" data-kind="feeType" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 3}}">
+          </view>
+          <view id="fsec-6" class="filter-section">
+            <view class="options-heading">报名方式</view>
             <view class="option-list"><view class="option-chip {{draftRegistrationOrganization === item ? 'option-active' : ''}}" wx:for="{{registrationOrganizationOptions}}" wx:key="*this" data-kind="registrationOrganization" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 4}}">
-            <view class="option-list"><view class="option-chip {{((index === 0 && !draftEventLevel) || draftEventLevel === item) ? 'option-active' : ''}}" wx:for="{{levelOptions}}" wx:key="*this" data-kind="eventLevel" data-value="{{index === 0 ? '' : item}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 5}}">
+          </view>
+          <view id="fsec-7" class="filter-section">
+            <view class="options-heading">报名时间</view>
             <view class="option-list"><view class="option-chip {{draftRegistrationWithin === registrationWithinValues[index] ? 'option-active' : ''}}" wx:for="{{registrationWithinOptions}}" wx:key="*this" wx:for-index="index" data-kind="registrationWithin" data-value="{{registrationWithinValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
             <view class="source-tip">“已截止”的赛事若已经归档，可按推算的下一届时间查找。</view>
-          </block>
-          <block wx:elif="{{activeFilterCategoryIndex === 6}}">
-            <view class="option-subheading">排序依据</view>
-            <view class="option-list"><view class="option-chip {{draftSortBy === sortByValues[index] ? 'option-active' : ''}}" wx:for="{{sortByOptions}}" wx:key="*this" wx:for-index="index" data-kind="sortBy" data-value="{{sortByValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
-            <view class="option-subheading secondary-heading">时间顺序</view>
-            <view class="option-list"><view class="option-chip {{draftSortOrder === sortOrderValues[index] ? 'option-active' : ''}}" wx:for="{{sortOrderOptions}}" wx:key="*this" wx:for-index="index" data-kind="sortOrder" data-value="{{sortOrderValues[index]}}" bindtap="selectMoreOption">{{item}}</view></view>
-          </block>
+          </view>
         </scroll-view>
       </view>
       <view class="sheet-actions"><button class="reset-button" bindtap="resetMoreFilters">清空选择</button><button class="primary apply-button" bindtap="applyMoreFilters">确定 · {{morePreviewCount}}场赛事</button></view>

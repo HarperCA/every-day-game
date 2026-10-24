@@ -7,6 +7,8 @@
 //   ⑤ 同档内：报名截止日越近越靠前；没有截止日的排在后面；已过截止日的（比赛中、比赛已结束）离今天越近越靠前；
 //   ⑥ 截止日相同或都没有截止日：综合分越高越靠前（沿用 competitionRanking.js 的打分排序）。
 // 收藏、提醒的比赛不符合筛选条件也不显示。旧版小程序不带 listVersion，仍走 publicQuery.js 的老流程，完全不受影响。
+// 首页状态标签（2026-10-24，用户定）：listGroups 只留这几组，报名中 = [报名中]、未开始 = [时间待公布]、已截止 = [比赛中, 比赛已结束]；
+// 不带或为空时不按分组筛（搜索时手机不带，三类都显示）。
 const { rankRecords } = require('./competitionRanking.js');
 const { majorCategories } = require('./majorKeywords.js');
 const { currentRegistrationStatus, passesPublicFilters, registrationInstant, registrationWithinDays } = require('./publicQuery.js');
@@ -61,6 +63,7 @@ function buildPublicList(records, query = {}, now = new Date()) {
   const withinDays = registrationWithinDays(query);
   const categories = stringList(query.categories, 13, /^.{1,20}$/);
   const province = typeof query.province === 'string' ? query.province.trim().slice(0, 20) : '';
+  const groups = new Set(stringList(query.listGroups, LIST_GROUPS.length, /^.{1,10}$/).filter(group => LIST_GROUPS.includes(group)));
   // 搜索时：映射出的专业大类拿来筛，同时返回给手机显示在面板上；不再按手机带来的偏好筛
   const searchCategories = keyword ? majorCategories(keyword) : [];
   const nameHit = item => String(item.search_text || '').includes(keyword);
@@ -72,7 +75,7 @@ function buildPublicList(records, query = {}, now = new Date()) {
     }
     return matchesCompetitionPreferences(item, categories, province);
   });
-  const ordered = publicOrder(filtered, query, now);
+  const ordered = publicOrder(filtered, query, now).filter(item => !groups.size || groups.has(item.list_group));
   // 搜索时名称命中的整块在前，只是专业对得上的整块在后，两块里各自保持上面的顺序
   // search_block：0 = 名称命中（或不是搜索），1 = 只是专业对得上；只在服务器内部分档用，返回给手机前被 listFields 去掉
   const items = keyword && searchCategories.length

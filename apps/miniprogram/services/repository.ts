@@ -77,6 +77,48 @@ export async function listCompetitions(query: Query):Promise<{items:Array<Return
   return { ...result, items:result.items.map(hydratePublic) };
 }
 
+// 首页（2026-10-24 起）：一次请求走新版列表（listVersion 2），服务器筛好、排好、分好页。
+// 有搜索词时服务器不按专业大类、省份和状态分组筛，搜索词映射出的专业大类放在 appliedCategories 里给筛选面板显示。
+// 分页是累计的：第 n 页返回前 n×pageSize 条，手机整页替换。
+export interface HomeQuery {
+  keyword?: string;
+  categories?: string[];
+  province?: string;
+  listGroups?: string[];
+  eventLevel?: string;
+  participationFormat?: string;
+  teamSizeCategory?: string;
+  feeType?: string;
+  registrationOrganization?: string;
+  registrationWithin?: string;
+  favoriteIds?: string[];
+  reminderIds?: string[];
+  page?: number;
+  pageSize?: number;
+}
+
+export async function listHomeCompetitions(query: HomeQuery):Promise<{items:Array<ReturnType<typeof hydratePublic>>; total:number; hasMore:boolean; appliedCategories:string[]|null}> {
+  const keyword = String(query.keyword || '').trim();
+  // 没选的条件不带，请求小一些，服务器缓存键也一致
+  const sent: Record<string, unknown> = { listVersion:2, page:query.page || 1, pageSize:query.pageSize || 16 };
+  for (const key of ['eventLevel', 'participationFormat', 'teamSizeCategory', 'feeType', 'registrationOrganization', 'registrationWithin'] as const) {
+    if (query[key]) sent[key] = query[key];
+  }
+  if (keyword) sent.keyword = keyword;
+  else {
+    if (query.categories?.length) sent.categories = query.categories;
+    if (query.province) sent.province = query.province;
+    if (query.listGroups?.length) sent.listGroups = query.listGroups;
+  }
+  if (query.favoriteIds?.length) sent.favoriteIds = query.favoriteIds;
+  if (query.reminderIds?.length) sent.reminderIds = query.reminderIds;
+  const result = await callPublicData<{ items:any[]; total:number; hasMore:boolean; appliedFilters?:{ categories?:string[] } }>('list', { query:sent });
+  return {
+    items:(result.items || []).map(hydratePublic), total:result.total || 0, hasMore:Boolean(result.hasMore),
+    appliedCategories:keyword ? (result.appliedFilters?.categories || []) : null,
+  };
+}
+
 export async function getCompetition(id: string) {
   return hydratePublic(await callPublicData<any>('get', { id }));
 }

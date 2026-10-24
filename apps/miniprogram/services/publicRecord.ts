@@ -38,6 +38,8 @@ export function hydratePublic(item: any) {
     participationFormat:item.participation_format, teamSizeCategory:item.team_size_category, feeType:item.fee_type, registrationOrganization:item.registration_organization,
     registrationMethod:item.registration_method || '', registrationUrl:item.registration_url || '', fees:item.fees || '',
     registrationStatus, statusClass:STATUS_CLASS[registrationStatus] || 'status-closed',
+    // 新版列表的状态分组：报名中 / 时间待公布 / 比赛中 / 比赛已结束；详情接口不带，为空
+    listGroup:String(item.list_group || ''),
     registrationStart:reminderTarget(item.registration_start, 'start'), registrationEnd:reminderTarget(item.registration_end, 'end'),
     registrationStartDate:item.registration_start ? item.registration_start.substring(0, 10) : '', registrationEndDate:item.registration_end ? item.registration_end.substring(0, 10) : '', registrationEndNote:String(item.registration_end_note || ''),
     // 时间说明（如“各省赛区自行确定报名时间”），详情页关键时间卡片里原样多行显示

@@ -16,7 +16,7 @@
       <view wx:if="{{item.unavailable}}" class="pcard-gone">赛事资料暂时打不开，收藏仍保留。可以下拉刷新，或点星标取消收藏。</view>
       <block wx:else>
         <view class="pcard-tags">
-          <text class="pcard-status {{item.statusClass}}">{{item.registrationStatus}}</text>
+          <text class="pcard-status {{item.statusClass}}">{{item.statusText}}</text>
           <text wx:if="{{item.levelTag}}" class="pcard-level">{{item.levelTag}}</text>
           <text wx:if="{{item.recClass}}" class="pcard-rec rec {{item.recClass}}">{{item.recommendationLevel}}</text>
         </view>

@@ -9,20 +9,16 @@
 .search-row button::after { border:0; }
 .assistant-button { flex:none; display:flex; align-items:center; gap:8rpx; height:80rpx; padding:0 22rpx 0 18rpx; border-radius:24rpx; border:1rpx solid var(--line); background:var(--surface); color:var(--accent); font-size:26rpx; font-weight:600; box-sizing:border-box; }
 .assistant-button image { width:34rpx; height:34rpx; }
-.filter-panel { display:flex; align-items:center; gap:16rpx; }
-.filter-scroll { flex:1; min-width:0; height:64rpx; white-space:nowrap; }
-.filter-track { display:inline-flex; align-items:center; height:64rpx; white-space:nowrap; }
-.comprehensive-chip { flex-shrink:0; margin-right:16rpx; }
-.all-filter-chip { flex-shrink:0; }
-.quick-picker { flex-shrink:0; margin-right:16rpx; }
-.quick-chip { box-sizing:border-box; height:64rpx; padding:0 24rpx; background:var(--surface); border:1rpx solid var(--line); border-radius:32rpx; color:var(--ink2); font-size:26rpx; line-height:62rpx; white-space:nowrap; }
-.quick-chip-active { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600; }
-.chip-arrow { margin-left:8rpx; font-size:20rpx; color:var(--muted); }
-.quick-chip-active .chip-arrow { color:var(--accent); }
-.filter-trigger { position:relative; display:flex; flex:0 0 64rpx; align-items:center; justify-content:center; width:64rpx; height:64rpx; border:1rpx solid var(--line); border-radius:32rpx; background:var(--surface); box-sizing:border-box; }
+/* 筛选栏：左边状态标签（选中的黑色加粗，下面一条蓝色短横线），右边“筛选”（2026-10-24 改版） */
+.filter-panel { display:flex; align-items:center; justify-content:space-between; gap:16rpx; height:72rpx; }
+.status-tabs { display:flex; align-items:stretch; gap:44rpx; height:100%; }
+.status-tab { position:relative; display:flex; align-items:center; color:var(--muted); font-size:29rpx; }
+.status-tab-active { color:var(--ink); font-weight:700; font-size:31rpx; }
+.status-tab-active::after { content:""; position:absolute; left:50%; bottom:2rpx; width:40rpx; height:6rpx; margin-left:-20rpx; border-radius:3rpx; background:var(--accent); }
+.filter-trigger { position:relative; display:flex; flex:none; align-items:center; gap:8rpx; height:100%; padding:0 4rpx; color:var(--ink2); font-size:27rpx; }
 .filter-trigger image { width:30rpx; height:30rpx; }
-.filter-trigger-active { background:var(--accent-soft); border-color:var(--accent); }
-.filter-count { position:absolute; top:-8rpx; right:-8rpx; min-width:30rpx; height:30rpx; padding:0 6rpx; border-radius:16rpx; background:var(--accent); color:#fff; font-size:19rpx; line-height:30rpx; text-align:center; box-sizing:border-box; }
+.filter-trigger-active { color:var(--accent); font-weight:600; }
+.filter-count { min-width:30rpx; height:30rpx; padding:0 6rpx; border-radius:16rpx; background:var(--accent); color:#fff; font-size:19rpx; line-height:30rpx; text-align:center; box-sizing:border-box; font-weight:600; }
 .result-meta { display:flex; justify-content:space-between; margin:4rpx 4rpx 20rpx; color:var(--muted); font-size:25rpx; }
 .clear { color:var(--accent); }
 /* 加载、没结果、出错 */
@@ -47,13 +43,18 @@
 .category-label { flex:1; }
 .category-dot { flex-shrink:0; width:9rpx; height:9rpx; border-radius:50%; background:var(--accent); }
 .filter-options { box-sizing:border-box; flex:1; min-width:0; height:100%; padding:30rpx 24rpx 40rpx; }
-.options-heading { margin-bottom:26rpx; color:var(--ink); font-size:29rpx; font-weight:700; }
-.option-subheading { margin-bottom:18rpx; color:#52637a; font-size:24rpx; font-weight:650; }
-.secondary-heading { margin-top:36rpx; }
+/* 面板右侧所有大类连成一长列，每类一个小标题 */
+.filter-section { padding-bottom:40rpx; }
+.filter-section + .filter-section { padding-top:8rpx; border-top:1rpx solid #edf0f4; }
+.filter-section + .filter-section .options-heading { margin-top:28rpx; }
+.options-heading { margin-bottom:22rpx; color:var(--ink); font-size:29rpx; font-weight:700; }
+.heading-note { margin-left:12rpx; color:var(--muted); font-size:22rpx; font-weight:400; }
+.option-list.option-list-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.option-list-3 .option-chip { min-height:68rpx; font-size:23rpx; }
 .option-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16rpx; }
 .option-chip { box-sizing:border-box; display:flex; align-items:center; justify-content:center; min-height:82rpx; padding:12rpx 10rpx; text-align:center; background:var(--chip); color:#435268; border:1rpx solid transparent; border-radius:20rpx; font-size:24rpx; line-height:1.35; }
 .option-active { color:var(--accent); background:var(--accent-soft); border-color:var(--accent); font-weight:650; }
-.source-tip { margin:32rpx 0 14rpx; color:#8190a5; font-size:22rpx; line-height:1.55; }
+.source-tip { margin:24rpx 0 0; color:#8190a5; font-size:22rpx; line-height:1.55; }
 .sheet-actions { display:grid; grid-template-columns:210rpx 1fr; gap:18rpx; flex-shrink:0; padding:20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom)); border-top:1rpx solid #e8edf2; background:#fff; }
 .sheet-actions button { margin:0; border-radius:24rpx; }
 .reset-button { background:#fff!important; color:var(--accent)!important; border:1rpx solid #c7dcf8; }
