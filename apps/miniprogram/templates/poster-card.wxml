@@ -1,0 +1,28 @@
+<!-- 首页、收藏页共用的双列卡片（2026-10 改版）。字段由 services/cardCover.ts 的 withCard 算好。
+     页面要有 openDetail、onStarTap、onPosterError 三个方法；样式在 app.wxss。
+     有海报时卡片下方写赛事名称；没有海报时名称已经在文字封面上，下方不再重复（用户定） -->
+<template name="poster-card">
+  <view class="pcard {{item.isEnded ? 'ended' : ''}}" data-id="{{item.id}}" data-unavailable="{{item.unavailable}}" bindtap="openDetail">
+    <view class="pcard-poster">
+      <image wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-img" src="{{item.posterUrl}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-index="{{index}}" binderror="onPosterError" />
+      <view wx:else class="cover cover-{{item.coverTone}}">
+        <text class="cover-kicker">{{item.coverKicker}}</text>
+        <text class="cover-title">{{item.coverTitle}}</text>
+      </view>
+      <text class="pcard-star {{item.isFavorite ? 'on' : ''}}" data-id="{{item.id}}" catchtap="onStarTap" role="button" aria-label="{{item.isFavorite ? '取消收藏' : '收藏'}}">{{item.isFavorite ? '★' : '☆'}}</text>
+    </view>
+    <view class="pcard-body">
+      <text wx:if="{{item.posterUrl && !item.posterFailed}}" class="pcard-name">{{item.name}}</text>
+      <view wx:if="{{item.unavailable}}" class="pcard-gone">赛事资料暂时打不开，收藏仍保留。可以下拉刷新，或点星标取消收藏。</view>
+      <block wx:else>
+        <view class="pcard-tags">
+          <text class="pcard-status {{item.statusClass}}">{{item.statusText}}</text>
+          <text wx:if="{{item.levelTag}}" class="pcard-level">{{item.levelTag}}</text>
+          <text wx:if="{{item.recClass}}" class="pcard-rec rec {{item.recClass}}">{{item.recommendationLevel}}</text>
+        </view>
+        <text class="pcard-dl {{item.deadlineTone}}">{{item.deadlineText}}</text>
+      </block>
+      <text wx:if="{{item.favoriteAt}}" class="pcard-since">收藏于 {{item.favoriteAt}}</text>
+    </view>
+  </view>
+</template>

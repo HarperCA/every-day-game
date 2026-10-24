@@ -43,3 +43,40 @@ button { border-radius: 16rpx; }
 .ccard-dl { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ccard-dl.arch { color: var(--amber); }
 .ccard-r2 .rec { font-size: 25rpx; }
+
+/* 双列卡片（2026-10 淘宝风格改版，首页、收藏页共用，模板在 templates/poster-card.wxml）：
+   整齐网格，每行两张顶部对齐、一样高；没海报时是文字封面（完整赛事名称，颜色按专业大类） */
+.card-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16rpx; }
+.pcard { display:flex; flex-direction:column; background:var(--surface); border-radius:16rpx; overflow:hidden; box-shadow:0 2rpx 4rpx rgba(23,32,51,.04), 0 8rpx 24rpx -12rpx rgba(23,32,51,.16); }
+.pcard.ended { opacity:.72; }
+.pcard-poster { position:relative; width:100%; height:193rpx; background:var(--accent-soft); }
+.pcard-img { display:block; width:100%; height:100%; }
+.cover { position:relative; box-sizing:border-box; width:100%; height:100%; padding:18rpx 20rpx; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; color:#fff; }
+.cover::before, .cover::after { content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.12); }
+.cover::before { width:200rpx; height:200rpx; right:-60rpx; top:-80rpx; }
+.cover::after { width:120rpx; height:120rpx; right:40rpx; bottom:-70rpx; background:rgba(255,255,255,.08); }
+.cover-kicker { position:relative; align-self:flex-start; max-width:70%; padding:2rpx 12rpx; border-radius:6rpx; background:rgba(255,255,255,.2); font-size:19rpx; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cover-title { position:relative; font-size:28rpx; font-weight:700; line-height:1.3; letter-spacing:1rpx; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; text-shadow:0 2rpx 6rpx rgba(0,0,0,.12); }
+.cover-blue { background:linear-gradient(135deg, #2f7cf0, #1450b8); }
+.cover-teal { background:linear-gradient(135deg, #1aa2a8, #0d6f86); }
+.cover-green { background:linear-gradient(135deg, #34a56f, #1b7a52); }
+.cover-orange { background:linear-gradient(135deg, #f29b38, #d2621c); }
+.cover-purple { background:linear-gradient(135deg, #8a6ae0, #5a3fb5); }
+.cover-rose { background:linear-gradient(135deg, #e5677d, #b8405f); }
+.cover-indigo { background:linear-gradient(135deg, #5b6fd8, #3946a8); }
+.pcard-star { position:absolute; top:10rpx; right:10rpx; width:52rpx; height:52rpx; border-radius:50%; background:rgba(255,255,255,.88); color:var(--muted); font-size:32rpx; line-height:52rpx; text-align:center; }
+.pcard-star.on { color:var(--star); }
+.pcard-body { flex:1; padding:16rpx 18rpx 20rpx; display:flex; flex-direction:column; gap:12rpx; }
+.pcard-name { min-height:82rpx; font-size:28rpx; font-weight:600; line-height:1.45; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
+.pcard-tags { display:flex; flex-wrap:wrap; gap:8rpx; }
+.pcard-status, .pcard-level, .pcard-rec { padding:4rpx 12rpx; border-radius:8rpx; font-size:21rpx; font-weight:600; line-height:1.4; }
+.pcard-status.status-open { color:var(--accent); background:var(--accent-soft); }
+.pcard-status.status-upcoming { color:var(--amber); background:#fdf1e2; }
+.pcard-status.status-pending, .pcard-status.status-closed { color:var(--muted); background:var(--chip); }
+.pcard-level { color:var(--ink2); background:var(--chip); }
+.pcard-rec { background:var(--chip); }
+.pcard-dl { font-size:23rpx; color:var(--ink2); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pcard-dl.urgent { color:#d2481c; }
+.pcard-dl.muted { color:var(--muted); font-weight:400; }
+.pcard-gone { font-size:23rpx; line-height:1.5; color:var(--muted); }
+.pcard-since { font-size:21rpx; color:var(--muted); }

@@ -56,7 +56,8 @@ class ProjectFileTests(unittest.TestCase):
     def test_wxml_has_no_javascript_method_calls(self):
         for path in MINI.rglob("*.wxml"):
             text = path.read_text(encoding="utf-8")
-            self.assertNotRegex(text, r"\.(slice|map|filter|join|substring)\(", str(path))
+            # 页面模板不支持方法调用（2026-10-24 专业大类用了 indexOf，选中后一直不变蓝）
+            self.assertNotRegex(text, r"\.(slice|map|filter|join|substring|indexOf|includes|some|find)\(", str(path))
 
     def test_home_filters_can_be_cleared_without_a_separate_selected_area(self):
         page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")
@@ -65,8 +66,10 @@ class ProjectFileTests(unittest.TestCase):
         self.assertNotIn('bindtap="removeCondition"', page)
         self.assertNotIn('bindtap="clearFilters"', page)
         self.assertIn('bindtap="resetMoreFilters"', page)
-        self.assertIn('bindtap="onComprehensiveTap"', page)
-        self.assertIn("selectedConditions", logic)
+        # 2026-10-24 改版：“全部”按钮和地区、专业大类、报名状态下拉去掉，改成状态标签 + 面板
+        self.assertNotIn("onComprehensiveTap", page + logic)
+        self.assertIn('bindtap="onStatusTab"', page)
+        self.assertIn("STATUS_TABS", logic)
 
     def test_development_preview_mode_is_gone(self):
         # 2026-09-30 删除“开发预览”模式：首页和详情页都不再有预览提示，也不再打包本地样例数据
@@ -81,13 +84,15 @@ class ProjectFileTests(unittest.TestCase):
         repository = (MINI / "services/repository.ts").read_text(encoding="utf-8")
         self.assertIn("全部筛选", page)
         self.assertIn("确定 · {{morePreviewCount}}场赛事", page)
-        for label in ("参赛形式", "队伍人数", "报名费用", "报名方式", "赛事地区"):
+        for label in ("地区", "专业大类", "参赛形式", "队伍人数", "报名费用", "报名方式"):
             self.assertIn(label, logic)
-        for field in ("participationFormat", "teamSizeCategory", "feeType", "registrationOrganization", "region"):
+        for field in ("participationFormat", "teamSizeCategory", "feeType", "registrationOrganization", "province", "listGroups"):
             self.assertIn(field, logic)
             self.assertIn(field, repository)
-        self.assertIn("moreFilterCount", logic)
-        self.assertIn("pageSize: 8", logic)
+        self.assertIn("filterCount", logic)
+        self.assertIn("listVersion:2", repository)
+        # 2026-10 首页改双列瀑布流：一页 16 张，和原来单列 8 张差不多高
+        self.assertIn("pageSize: 16", logic)
 
     def test_admin_competition_list_has_region_filter(self):
         admin = (ROOT / "apps/admin/src/App.tsx").read_text(encoding="utf-8")

@@ -52,7 +52,10 @@
       </view>
     </scroll-view>
     <view class="composer">
-      <input class="composer-input" value="{{input}}" bindinput="onInput" bindconfirm="onSubmit" confirm-type="send" maxlength="300" placeholder="说说你的专业、年级和想找的比赛" aria-label="向助手提问" />
+      <!-- 多行输入框：高度按行数算，最多 5 行；键盘上的“发送”键直接发出，不能手动换行 -->
+      <view class="composer-box">
+        <textarea class="composer-input" style="height:{{inputLines * 40}}rpx" value="{{input}}" bindinput="onInput" bindlinechange="onInputLineChange" bindconfirm="onSubmit" confirm-type="send" show-confirm-bar="{{false}}" disable-default-padding maxlength="300" cursor-spacing="24" placeholder="说说你的专业、年级和想找的比赛" aria-label="向助手提问" />
+      </view>
       <button class="send" disabled="{{sending || !input}}" bindtap="onSubmit" aria-label="发送"><image src="/assets/send.svg" mode="aspectFit" aria-hidden="true" /></button>
     </view>
   </view>

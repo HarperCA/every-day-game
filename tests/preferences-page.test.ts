@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../apps/miniprogram/services/cloudSession', () => ({isCloudSessionReady:()=>false,callUserData:vi.fn()}));
-vi.mock('../apps/miniprogram/services/repository', () => ({getProfessionOptions:()=>['计算机与AI','电子信息'],listCompetitions:vi.fn()}));
+vi.mock('../apps/miniprogram/services/repository', () => ({getProfessionOptions:()=>['计算机与AI','电子信息'],listCompetitions:vi.fn(),listHomeCompetitions:vi.fn()}));
 const definitions:any[] = [];
 let storage:Map<string,any>;
 function instance(definition:any) {
@@ -97,10 +97,10 @@ describe('独立比赛偏好编辑页',()=>{
     const page = instance(definitions.find(page=>page.refreshCompetitionPreferences));
     page.preferenceSnapshot = JSON.stringify({profession:'计算机与AI',categories:[],province:'',dontShowAgain:true});
     page.load=vi.fn();
-    page.updateSelectedConditions=vi.fn();
     page.refreshCompetitionPreferences();
-    expect(page.data.competitionCategories).toEqual(['电子信息']);
-    expect(page.data.preferenceProvince).toBe('江苏省');
+    // 2026-10-24 首页改版：偏好直接成为当前的地区和专业大类，打开面板时显示为已选
+    expect(page.data.categories).toEqual(['电子信息']);
+    expect(page.data.region).toBe('江苏省');
     expect(page.load).toHaveBeenCalledTimes(1);
     page.data.region='浙江省';
     page.refreshCompetitionPreferences();

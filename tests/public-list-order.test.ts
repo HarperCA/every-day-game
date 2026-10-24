@@ -154,3 +154,22 @@ describe('偏好筛选和手机端规则一致', () => {
     vi.unstubAllGlobals();
   });
 });
+
+// 首页状态标签：报名中 / 未开始 / 已截止（2026-10-24）
+describe('新版列表：按状态分组筛', () => {
+  it('listGroups 只留指定的分组；未开始含即将报名，已截止含比赛中和比赛已结束', () => {
+    const pick = (listGroups: any) => ids(buildPublicList(records, { listVersion:2, listGroups }, NOW));
+    expect(pick(['报名中'])).toEqual(['open-soon', 'open-late', 'open-nodl']);
+    expect(pick(['时间待公布'])).toEqual(['upcoming', 'tbd']);
+    expect(pick(['比赛中', '比赛已结束'])).toEqual(['running', 'ended-recent', 'ended-old']);
+  });
+  it('不带、为空或只有不认识的分组时不筛', () => {
+    const all = ids(buildPublicList(records, { listVersion:2 }, NOW));
+    expect(ids(buildPublicList(records, { listVersion:2, listGroups:[] }, NOW))).toEqual(all);
+    expect(ids(buildPublicList(records, { listVersion:2, listGroups:['乱写'] }, NOW))).toEqual(all);
+    expect(ids(buildPublicList(records, { listVersion:2, listGroups:'报名中' }, NOW))).toEqual(all);
+  });
+  it('分组不同，缓存键也不同', () => {
+    expect(publicQueryKey({ listVersion:2, listGroups:['报名中'] })).not.toBe(publicQueryKey({ listVersion:2, listGroups:['时间待公布'] }));
+  });
+});
