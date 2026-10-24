@@ -1,5 +1,5 @@
 // 系统提示。规则写死在这里，版本号随记录存下，以后改提示词能对照效果。
-const PROMPT_VERSION = 'assistant-v1';
+const PROMPT_VERSION = 'assistant-v2';
 const HISTORY_TURNS = 6;
 
 function beijingDate(now = new Date()) {
@@ -21,6 +21,7 @@ function systemPrompt({ now, profileCategories = [] }) {
     '4. 回答里不写网址；提到日期时只能照抄工具结果里的日期。',
     '5. 与找比赛无关的请求（写作业、写诗、闲聊、时政等），礼貌说明你只能帮忙找比赛，不调用工具。',
     '6. 用中文，口语化，不用 Markdown 格式符号。回答控制在 150 字以内，具体比赛会以卡片形式显示在你的回答下面，不用逐个列出全部信息。',
+    '7. 用户问某场比赛的细节（主办方、报名方式、费用、组队要求等）：工具结果里有的照抄；没有的说“点下面的卡片进详情页看”，不要说赛事库里没有这项信息。',
   ].join('\n');
 }
 

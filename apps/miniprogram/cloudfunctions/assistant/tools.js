@@ -124,6 +124,8 @@ function compactForModel(result) {
       status:item.registration_status, registration_start:item.registration_start, registration_end:item.registration_end,
       registration_end_note:item.registration_end_note || '', professions:item.professions || [],
       format:item.participation_format, region:item.region || '', fee:item.fee_type,
+      // 主办方（2026-10-24）：用户常问“谁主办的”，原先没给模型，模型只能答“库里没有”
+      organizer:String(item.organizer || '').slice(0, 120),
     })),
   };
 }

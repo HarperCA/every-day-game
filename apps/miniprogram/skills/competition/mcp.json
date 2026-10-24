@@ -42,6 +42,11 @@
     },
     {
       "name": "getCompetitionDetail",
+      "_meta": {
+        "ui": {
+          "pagePath": "/pages/detail/detail"
+        }
+      },
       "description": "查看某一场比赛的详细信息：主办方、报名时间、参赛对象、比赛形式、报名方式和费用。只在用户追问某场比赛时调用。",
       "inputSchema": {
         "type": "object",
