@@ -66,14 +66,15 @@ export function planSync(docs, state = {}, { full = false, now = Date.now() } = 
 export function planPosters(docs, posters = {}) {
   const wanted = new Set(docs.map(doc => doc.poster_file).filter(file => typeof file === 'string' && POSTER_FILE.test(file)));
   return {
-    upload:[...wanted].filter(file => !posters[file]?.url),
+    upload:[...wanted].filter(file => !posters[file]?.fileID),
     stale:Object.keys(posters).filter(file => !wanted.has(file)),
   };
 }
 
-// 推给上海的数据带上海报链接；还没推成功的海报先不带，小程序显示文字封面，下次同步再补
+// 推给上海的数据带上海报的云存储文件 ID；上海 publicData 返回列表时再换成 10 分钟有效的链接（2026-10-24 用户定：不升级套餐，存储是私有的）。
+// 还没推成功的海报先不带，小程序显示文字封面，下次同步再补
 export function withPosterUrls(docs, posters = {}) {
-  return docs.map(doc => ({ ...doc, poster_url:(POSTER_FILE.test(doc.poster_file || '') && posters[doc.poster_file]?.url) || '' }));
+  return docs.map(doc => ({ ...doc, poster_file_id:(POSTER_FILE.test(doc.poster_file || '') && posters[doc.poster_file]?.fileID) || '' }));
 }
 
 async function syncPosters(endpoint, secret, docs, posters) {

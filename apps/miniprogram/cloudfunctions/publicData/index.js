@@ -2,6 +2,7 @@ const cloud = require('wx-server-sdk');
 const { assertPublicRecordCapacity, currentRegistrationStatus, isMissingCollection, MAX_PUBLIC_RECORDS, normalizePublicRecordId } = require('./publicQuery');
 const { forwardIfConfigured } = require('./cloudBridge');
 const { slimListV2 } = require('./listFields');
+const { fillPosterLinks } = require('./posterLinks');
 const { buildPublicList, personalizePage, publicQueryKey } = require('./listOrder');
 
 cloud.init({ env:cloud.DYNAMIC_CURRENT_ENV });
@@ -116,7 +117,9 @@ exports.main = async rawEvent => {
       const [records] = await Promise.all([loadPublishedRecordsCached(), countLoad('list')]);
       // 列表只返回卡片要用的字段（listFields.js），否则全部比赛超过小程序链路 1MB 的上限；详情走 get，仍是完整记录
       // 2026-10-24 起新旧版小程序统一走新的筛选和排序（listOrder.js）；旧版不带收藏、提醒编号，组内分档对它不起作用
-      return { ok:true, data:slimListV2(listV2(records, event.query || {})) };
+      // 海报：把这一页用到的云存储文件 ID 换成 10 分钟有效的链接（posterLinks.js，2026-10-24）
+      const page = listV2(records, event.query || {});
+      return { ok:true, data:slimListV2({ ...page, items:await fillPosterLinks(page.items, cloud) }) };
     }
     if (event?.action === 'get') {
       const id = normalizePublicRecordId(event.id);

@@ -93,13 +93,13 @@ describe('同步时推海报', () => {
   const f1 = `${'1'.repeat(64)}.jpg`; const f2 = `${'2'.repeat(64)}.jpg`; const f3 = `${'3'.repeat(64)}.jpg`;
   it('只推还没推过的；不再用的列为要删；同一张图多场比赛共用只推一次', () => {
     const docs = [{ id:'a', poster_file:f1 }, { id:'b', poster_file:f2 }, { id:'c', poster_file:f2 }, { id:'d', poster_file:'' }];
-    const plan = planPosters(docs, { [f1]:{ fileID:'cloud://e/posters/1.jpg', url:'https://u/1' }, [f3]:{ fileID:'cloud://e/posters/3.jpg', url:'https://u/3' } });
+    const plan = planPosters(docs, { [f1]:{ fileID:'cloud://e/posters/1.jpg' }, [f3]:{ fileID:'cloud://e/posters/3.jpg' } });
     expect(plan.upload).toEqual([f2]);
     expect(plan.stale).toEqual([f3]);
   });
-  it('推给上海的数据带上链接；还没推成功的先为空（小程序显示文字封面）', () => {
-    const out = withPosterUrls([{ id:'a', poster_file:f1 }, { id:'b', poster_file:f2 }, { id:'c' }], { [f1]:{ url:'https://u/1' } });
-    expect(out.map(doc => doc.poster_url)).toEqual(['https://u/1', '', '']);
+  it('推给上海的数据带上海报的云存储文件 ID（链接由上海返回列表时再换）；还没推成功的先为空', () => {
+    const out = withPosterUrls([{ id:'a', poster_file:f1 }, { id:'b', poster_file:f2 }, { id:'c' }], { [f1]:{ fileID:'cloud://e/posters/1.jpg' } });
+    expect(out.map(doc => doc.poster_file_id)).toEqual(['cloud://e/posters/1.jpg', '', '']);
   });
 });
 
@@ -169,5 +169,40 @@ describe('比赛记录 → 公开缓存', async () => {
     expect(withPoster.poster_file).toBe(file);
     expect(JSON.stringify(withPoster)).not.toContain('c'.repeat(64));
     expect(toPublicCache(base, NOW).poster_file).toBe('');
+  });
+});
+
+describe('上海 publicData：返回列表时把文件 ID 换成链接', () => {
+  const { fillPosterLinks, clearPosterLinkCache, LINK_TTL_MS } = require('../apps/miniprogram/cloudfunctions/publicData/posterLinks.js');
+  const id = n => `cloud://env.bucket/posters/${String(n).repeat(64).slice(0, 64)}.jpg`;
+  const fakeCloud = () => {
+    const calls = [];
+    return { calls, getTempFileURL:async ({ fileList }) => { calls.push(fileList); return { fileList:fileList.map(fileID => ({ fileID, status:0, tempFileURL:`https://b.tcb.qcloud.la/${fileID.slice(-10)}?sign=x` })) }; } };
+  };
+  beforeEach(() => clearPosterLinkCache());
+  it('一页里的文件 ID 一次换好，填进 poster_url；没有海报的为空；不改原来的条目', async () => {
+    const cloud = fakeCloud();
+    const items = [{ id:'a', poster_file_id:id(1) }, { id:'b', poster_file_id:id(2) }, { id:'c', poster_file_id:'' }, { id:'d', poster_file_id:id(1) }];
+    const out = await fillPosterLinks(items, cloud, 1000);
+    expect(cloud.calls).toEqual([[id(1), id(2)]]);
+    expect(out.map(item => Boolean(item.poster_url))).toEqual([true, true, false, true]);
+    expect(items[0]).not.toHaveProperty('poster_url');
+  });
+  it('8 分钟内用缓存不再调接口；过了 8 分钟重新换（链接 10 分钟失效）', async () => {
+    const cloud = fakeCloud();
+    await fillPosterLinks([{ poster_file_id:id(3) }], cloud, 0);
+    await fillPosterLinks([{ poster_file_id:id(3) }], cloud, LINK_TTL_MS - 1);
+    expect(cloud.calls).toHaveLength(1);
+    await fillPosterLinks([{ poster_file_id:id(3) }], cloud, LINK_TTL_MS + 1);
+    expect(cloud.calls).toHaveLength(2);
+  });
+  it('超过 50 个分批换；换链接失败不影响列表；美国服务器没有这个接口时原样返回', async () => {
+    const cloud = fakeCloud();
+    await fillPosterLinks(Array.from({ length:60 }, (_, n) => ({ poster_file_id:`cloud://env.bucket/posters/${n.toString(16).padStart(64, '0')}.jpg` })), cloud, 0);
+    expect(cloud.calls.map(batch => batch.length)).toEqual([50, 10]);
+    const broken = { getTempFileURL:async () => { throw new Error('down'); } };
+    expect((await fillPosterLinks([{ id:'x', poster_file_id:id(5) }], broken, 0))[0].poster_url).toBe('');
+    const items = [{ id:'y' }];
+    expect(await fillPosterLinks(items, {}, 0)).toBe(items);
   });
 });
