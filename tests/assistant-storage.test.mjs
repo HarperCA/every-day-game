@@ -7,7 +7,7 @@ import { openDatabase } from '../apps/server/src/db.mjs';
 import { createCloudShim } from '../apps/server/src/cloudbase-shim.mjs';
 import { RECORDS } from './assistant-fixtures.mjs';
 const require = createRequire(import.meta.url);
-const { saveTurnLog, loadRecentTurns, COLLECTION } = require('../apps/miniprogram/cloudfunctions/assistant/conversationLog.js');
+const { saveTurnLog, loadRecentTurns, purgeExpiredLogs, COLLECTION, RETENTION_DAYS } = require('../apps/miniprogram/cloudfunctions/assistant/conversationLog.js');
 const { loadPublicRecords } = require('../apps/miniprogram/cloudfunctions/assistant/publicRecords.js');
 
 // 用自有服务器同一套 SQLite 外壳跑，和线上的读写方式一致
@@ -56,5 +56,33 @@ describe('赛事助手：读公开比赛', () => {
     }
     const ids = (await loadPublicRecords(db)).map(item => item.id).sort();
     expect(ids).toEqual(['edition-a', 'edition-archived', 'edition-b', 'edition-c', 'edition-d']);
+  });
+});
+
+// 问答记录保存半年，到期自动删除（2026-10-24）
+describe('赛事助手：对话记录保存 180 天', () => {
+  const ids = async () => (await db.collection(COLLECTION).get()).data.map(row => row.id).sort();
+  it('删掉保存满 180 天的，留下没满的', async () => {
+    const now = new Date('2027-05-01T00:00:00Z');
+    const daysAgo = days => new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+    for (const [id, days] of [['old-200', 200], ['old-181', 181], ['edge-180', RETENTION_DAYS], ['new-179', 179], ['new-1', 1]]) {
+      await db.collection(COLLECTION).doc(id).set({ data:turn(id, daysAgo(days)) });
+    }
+    expect(await purgeExpiredLogs(db, now)).toBe(3);
+    expect(await ids()).toEqual(['new-1', 'new-179']);
+  });
+  it('集合还没建时什么都不做', async () => {
+    expect(await purgeExpiredLogs(db, new Date())).toBe(0);
+  });
+  it('写记录时顺带清理，12 小时内只清一次', async () => {
+    const now = new Date('2028-01-01T00:00:00Z');
+    await db.collection(COLLECTION).doc('ancient').set({ data:turn('ancient', '2027-01-01T00:00:00Z') });
+    await saveTurnLog(db, turn('fresh', now.toISOString()), now);
+    expect(await ids()).toEqual(['fresh']);
+    await db.collection(COLLECTION).doc('ancient-2').set({ data:turn('ancient-2', '2027-01-01T00:00:00Z') });
+    await saveTurnLog(db, turn('fresh-2', now.toISOString()), new Date(now.getTime() + 60 * 60 * 1000));
+    expect(await ids()).toContain('ancient-2');
+    await saveTurnLog(db, turn('fresh-3', now.toISOString()), new Date(now.getTime() + 13 * 60 * 60 * 1000));
+    expect(await ids()).not.toContain('ancient-2');
   });
 });
