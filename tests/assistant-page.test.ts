@@ -245,6 +245,27 @@ describe('赛事助手对话页', () => {
   });
 });
 
+// 键盘弹起时不整页上推（字多了会把对话推出屏幕变空白）：只把输入栏垫到键盘上方，对话滚到最新（2026-10-24）
+describe('赛事助手：键盘和输入框', () => {
+  it('键盘弹起记下高度并滚到最新一条；收起、失焦归零', () => {
+    const page = makePage();
+    page.onKeyboardHeightChange({ detail: { height: 301.6, duration: 0.25 } });
+    expect(page.data).toMatchObject({ keyboardHeight: 302, scrollInto: 'feed-end' });
+    page.onKeyboardHeightChange({ detail: { height: 0 } });
+    expect(page.data.keyboardHeight).toBe(0);
+    page.onKeyboardHeightChange({ detail: { height: 280 } });
+    page.onInputBlur();
+    expect(page.data.keyboardHeight).toBe(0);
+  });
+  it('键盘开着时输入框变高，对话也滚到最新；最多 5 行', () => {
+    const page = makePage();
+    page.onKeyboardHeightChange({ detail: { height: 280 } });
+    page.setData({ scrollInto: '' });
+    page.onInputLineChange({ detail: { lineCount: 8 } });
+    expect(page.data).toMatchObject({ inputLines: 5, scrollInto: 'feed-end' });
+  });
+});
+
 describe('赛事助手：卡片显示', () => {
   it('截止、今天截止、已截止、没有日期', () => {
     const base = { id: 'a', name: 'a', editionName: '', eventLevel: '', registrationEndNote: '' };
