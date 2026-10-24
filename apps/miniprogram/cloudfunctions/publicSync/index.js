@@ -7,6 +7,8 @@
 //   upsert：写入或覆盖若干条（每条带 id）
 //   prune ：只保留给定 id，其余删掉（服务器那边下架、删除的赛事）
 //   status：返回现有条数
+//   uploadPoster ：存一张海报到云存储 posters/ 目录，返回文件 ID 和 https 链接（2026-10-24）
+//   deletePosters：删掉不再用的海报文件
 const crypto = require('node:crypto');
 const cloud = require('wx-server-sdk');
 const { aggregatePreferences } = require('./preferenceValidation');
@@ -47,6 +49,45 @@ async function setDoc(id, data) {
 }
 
 const validId = id => typeof id === 'string' && /^[A-Za-z0-9_-]{1,120}$/.test(id);
+
+// 海报（2026-10-24）：美国服务器同步时一张一请求推过来（HTTP 访问服务单次请求上限实测在 96～100 KB 之间，
+// 海报压在 60 KB 以内，编码后约 80 KB）。文件名是图片内容的哈希，只收 640×360 的 JPG。
+const POSTER_FILE = /^[0-9a-f]{64}\.jpg$/;
+const POSTER_MAX_BYTES = 60 * 1024;
+
+function jpegSize(buffer) {
+  if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+  let offset = 2;
+  while (offset + 9 < buffer.length) {
+    if (buffer[offset] !== 0xff) { offset += 1; continue; }
+    const marker = buffer[offset + 1];
+    if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { offset += 2; continue; }
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { width:buffer.readUInt16BE(offset + 7), height:buffer.readUInt16BE(offset + 5) };
+    offset += 2 + buffer.readUInt16BE(offset + 2);
+  }
+  return null;
+}
+
+async function uploadPoster(params) {
+  if (!POSTER_FILE.test(String(params.file || ''))) return { ok:false, status:'invalid_poster_file' };
+  const buffer = Buffer.from(String(params.data || ''), 'base64');
+  const size = jpegSize(buffer);
+  if (!size || size.width !== 640 || size.height !== 360 || buffer.length > POSTER_MAX_BYTES) return { ok:false, status:'invalid_poster_image' };
+  // 文件名就是内容哈希：对不上说明传输出错，不存
+  if (crypto.createHash('sha256').update(buffer).digest('hex') !== params.file.slice(0, 64)) return { ok:false, status:'poster_hash_mismatch' };
+  const { fileID } = await cloud.uploadFile({ cloudPath:`posters/${params.file}`, fileContent:buffer });
+  const { fileList } = await cloud.getTempFileURL({ fileList:[fileID] });
+  const url = fileList?.[0]?.tempFileURL || '';
+  if (!url) return { ok:false, status:'poster_url_missing' };
+  return { ok:true, status:'ok', fileID, url };
+}
+
+async function deletePosters(params) {
+  const fileIDs = Array.isArray(params.fileIDs) ? params.fileIDs.filter(id => typeof id === 'string' && /^cloud:\/\/[^/]+\/posters\/[0-9a-f]{64}\.jpg$/.test(id)) : [];
+  if (!fileIDs.length) return { ok:true, status:'ok', removed:0 };
+  const { fileList } = await cloud.deleteFile({ fileList:fileIDs.slice(0, 50) });
+  return { ok:true, status:'ok', removed:(fileList || []).filter(item => item.status === 0).length };
+}
 
 async function allIds() {
   const ids = [];
@@ -90,6 +131,8 @@ exports.main = async event => {
       return { ok:true, status:'ok', removed };
     }
     if (params.action === 'status') return { ok:true, status:'ok', count:(await allIds()).length };
+    if (params.action === 'uploadPoster') return await uploadPoster(params);
+    if (params.action === 'deletePosters') return await deletePosters(params);
     // 访问异常（clientLog 云函数收的）和每日成功加载次数（publicData 记的），给美国服务器拉回去在后台显示
     if (params.action === 'pullClientLogs') {
       const _ = db.command;

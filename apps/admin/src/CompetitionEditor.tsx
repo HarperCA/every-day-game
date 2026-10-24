@@ -4,6 +4,7 @@ import { fromDateTimeLocal, linesToList, listToLines, toDateTimeLocal } from './
 import { displayAuditField } from './fieldLabels';
 import { displayQualityIssue, parseQualityIssueLines } from './qualityIssueDisplay';
 import seedCompetitions from './data/competitions.json';
+import PosterField from './PosterField';
 
 const dataStatuses = ['draft', 'pending_system_validation', 'pending_manual_review', 'reviewing', 'published', 'archived', 'offline', 'quarantined'];
 const dataStatusLabels: Record<string, string> = { draft:'草稿', pending_system_validation:'待系统验证', pending_manual_review:'待人工核验', reviewing:'资料复核中', published:'已发布', archived:'已归档', offline:'已下架' };
@@ -72,6 +73,8 @@ export default function CompetitionEditor({ editing, setEditing, errors, onCance
         <p>候选赛事名称：{editing.noticeResolution.proposedName || '待提取'}。请核实主办方页面与报名入口，修改上方赛事名称和下方报名网址，并清除“通知线索待追溯”质量问题。</p>
         {(editing.noticeResolution.leads || []).map((lead:any) => <p key={lead.url}><a href={lead.url} target="_blank" rel="noreferrer">{lead.title || lead.url}</a> · {lead.status || '待核验'}</p>)}
       </fieldset>}
+
+      {!isNew && <PosterField editing={editing} setEditing={setEditing}/>}
 
       <fieldset><legend>参赛与报名信息</legend><div className="editor-grid">
         <TextField label="参赛对象" value={editing.participants} onChange={value=>set('participants',value)}/>

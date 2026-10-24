@@ -860,6 +860,9 @@ async function handle(event) {
     return require('./siteBlocklist').decideSiteBlock(db, { host:event.host, decision:event.decision, note:event.note });
   }
   if (event.action === 'aiReviewConfig') return aiReviewConfigStatus();
+  // 海报图片（2026-10-24）：存进美国服务器的图片总库，返回文件名和宽高；记录里的海报、候选列表随“保存修改”一起存
+  if (event.action === 'uploadPosterImage') return require('./posterImage').savePosterImage(event.data, event.kind);
+  if (event.action === 'posterImage') return require('./posterImage').readPosterImage(event.file);
   // 一次性探测：当前模型是否真的接受图片输入。
   if (event.action === 'aiImageProbe') {
     const imageUrl = String(event.imageUrl || '').trim();

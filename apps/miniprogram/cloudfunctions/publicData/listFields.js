@@ -14,6 +14,8 @@ const LIST_FIELDS = [
   'registration_status', 'registration_start', 'registration_end', 'registration_end_note',
   'data_status', 'next_edition_estimate', 'last_verified_at',
   'recommendation', 'recommendation_reasons',
+  // 海报的 https 链接（2026-10-24）：只多这一条，图片本身由小程序按链接另外下载，不挡文字
+  'poster_url',
 ];
 
 function toListItem(item) {

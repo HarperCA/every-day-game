@@ -1,4 +1,5 @@
 const { valueFields } = require('./competitionValue.js');
+const { publicPosterFile } = require('./posterImage.js');
 const { blockedTitleReason, needsNoticeResolution } = require('./noticeResolution.js');
 const { titleHasEditionTokens } = require('./editionTitle.js');
 const { classifyCompetitionScope } = require('./competitionScope.js');
@@ -163,6 +164,8 @@ function toPublicCache(record, now = new Date(), gateOptions = {}) {
     // 只有归档记录才有意义；发布中的记录这两个字段恒为 null，保持字段形状一致。
     next_edition_estimate:archived ? (record.nextEditionEstimate || null) : null,
     archived_at:archived ? (record.archivedAt || null) : null,
+    // 海报（2026-10-24）：公开数据里只放图片总库里的文件名，同步到上海时换成 https 链接 poster_url；候选图片不进公开数据
+    poster_file:publicPosterFile(record),
   };
 }
 
