@@ -8,6 +8,7 @@ Page({
     messages: [] as any[],
     quickQuestions: QUICK_QUESTIONS,
     input: '',
+    inputLines: 1,
     sending: false,
     scrollInto: '',
     sessionId: '',
@@ -32,6 +33,11 @@ Page({
     this.setData({ messages });
   },
   onInput(event: WechatMiniprogram.Input) { this.setData({ input: event.detail.value }); },
+  // 输入框行数变了就跟着改高度，最多 5 行
+  onInputLineChange(event: any) {
+    const lines = Math.min(5, Math.max(1, Number(event.detail.lineCount) || 1));
+    if (lines !== this.data.inputLines) this.setData({ inputLines: lines });
+  },
   onSubmit() { return this.send(this.data.input); },
   onQuickQuestion(event: WechatMiniprogram.TouchEvent) { return this.send(String(event.currentTarget.dataset.text || '')); },
   onOption(event: WechatMiniprogram.TouchEvent) {
@@ -82,7 +88,7 @@ Page({
     try { loggedIn = await getApp<any>().requestWechatLogin(); } catch (_error) { loggedIn = false; }
     if (!loggedIn) return;
     const userMessage = { id: nextMessageId(), role: 'user', text };
-    this.setData({ messages: [...this.data.messages, userMessage], input: '', sending: true, scrollInto: 'typing' });
+    this.setData({ messages: [...this.data.messages, userMessage], input: '', inputLines: 1, sending: true, scrollInto: 'typing' });
     try {
       const answer = await askAssistant(text, this.data.sessionId);
       const reply = botMessage(answer);
