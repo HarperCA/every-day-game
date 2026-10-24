@@ -89,12 +89,19 @@
         <scroll-view class="filter-options" scroll-y scroll-into-view="{{sectionScrollInto}}" scroll-with-animation bindscroll="onFilterScroll">
           <view id="fsec-0" class="filter-section">
             <view class="options-heading">地区</view>
-            <view class="option-list option-list-3"><view class="option-chip {{(index === 0 && !draftRegion) || draftRegion === item ? 'option-active' : ''}}" wx:for="{{regionOptions}}" wx:key="*this" data-kind="region" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+            <!-- 不限、全国、选择省份（点开是底部滚轮，选好后按钮上显示省名） -->
+            <view class="option-list option-list-3">
+              <view class="option-chip {{!draftRegion ? 'option-active' : ''}}" data-kind="region" data-value="不限" bindtap="selectMoreOption">不限</view>
+              <view class="option-chip {{draftRegion === '全国' ? 'option-active' : ''}}" data-kind="region" data-value="全国" bindtap="selectMoreOption">全国</view>
+              <picker range="{{provinceOptions}}" value="{{provincePickerIndex}}" bindchange="onProvincePick">
+                <view class="option-chip {{draftRegion && draftRegion !== '全国' ? 'option-active' : ''}}">{{draftRegion && draftRegion !== '全国' ? draftRegion : '选择省份'}}<text class="chip-arrow">▸</text></view>
+              </picker>
+            </view>
             <view class="source-tip">选省份时，同时显示这个省所在大区和全国性的比赛；选“全国”只看不限地区的比赛。</view>
           </view>
           <view id="fsec-1" class="filter-section">
             <view class="options-heading">专业大类<text class="heading-note">可多选</text></view>
-            <view class="option-list"><view class="option-chip {{(index === 0 && !draftCategories.length) || (index > 0 && draftCategories.indexOf(item) >= 0) ? 'option-active' : ''}}" wx:for="{{categoryOptions}}" wx:key="*this" data-kind="categories" data-value="{{item}}" bindtap="selectMoreOption">{{item}}</view></view>
+            <view class="option-list"><view class="option-chip {{item.selected ? 'option-active' : ''}}" wx:for="{{categoryChips}}" wx:key="label" data-kind="categories" data-value="{{item.label}}" bindtap="selectMoreOption">{{item.label}}</view></view>
           </view>
           <view id="fsec-2" class="filter-section">
             <view class="options-heading">赛事级别</view>

@@ -225,6 +225,14 @@ describe('首页筛选面板', () => {
   it('地区单选，点“不限”或再点一次取消；专业大类多选，点“不限”清空', () => {
     const page = makePage();
     page.openMoreFilters();
+    // 省份从滚轮里选：滚轮里没有“全国”
+    expect(page.data.provinceOptions).not.toContain('全国');
+    page.onProvincePick({ detail:{ value: page.data.provinceOptions.indexOf('江苏省') } });
+    expect(page.data).toMatchObject({ draftRegion:'江苏省', provincePickerIndex: page.data.provinceOptions.indexOf('江苏省') });
+    page.closeMoreFilters();
+    page.data.region = '江苏省';
+    page.openMoreFilters();
+    expect(page.data.provincePickerIndex).toBe(page.data.provinceOptions.indexOf('江苏省'));
     page.selectMoreOption(tap({kind:'region', value:'浙江省'}));
     expect(page.data.draftRegion).toBe('浙江省');
     page.selectMoreOption(tap({kind:'region', value:'不限'}));
@@ -237,8 +245,10 @@ describe('首页筛选面板', () => {
     expect(page.data.draftCategories).toEqual(['计算机与AI', '设计与艺术']);
     page.selectMoreOption(tap({kind:'categories', value:'计算机与AI'}));
     expect(page.data.draftCategories).toEqual(['设计与艺术']);
+    expect(page.data.categoryChips.filter((chip: any) => chip.selected).map((chip: any) => chip.label)).toEqual(['设计与艺术']);
     page.selectMoreOption(tap({kind:'categories', value:'不限'}));
     expect(page.data.draftCategories).toEqual([]);
+    expect(page.data.categoryChips.filter((chip: any) => chip.selected).map((chip: any) => chip.label)).toEqual(['不限']);
   });
 
   it('面板里改的条件点确定才生效；左边小圆点、筛选按钮上的个数跟着变', () => {

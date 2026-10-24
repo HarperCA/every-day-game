@@ -16,7 +16,9 @@ export const STATUS_TABS = [
   { label:'已截止', groups:['比赛中', '比赛已结束'] },
 ];
 const ALL = '不限';
-const regionOptions = [ALL, ...surveyProvinceOptions];
+// 地区只放“不限”“全国”两个按钮，具体省份点“选择省份”从底部滚轮里选（2026-10-24，用户定）
+const NATIONWIDE = '全国';
+const provinceOptions = surveyProvinceOptions.filter(item => item !== NATIONWIDE);
 const categoryOptions = [ALL, ...getProfessionOptions()];
 export const FILTER_SECTIONS = ['地区', '专业大类', '赛事级别', '参赛形式', '队伍人数', '报名费用', '报名方式', '报名时间'];
 const PANEL_FIELDS = ['eventLevel', 'participationFormat', 'teamSizeCategory', 'feeType', 'registrationOrganization', 'registrationWithin'] as const;
@@ -86,8 +88,9 @@ Page({
     draftFeeType: '',
     draftRegistrationOrganization: '',
     draftRegistrationWithin: '',
-    regionOptions,
-    categoryOptions,
+    provinceOptions,
+    provincePickerIndex: 0,
+    categoryChips: categoryOptions.map((label, index) => ({ label, selected: index === 0 })),
     levelOptions: levelOptions.slice(1),
     participationFormatOptions,
     teamSizeOptions,
@@ -214,7 +217,9 @@ Page({
   },
   updateSectionMarks() {
     const d = this.data as any;
-    this.setData({ sectionMarks: [d.draftRegion, d.draftCategories.length, ...PANEL_FIELDS.map(field => d[draftField(field)])].map(Boolean) });
+    // 专业大类是多选，选没选中在这里算好：页面模板不支持 indexOf 这类方法调用，写在模板里会一直算成没选中
+    const categoryChips = categoryOptions.map((label, index) => ({ label, selected: index === 0 ? !d.draftCategories.length : d.draftCategories.includes(label) }));
+    this.setData({ categoryChips, sectionMarks: [d.draftRegion, d.draftCategories.length, ...PANEL_FIELDS.map(field => d[draftField(field)])].map(Boolean) });
   },
   // 打开面板：搜索时显示搜索实际用的条件（不限地区 + 搜索词映射出的专业大类），否则显示当前条件
   openMoreFilters() {
@@ -225,6 +230,7 @@ Page({
     };
     for (const field of PANEL_FIELDS) drafts[draftField(field)] = (this.data as any)[field];
     this.sectionTops = [];
+    drafts.provincePickerIndex = Math.max(0, provinceOptions.indexOf(String(drafts.draftRegion)));
     this.setData({ ...drafts, activeSection: 0, sectionScrollInto: '', morePanelVisible: true }, () => {
       this.updateSectionMarks();
       this.refreshMorePreview();
@@ -261,6 +267,13 @@ Page({
     // 滑到底时最后几类到不了顶上，直接高亮最后一类
     if (this.optionsHeight && scrollTop + this.optionsHeight >= scrollHeight - 4) active = FILTER_SECTIONS.length - 1;
     if (active !== this.data.activeSection) this.setData({ activeSection: active });
+  },
+  // 省份滚轮选好：这个按钮显示省名
+  onProvincePick(event: WechatMiniprogram.PickerChange) {
+    const index = Number(event.detail.value);
+    const province = provinceOptions[index];
+    if (!province) return;
+    this.setData({ draftRegion: province, provincePickerIndex: index }, () => { this.updateSectionMarks(); this.refreshMorePreview(); });
   },
   // 面板里单选的条件：再点一次取消
   selectMoreOption(event: WechatMiniprogram.TouchEvent) {

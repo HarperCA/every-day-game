@@ -56,7 +56,8 @@ class ProjectFileTests(unittest.TestCase):
     def test_wxml_has_no_javascript_method_calls(self):
         for path in MINI.rglob("*.wxml"):
             text = path.read_text(encoding="utf-8")
-            self.assertNotRegex(text, r"\.(slice|map|filter|join|substring)\(", str(path))
+            # 页面模板不支持方法调用（2026-10-24 专业大类用了 indexOf，选中后一直不变蓝）
+            self.assertNotRegex(text, r"\.(slice|map|filter|join|substring|indexOf|includes|some|find)\(", str(path))
 
     def test_home_filters_can_be_cleared_without_a_separate_selected_area(self):
         page = (MINI / "pages/index/index.wxml").read_text(encoding="utf-8")
