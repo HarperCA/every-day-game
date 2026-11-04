@@ -32,10 +32,11 @@
 | 文件 | 做什么 | 端口 |
 |---|---|---|
 | competition-radar-admin.service | 新后台；只听本机，nginx 转 https://107-175-111-18.sslip.io/new-admin/（要口令登录，和旧后台同一个口令） | 4318 |
-| competition-radar-assistant.service | 新赛事助手；只听本机，切换时再接 nginx | 4320 |
+| competition-radar-assistant.service | 新赛事助手；只听本机，nginx 转 `/new-api/assistant` | 4320 |
 | competition-radar-user-sync-receiver.service | 收北京推来的用户数据 | 4332 |
 | nginx-sync-user.conf | `/sync/user` 只放北京 IP | — |
 | nginx-new-admin.conf | `/new-admin/` 转新后台 | — |
+| nginx-new-assistant.conf | `/new-api/assistant` 转新赛事助手（小程序直连，带北京签的令牌；旧路径 `/api/assistant` 还归旧服务器） | — |
 | ../定时/ 的五个 | 每晚流程、维护、回收站清理、建议屏蔽网站、公开比赛同步 | — |
 
 都以 root 运行（旧系统也是 root，AI 密钥文件、Codex 的登录都在 root 下）。
