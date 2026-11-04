@@ -1,0 +1,62 @@
+{
+ "说明": "旧代码 publicSync/preferenceValidation.js aggregatePreferences 在这些输入上的输出（2026-11-02 跑出来的）",
+ "prefs": [
+  {
+   "profession": "计算机与AI",
+   "categories": [
+    "计算机与AI",
+    "数学与统计",
+    "计算机与AI"
+   ],
+   "province": "福建省",
+   "survey_status": "completed"
+  },
+  {
+   "profession": "计算机与AI",
+   "categories": [],
+   "province": "",
+   "survey_status": "completed"
+  },
+  {
+   "profession": "不在名单里",
+   "categories": [
+    "数学与统计",
+    "乱写的"
+   ],
+   "province": "北京市",
+   "survey_status": "completed"
+  },
+  {
+   "profession": "设计与艺术",
+   "survey_status": "skipped"
+  },
+  {
+   "profession": "数学与统计",
+   "categories": [
+    "设计与艺术"
+   ],
+   "province": "福建省"
+  }
+ ],
+ "结果": {
+  "total": 5,
+  "completed": 4,
+  "skipped": 1,
+  "noProfession": 1,
+  "noCategory": 1,
+  "noProvince": 1,
+  "profession": {
+   "计算机与AI": 2,
+   "数学与统计": 1
+  },
+  "categories": {
+   "计算机与AI": 1,
+   "数学与统计": 2,
+   "设计与艺术": 1
+  },
+  "province": {
+   "福建省": 2,
+   "北京市": 1
+  }
+ }
+}

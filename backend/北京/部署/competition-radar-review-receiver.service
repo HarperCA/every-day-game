@@ -1,0 +1,21 @@
+# 竞赛雷达 北京收美国后台的审核结果（纠错采纳驳回、意见反馈回复，沟通/审核结果回传/北京端.mjs，2026-11-03）。
+# 只听本机 4333，nginx 把 /sync/review 转进来（只放美国服务器的 IP）。
+[Unit]
+Description=竞赛雷达 北京收审核结果回传
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/competition-radar/backend
+EnvironmentFile=/opt/competition-radar/beijing.env
+ExecStart=/usr/bin/node --preserve-symlinks-main /opt/competition-radar/backend/沟通/审核结果回传/北京端.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

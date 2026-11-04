@@ -1,0 +1,157 @@
+/* 框架的样式：顶栏、侧栏、页面外框、占位、通用卡片和表格。页面里的具体内容样式写在各自的组件里。 */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--底色);
+  color: var(--字);
+  font: var(--字号)/1.6 system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* 顶栏 */
+.顶栏 {
+  position: sticky; top: 0; z-index: 10;
+  height: var(--顶栏高);
+  display: flex; align-items: center; gap: var(--间距);
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  background: var(--面板); border-bottom: 1px solid var(--线);
+}
+.顶栏 .名称 { font-size: var(--字号中); font-weight: 600; }
+.顶栏 .名称 small { color: var(--弱字); font-weight: 400; margin-left: 8px; font-size: var(--字号小); }
+.顶栏 .右侧 { margin-left: auto; display: flex; align-items: center; gap: 12px; color: var(--次要字); font-size: var(--字号小); }
+
+/* 布局：左侧目录 + 中间内容 */
+.布局 { display: grid; grid-template-columns: var(--侧栏宽) minmax(0, 1fr); min-height: calc(100vh - var(--顶栏高)); }
+.侧栏 {
+  position: sticky; top: var(--顶栏高); align-self: start;
+  height: calc(100vh - var(--顶栏高)); overflow-y: auto;
+  padding: var(--间距) 10px; border-right: 1px solid var(--线); background: var(--面板);
+}
+.侧栏 { display: flex; flex-direction: column; gap: 14px; }
+/* 分类只是标题，不能点；子页面是链接（2026-11-01 用户定） */
+.分类 { display: flex; flex-direction: column; gap: 2px; }
+.分类标题 { padding: 4px 12px; color: var(--弱字); font-size: var(--字号小); font-weight: 600; letter-spacing: .04em; cursor: default; user-select: none; }
+.侧栏 a {
+  display: block; padding: 7px 12px 7px 20px; border-radius: 8px;
+  color: var(--次要字); text-decoration: none;
+}
+.侧栏 a:hover { background: var(--面板浅); color: var(--字); }
+.侧栏 a.当前 { background: var(--强调浅); color: var(--强调); font-weight: 600; }
+
+.内容 {
+  width: 100%; max-width: 1180px; margin-inline: auto;
+  padding-block: 24px 80px;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+/* 页面外框：中间只放当前这一页 */
+.页 {
+  background: var(--面板); border: 1px solid var(--线); border-radius: var(--圆角);
+  box-shadow: var(--阴影); min-width: 0;
+}
+.页头 { padding: 18px 20px 0; display: flex; flex-direction: column; gap: 4px; }
+.页路径 { color: var(--弱字); font-size: var(--字号小); }
+.页头 h1 { font-size: var(--字号大); }
+.页头 p { margin: 0; color: var(--次要字); }
+.页身 { padding: 16px 20px 20px; min-width: 0; }
+.页顶部 { padding: 16px 20px 4px; border-bottom: 1px solid var(--线); }
+.页顶部 h2 { font-size: var(--字号中, 15px); margin: 0 0 4px; }
+.标签说明 { margin: 0 0 12px; color: var(--次要字); font-size: var(--字号小); }
+
+/* 状态：加载中、出错、空白、占位 */
+.状态 { padding: 28px; text-align: center; color: var(--弱字); }
+.状态.出错 { color: var(--警示); background: var(--警示浅); border-radius: 8px; }
+.占位 {
+  border: 1px dashed var(--线); border-radius: 8px; padding: 18px 20px;
+  background: var(--面板浅); color: var(--次要字); font-size: var(--字号小);
+}
+.占位 strong { display: block; color: var(--字); font-size: var(--字号); margin-bottom: 6px; }
+.占位 code { background: var(--底色); padding: 1px 6px; border-radius: 4px; }
+.占位 ul { margin: 8px 0 0; padding-left: 18px; }
+.示例标记 {
+  display: inline-block; font-size: var(--字号小); color: var(--色2);
+  border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; line-height: 20px;
+}
+
+/* 通用工具栏和表格外框 */
+.工具栏 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.工具栏 input, .工具栏 select {
+  font: inherit; color: inherit; background: var(--面板); border: 1px solid var(--线);
+  border-radius: 8px; padding: 6px 10px; min-width: 0;
+}
+.表格外框 { overflow-x: auto; border: 1px solid var(--线); border-radius: 8px; }
+table.表格 { width: 100%; border-collapse: collapse; font-size: var(--字号小); }
+.表格 th, .表格 td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--线); white-space: nowrap; }
+.表格 th { color: var(--次要字); font-weight: 500; background: var(--面板浅); }
+.表格 tr:last-child td { border-bottom: 0; }
+/* 表格里文字多的格子（操作记录的对象、详情）可以换行 */
+.表格 td.可换行 { white-space: normal; min-width: 12em; }
+.翻页 { justify-content: center; margin: 12px 0 0; }
+
+@media (max-width: 760px) {
+  .布局 { grid-template-columns: minmax(0, 1fr); }
+  /* 窄屏：所有子页面排成一行，左右滑；分类标题跟在前面 */
+  .侧栏 { position: static; height: auto; flex-direction: row; overflow-x: auto; gap: 12px; border-right: 0; border-bottom: 1px solid var(--线); }
+  .分类 { flex-direction: row; align-items: center; flex-shrink: 0; }
+  .分类标题 { padding: 4px 4px 4px 0; }
+  .侧栏 a { white-space: nowrap; padding: 6px 10px; }
+}
+
+/* 切换按钮（总览里切换按什么分） */
+.切换 { border: 1px solid var(--线); background: var(--面板); padding: 4px 12px; border-radius: 999px; color: var(--次要字); }
+.切换.选中 { border-color: var(--强调); color: var(--强调); background: var(--强调浅); font-weight: 600; }
+.工具栏 button:not(.切换) { border: 1px solid var(--线); background: var(--面板); padding: 6px 12px; border-radius: 8px; }
+.工具栏 button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 表格里第二行的小字 */
+.表格 .次要, .工具栏 .次要 { color: var(--弱字); font-size: var(--字号小); }
+
+/* 两级列表（比赛管理）：一级比赛一行，届次缩进在下面；不用表格，窄屏也不左右滑 */
+.主按钮 { border: 1px solid var(--强调) !important; background: var(--强调) !important; color: #fff; padding: 6px 14px; border-radius: 8px; }
+.提示条 { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: var(--强调浅); color: var(--强调); font-size: var(--字号小); }
+.两级列表 { border: 1px solid var(--线); border-radius: 8px; }
+.一级行, .二级行 { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--线); min-width: 0; }
+.两级列表 > :first-child { border-top: 0; }
+.一级行 { background: var(--面板浅); font-weight: 600; margin-top: 0; }
+.二级行 { padding-left: calc(12px + 2em); border-top-style: dashed; }
+.一级行 .名称, .二级行 .名称 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.行尾 { display: flex; gap: 6px; flex: none; }
+.两级列表 button { border: 1px solid var(--线); background: var(--面板); padding: 2px 10px; border-radius: 6px; font-size: var(--字号小); font-weight: 400; flex: none; }
+.两级列表 button.危险 { color: var(--警示); }
+.状态标签 { flex: none; font: inherit; font-size: var(--字号小); border-radius: 999px; padding: 1px 8px; border: 1px solid currentColor; background: var(--面板); }
+.状态标签.已发布 { color: var(--色1); }
+.状态标签.已归档 { color: var(--色3); }
+.状态标签.待人工审核 { color: var(--色2); }
+
+/* 编辑框 */
+.编辑框 { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 1px solid var(--线); border-radius: var(--圆角); background: var(--面板); color: var(--字); padding: 20px; }
+.编辑框::backdrop { background: rgb(0 0 0 / 35%); }
+.编辑框 h3 { margin: 0 0 12px; font-size: var(--字号中); }
+.表单 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.表单项 { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 10px; align-items: start; }
+.表单项 > span:first-child { color: var(--次要字); font-size: var(--字号小); padding-top: 6px; }
+.表单项 input[type="text"], .表单项 select, .表单项 textarea { font: inherit; color: inherit; background: var(--面板); border: 1px solid var(--线); border-radius: 6px; padding: 5px 8px; width: 100%; box-sizing: border-box; }
+.表单项 input[type="checkbox"] { justify-self: start; margin-top: 8px; }
+.表单项 textarea.代码 { font-family: ui-monospace, Consolas, monospace; font-size: var(--字号小); }
+.多选 { display: flex; flex-wrap: wrap; gap: 4px 12px; padding-top: 4px; }
+.多选 label { display: inline-flex; gap: 4px; align-items: center; font-size: var(--字号小); }
+.错误栏 { color: var(--警示); font-size: var(--字号小); margin-top: 10px; white-space: pre-wrap; }
+.错误栏:empty { display: none; }
+.按钮行 { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; position: sticky; bottom: -20px; background: var(--面板); padding: 10px 0; }
+.按钮行 button { border: 1px solid var(--线); background: var(--面板); padding: 6px 16px; border-radius: 8px; }
+@media (max-width: 760px) { .表单项 { grid-template-columns: 1fr; gap: 4px; } }
+
+/* 编辑框里的封面海报 */
+.海报栏 { border: 1px solid var(--线); border-radius: 8px; margin: 14px 0 0; padding: 10px 14px; display: grid; gap: 8px; }
+.海报栏 legend { padding: 0 6px; color: var(--次要字); font-size: var(--字号小); }
+.海报栏 .次要 { color: var(--弱字); font-size: var(--字号小); }
+.海报栏 img { display: block; max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--线); background: var(--面板浅); }
+.海报消息 { color: var(--强调); font-size: var(--字号小); }
+.海报消息:empty { display: none; }
+.海报现状 { display: grid; gap: 10px; }
+.海报块 { display: grid; gap: 6px; justify-items: start; }
+.候选项 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.海报栏 button { border: 1px solid var(--线); background: var(--面板); padding: 2px 10px; border-radius: 6px; font-size: var(--字号小); }
+.海报栏 button.危险 { color: var(--警示); }

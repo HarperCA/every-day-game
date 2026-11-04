@@ -1,0 +1,10 @@
+# 竞赛雷达 每日补缺失（每天 10:00）：挑最有用的 20 个缺字段的记录交给 Codex 补（美国/db/维护/补缺失/，2026-11-03）。
+[Unit]
+Description=竞赛雷达 每日补缺失（每天 10:00）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/美国/db/维护/补缺失/run.mjs

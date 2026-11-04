@@ -1,0 +1,11 @@
+# 竞赛雷达 每日补缺失：每天北京时间 10:00（夜里的流程已经跑完）。错过了不补跑。
+[Unit]
+Description=竞赛雷达 每日补缺失（每天 10:00）
+
+[Timer]
+OnCalendar=*-*-* 10:00:00 Asia/Shanghai
+Persistent=false
+Unit=competition-radar-fill.service
+
+[Install]
+WantedBy=timers.target

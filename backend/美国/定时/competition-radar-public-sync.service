@@ -1,0 +1,12 @@
+# 竞赛雷达 公开比赛同步到北京（每 5 分钟）
+# 把比赛库里已公开的比赛、届次和海报推到北京主数据库，只推有变化的，每 24 小时整体重推一次。环境变量（BACKEND_DIR、DB_DIR、POSTER_DIR、
+# SYNC_ENDPOINT、SYNC_SECRET_FILE、SYNC_STATE_FILE、PATH 里要有 Node 22）写在服务器上的 /etc/competition-radar/env（权限 600，不进仓库），说明见同目录 README.md。
+[Unit]
+Description=竞赛雷达 公开比赛同步到北京（每 5 分钟）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/沟通/公开比赛同步/美国端.mjs

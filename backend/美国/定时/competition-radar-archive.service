@@ -1,0 +1,11 @@
+# 竞赛雷达 每日归档（每天 2:00）：报名已截止的已发布届次全部归档，算下一届预计（美国/db/维护/归档/，2026-11-03）。
+# 接替旧系统 daily-contest-archive.timer，时间一样。
+[Unit]
+Description=竞赛雷达 每日归档（每天 2:00）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/美国/db/维护/归档/run.mjs

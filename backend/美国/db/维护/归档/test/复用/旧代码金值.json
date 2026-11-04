@@ -1,0 +1,248 @@
+{
+ "说明": "旧系统线上归档代码（adminData archiveSchedule.js + registrationSchedule.js + publicCache.js registrationStatus，11-03 拷下）在这些输入上的结果",
+ "now": "2026-11-03T04:00:00.000Z",
+ "例子们": [
+  {
+   "id": "只写日期-已过",
+   "name": "只写日期-已过",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-10-31"
+   }
+  },
+  {
+   "id": "只写日期-今天截止",
+   "name": "只写日期-今天截止",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-11-03"
+   }
+  },
+  {
+   "id": "只写日期-昨天截止",
+   "name": "只写日期-昨天截止",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-11-02"
+   }
+  },
+  {
+   "id": "还没截止",
+   "name": "还没截止",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-10-01",
+    "registration_end": "2026-12-01"
+   }
+  },
+  {
+   "id": "带钟点-刚过",
+   "name": "带钟点-刚过",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-10-01T09:00:00+08:00",
+    "registration_end": "2026-11-03T11:00:00+08:00"
+   }
+  },
+  {
+   "id": "带钟点-还差一点",
+   "name": "带钟点-还差一点",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-10-01T09:00:00+08:00",
+    "registration_end": "2026-11-03T13:00:00+08:00"
+   }
+  },
+  {
+   "id": "没截止日-比赛已结束",
+   "name": "没截止日-比赛已结束",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-06-01",
+    "competition_start": "2026-08-01",
+    "competition_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "没开始日-用比赛开始推算",
+   "name": "没开始日-用比赛开始推算",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_end": "2026-10-01",
+    "competition_start": "2026-10-20"
+   }
+  },
+  {
+   "id": "起止都没有-说明待公布-比赛已结束",
+   "name": "起止都没有-说明待公布-比赛已结束",
+   "dataStatus": "published",
+   "schedule": {
+    "pending_announcement": true,
+    "competition_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "起止都没有-没说明",
+   "name": "起止都没有-没说明",
+   "dataStatus": "published",
+   "schedule": {
+    "competition_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "开始晚于截止",
+   "name": "开始晚于截止",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-10-20",
+    "registration_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "截止日写坏了",
+   "name": "截止日写坏了",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-13-45"
+   }
+  },
+  {
+   "id": "人工指定报名中-但截止已过",
+   "name": "人工指定报名中-但截止已过",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-10-01",
+    "status_override": "报名中"
+   }
+  },
+  {
+   "id": "人工指定已截止-截止还没到",
+   "name": "人工指定已截止-截止还没到",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2026-10-01",
+    "registration_end": "2026-12-01",
+    "status_override": "已截止"
+   }
+  },
+  {
+   "id": "已归档的",
+   "name": "已归档的",
+   "dataStatus": "archived",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "草稿",
+   "name": "草稿",
+   "dataStatus": "draft",
+   "schedule": {
+    "registration_start": "2026-09-01",
+    "registration_end": "2026-10-01"
+   }
+  },
+  {
+   "id": "闰年开始日",
+   "name": "闰年开始日",
+   "dataStatus": "published",
+   "schedule": {
+    "registration_start": "2028-02-29",
+    "registration_end": "2028-03-10"
+   }
+  }
+ ],
+ "结果": [
+  {
+   "编号": "只写日期-已过",
+   "归档": true,
+   "下一届预计": "2027-09-01T00:00:00.000Z"
+  },
+  {
+   "编号": "只写日期-今天截止",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "只写日期-昨天截止",
+   "归档": true,
+   "下一届预计": "2027-09-01T00:00:00.000Z"
+  },
+  {
+   "编号": "还没截止",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "带钟点-刚过",
+   "归档": true,
+   "下一届预计": "2027-10-01T01:00:00.000Z"
+  },
+  {
+   "编号": "带钟点-还差一点",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "没截止日-比赛已结束",
+   "归档": true,
+   "下一届预计": "2027-06-01T00:00:00.000Z"
+  },
+  {
+   "编号": "没开始日-用比赛开始推算",
+   "归档": true,
+   "下一届预计": "2027-10-20T00:00:00.000Z"
+  },
+  {
+   "编号": "起止都没有-说明待公布-比赛已结束",
+   "归档": true,
+   "下一届预计": null
+  },
+  {
+   "编号": "起止都没有-没说明",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "开始晚于截止",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "截止日写坏了",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "人工指定报名中-但截止已过",
+   "归档": true,
+   "下一届预计": "2027-09-01T00:00:00.000Z"
+  },
+  {
+   "编号": "人工指定已截止-截止还没到",
+   "归档": true,
+   "下一届预计": "2027-10-01T00:00:00.000Z"
+  },
+  {
+   "编号": "已归档的",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "草稿",
+   "归档": false,
+   "下一届预计": null
+  },
+  {
+   "编号": "闰年开始日",
+   "归档": false,
+   "下一届预计": null
+  }
+ ]
+}

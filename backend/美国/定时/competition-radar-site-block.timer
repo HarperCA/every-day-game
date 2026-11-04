@@ -1,0 +1,12 @@
+# 竞赛雷达 统计建议屏蔽的网站：每周一北京时间 9:00（服务器系统时区是 UTC；OnCalendar 末尾写时区要 systemd 235 以上）。
+# 搬自旧系统的 daily-contest-site-block.timer。错过了不补跑（Persistent=false），下周一再统计。
+[Unit]
+Description=竞赛雷达 统计建议屏蔽的网站（每周一 9:00）
+
+[Timer]
+OnCalendar=Mon *-*-* 09:00:00 Asia/Shanghai
+Persistent=false
+Unit=competition-radar-site-block.service
+
+[Install]
+WantedBy=timers.target

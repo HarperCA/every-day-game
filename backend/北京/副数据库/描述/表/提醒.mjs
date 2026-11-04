@@ -1,0 +1,31 @@
+// 提醒挂届次（届次在主数据库，跨库查不了，写“对应”不写“指向”）。字段沿用旧的上海 reminder 集合（database/schemas/reminder.schema.json）。
+// 提醒编号由小程序生成（同一届、同一件事可以设几个提前量）；到期扫描按 remind_at + delivery_status 走索引。
+export default {
+  表名: 'reminder',
+  说明: '提醒',
+  主键: 'id',
+  字段: {
+    id: { 说明: '提醒编号（小程序生成）', 必填: true, 类型: '编号' },
+    user_id: { 说明: '提醒谁', 必填: true, 类型: '编号', 指向: 'user_account' },
+    edition_id: { 说明: '提醒哪一届', 必填: true, 类型: '编号', 对应: 'edition' },
+    competition_name: { 说明: '比赛名称（发消息时用）', 必填: true, 类型: '文字' },
+    task_name: { 说明: '提醒标题（订阅消息里最多 20 个字）', 必填: true, 类型: '文字', 最长: 20 },
+    event_type: { 说明: '提醒什么', 必填: true, 类型: '文字', 可选值: ['registration_start', 'registration_end'] },
+    event_label: { 说明: '提醒什么（显示用：报名开始、报名截止）', 必填: true, 类型: '文字' },
+    target_at: { 说明: '那件事的时间', 必填: true, 类型: '时间' },
+    advance_key: { 说明: '提前多久', 必填: true, 类型: '文字', 可选值: ['1d', '3d', '5d', '7d', '15d', '1m', '3m', 'custom'] },
+    advance_label: { 说明: '提前多久（显示用）', 必填: true, 类型: '文字' },
+    offset_ms: { 说明: '提前的毫秒数', 必填: true, 类型: '整数' },
+    remind_at: { 说明: '什么时候提醒', 必填: true, 类型: '时间' },
+    authorization_status: { 说明: '订阅消息授权状态', 必填: true, 类型: '文字', 可选值: ['not_requested', 'accepted', 'rejected', 'unavailable'], 默认: 'not_requested' },
+    delivery_status: { 说明: '发送状态', 必填: true, 类型: '文字', 可选值: ['pending', 'queued', 'sent', 'failed', 'manual_required', 'expired', 'cancelled'], 默认: 'pending' },
+    schedule_change_status: { 说明: '比赛时间有没有变', 必填: true, 类型: '文字', 可选值: ['normal', 'time_updated', 'postponed', 'cancelled'], 默认: 'normal' },
+    subscription_template_id: { 说明: '订阅消息模板', 必填: false, 类型: '文字' },
+    retry_count: { 说明: '发送重试了几次', 必填: true, 类型: '整数', 默认: 0 },
+    last_error: { 说明: '上次发送失败的原因', 必填: false, 类型: '文字' },
+    sent_at: { 说明: '发出的时间', 必填: false, 类型: '时间' },
+    created_at: { 说明: '设置时间', 必填: true, 类型: '时间' },
+    updated_at: { 说明: '最后修改时间', 必填: true, 类型: '时间' },
+  },
+  索引: [['user_id'], ['remind_at', 'delivery_status'], ['edition_id']],
+};
