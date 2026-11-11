@@ -1,0 +1,11 @@
+# 竞赛雷达 北京用户数据同步到美国：每分钟（2026-11-06 用户定）。没有变化时一个请求都不发。
+[Unit]
+Description=竞赛雷达 北京用户数据同步到美国（每分钟）
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=false
+Unit=competition-radar-user-sync.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>竞赛雷达后台</title>
+  <link rel="stylesheet" href="./样式/主题.css">
+  <link rel="stylesheet" href="./样式/框架.css">
+  <link rel="stylesheet" href="./框架/组件/环形图.css">
+</head>
+<body>
+  <!-- 这里只有外框。左侧目录和当前这一页都由 框架/启动.mjs 按 目录清单.mjs 生成，内容由各功能文件夹里的函数提供。 -->
+  <header class="顶栏">
+    <div class="名称">竞赛雷达后台<small>比赛库管理</small></div>
+    <div class="右侧" id="顶栏右侧"></div>
+  </header>
+  <div class="布局">
+    <nav class="侧栏" id="目录" aria-label="后台目录"></nav>
+    <main class="内容" id="内容"></main>
+  </div>
+  <script type="module" src="./框架/启动.mjs"></script>
+</body>
+</html>

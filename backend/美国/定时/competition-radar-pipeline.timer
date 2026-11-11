@@ -1,0 +1,12 @@
+# 竞赛雷达 每晚寻找流程（每天 1:00）：按北京时间（服务器系统时区是 UTC；OnCalendar 末尾写时区要 systemd 235 以上）。
+# 服务器关着、错过了时间不补跑（Persistent=false），免得白天和维护撞在一起。
+[Unit]
+Description=竞赛雷达 每晚寻找流程（每天 1:00）
+
+[Timer]
+OnCalendar=*-*-* 01:00:00 Asia/Shanghai
+Persistent=false
+Unit=competition-radar-pipeline.service
+
+[Install]
+WantedBy=timers.target

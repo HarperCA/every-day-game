@@ -1,0 +1,22 @@
+# 竞赛雷达 北京入口：小程序的请求（/api/login、userData、publicData、clientLog）都从这里进；发提醒的调度也在这个进程里（2026-11-03）。
+# 只听本机 4330，nginx 把 https://xiaohuiworks.cn/api/ 转进来。环境变量见同目录 README.md。
+[Unit]
+Description=竞赛雷达 北京入口（小程序接口 + 发提醒）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/competition-radar/backend
+EnvironmentFile=/opt/competition-radar/beijing.env
+EnvironmentFile=/opt/competition-radar/secrets/session.env
+ExecStart=/usr/bin/node --preserve-symlinks-main /opt/competition-radar/backend/北京/入口/服务.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

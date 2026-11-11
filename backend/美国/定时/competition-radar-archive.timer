@@ -1,0 +1,11 @@
+# 竞赛雷达 每日归档：每天北京时间 2:00。服务器关着、错过了时间不补跑（Persistent=false），第二天照常。
+[Unit]
+Description=竞赛雷达 每日归档（每天 2:00）
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Asia/Shanghai
+Persistent=false
+Unit=competition-radar-archive.service
+
+[Install]
+WantedBy=timers.target

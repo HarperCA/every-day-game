@@ -1,0 +1,11 @@
+# 竞赛雷达 后台多选的 AI 维护：每 2 分钟看一眼队列。错过了不补跑。
+[Unit]
+Description=竞赛雷达 后台多选的 AI 维护（每 2 分钟看一眼队列）
+
+[Timer]
+OnCalendar=*-*-* *:00/2:00
+Persistent=false
+Unit=competition-radar-ai-queue.service
+
+[Install]
+WantedBy=timers.target

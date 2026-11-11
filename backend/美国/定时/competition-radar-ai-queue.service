@@ -1,0 +1,10 @@
+# 竞赛雷达 后台多选的 AI 维护：看队列，有就跑（只调 Codex），空的马上退出。见 美国/db/维护/批量.mjs。
+[Unit]
+Description=竞赛雷达 后台多选的 AI 维护（每 2 分钟看一眼队列）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/美国/db/维护/run.mjs --队列

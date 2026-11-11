@@ -1,0 +1,16 @@
+# 竞赛雷达 北京把用户数据推到美国的只读副本（沟通/用户数据同步/北京端.mjs，2026-11-03）。由同名 .timer 每 10 分钟跑一次。
+# 美国接收端部署好、beijing.env 里填了 USER_SYNC_ENDPOINT 之后才开定时器。
+[Unit]
+Description=竞赛雷达 北京用户数据同步到美国
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/competition-radar/backend
+EnvironmentFile=/opt/competition-radar/beijing.env
+ExecStart=/usr/bin/node --preserve-symlinks-main /opt/competition-radar/backend/沟通/用户数据同步/北京端.mjs
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077

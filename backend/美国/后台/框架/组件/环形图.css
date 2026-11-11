@@ -1,0 +1,27 @@
+/* 环形图：左边图，右边图例和说明；窄屏上下排。 */
+.环形图布局 { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); gap: 28px; align-items: center; }
+.环形图 { width: 100%; max-width: 320px; height: auto; display: block; margin-inline: auto; }
+.环形图 .扇环 { cursor: pointer; transition: opacity .15s, transform .15s; transform-origin: 120px 120px; outline: none; }
+.环形图 .扇环:hover, .环形图 .扇环:focus-visible { transform: scale(1.03); }
+.环形图 .扇环.淡 { opacity: .25; }
+.环形图 .中心 { cursor: pointer; }
+.环形图 .中心 circle { fill: var(--面板); }
+.环形图 .中心数字 { font-size: 40px; font-weight: 700; fill: var(--字); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.环形图 .中心名称 { font-size: 12px; fill: var(--次要字); text-anchor: middle; }
+
+.图例 { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.图例 button {
+  width: 100%; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 3.5em; gap: 10px; align-items: center;
+  border: 0; background: none; padding: 8px 10px; border-radius: 8px; text-align: left;
+}
+.图例 button:hover { background: var(--面板浅); }
+.图例 i { width: 12px; height: 12px; border-radius: 3px; }
+.图例 .名 { font-weight: 500; }
+.图例 .数 { font-variant-numeric: tabular-nums; }
+.图例 .比 { color: var(--次要字); text-align: right; font-variant-numeric: tabular-nums; }
+.图例 .说明 { margin: 0 10px 4px 32px; color: var(--次要字); font-size: var(--字号小); }
+.图例 li.选中 button { background: var(--强调浅); }
+
+@media (max-width: 760px) {
+  .环形图布局 { grid-template-columns: minmax(0, 1fr); }
+}

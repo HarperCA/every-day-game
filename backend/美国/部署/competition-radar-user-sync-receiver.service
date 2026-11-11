@@ -1,0 +1,19 @@
+# 竞赛雷达 收北京推来的用户数据，写进美国的用户副本（沟通/用户数据同步/美国端.mjs，2026-11-03）。只听本机 4332，nginx 把 /sync/user 转进来（只放北京服务器的 IP）。
+[Unit]
+Description=竞赛雷达 收北京用户数据（只听本机 4332）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/competition-radar/env
+EnvironmentFile=/opt/competition-radar/secrets/session.env
+ExecStart=/opt/competition-radar/node/bin/node /opt/competition-radar/backend/沟通/用户数据同步/美国端.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

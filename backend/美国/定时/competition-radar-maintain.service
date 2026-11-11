@@ -1,0 +1,12 @@
+# 竞赛雷达 维护比赛库（每天 9:00–18:00 每 5 分钟一个比赛）
+# 不叠着跑、流程在跑就跳过，由维护自己的锁保证。环境变量（BACKEND_DIR、DB_DIR、AI_KEYS_DIR、PIPELINE_LOG_DIR、MAINTAIN_LOG_DIR、PATH 里要有 Node 22）
+# 写在服务器上的 /etc/competition-radar/env（权限 600，不进仓库），说明见同目录 README.md。
+[Unit]
+Description=竞赛雷达 维护比赛库（每天 9:00–18:00 每 5 分钟一个比赛）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/美国/db/维护/run.mjs

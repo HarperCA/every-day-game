@@ -1,0 +1,12 @@
+# 竞赛雷达 公开比赛同步到北京（每 5 分钟，全天）。没有变化时一个请求都不发。
+# 服务器关着、错过了时间不补跑（Persistent=false），开机后下一个 5 分钟照常跑。
+[Unit]
+Description=竞赛雷达 公开比赛同步到北京（每 5 分钟）
+
+[Timer]
+OnCalendar=*-*-* *:00/5:00
+Persistent=false
+Unit=competition-radar-public-sync.service
+
+[Install]
+WantedBy=timers.target

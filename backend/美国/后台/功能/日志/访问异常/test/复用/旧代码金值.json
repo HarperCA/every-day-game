@@ -1,0 +1,233 @@
+{
+ "说明": "旧代码 adminData/clientIssues.js aggregateClientIssues 在这些输入上的输出（2026-11-02 跑出来的）",
+ "issues": [
+  {
+   "kind": "load_failed",
+   "at": "2026-11-01T03:00:00.000Z",
+   "page": "pages/home/home",
+   "action": "list",
+   "message": "超时",
+   "networkType": "4g",
+   "platform": "android"
+  },
+  {
+   "kind": "cloud_fallback",
+   "at": "2026-11-01T05:00:00.000Z",
+   "page": "pages/home/home",
+   "action": "list",
+   "message": "x",
+   "networkType": "wifi"
+  },
+  {
+   "kind": "slow",
+   "at": "2026-11-02T01:00:00.000Z",
+   "page": "pages/detail/detail",
+   "action": "get",
+   "elapsed_ms": 4200
+  },
+  {
+   "kind": "js_error",
+   "received_at": "2026-11-02T01:30:00.000Z",
+   "page": "pages/me/me",
+   "message": "TypeError"
+  },
+  {
+   "kind": "user_data_failed",
+   "at": "2026-11-02T01:40:00.000Z",
+   "action": "addFavorite",
+   "networkType": "wifi"
+  },
+  {
+   "kind": "load_failed",
+   "at": "2026-10-01T01:00:00.000Z",
+   "message": "太早了，不在范围内"
+  }
+ ],
+ "stats": [
+  {
+   "date": "2026-11-01",
+   "list": 40,
+   "get": 10
+  },
+  {
+   "date": "2026-11-02",
+   "list": 5,
+   "get": 0
+  },
+  {
+   "date": "2026-09-30",
+   "list": 99,
+   "get": 1
+  }
+ ],
+ "now": "2026-11-02T04:00:00.000Z",
+ "结果": {
+  "1": {
+   "days": 1,
+   "kindLabels": {
+    "cloud_fallback": "上海失败，已退回美国服务器",
+    "load_failed": "加载失败（用户看到了报错）",
+    "slow": "加载超过 3 秒",
+    "user_data_failed": "登录/收藏/提醒失败",
+    "js_error": "小程序代码报错"
+   },
+   "summary": {
+    "attempts": 5,
+    "successRate": 1,
+    "issues": 3
+   },
+   "daily": [
+    {
+     "date": "2026-11-02",
+     "shanghaiOk": 5,
+     "fallback": 0,
+     "failed": 0,
+     "slow": 1,
+     "userDataFailed": 1,
+     "jsError": 1,
+     "attempts": 5,
+     "successRate": 1
+    }
+   ],
+   "byKind": {
+    "slow": 1,
+    "js_error": 1,
+    "user_data_failed": 1
+   },
+   "byNetwork": {
+    "unknown": 2,
+    "wifi": 1
+   },
+   "byAction": {
+    "get": 1,
+    "addFavorite": 1
+   },
+   "recent": [
+    {
+     "kind": "js_error",
+     "received_at": "2026-11-02T01:30:00.000Z",
+     "page": "pages/me/me",
+     "message": "TypeError"
+    },
+    {
+     "kind": "user_data_failed",
+     "at": "2026-11-02T01:40:00.000Z",
+     "action": "addFavorite",
+     "networkType": "wifi"
+    },
+    {
+     "kind": "slow",
+     "at": "2026-11-02T01:00:00.000Z",
+     "page": "pages/detail/detail",
+     "action": "get",
+     "elapsed_ms": 4200
+    }
+   ]
+  },
+  "3": {
+   "days": 3,
+   "kindLabels": {
+    "cloud_fallback": "上海失败，已退回美国服务器",
+    "load_failed": "加载失败（用户看到了报错）",
+    "slow": "加载超过 3 秒",
+    "user_data_failed": "登录/收藏/提醒失败",
+    "js_error": "小程序代码报错"
+   },
+   "summary": {
+    "attempts": 57,
+    "successRate": 0.9824561403508771,
+    "issues": 5
+   },
+   "daily": [
+    {
+     "date": "2026-11-02",
+     "shanghaiOk": 5,
+     "fallback": 0,
+     "failed": 0,
+     "slow": 1,
+     "userDataFailed": 1,
+     "jsError": 1,
+     "attempts": 5,
+     "successRate": 1
+    },
+    {
+     "date": "2026-11-01",
+     "shanghaiOk": 50,
+     "fallback": 1,
+     "failed": 1,
+     "slow": 0,
+     "userDataFailed": 0,
+     "jsError": 0,
+     "attempts": 52,
+     "successRate": 0.9807692307692307
+    },
+    {
+     "date": "2026-10-31",
+     "shanghaiOk": 0,
+     "fallback": 0,
+     "failed": 0,
+     "slow": 0,
+     "userDataFailed": 0,
+     "jsError": 0,
+     "attempts": 0,
+     "successRate": null
+    }
+   ],
+   "byKind": {
+    "load_failed": 1,
+    "cloud_fallback": 1,
+    "slow": 1,
+    "js_error": 1,
+    "user_data_failed": 1
+   },
+   "byNetwork": {
+    "4g": 1,
+    "wifi": 2,
+    "unknown": 2
+   },
+   "byAction": {
+    "list": 2,
+    "get": 1,
+    "addFavorite": 1
+   },
+   "recent": [
+    {
+     "kind": "js_error",
+     "received_at": "2026-11-02T01:30:00.000Z",
+     "page": "pages/me/me",
+     "message": "TypeError"
+    },
+    {
+     "kind": "user_data_failed",
+     "at": "2026-11-02T01:40:00.000Z",
+     "action": "addFavorite",
+     "networkType": "wifi"
+    },
+    {
+     "kind": "slow",
+     "at": "2026-11-02T01:00:00.000Z",
+     "page": "pages/detail/detail",
+     "action": "get",
+     "elapsed_ms": 4200
+    },
+    {
+     "kind": "cloud_fallback",
+     "at": "2026-11-01T05:00:00.000Z",
+     "page": "pages/home/home",
+     "action": "list",
+     "message": "x",
+     "networkType": "wifi"
+    },
+    {
+     "kind": "load_failed",
+     "at": "2026-11-01T03:00:00.000Z",
+     "page": "pages/home/home",
+     "action": "list",
+     "message": "超时",
+     "networkType": "4g",
+     "platform": "android"
+    }
+   ]
+  }
+ }
+}

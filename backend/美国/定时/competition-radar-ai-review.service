@@ -1,0 +1,11 @@
+# 竞赛雷达 AI 审查（约每 5 小时一批）：先跑后台多选的队列，再挑 100 个比赛（待人工审核优先），只调 Codex。见 美国/db/维护/批量.mjs。
+# 不叠着跑、每晚流程开始了就停，由维护自己的锁保证。环境变量写在服务器上的 /etc/competition-radar/env。
+[Unit]
+Description=竞赛雷达 AI 审查（约每 5 小时 100 个比赛）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/usr/bin/env node ${BACKEND_DIR}/美国/db/维护/run.mjs --批 100
