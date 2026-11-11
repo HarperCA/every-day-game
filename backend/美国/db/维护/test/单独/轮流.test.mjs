@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest';
 import { tempRoot } from '../../../../../共用/test/复用/临时目录.mjs';
 import { openDb } from '../../../index.mjs';
 import { 挑下一个比赛, 维护一个比赛, 间隔天数 } from '../../轮流.mjs';
-import { 拿锁, 流程在跑 } from '../../运行锁.mjs';
+import { 拿锁, 流程在跑 } from '../../../../../共用/工具/运行锁.mjs';
 
 const now = new Date('2026-11-01T02:00:00.000Z');   // 北京时间 10:00
 const 天前 = n => new Date(now.getTime() - n * 86400000).toISOString();
@@ -78,14 +78,15 @@ describe('维护一个比赛', () => {
 });
 
 describe('运行锁', () => {
-  test('不叠着跑：上一次还拿着锁，这一次拿不到；放掉以后能拿；超过 1 小时没放的算上次异常退出留下的', () => {
-    const file = path.join(tempRoot(), '.维护中.lock');
-    const 放 = 拿锁(file, { now });
+  test('同一个维护目录只允许一个写事务，释放后下一次能拿锁', () => {
+    const 目录 = tempRoot();
+    const 放 = 拿锁(目录);
     expect(放).toBeTypeOf('function');
-    expect(拿锁(file, { now })).toBeNull();
+    expect(拿锁(目录)).toBeNull();
     放();
-    expect(拿锁(file, { now })).toBeTypeOf('function');
-    expect(拿锁(file, { now: new Date(now.getTime() + 61 * 60000) })).toBeTypeOf('function');
+    const 再放 = 拿锁(目录);
+    expect(再放).toBeTypeOf('function');
+    再放();
   });
   test('每晚流程在跑（它的锁文件在、没超过 12 小时）：维护这一轮跳过', () => {
     const dir = tempRoot();

@@ -18,8 +18,10 @@
 //   汇总(结果们) → { 共, 成功, 失败, 出错, 按结果: { 结果: 个数 }, 按摘要: { 摘要: 个数 } }
 //     成功/失败看维护一个交回的 成功（2026-11-08），抛错的算出错（摘要算“出错”）
 import path from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { setTimeout as 等待 } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { 拿锁, 流程在跑 } from '../../../共用/工具/运行锁.mjs';
 import { 挑要查的 } from './调度/index.mjs';
 import { 维护一个, 默认部件 } from './维护一个.mjs';
 
@@ -85,7 +87,26 @@ function 参数(argv) {
 async function 运行(argv) {
   const 给 = 参数(argv);
   const 试跑 = 给.开关.has('试跑');
-  const fs = await import('node:fs');
+  if (试跑) return 运行一批(给, 试跑);
+
+  const 当前目录 = path.dirname(fileURLToPath(import.meta.url));
+  const 锁目录 = process.env.MAINTAIN_LOG_DIR || path.join(当前目录, '..', '数据', '维护日志');
+  const 流程锁 = path.join(process.env.PIPELINE_LOG_DIR || path.join(当前目录, '..', '..', 'pipeline', '日志'), '.运行中.lock');
+  let 放锁 = null;
+  try {
+    放锁 = 流程在跑(流程锁) ? null : 拿锁(锁目录);
+    if (!放锁) console.log('等待每日流程或其他维护完成');
+    while (!放锁) {
+      await 等待(5000);
+      if (!流程在跑(流程锁)) 放锁 = 拿锁(锁目录);
+    }
+    return await 运行一批(给, 试跑);
+  } finally {
+    放锁?.();
+  }
+}
+
+async function 运行一批(给, 试跑) {
   const { openDb, 屏蔽网站 } = await import('../index.mjs');
   const { createAi, PURPOSES, DEFAULT_CONFIG } = await import('../../ai/index.mjs');
   const web = await import('../../web/index.mjs');
@@ -103,11 +124,10 @@ async function 运行(argv) {
       db, 比赛们: 给.比赛 ? 给.比赛.split(',') : [], 上限: Number(给.上限 || 20), 并发: Number(给.并发 || 4), 打印: console.log,
       选项: { ai, 工具: { 读网页, 取源码, 浏览器 }, 屏蔽: 屏蔽网站.当前屏蔽(db), 试跑 },
     });
-    if (给.报告) fs.writeFileSync(给.报告, JSON.stringify(结果们, null, 1));
+    if (给.报告) writeFileSync(给.报告, JSON.stringify(结果们, null, 1));
     return 结果们;
   } finally {
-    await 浏览器.关();
-    db.close();
+    try { await 浏览器.关(); } finally { db.close(); }
   }
 }
 

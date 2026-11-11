@@ -8,9 +8,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(path.join(HERE, '..', '..', 'Environment', 'package.json'));
 const Database = require('better-sqlite3');
 
-export function openSqlite(file, options = {}) {
+export function openSqlite(file, { wal = true, ...options } = {}) {
   const db = new Database(file, options);
-  if (file !== ':memory:' && !options.readonly) db.pragma('journal_mode = WAL');
+  if (wal && file !== ':memory:' && !options.readonly) db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   return db;
 }

@@ -8,7 +8,7 @@
 //   node backend/美国/db/维护/run.mjs --批 100            AI 审查一批：先跑后台队列，再挑 100 个比赛（待人工审核优先），只跑核对原文（见 批量.mjs）
 //   node backend/美国/db/维护/run.mjs --队列              只跑后台多选的队列，空的马上退出
 //
-// 不叠着跑：上一次还没完（锁文件 日志/.维护中.lock）就跳过；每晚流程还在跑（PIPELINE_LOG_DIR/.运行中.lock）也跳过这一轮。
+// 不叠着跑：上一次还没完（共用维护锁）就跳过；每晚流程还在跑（PIPELINE_LOG_DIR/.运行中.lock）也跳过这一轮。
 // 日志写进 MAINTAIN_LOG_DIR（默认本文件夹下的 日志/，不进 git），每天一个文件。
 // AI 总管、读网页已接上（密钥只在服务器上）；检查项和查找还是占位。
 import fs from 'node:fs';
@@ -21,7 +21,7 @@ import { openDb, 维护队列 } from '../index.mjs';
 import { runMaintenance } from './index.mjs';
 import { 维护一个比赛 } from './轮流.mjs';
 import { 批量维护 } from './批量.mjs';
-import { 拿锁, 流程在跑, 续锁 } from './运行锁.mjs';
+import { 拿锁, 流程在跑 } from '../../../共用/工具/运行锁.mjs';
 import { 从环境造读网页 } from './北京读网页.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -53,12 +53,13 @@ try {
   const logDir = process.env.MAINTAIN_LOG_DIR || path.join(HERE, '日志');
   fs.mkdirSync(logDir, { recursive: true });
   const log = createLogger(path.join(logDir, `${new Date().toISOString().slice(0, 10)}.log`), { console: true, module: '维护' });
+  const 锁目录 = process.env.MAINTAIN_LOG_DIR || path.join(HERE, '..', '数据', '维护日志');
   const 流程锁 = path.join(process.env.PIPELINE_LOG_DIR || path.join(HERE, '..', '..', 'pipeline', '日志'), '.运行中.lock');
   if (流程在跑(流程锁)) {
     log.info('每晚流程还在跑，这一轮维护跳过');
   } else if (args.队列 && 队列是空的()) {
     // 每 2 分钟一次，空的不写日志也不拿锁
-  } else if (!(放锁 = 拿锁(path.join(logDir, '.维护中.lock')))) {
+  } else if (!(放锁 = 拿锁(锁目录))) {
     log.info('上一次维护还没完，这一轮跳过');
   } else {
     const db = openDb({ readOnly: args.dryRun });
@@ -67,7 +68,7 @@ try {
       const 共用 = { db, log, ai, web, only: args.only, dryRun: args.dryRun };
       if (args.批 !== null || args.队列) {
         const 回 = await 批量维护({ db, log, ai, web, dryRun: args.dryRun, 上限: args.批 ?? 0, 只队列: args.队列,
-          该停: () => 流程在跑(流程锁), 续锁: () => 续锁(path.join(logDir, '.维护中.lock')) });
+          该停: () => 流程在跑(流程锁) });
         console.log(`AI 审查：跑了 ${回.跑了} 个（手动 ${回.手动}，自动 ${回.自动}），失败 ${回.失败}${回.停因 ? `；${回.停因}` : ''}`);
         process.exitCode = 0;
       } else {

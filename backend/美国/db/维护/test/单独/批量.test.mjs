@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vitest';
 import { openDb, 维护队列 } from '../../../index.mjs';
 import { 批量维护, AI审查检查项 } from '../../批量.mjs';
 import { 挑下一个比赛, 维护一个比赛 } from '../../轮流.mjs';
-import { 拿锁, 续锁 } from '../../运行锁.mjs';
 import { 读暂停, 退避中的比赛, 退避到 } from '../../额度和退避.mjs';
 import { tempRoot } from '../../../../../共用/test/复用/临时目录.mjs';
 import path from 'node:path';
@@ -227,18 +226,6 @@ describe('维护一个比赛：失败不记', () => {
     const [记录] = db.find('audit_log', { action: '维护比赛' });
     expect(记录.detail.留着说明[0].说明).toBe('官网打不开');
     db.close();
-  });
-});
-
-describe('运行锁', () => {
-  test('续锁：把时间更新，下一个进程看到的锁还新', () => {
-    const 文件 = path.join(tempRoot('锁-'), '.维护中.lock');
-    const 放 = 拿锁(文件, { now });
-    const 一会儿 = new Date(now.getTime() + 50 * 60000);
-    续锁(文件, { now: 一会儿 });
-    expect(JSON.parse(fs.readFileSync(文件, 'utf8')).at).toBe(一会儿.toISOString());
-    expect(拿锁(文件, { now: new Date(一会儿.getTime() + 50 * 60000) })).toBeNull();
-    放();
   });
 });
 
