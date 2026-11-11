@@ -3,19 +3,25 @@ vi.mock('../apps/miniprogram/services/clientLog', () => ({ reportIssue:vi.fn(), 
 
 it('a late login result cannot replace the newer account', async () => {
   vi.resetModules();
-  let resolveFirst:any;
-  let resolveSecond:any;
-  const callFunction = vi.fn()
-    .mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }))
-    .mockImplementationOnce(() => new Promise(resolve => { resolveSecond = resolve; }));
-  vi.stubGlobal('wx', { cloud:{ init:vi.fn(), callFunction } });
+  const login = vi.fn(options => options.success({ code:'wechat-code' }));
+  const request = vi.fn();
+  vi.stubGlobal('wx', { login, request });
   const session = await import('../apps/miniprogram/services/cloudSession');
   const first = session.loginWithWechat();
   const rejected = expect(first).rejects.toThrow('登录请求已过期');
   const second = session.loginWithWechat();
-  resolveSecond({result:{ok:true,data:{userId:'b',openid:'openid-b',isNewUser:false}}});
+  await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  expect(request.mock.calls.map(([options]) => options.url)).toEqual([
+    'https://xiaohuiworks.cn/api/login',
+    'https://xiaohuiworks.cn/api/login',
+  ]);
+  const respond = (index:number, id:string) => request.mock.calls[index][0].success({
+    statusCode:200,
+    data:{ ok:true, data:{ userId:id, openid:`openid-${id}`, isNewUser:false, userSessionToken:`token-${id}` } },
+  });
+  respond(1, 'b');
   await second;
-  resolveFirst({result:{ok:true,data:{userId:'a',openid:'openid-a',isNewUser:false}}});
+  respond(0, 'a');
   await rejected;
   expect(session.getCurrentUserId()).toBe('b');
   expect(session.isCloudSessionReady()).toBe(true);

@@ -3,8 +3,18 @@ import { afterEach, expect, it, vi } from 'vitest';
 vi.mock('../apps/miniprogram/services/clientLog', () => ({ reportIssue:vi.fn(), SLOW_THRESHOLD_MS:3000 }));
 afterEach(() => { vi.unstubAllGlobals(); vi.doUnmock('../apps/miniprogram/config/cloud'); vi.resetModules(); });
 
+function useShanghaiMode() {
+  vi.doMock('../apps/miniprogram/config/cloud', async importOriginal => ({
+    ...await importOriginal<typeof import('../apps/miniprogram/config/cloud')>(),
+    API_BASE_URL: 'https://107-175-111-18.sslip.io',
+    BEIJING_BACKEND_ENABLED: false,
+    USER_DATA_ON_CLOUD: true,
+  }));
+}
+
 it('reuses the bridge-issued session and prevents a payload overriding the action', async () => {
   vi.resetModules();
+  useShanghaiMode();
   const login = vi.fn();
   const request = vi.fn(options => options.success({ statusCode:200, data:{ ok:true, data:[] } }));
   vi.stubGlobal('wx', { login, request, cloud:{ init:vi.fn(), callFunction:vi.fn().mockResolvedValue({ result:{ ok:true, data:{ userId:'shanghai-id', openid:'trusted-user', isNewUser:false, userSessionToken:'bridge-token', userSessionOrigin:'https://107-175-111-18.sslip.io' } } }) } });
@@ -30,6 +40,7 @@ it('direct login returns a session used for subsequent requests without a second
 
 it('a cloud user response from the previous account cannot be consumed after another login', async () => {
   vi.resetModules();
+  useShanghaiMode();
   let complete:any;
   const callFunction = vi.fn()
     .mockResolvedValueOnce({ result:{ ok:true, data:{ userId:'a', openid:'a', isNewUser:false } } })
@@ -87,6 +98,7 @@ it('keeps American feedback history on its own origin and never sends a Beijing 
 
 it('does not assign a Beijing cloud bridge token to the legacy American feedback origin', async () => {
   vi.resetModules();
+  useShanghaiMode();
   const login = vi.fn(options => options.success({ code:'us-code' }));
   const request = vi.fn(options => options.success({ statusCode:200, data:{ ok:true, data:options.url.endsWith('/api/login') ? { openid:'trusted-user', userSessionToken:'us-token' } : [] } }));
   vi.stubGlobal('wx', { login, request, cloud:{ init:vi.fn(), callFunction:vi.fn().mockResolvedValue({ result:{ ok:true, data:{ userId:'shanghai-id', openid:'trusted-user', isNewUser:false, userSessionToken:'beijing-token', userSessionOrigin:'https://beijing.example' } } }) } });
