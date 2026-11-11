@@ -9,7 +9,7 @@
     "data:import:prepare": "python scripts/import_seed.py",
     "sources:verify": "node scripts/verify_source_urls.mjs",
     "test:data": "python -m unittest discover -s tests -p test_*.py",
-    "test": "pnpm test:data && vitest run",
+    "test": "pnpm test:data && vitest run tests",
     "admin:dev": "pnpm --dir apps/admin dev",
     "admin:build": "pnpm --dir apps/admin build",
     "admin:verify:cloud": "pnpm --dir apps/admin verify:cloud",
