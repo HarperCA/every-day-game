@@ -26,6 +26,7 @@ import * as 搜索记忆 from './操作/搜索记忆.mjs';
 import * as 爬虫脚本 from './操作/爬虫脚本.mjs';
 import * as 指纹 from './操作/指纹.mjs';
 
+export { 检查频率, 下次检查, 挑要查的 } from './操作/维护计划.mjs';
 export { TABLES, 比赛, 届次, 拒过的网址, 屏蔽网站, 维护队列, 审核进度, 图片总库, 用户副本, 用户反馈, 搜索记忆, 爬虫脚本, 指纹 };
 export { DbError, DB_ERROR_KINDS, validate, buildCreateSql, FIELD_TYPES, LIMITS } from '../../共用/db/index.mjs';
 

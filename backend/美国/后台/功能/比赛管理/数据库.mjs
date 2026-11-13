@@ -21,7 +21,16 @@
 //   交回 { 比赛们, 字段表, 状态们, 海报规格, AI维护, 结果 }：比赛和届次只带编号、版本号、状态和给用户看的字段，比赛另带最新维护时间
 //   和 最新新维护 { 成功, 摘要, 时间 }（最新一条新维护记录的简要，给维护时间着色；没有记录给 null，没写成功的 成功 给 null）；字段表给编辑表单用（海报单独一栏，不在里面）。
 //   环境里的 图片目录 不给时用图片总库的默认位置。
-import { TABLES, 比赛, 届次, 图片总库, 维护队列, 搜索记忆 } from '../../../db/index.mjs';
+import { TABLES, 比赛, 届次, 图片总库, 维护队列, 搜索记忆, 下次检查 } from '../../../db/index.mjs';
+
+const 一天 = 86400000;
+const 北京时差 = 8 * 3600000;
+function 本周范围(now) {
+  const 北京时间 = new Date(now.getTime() + 北京时差);
+  const 今天零点 = Date.UTC(北京时间.getUTCFullYear(), 北京时间.getUTCMonth(), 北京时间.getUTCDate());
+  const 周一 = 今天零点 - (北京时间.getUTCDay() + 6) % 7 * 一天 - 北京时差;
+  return { 周一, 下周一: 周一 + 7 * 一天 };
+}
 
 const 海报字段 = ['poster', 'poster_candidates'];
 
@@ -115,10 +124,22 @@ function 改动的名称(db, 编号, 改动) {
   return { 届次名, 字段说明 };
 }
 
-function 列出(db) {
+function 列出(db, 当前时间, 队列) {
   const 比赛们 = 比赛.全部连届次(db);
   const 最新 = 最新新维护们(db, 比赛们);
+  const { 周一, 下周一 } = 本周范围(当前时间);
+  const 正在 = new Set([队列.正在].flat().filter(Boolean));
+  const 排队 = new Set(队列.排队);
+  function 本周状态(比赛) {
+    if (正在.has(比赛.id)) return '维护中';
+    const 上次 = Date.parse(比赛.last_maintained_at ?? '');
+    if (上次 >= 周一 && 上次 <= 当前时间.getTime()) return '本周已维护';
+    if (排队.has(比赛.id)) return '本周未维护';
+    const { 下次检查: 到期时间 } = 下次检查(比赛, 比赛.届次们, 当前时间);
+    return 到期时间 === null || Date.parse(到期时间) < 下周一 ? '本周未维护' : null;
+  }
   return 比赛们.map(c => ({
+    本周维护状态: 本周状态(c),
     id: c.id, version: c.version, last_maintained_at: c.last_maintained_at ?? null, 最新新维护: 简要(最新.get(c.id)), ...挑出(c, 比赛.可改字段),
     届次们: c.届次们.map(e => ({ id: e.id, version: e.version, status: e.status, status_reason: e.status_reason ?? [], ...挑出(e, 届次.可改字段) })),
   }));
@@ -145,17 +166,19 @@ export async function 取({ 动作, ...参数 } = {}, { db, 操作人 = '管理�
     const 详情 = 维护详情(db, 参数.编号);
     return { 结果: { 动作, 编号: 参数.编号, 详情, ...改动的名称(db, 参数.编号, 详情?.改动 ?? []) } };
   }
+  const 当前时间 = now();
   let 结果 = null;
   if (动作) {
     if (!Object.hasOwn(动作们, 动作)) throw new Error(`不认识的动作：${动作}`);
-    结果 = { 动作, ...动作们[动作](db, 参数, { 操作人, at: now().toISOString(), 图片目录 }) };
+    结果 = { 动作, ...动作们[动作](db, 参数, { 操作人, at: 当前时间.toISOString(), 图片目录 }) };
   }
+  const 队列 = 维护队列.读(db);
   return {
-    比赛们: 列出(db),
+    比赛们: 列出(db, 当前时间, 队列),
     字段表: { 比赛: 字段说明('competition', 比赛.可改字段), 届次: 字段说明('edition', 届次.可改字段.filter(字段 => !海报字段.includes(字段))) },
     状态们: 届次.状态们,
     海报规格: { ...图片总库.海报规格, ...图片总库.海报比例范围 },
-    AI维护: 维护队列.读(db),
+    AI维护: 队列,
     结果,
   };
 }

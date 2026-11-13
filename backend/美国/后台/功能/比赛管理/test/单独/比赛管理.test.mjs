@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { 整理, 表单初值, 表单转改动, 是海报比例, 压到上限, 加候选, 删候选, 维护时间文字, 维护状态, 搜索记忆展示, 维护标记, 维护详情展示 } from '../../整理.mjs';
 import { 呈现 } from '../../呈现.mjs';
-import { 搜索记忆 } from '../../../../../db/index.mjs';
+import { 搜索记忆, 维护队列 } from '../../../../../db/index.mjs';
 import { 假JPG } from '../../../../../../共用/test/复用/假图片.mjs';
 import { 比赛公开字段, 届次公开字段 } from '../../../../../../沟通/公开比赛同步/格式.mjs';
 
@@ -586,4 +586,49 @@ describe('呈现：维护时间着色、点开才展开', () => {
     expect(没改动.textContent).toContain('核对无误');
     expect(有改动.textContent + 没改动.textContent).not.toContain('null');
   });
+});
+
+
+test('本周维护按北京时间和维护计划统计，三个状态不重复，并可叠加届次状态', async () => {
+  const db = open();
+  const 比赛们 = [
+    ['done', '2026-11-08T16:00:00.000Z'],
+    ['outside', '2026-11-08T15:59:59.000Z'],
+    ['due', '2026-10-13T00:00:00.000Z'],
+    ['edge', '2026-10-19T16:00:00.000Z'],
+    ['queued', '2026-11-06T00:00:00.000Z'],
+    ['running', '2026-11-09T00:00:00.000Z'],
+    ['never', null],
+  ];
+  for (const [id, at] of 比赛们) {
+    db.insert('competition', id, { name: '测试比赛 ' + id, level: '国家级', last_maintained_at: at });
+    db.insert('edition', 'edition-' + id, { competition_id: id, ordinal: 1, edition_name: '测试届次 ' + id, status: '已归档' });
+  }
+  db.insert('edition', 'edition-due-2', { competition_id: 'due', ordinal: 2, edition_name: '第二届', status: '已归档' });
+  const 当前时间 = () => new Date('2026-11-13T02:00:00.000Z');
+  维护队列.加入(db, ['running', 'queued'], { at: 当前时间().toISOString() });
+  维护队列.领下一个(db, { at: 当前时间().toISOString() });
+  const 数据 = await 处理后台请求('比赛管理', {}, { db, now: 当前时间 });
+  const 本周 = 整理(数据, { 状态: '已归档', 本周维护: '本周需要维护' });
+  expect(Object.fromEntries(本周.本周筛选项)).toEqual({
+    全部维护状态: 7, 本周需要维护: 5, 本周未维护: 3, 本周已维护: 1, 维护中: 1,
+  });
+  expect(本周.组们.map(x => x.比赛.id).sort()).toEqual(['done', 'due', 'never', 'queued', 'running']);
+  expect(整理(数据, { 本周维护: '维护中' }).组们.map(x => x.比赛.id)).toEqual(['running']);
+  expect(整理(数据, { 本周维护: '本周已维护' }).组们.map(x => x.比赛.id)).toEqual(['done']);
+  expect(整理(数据, { 关键词: 'due', 本周维护: '本周未维护' }).组们.map(x => x.比赛.id)).toEqual(['due']);
+});
+
+test('本周维护下拉紧跟届次状态，切换时只更新本周维护条件', () => {
+  const 建 = 假建();
+  const 容器 = 建('div');
+  const 改条件 = vi.fn();
+  const 数据 = 整理({ 比赛们: [], 字段表: { 比赛: [], 届次: [] } });
+  呈现(容器, 数据, { 条件: {}, 建, 改条件 });
+  const 工具栏 = 找元素(容器, 有类('工具栏'))[0];
+  const [状态, 本周] = 工具栏.子.filter(x => x.标签 === 'select');
+  expect(工具栏.子.indexOf(本周)).toBe(工具栏.子.indexOf(状态) + 1);
+  expect(本周.子.map(x => x.属性.value)).toEqual(['全部维护状态', '本周需要维护', '本周未维护', '本周已维护', '维护中']);
+  本周.听.change({ target: { value: '本周未维护' } });
+  expect(改条件).toHaveBeenCalledWith({ 本周维护: '本周未维护' });
 });

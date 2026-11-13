@@ -35,9 +35,14 @@ export function 呈现(容器, 数据, { 条件, 改条件, 提交, 发请求, �
   搜索.addEventListener('input', () => { 正在搜索 = true; 改条件({ 关键词: 搜索.value }); });
   const 筛选 = 建('select', { 'aria-label': '按状态筛选', onchange: 事件 => 改条件({ 状态: 事件.target.value }) },
     数据.筛选项.map(([名, 数]) => 建('option', { value: 名, selected: 名 === 数据.状态 }, `${名} ${数}`)));
+  const 本周筛选 = 建('select', {
+    'aria-label': '按本周维护状态筛选',
+    title: '按北京时间周一至周日统计，数量按比赛计算',
+    onchange: 事件 => 改条件({ 本周维护: 事件.target.value }),
+  }, (数据.本周筛选项 ?? []).map(([名, 数]) => 建('option', { value: 名, selected: 名 === 数据.本周维护 }, `${名} ${数}`)));
   容器.append(建('div', { class: '工具栏' },
     建('button', { type: 'button', class: '主按钮', onclick: () => 打开编辑框(容器, 建, { 标题: '新建比赛', 字段们: 数据.字段表.比赛, 原: {}, 提交: 内容 => 提交({ 动作: '新建比赛', 内容 }) }) }, '新建'),
-    搜索, 筛选,
+    搜索, 筛选, 本周筛选,
     建('button', { type: 'button', onclick: () => {
       const 全选了 = 本页比赛.length && 本页比赛.every(编号 => 已选.has(编号));
       if (全选了) 本页比赛.forEach(编号 => 已选.delete(编号));
