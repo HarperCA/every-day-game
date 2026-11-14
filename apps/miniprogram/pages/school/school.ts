@@ -8,7 +8,7 @@ const schoolNames = [...new Set(SCHOOL_NAMES)];
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
-    contestPickerOpen: false, schoolPickerOpen: false, schoolQuery: '', schoolOptions: [] as string[],
+    pickerStep: '' as '' | 'school' | 'contest', schoolQuery: '', schoolOptions: [] as string[],
     moreSchools: false, selectedSchool: '', schoolLabel: ALL_SCHOOLS, visibleContests: [] as ContestView[],
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
@@ -16,7 +16,7 @@ Page({
   async refresh(school?: string) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], visibleContests: [], contestPickerOpen: false, schoolPickerOpen: false, members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], visibleContests: [], pickerStep: '', members: [], managed: [], inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
@@ -37,7 +37,7 @@ Page({
   },
   onHide() {
     this.schoolGeneration = (this.schoolGeneration || 0) + 1;
-    this.setData({ status: null, contests: [], visibleContests: [], contestPickerOpen: false, schoolPickerOpen: false, members: [], managed: [], inviteCode: '' });
+    this.setData({ status: null, contests: [], visibleContests: [], pickerStep: '', members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
   toggleStudentView() {
@@ -53,12 +53,12 @@ Page({
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
   },
   toggleContestPicker() {
-    this.setData({ contestPickerOpen: !this.data.contestPickerOpen, schoolPickerOpen: false });
+    if (this.data.pickerStep) this.setData({ pickerStep: '' });
+    else this.openSchoolChoices();
   },
-  toggleSchoolPicker() {
-    const schoolPickerOpen = !this.data.schoolPickerOpen;
-    this.setData({ schoolPickerOpen, contestPickerOpen: false });
-    if (schoolPickerOpen) this.updateSchoolOptions('', SCHOOL_PAGE_SIZE);
+  openSchoolChoices() {
+    this.setData({ pickerStep: 'school' });
+    this.updateSchoolOptions('', SCHOOL_PAGE_SIZE);
   },
   searchSchools(event: WechatMiniprogram.Input) {
     this.updateSchoolOptions(event.detail.value, SCHOOL_PAGE_SIZE);
@@ -75,7 +75,7 @@ Page({
     const selectedSchool = event.currentTarget.dataset.school || '';
     const { contests } = this.data;
     const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
-    this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, visibleContests, schoolPickerOpen: false });
+    this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, visibleContests, pickerStep: 'contest' });
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {

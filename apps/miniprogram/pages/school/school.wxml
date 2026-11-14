@@ -11,19 +11,15 @@
         <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
       </view>
       <view wx:if="{{studentView || !adminSchool}}" class="sc-hero-row">
-        <view class="sc-picker-trigger" role="button" aria-expanded="{{contestPickerOpen}}" bindtap="toggleContestPicker">
+        <view class="sc-picker-trigger" role="button" aria-expanded="{{!!pickerStep}}" bindtap="toggleContestPicker">
           <text class="sc-hero-title">选择比赛</text>
-          <text class="sc-picker-chevron">{{contestPickerOpen ? '▴' : '▾'}}</text>
+          <text class="sc-picker-chevron">{{pickerStep ? '▴' : '▾'}}</text>
         </view>
         <view class="sc-hero-count">{{visibleContests.length}} 场校赛</view>
       </view>
       <view wx:else class="sc-hero-title">{{adminSchool}}</view>
-      <view wx:if="{{studentView || !adminSchool}}" class="sc-school-filter">
-        <view class="sc-picker-trigger sc-school-filter-trigger" role="button" aria-label="筛选学校：{{schoolLabel}}" aria-expanded="{{schoolPickerOpen}}" bindtap="toggleSchoolPicker">
-          <text>{{schoolLabel}}</text>
-          <text class="sc-picker-chevron">{{schoolPickerOpen ? '▴' : '▾'}}</text>
-        </view>
-        <view wx:if="{{schoolPickerOpen}}" class="sc-picker-menu">
+      <block wx:if="{{studentView || !adminSchool}}">
+        <view wx:if="{{pickerStep === 'school'}}" class="sc-picker-menu">
           <input class="sc-school-search" placeholder="搜索学校名称" value="{{schoolQuery}}" bindinput="searchSchools" />
           <scroll-view scroll-y class="sc-picker-list" bindscrolltolower="showMoreSchools">
             <view class="sc-picker-option" role="button" bindtap="selectSchoolFilter">全部学校</view>
@@ -31,13 +27,14 @@
             <view wx:if="{{!schoolOptions.length}}" class="sc-picker-empty">未找到匹配的学校</view>
           </scroll-view>
         </view>
-      </view>
-      <view wx:if="{{(studentView || !adminSchool) && contestPickerOpen}}" class="sc-picker-menu">
-        <scroll-view wx:if="{{visibleContests.length}}" scroll-y class="sc-picker-list">
-          <view wx:for="{{visibleContests}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="openContest">{{item.title}}</view>
-        </scroll-view>
-        <view wx:else class="sc-picker-empty">暂无可选比赛</view>
-      </view>
+        <view wx:elif="{{pickerStep === 'contest'}}" class="sc-picker-menu">
+          <view class="sc-picker-option sc-picker-back" role="button" bindtap="openSchoolChoices">‹ {{schoolLabel}} · 更换学校</view>
+          <scroll-view wx:if="{{visibleContests.length}}" scroll-y class="sc-picker-list">
+            <view wx:for="{{visibleContests}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="openContest">{{item.title}}</view>
+          </scroll-view>
+          <view wx:else class="sc-picker-empty">暂无可选比赛</view>
+        </view>
+      </block>
     </view>
     <view class="sc-panel" wx:if="{{adminSchool && !studentView}}">
       <picker range="{{status.adminSchools}}" bindchange="switchSchool" disabled="{{loading || working}}">
