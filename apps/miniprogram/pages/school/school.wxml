@@ -6,12 +6,14 @@
     <button size="mini" bindtap="retry">重试</button>
   </view>
   <block wx:if="{{status}}">
-    <view class="sc-panel" wx:if="{{!status.memberships.length && !status.adminSchools.length}}">
-      还没加入学校，请向校赛管理员索取邀请卡片。
-    </view>
-    <view class="sc-panel" wx:if="{{adminSchool}}">
-      <view wx:if="{{studentView}}">当前为学生视角</view>
-      <button size="mini" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '返回管理员工作台' : '切换到学生视角'}}</button>
+    <view class="sc-hero">
+      <view class="sc-hero-school">{{schoolLabel}}</view>
+      <view class="sc-hero-row">
+        <view class="sc-hero-title">校赛专区</view>
+        <view class="sc-hero-count">{{contests.length}} 场校赛</view>
+      </view>
+      <view wx:if="{{!status.memberships.length && !status.adminSchools.length}}" class="sc-hero-note">请向校赛管理员索取邀请卡片，加入后查看本校赛事。</view>
+      <button wx:if="{{adminSchool}}" size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '返回管理员工作台' : '切换到学生视角'}}</button>
     </view>
     <view class="sc-panel" wx:if="{{!studentView || !adminSchool}}">
       <button size="mini" bindtap="openApply">申请成为校赛管理员</button>
@@ -48,12 +50,16 @@
         <button wx:if="{{item.status === '已发布'}}" size="mini" data-action="withdraw" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">下架</button>
       </view>
     </view>
-    <view class="sc-panel" wx:if="{{status.memberships.length || status.adminSchools.length}}">
-      <view class="sc-title">本校已发布的校赛</view>
-      <view wx:if="{{!contests.length && !loading}}">暂时没有已发布的校赛</view>
-      <view class="sc-row" wx:for="{{contests}}" wx:key="id" data-id="{{item.id}}" bindtap="openContest">
-        <view>{{item.title}}</view><view>{{item.school}} {{item.endDate}}</view>
-      </view>
+    <view wx:if="{{status.memberships.length || status.adminSchools.length}}">
+      <view class="sc-section-title">本校已发布的校赛</view>
+      <view wx:if="{{!contests.length && !loading}}" class="sc-panel sc-empty">暂时没有已发布的校赛</view>
+      <block wx:for="{{contests}}" wx:key="id">
+        <view class="sc-panel sc-contest" data-id="{{item.id}}" bindtap="openContest" hover-class="sc-contest-pressed">
+          <view class="sc-school-tag">{{item.school}}</view>
+          <view class="sc-contest-title">{{item.title}}</view>
+          <view wx:if="{{item.endDate}}" class="sc-contest-date">报名截止 {{item.endDate}}</view>
+        </view>
+      </block>
     </view>
   </block>
 </view>

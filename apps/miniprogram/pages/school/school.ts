@@ -3,6 +3,7 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: false,
+    schoolLabel: '',
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
@@ -15,7 +16,9 @@ Page({
       if (this.schoolGeneration !== generation) return;
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
-      this.setData({ status, contests, adminSchool });
+      const schools = [...new Set([...status.memberships.map(member => member.school), ...status.adminSchools])];
+      const schoolLabel = schools.length > 1 ? '我的学校' : schools[0] || '校赛专区';
+      this.setData({ status, contests, adminSchool, schoolLabel });
       if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });

@@ -4,3 +4,28 @@
 .sc-row { padding: 16rpx 0; border-bottom: 1rpx solid var(--line, #ddd); }
 .sc-actions { display: flex; flex-wrap: wrap; gap: 12rpx; }
 .sc-row button, .sc-panel button { margin: 10rpx 10rpx 0 0; }
+.sc-hero {
+  margin-bottom: 24rpx;
+  padding: 30rpx 28rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(130deg, #14295c, #175bd6);
+  color: #fff;
+}
+.sc-hero-school, .sc-hero-count {
+  display: inline-block;
+  padding: 7rpx 15rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 24rpx;
+}
+.sc-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-top: 20rpx; }
+.sc-hero-title { font-size: 44rpx; font-weight: 700; }
+.sc-hero-count { flex-shrink: 0; }
+.sc-hero-note { margin-top: 16rpx; font-size: 25rpx; color: #e5efff; }
+.sc-mode { margin: 20rpx 0 0; color: #16469c; background: #fff; }
+.sc-section-title { margin: 24rpx 4rpx 16rpx; font-size: 30rpx; font-weight: 700; }
+.sc-empty { padding: 52rpx 20rpx; text-align: center; color: var(--muted, #59677e); font-size: 27rpx; }
+.sc-school-tag { display: inline-block; padding: 5rpx 14rpx; border-radius: 24rpx; background: #e7efff; color: #174da6; font-size: 23rpx; }
+.sc-contest-title { margin-top: 12rpx; font-size: 32rpx; font-weight: 700; }
+.sc-contest-date { margin-top: 10rpx; color: var(--muted, #59677e); font-size: 25rpx; }
+.sc-contest-pressed { opacity: 0.85; }
