@@ -15,12 +15,26 @@
           <text class="sc-hero-title">选择比赛</text>
           <text class="sc-picker-chevron">{{contestPickerOpen ? '▴' : '▾'}}</text>
         </view>
-        <view class="sc-hero-count">{{contests.length}} 场校赛</view>
+        <view class="sc-hero-count">{{visibleContests.length}} 场校赛</view>
       </view>
       <view wx:else class="sc-hero-title">{{adminSchool}}</view>
+      <view wx:if="{{studentView || !adminSchool}}" class="sc-school-filter">
+        <view class="sc-picker-trigger sc-school-filter-trigger" role="button" aria-label="筛选学校：{{schoolLabel}}" aria-expanded="{{schoolPickerOpen}}" bindtap="toggleSchoolPicker">
+          <text>{{schoolLabel}}</text>
+          <text class="sc-picker-chevron">{{schoolPickerOpen ? '▴' : '▾'}}</text>
+        </view>
+        <view wx:if="{{schoolPickerOpen}}" class="sc-picker-menu">
+          <input class="sc-school-search" placeholder="搜索学校名称" value="{{schoolQuery}}" bindinput="searchSchools" />
+          <scroll-view scroll-y class="sc-picker-list" bindscrolltolower="showMoreSchools">
+            <view class="sc-picker-option" role="button" bindtap="selectSchoolFilter">全部学校</view>
+            <view wx:for="{{schoolOptions}}" wx:key="*this" class="sc-picker-option" role="button" data-school="{{item}}" bindtap="selectSchoolFilter">{{item}}</view>
+            <view wx:if="{{!schoolOptions.length}}" class="sc-picker-empty">未找到匹配的学校</view>
+          </scroll-view>
+        </view>
+      </view>
       <view wx:if="{{(studentView || !adminSchool) && contestPickerOpen}}" class="sc-picker-menu">
-        <scroll-view wx:if="{{contests.length}}" scroll-y class="sc-picker-list">
-          <view wx:for="{{contests}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="openContest">{{item.title}}</view>
+        <scroll-view wx:if="{{visibleContests.length}}" scroll-y class="sc-picker-list">
+          <view wx:for="{{visibleContests}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="openContest">{{item.title}}</view>
         </scroll-view>
         <view wx:else class="sc-picker-empty">暂无可选比赛</view>
       </view>
@@ -50,12 +64,12 @@
       </view>
     </view>
     <view wx:if="{{(studentView || !adminSchool) && (status.memberships.length || status.adminSchools.length)}}">
-      <view class="sc-section-title">本校已发布的校赛</view>
-      <view wx:if="{{!contests.length && !loading}}" class="sc-panel sc-empty">
+      <view class="sc-section-title">已发布的校赛</view>
+      <view wx:if="{{!visibleContests.length && !loading}}" class="sc-panel sc-empty">
         <view class="sc-empty-title">暂无可选比赛</view>
-        <view class="sc-empty-note">本校发布新比赛后，会在这里显示。</view>
+        <view class="sc-empty-note">{{selectedSchool ? '该校暂无当前账号可查看的已发布校赛。' : '学校发布新比赛后，会在这里显示。'}}</view>
       </view>
-      <block wx:for="{{contests}}" wx:key="id">
+      <block wx:for="{{visibleContests}}" wx:key="id">
         <view class="sc-panel sc-contest" data-id="{{item.id}}" bindtap="openContest" hover-class="sc-contest-pressed">
           <view wx:if="{{item.school !== '官方的'}}" class="sc-school-tag">{{item.school}}</view>
           <view class="sc-contest-title">{{item.title}}</view>

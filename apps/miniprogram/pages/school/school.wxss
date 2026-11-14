@@ -32,6 +32,9 @@
 .sc-picker-option { padding: 16rpx 20rpx; line-height: 1.45; font-size: 28rpx; overflow-wrap: anywhere; }
 .sc-picker-option + .sc-picker-option { border-top: 1rpx solid var(--line, #ddd); }
 .sc-picker-empty { padding: 18rpx 20rpx; font-size: 26rpx; }
+.sc-school-filter { margin-top: 16rpx; }
+.sc-school-filter-trigger { display: inline-flex; font-size: 26rpx; }
+.sc-school-search { margin: 16rpx; padding: 12rpx 16rpx; border: 1rpx solid var(--line, #ddd); border-radius: 10rpx; font-size: 26rpx; }
 .sc-hero-count { flex-shrink: 0; }
 .sc-mode-row { display: flex; justify-content: flex-end; margin-bottom: 16rpx; }
 .sc-mode { margin: 0; color: #fff; background: rgba(255, 255, 255, 0.18); }

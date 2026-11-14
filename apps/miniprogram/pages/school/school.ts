@@ -1,22 +1,30 @@
 import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInvite, getSchoolStatus, invitePath, leaveSchool, listContests, listManagedContests, listMembers, removeMember, schoolError, withdrawContest } from '../../services/schoolContests';
+import { SCHOOL_NAMES } from '../../services/schoolList';
+
+const ALL_SCHOOLS = '全部学校';
+const SCHOOL_PAGE_SIZE = 50;
+const schoolNames = [...new Set(SCHOOL_NAMES)];
 
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
-    contestPickerOpen: false,
+    contestPickerOpen: false, schoolPickerOpen: false, schoolQuery: '', schoolOptions: [] as string[],
+    moreSchools: false, selectedSchool: '', schoolLabel: ALL_SCHOOLS, visibleContests: [] as ContestView[],
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
   async refresh(school?: string) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], contestPickerOpen: false, members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], visibleContests: [], contestPickerOpen: false, schoolPickerOpen: false, members: [], managed: [], inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
-      this.setData({ status, contests, adminSchool });
+      const { selectedSchool } = this.data;
+      const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
+      this.setData({ status, contests, visibleContests, adminSchool });
       if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });
@@ -29,7 +37,7 @@ Page({
   },
   onHide() {
     this.schoolGeneration = (this.schoolGeneration || 0) + 1;
-    this.setData({ status: null, contests: [], contestPickerOpen: false, members: [], managed: [], inviteCode: '' });
+    this.setData({ status: null, contests: [], visibleContests: [], contestPickerOpen: false, schoolPickerOpen: false, members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
   toggleStudentView() {
@@ -45,7 +53,29 @@ Page({
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
   },
   toggleContestPicker() {
-    this.setData({ contestPickerOpen: !this.data.contestPickerOpen });
+    this.setData({ contestPickerOpen: !this.data.contestPickerOpen, schoolPickerOpen: false });
+  },
+  toggleSchoolPicker() {
+    const schoolPickerOpen = !this.data.schoolPickerOpen;
+    this.setData({ schoolPickerOpen, contestPickerOpen: false });
+    if (schoolPickerOpen) this.updateSchoolOptions('', SCHOOL_PAGE_SIZE);
+  },
+  searchSchools(event: WechatMiniprogram.Input) {
+    this.updateSchoolOptions(event.detail.value, SCHOOL_PAGE_SIZE);
+  },
+  showMoreSchools() {
+    if (this.data.moreSchools) this.updateSchoolOptions(this.data.schoolQuery, this.data.schoolOptions.length + SCHOOL_PAGE_SIZE);
+  },
+  updateSchoolOptions(schoolQuery: string, limit: number) {
+    const query = schoolQuery.trim().toLowerCase();
+    const matches = query ? schoolNames.filter(school => school.toLowerCase().includes(query)) : schoolNames;
+    this.setData({ schoolQuery, schoolOptions: matches.slice(0, limit), moreSchools: matches.length > limit });
+  },
+  selectSchoolFilter(event: WechatMiniprogram.TouchEvent) {
+    const selectedSchool = event.currentTarget.dataset.school || '';
+    const { contests } = this.data;
+    const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
+    this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, visibleContests, schoolPickerOpen: false });
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {
