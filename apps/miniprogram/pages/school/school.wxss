@@ -33,6 +33,7 @@
 .sc-picker-option + .sc-picker-option { border-top: 1rpx solid var(--line, #ddd); }
 .sc-picker-empty { padding: 18rpx 20rpx; font-size: 26rpx; }
 .sc-picker-back { color: #174da6; border-bottom: 1rpx solid var(--line, #ddd); }
+.sc-selected-managed { padding-inline: 14rpx; border-radius: 12rpx; background: #e7efff; color: #174da6; }
 .sc-school-search { margin: 16rpx; padding: 12rpx 16rpx; border: 1rpx solid var(--line, #ddd); border-radius: 10rpx; font-size: 26rpx; }
 .sc-hero-count { flex-shrink: 0; }
 .sc-mode-row { display: flex; justify-content: flex-end; margin-bottom: 16rpx; }

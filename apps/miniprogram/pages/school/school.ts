@@ -10,13 +10,13 @@ Page({
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
     pickerStep: '' as '' | 'school' | 'contest', schoolQuery: '', schoolOptions: [] as string[],
     moreSchools: false, selectedSchool: '', schoolLabel: ALL_SCHOOLS, visibleContests: [] as ContestView[],
-    members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
+    members: [] as SchoolMember[], managed: [] as ContestView[], selectedManagedId: '', loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
-  async refresh(school?: string) {
+  async refresh(school?: string, showManagedChoices = false) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], visibleContests: [], pickerStep: '', members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], visibleContests: [], pickerStep: '', members: [], managed: [], selectedManagedId: '', inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
@@ -24,10 +24,13 @@ Page({
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
       const { selectedSchool } = this.data;
       const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
-      this.setData({ status, contests, visibleContests, adminSchool });
-      if (adminSchool && !this.data.studentView) {
+      const studentView = this.data.studentView || !adminSchool;
+      this.setData({ status, contests, visibleContests, adminSchool, studentView });
+      if (!studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
-        if (this.schoolGeneration === generation) this.setData({ members, managed });
+        if (this.schoolGeneration === generation) {
+          this.setData({ members, managed, pickerStep: showManagedChoices ? 'contest' : '' });
+        }
       }
     } catch (error) {
       if (this.schoolGeneration === generation) this.setData({ error: schoolError(error) });
@@ -49,10 +52,8 @@ Page({
       this.setData({ studentView: true, members: [], managed: [], inviteCode: '' });
     }
   },
-  switchSchool(event: WechatMiniprogram.PickerChange) {
-    void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
-  },
   toggleContestPicker() {
+    if (this.data.loading || this.data.working) return;
     if (this.data.pickerStep) this.setData({ pickerStep: '' });
     else this.openSchoolChoices();
   },
@@ -68,11 +69,18 @@ Page({
   },
   updateSchoolOptions(schoolQuery: string, limit: number) {
     const query = schoolQuery.trim().toLowerCase();
-    const matches = query ? schoolNames.filter(school => school.toLowerCase().includes(query)) : schoolNames;
+    const options = this.data.studentView ? schoolNames : this.data.status?.adminSchools ?? [];
+    const matches = query ? options.filter(school => school.toLowerCase().includes(query)) : options;
     this.setData({ schoolQuery, schoolOptions: matches.slice(0, limit), moreSchools: matches.length > limit });
   },
   selectSchoolFilter(event: WechatMiniprogram.TouchEvent) {
     const selectedSchool = event.currentTarget.dataset.school || '';
+    if (!this.data.studentView) {
+      if (this.data.loading || this.data.working || !this.data.status?.adminSchools.includes(selectedSchool)) return;
+      if (selectedSchool === this.data.adminSchool) this.setData({ pickerStep: 'contest', selectedManagedId: '' });
+      else void this.refresh(selectedSchool, true);
+      return;
+    }
     const { contests } = this.data;
     const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
     this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, visibleContests, pickerStep: 'contest' });
@@ -85,6 +93,17 @@ Page({
     const { id, signup } = event.currentTarget.dataset;
     if (!id) return;
     this.navigateToContest(String(id), String(signup) === 'true');
+  },
+  selectPickerContest(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.studentView) {
+      this.openContest(event);
+      return;
+    }
+    const id = event.currentTarget.dataset.id;
+    if (!this.data.managed.some(contest => contest.id === id)) return;
+    this.setData({ selectedManagedId: id, pickerStep: '' }, () => {
+      wx.pageScrollTo({ selector: '#sc-selected-managed', duration: 200 });
+    });
   },
   navigateToContest(id: string, showSignup = false) {
     const section = showSignup ? '&section=signup' : '';
