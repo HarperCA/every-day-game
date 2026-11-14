@@ -7,6 +7,16 @@
     "pages/feedback-records/feedback-records",
     "pages/favorites/favorites",
     "pages/reminders/reminders",
+    "pages/team/team",
+    "pages/team-create/team-create",
+    "pages/team-detail/team-detail",
+    "pages/team-applications/team-applications",
+    "pages/team-pick/team-pick",
+    "pages/school/school",
+    "pages/school-pick/school-pick",
+    "pages/school-apply/school-apply",
+    "pages/school-create/school-create",
+    "pages/school-detail/school-detail",
     "pages/my/my",
     "pages/profile/profile",
     "pages/preferences/preferences",
@@ -14,15 +24,6 @@
     "pages/assistant/assistant"
   ],
   "lazyCodeLoading": "requiredComponents",
-  "subPackages": [
-    {"root": "skills", "independent": true, "pages": []}
-  ],
-  "agent": {
-    "instruction": "skills/AGENTS.md",
-    "skills": [
-      {"name": "competitionSkill", "description": "找大学生比赛：按专业、地区、组队方式和截止时间推荐比赛，查看比赛详情", "path": "skills/competition"}
-    ]
-  },
   "window": {
     "navigationBarTitleText": "大学生竞赛助手",
     "navigationBarBackgroundColor": "#ffffff",
@@ -35,6 +36,8 @@
     "backgroundColor": "#ffffff",
     "list": [
       {"pagePath": "pages/index/index", "text": "找比赛", "iconPath": "assets/tabbar-find-trophy-normal.png", "selectedIconPath": "assets/tabbar-find-trophy-active.png"},
+      {"pagePath": "pages/school/school", "text": "校赛", "iconPath": "assets/tabbar-school-normal.png", "selectedIconPath": "assets/tabbar-school-active.png"},
+      {"pagePath": "pages/team/team", "text": "组队", "iconPath": "assets/tabbar-team-normal.png", "selectedIconPath": "assets/tabbar-team-active.png"},
       {"pagePath": "pages/my/my", "text": "我的", "iconPath": "assets/tabbar-my-normal.png", "selectedIconPath": "assets/tabbar-my-active.png"}
     ]
   },

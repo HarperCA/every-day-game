@@ -1,6 +1,7 @@
 import { getCompetition } from '../../services/repository';
 import { isFavorite as checkFavorite, toggleFavorite } from '../../services/favorites';
 import { getRemindersForEdition, removeRemindersForEdition, saveReminderPlansWithAuthorization } from '../../services/reminders';
+import { findMyTeamForCompetition } from '../../services/teams';
 
 function localDateParts(value: Date) {
   const pad = (part: number) => String(part).padStart(2, '0');
@@ -9,7 +10,7 @@ function localDateParts(value: Date) {
 
 Page({
   data: {
-    item: null as any, isFavorite: false, reminderCount: 0, loading: true, error: '',
+    item: null as any, isFavorite: false, reminderCount: 0, loading: true, error: '', myTeamId: '',
     recommendationExpanded: false, rulesExpanded: false, officialInfoExpanded: false,
     reminderPanelVisible: false, reminderEventType: 'registration_end',
     reminderEvents: [] as any[],
@@ -22,6 +23,25 @@ Page({
   onShow() {
     const id = this.data.item?.id;
     if (id) this.setData({ isFavorite: checkFavorite(id), reminderCount: getRemindersForEdition(id).length });
+    if (id) this.refreshTeamEntry();
+  },
+  // 这场比赛我有没有队伍：从北京读（2026-11-12），读不到当没有
+  async refreshTeamEntry() {
+    const id = this.data.item?.id || '';
+    const team = await findMyTeamForCompetition(id).catch(() => null);
+    if (id === (this.data.item?.id || '')) this.setData({ myTeamId: team?.id || '' });
+  },
+  // 组队入口：这场比赛已有队伍就进队伍页，没有就发起
+  openTeamEntry() {
+    const { item, myTeamId } = this.data;
+    if (!item?.id) return;
+    // 刚从这支队伍的页面过来就直接返回，来回点不会把页面越叠越深
+    const pages = getCurrentPages();
+    const previous = pages[pages.length - 2];
+    if (myTeamId && previous?.route === 'pages/team-detail/team-detail' && previous.data?.id === myTeamId) { wx.navigateBack(); return; }
+    wx.navigateTo({ url: myTeamId
+      ? `/pages/team-detail/team-detail?id=${encodeURIComponent(myTeamId)}`
+      : `/pages/team-create/team-create?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.name || '')}` });
   },
   toggleRules() { this.setData({ rulesExpanded: !this.data.rulesExpanded }); },
   toggleOfficialInfo() { this.setData({ officialInfoExpanded: !this.data.officialInfoExpanded }); },
@@ -36,6 +56,7 @@ Page({
         // 缓存命中时这里几乎立刻执行，真机上会赶在页面还没稳定时打开，面板显示不出来。
         if (openEventType) setTimeout(() => this.openReminderPanel(openEventType), 350);
       });
+      this.refreshTeamEntry();
     } catch (error) { this.setData({ loading: false, error: error instanceof Error ? error.message : '加载失败' }); }
   },
   copyRegistrationUrl() {
@@ -47,6 +68,12 @@ Page({
       ? `请在浏览器中打开并核对主办单位。\n报名方式：${method}`
       : '链接已复制，请在浏览器中打开并核对主办单位。';
     wx.setClipboardData({ data: item.registrationUrl, success: () => wx.showModal({ title: '链接已复制', content, showCancel: false }) });
+  },
+  // 高校转发的转发页链接：小程序不能直接打开外部网页，和“复制官方报名链接”一样复制到剪贴板（2026-11-12）
+  copySourceUrl() {
+    const url = this.data.item?.infoSourceUrl;
+    if (!url) return;
+    wx.setClipboardData({ data: url, success: () => wx.showModal({ title: '链接已复制', content: '这是高校转发的通知，请在浏览器中打开查看。报名时间和要求以官方通知为准。', showCancel: false }) });
   },
   async favorite() {
     const id = this.data.item?.id;
@@ -156,6 +183,12 @@ Page({
       wx.showToast({ title: '提醒已保存', icon: 'success' });
     } catch (error) { wx.showToast({ title: error instanceof Error ? error.message : '提醒保存失败', icon: 'none' }); }
     finally { this.setData({ savingReminder: false }); }
+  },
+  // 转发卡片：页面上的转发按钮和右上角菜单的“转发”都走这里。不传 imageUrl，封面用微信默认截图。
+  onShareAppMessage() {
+    const item = this.data.item;
+    if (!item?.id) return { title: '竞赛雷达', path: '/pages/index/index' };
+    return { title: item.name, path: `/pages/detail/detail?id=${encodeURIComponent(item.id)}` };
   },
   feedback() {
     const item = this.data.item;

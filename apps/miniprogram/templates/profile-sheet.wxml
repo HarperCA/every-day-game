@@ -1,0 +1,19 @@
+<!-- 昵称头像小面板（2026-11-12）：建队页、队伍页共用，逻辑在 services/profileSheet.ts，样式在 templates/profile-sheet.wxss。
+     用微信“头像昵称填写”能力：button open-type="chooseAvatar" 选头像，input type="nickname" 填昵称。队友和队长会看到。 -->
+<template name="profile-sheet">
+  <view wx:if="{{show}}" class="ps-mask" catchtouchmove="noop">
+    <view class="ps-panel">
+      <view class="ps-title">{{title || '设置头像和昵称'}}</view>
+      <view class="ps-sub">组队时队长和队友会看到</view>
+      <button class="ps-ava-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{avatarPreview}}" class="ps-ava" src="{{avatarPreview}}" mode="aspectFill" />
+        <view wx:else class="ps-ava ps-ava-empty">选头像</view>
+      </button>
+      <input class="ps-input" type="nickname" value="{{nickname}}" maxlength="30" placeholder="填写昵称" placeholder-class="ps-holder" bindinput="onNicknameInput" bindblur="onNicknameInput" />
+      <view class="ps-actions">
+        <button class="ps-btn ps-btn-plain" bindtap="closeProfileSheet">取消</button>
+        <button class="ps-btn ps-btn-main" bindtap="saveProfileSheet" disabled="{{saving}}">{{saving ? '保存中' : '保存'}}</button>
+      </view>
+    </view>
+  </view>
+</template>

@@ -1,0 +1,13 @@
+<view class="school-detail">
+  <view wx:if="{{loading}}">正在加载校赛…</view>
+  <view wx:if="{{error}}">{{error}}<button size="mini" bindtap="refresh">重试</button></view>
+  <block wx:if="{{contest}}">
+    <view class="school-heading">{{contest.title}}</view>
+    <view>{{contest.school}}</view>
+    <view wx:if="{{contest.startDate || contest.endDate}}">赛程 {{contest.startDate}} ～ {{contest.endDate}}</view>
+    <view class="school-content">{{contest.content}}</view>
+    <view wx:if="{{contest.signup}}" class="school-content" selectable="true">报名方式 {{contest.signup}}</view>
+    <button bindtap="createTeam" type="primary">创建校赛队伍</button>
+    <button open-type="share">转发校赛</button>
+  </block>
+</view>

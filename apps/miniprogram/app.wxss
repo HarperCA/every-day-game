@@ -78,5 +78,9 @@ button { border-radius: 16rpx; }
 .pcard-dl { font-size:23rpx; color:var(--ink2); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .pcard-dl.urgent { color:#d2481c; }
 .pcard-dl.muted { color:var(--muted); font-weight:400; }
+/* 截止日期一行：日期太长时省略号收尾，右边的“高校转发”小标记不换行 */
+.pcard-dl-row { display:flex; align-items:center; gap:8rpx; min-width:0; }
+.pcard-dl-row .pcard-dl { flex:1; min-width:0; }
+.pcard-src { flex:none; padding:2rpx 8rpx; border-radius:6rpx; font-size:19rpx; line-height:1.4; color:#8a6a10; background:#fdf3e4; }
 .pcard-gone { font-size:23rpx; line-height:1.5; color:var(--muted); }
 .pcard-since { font-size:21rpx; color:var(--muted); }

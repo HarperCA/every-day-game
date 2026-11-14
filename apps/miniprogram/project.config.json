@@ -1,7 +1,6 @@
 {
   "description": "大学生竞赛推荐小程序 MVP（Mock 开发模式）",
   "miniprogramRoot": "./",
-  "cloudfunctionRoot": "cloudfunctions/",
   "compileType": "miniprogram",
   "setting": {
     "useCompilerPlugins": [

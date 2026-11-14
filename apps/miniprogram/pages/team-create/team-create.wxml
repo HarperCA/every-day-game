@@ -1,0 +1,27 @@
+<!-- 创建队伍（2026-11-05；11-12 按用户定的规则改）：选比赛、队名、人数、队长微信号（11-12 改必填），底部创建 -->
+<import src="/templates/profile-sheet.wxml" />
+<view class="tc-page">
+  <view class="tc-sec">
+    <view class="tc-label">比赛</view>
+    <view class="tc-comp-row" bindtap="pickCompetition" role="button">
+      <text class="tc-comp {{competitionName ? '' : 'tc-comp-empty'}}">{{competitionName || '选择比赛'}}</text>
+      <text wx:if="{{!fromCompetition}}" class="tc-chev">›</text>
+    </view>
+  </view>
+
+  <view class="tc-sec">
+    <view class="tc-label">队伍名称</view>
+    <input class="tc-input" value="{{name}}" maxlength="20" placeholder="给队伍起个名字" placeholder-class="tc-holder" data-field="name" bindinput="onField" />
+    <view class="tc-line"></view>
+    <view class="tc-label tc-label-next">队伍总人数</view>
+    <picker mode="selector" range="{{sizeOptions}}" value="{{sizeIndex}}" bindchange="onSizeChange">
+      <view class="tc-picker"><text>{{sizeOptions[sizeIndex]}}</text><text class="tc-chev">›</text></view>
+    </picker>
+    <view class="tc-line"></view>
+    <view class="tc-label tc-label-next">你的微信号</view>
+    <input class="tc-input" value="{{wechat}}" maxlength="50" placeholder="入队的队员才能看到" placeholder-class="tc-holder" data-field="wechat" bindinput="onField" />
+  </view>
+
+  <view class="tc-bar"><button class="tc-submit" bindtap="submit" disabled="{{submitting}}">创建队伍并转发</button></view>
+</view>
+<template is="profile-sheet" data="{{...profileSheet}}" />

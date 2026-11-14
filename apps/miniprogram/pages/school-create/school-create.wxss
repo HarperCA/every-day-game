@@ -1,0 +1,6 @@
+.school-form { padding: 28rpx; }
+.school-form label { display: block; margin-bottom: 20rpx; }
+.school-form input, .school-form textarea, .school-form picker { box-sizing: border-box; width: 100%; padding: 16rpx; margin-top: 8rpx; border: 1rpx solid var(--line, #ccc); border-radius: 12rpx; }
+.school-form input { height: 76rpx; }
+.school-form textarea { height: 180rpx; }
+.school-error { color: #b42318; margin: 20rpx 0; }

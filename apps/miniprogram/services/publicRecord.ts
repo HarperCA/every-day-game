@@ -21,6 +21,14 @@ export function reminderTarget(value: unknown, boundary: 'start' | 'end'): strin
     ? `${value}T${boundary === 'end' ? '23:59:59+08:00' : '00:00:00+08:00'}` : value;
 }
 
+// 信息来源（2026-11-12 用户定）：追不到官方通知的新一届用“高校转发”发布。北京接口给 infoSource（'official' | 'school_repost'）、infoSourceUrl；
+// 旧数据没有这两个字段、或值不认识的，当官方。转发链接只认 http(s) 的，别的不给（详情页就不显示复制按钮）。
+export function infoSourceOf(item: any) {
+  const isSchoolRepost = (item.infoSource ?? item.info_source) === 'school_repost';
+  const url = String(item.infoSourceUrl ?? item.info_source_url ?? '').trim();
+  return { infoSource: isSchoolRepost ? 'school_repost' : 'official', infoSourceUrl: isSchoolRepost && /^https?:\/\//i.test(url) ? url : '', isSchoolRepost };
+}
+
 export function hydratePublic(item: any) {
   const registrationStatus = item.registration_status;
   const eligibilityText = String(item.eligibility || '').trim();
@@ -66,5 +74,7 @@ export function hydratePublic(item: any) {
     dataStatus:item.data_status || 'published',
     nextEditionEstimate:item.next_edition_estimate || '',
     nextEditionEstimateDate:item.next_edition_estimate ? item.next_edition_estimate.substring(0, 10) : '',
+    // 高校转发：详情页标“信息来自高校转发，以官方通知为准”并可复制转发链接；卡片上加小标记
+    ...infoSourceOf(item),
   };
 }

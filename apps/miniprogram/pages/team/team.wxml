@@ -1,0 +1,34 @@
+<!-- 组队页（2026-11-05；11-12 接后端）：上面一排两个方框按钮，下面按全部、我发起的、我参加的筛选队伍 -->
+<import src="/templates/team-card.wxml" />
+<brand-nav />
+<view class="team-page">
+  <view class="team-actions">
+    <view class="team-box" bindtap="createTeam" role="button"><text class="team-box-t">创建队伍</text></view>
+    <view class="team-box" bindtap="openApplications" role="button">
+      <text class="team-box-t">组队申请</text>
+      <text wx:if="{{inboundCount}}" class="team-box-badge">{{inboundCount}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="team-empty">
+    <view class="team-empty-title">没读到队伍</view>
+    <view class="team-empty-sub">{{error}}</view>
+    <button class="team-retry" bindtap="refresh">重新加载</button>
+  </view>
+  <view wx:elif="{{loading}}" class="team-empty"><view class="team-empty-sub">正在加载…</view></view>
+  <view wx:elif="{{isEmpty}}" class="team-empty">
+    <image class="team-empty-ico" src="/assets/tabbar-team-active.png" mode="aspectFit" aria-hidden="true" />
+    <view class="team-empty-title">还没有队伍</view>
+    <view class="team-empty-sub">创建队伍后，把卡片转发到群里招募队友</view>
+  </view>
+  <block wx:else>
+    <view class="team-filter">
+      <view class="team-filter-item {{filter === 'all' ? 'on' : ''}}" bindtap="setFilter" data-filter="all">全部<text class="team-filter-n">{{counts.all}}</text></view>
+      <view class="team-filter-item {{filter === 'initiated' ? 'on' : ''}}" bindtap="setFilter" data-filter="initiated">我发起的<text class="team-filter-n">{{counts.initiated}}</text></view>
+      <view class="team-filter-item {{filter === 'joined' ? 'on' : ''}}" bindtap="setFilter" data-filter="joined">我参加的<text class="team-filter-n">{{counts.joined}}</text></view>
+    </view>
+    <block wx:for="{{teams}}" wx:for-item="team" wx:key="id">
+      <template is="team-card" data="{{team}}" />
+    </block>
+  </block>
+</view>

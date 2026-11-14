@@ -9,10 +9,14 @@ MINI = ROOT / "apps" / "miniprogram"
 
 
 class ProjectFileTests(unittest.TestCase):
-    def test_miniprogram_has_only_two_frozen_tabs(self):
+    def test_miniprogram_tabbar(self):
+        # 2026-11-12 新前端：底部导航固定四个——找比赛、校赛、组队、我的，都指向已注册页面
         config = json.loads((MINI / "app.json").read_text(encoding="utf-8"))
         tabs = [(item["pagePath"], item["text"]) for item in config["tabBar"]["list"]]
-        self.assertEqual(tabs, [("pages/index/index", "找比赛"), ("pages/my/my", "我的")])
+        self.assertEqual(tabs, [("pages/index/index", "找比赛"), ("pages/school/school", "校赛"), ("pages/team/team", "组队"), ("pages/my/my", "我的")])
+        for page_path, _text in tabs:
+            for suffix in (".ts", ".wxml", ".wxss", ".json"):
+                self.assertTrue((MINI / f"{page_path}{suffix}").exists(), f"missing {page_path}{suffix}")
 
     def test_required_vertical_slice_pages_exist(self):
         for stem in ("pages/index/index", "pages/detail/detail", "pages/feedback/feedback", "pages/favorites/favorites", "pages/reminders/reminders", "pages/my/my"):
@@ -47,11 +51,10 @@ class ProjectFileTests(unittest.TestCase):
         self.assertNotIn("我的提醒<text>开发中", my_page)
 
     def test_reminder_replace_is_atomic_and_preserves_active_delivery(self):
-        user_data = (MINI / "cloudfunctions/userData/index.js").read_text(encoding="utf-8")
-        policy = (MINI / "cloudfunctions/userData/reminderWritePolicy.js").read_text(encoding="utf-8")
-        self.assertIn("db.runTransaction", user_data)
-        self.assertIn("shouldPreserveCloudReminder(current)", user_data)
-        self.assertIn("delivery_status === 'queued'", policy)
+        # 2026-11-12 起提醒写入迁到北京后端（backend/北京/服务/发提醒），前端只保留计划校验
+        reminders = (MINI / "services/reminders.ts").read_text(encoding="utf-8")
+        self.assertIn("validateReminderPlans", reminders)
+        self.assertIn("replaceReminderEvent", reminders)
 
     def test_wxml_has_no_javascript_method_calls(self):
         for path in MINI.rglob("*.wxml"):
@@ -134,32 +137,28 @@ class ProjectFileTests(unittest.TestCase):
         self.assertIn("feedback_review", store)
 
     def test_wechat_login_and_user_data_binding_are_implemented(self):
+        # 2026-11-12 新前端：登录和用户数据直连北京后端（/api/login + 签名会话），不再走上海云函数
         app = (MINI / "app.ts").read_text(encoding="utf-8")
         cloud_session = (MINI / "services/cloudSession.ts").read_text(encoding="utf-8")
         favorites = (MINI / "services/favorites.ts").read_text(encoding="utf-8")
         reminders = (MINI / "services/reminders.ts").read_text(encoding="utf-8")
-        login_function = (MINI / "cloudfunctions/login/index.js").read_text(encoding="utf-8")
-        user_data_function = (MINI / "cloudfunctions/userData/index.js").read_text(encoding="utf-8")
         self.assertNotIn("mock-user-001", app)
         self.assertIn("loginWithWechat", app)
-        self.assertIn("wx.cloud.callFunction", cloud_session)
-        self.assertIn("cloud.getWXContext", login_function)
-        self.assertIn("cloud.getWXContext", user_data_function)
+        self.assertIn("wx.login", cloud_session)
+        self.assertIn("/api/login", cloud_session)
+        self.assertIn("userSessionToken", cloud_session)
         self.assertIn("initializeFavoritesCloudSync", favorites)
         self.assertIn("initializeRemindersCloudSync", reminders)
         self.assertIn("setFavorite", favorites)
         self.assertIn("replaceReminderEvent", reminders)
 
-    def test_feedback_submission_reaches_cloud_review_queue(self):
+    def test_feedback_submission_reaches_backend(self):
+        # 纠错提交换由北京后端的用户数据接口处理（services/cloudSession.ts 的 callUserData）
         detail = (MINI / "pages/detail/detail.ts").read_text(encoding="utf-8")
         form = (MINI / "pages/feedback/feedback.ts").read_text(encoding="utf-8")
-        user_data = (MINI / "cloudfunctions/userData/index.js").read_text(encoding="utf-8")
-        admin_data = (MINI / "cloudfunctions/adminData/index.js").read_text(encoding="utf-8")
         self.assertIn("/pages/feedback/feedback", detail)
         self.assertIn("submitFeedback", form)
         self.assertIn("decodeURIComponent", form)
-        self.assertIn("pending_ai_review", user_data)
-        self.assertIn("loadSubmittedFeedbacks", admin_data)
         self.assertNotIn("纠错表单将在下一纵向切片接入", detail)
 
     def test_frontend_sources_contain_no_secret_values(self):

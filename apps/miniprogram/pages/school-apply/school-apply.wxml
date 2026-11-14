@@ -1,0 +1,8 @@
+<view class="school-form">
+  <label>学校全称<input data-field="school" bindinput="onField" maxlength="100" /></label>
+  <label>真实姓名<input data-field="realName" bindinput="onField" maxlength="50" /></label>
+  <label>联系方式<input data-field="contact" bindinput="onField" maxlength="100" /></label>
+  <label>证明说明<textarea data-field="proof" bindinput="onField" maxlength="1000" /></label>
+  <view wx:if="{{error}}" class="school-error">{{error}}</view>
+  <button bindtap="submit" type="primary" loading="{{working}}" disabled="{{working}}">提交管理员申请</button>
+</view>

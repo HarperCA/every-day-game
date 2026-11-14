@@ -1,0 +1,39 @@
+<!-- 组队申请（2026-11-05；11-12 接后端）：两栏切换；待我审批（只给队长）可以通过、拒绝，我发出的可以撤回 -->
+<view class="ta-page">
+  <view class="ta-tabs">
+    <view class="ta-tab {{tab === 'inbound' ? 'on' : ''}}" bindtap="setTab" data-tab="inbound">待我审批<text wx:if="{{inbound.length}}" class="ta-badge">{{inbound.length}}</text></view>
+    <view class="ta-tab {{tab === 'outbound' ? 'on' : ''}}" bindtap="setTab" data-tab="outbound">我发出的<text wx:if="{{outbound.length}}" class="ta-count">{{outbound.length}}</text></view>
+  </view>
+
+  <view wx:if="{{error}}" class="ta-empty">{{error}}</view>
+  <view wx:elif="{{loading}}" class="ta-empty">正在加载…</view>
+  <block wx:elif="{{tab === 'inbound'}}">
+    <view wx:if="{{!inbound.length}}" class="ta-empty">没有待审批的申请</view>
+    <view class="ta-card" wx:for="{{inbound}}" wx:for-item="application" wx:key="id">
+      <view class="ta-person">
+        <image wx:if="{{application.avatarUrl}}" class="ta-ava ta-ava-img" src="{{application.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="ta-ava">{{application.initial}}</text>
+        <view class="ta-person-text">
+          <view class="ta-name-row"><text class="ta-name">{{application.name}}</text><text class="ta-major">{{application.major}} · {{application.grade}}</text></view>
+          <view class="ta-sub">申请加入 {{application.teamName}}</view>
+        </view>
+      </view>
+      <view wx:if="{{application.strengths}}" class="ta-sub ta-line">擅长：{{application.strengths}}</view>
+      <view wx:if="{{application.intro}}" class="ta-message">{{application.intro}}</view>
+      <view class="ta-actions">
+        <button class="ta-btn ta-btn-plain" bindtap="reject" data-id="{{application.id}}">拒绝</button>
+        <button class="ta-btn ta-btn-main" bindtap="approve" data-id="{{application.id}}">通过</button>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <view wx:if="{{!outbound.length}}" class="ta-empty">还没有发出申请</view>
+    <view class="ta-card" wx:for="{{outbound}}" wx:for-item="item" wx:key="id" bindtap="openTeam" data-id="{{item.teamId}}" role="button">
+      <view class="ta-out-r1"><text class="ta-name ta-out-name">{{item.teamName}}</text><text class="ta-status {{item.statusClass}}">{{item.statusText}}</text></view>
+      <view class="ta-sub">{{item.competitionName}}</view>
+      <view wx:if="{{item.canWithdraw}}" class="ta-actions">
+        <button class="ta-btn ta-btn-plain" catchtap="withdraw" data-id="{{item.id}}">撤回申请</button>
+      </view>
+    </view>
+  </block>
+</view>

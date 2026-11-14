@@ -4,6 +4,7 @@
     <view class="hero-row">
       <text class="st {{item.statusClass}}">{{item.registrationStatus}}</text>
       <text wx:if="{{item.recommendationLevel}}" class="rec {{item.recommendationLevel === '强烈推荐' ? 'r1' : item.recommendationLevel === '值得参加' ? 'r2' : item.recommendationLevel === '适合练手' ? 'r3' : item.recommendationLevel === '高难挑战' ? 'r4' : 'r5'}}">{{item.recommendationLevel}}</text>
+      <button class="share-btn" open-type="share" aria-label="转发给好友或群">转发</button>
     </view>
     <view class="title">{{item.name}}</view>
     <view class="hero-meta">
@@ -13,7 +14,11 @@
     </view>
     <view class="hero-tags" wx:if="{{item.professions.length}}"><text wx:for="{{item.professions}}" wx:key="*this">{{item}}</text></view>
     <!-- 信息可信度（2026-10，用户定）：最近一次核验日期；信息都来自主办方公开资料 -->
-    <view class="verify-line" wx:if="{{item.lastVerifiedDate && item.lastVerifiedDate !== '待核验'}}">✓ {{item.lastVerifiedDate}} 已核验 · 信息来自主办方公开资料</view>
+    <!-- 高校转发（2026-11-12 用户定）：追不到官方通知的新一届用高校转发发布，标明来源；转发链接点了复制（小程序不能直接打开外部网页） -->
+    <view wx:if="{{item.isSchoolRepost}}" class="repost-note">
+      <text class="repost-text">信息来自高校转发，以官方通知为准</text>
+      <text wx:if="{{item.infoSourceUrl}}" class="repost-link" bindtap="copySourceUrl" role="button" aria-label="复制高校转发通知的链接">复制转发链接</text>
+    </view>
   </view>
 
   <view class="body">
@@ -42,6 +47,13 @@
     <view wx:if="{{item.schoolTimingDependent}}" class="timing-warning timing-{{item.timingReliability}}">
       <view wx:if="{{item.timingReliability !== 'school_controlled'}}" class="timing-head">以上日期未经确认</view>
       <view class="timing-note">{{item.schoolTimingNote}}</view>
+    </view>
+
+    <!-- 组队入口（2026-11-05 用户定）：关键时间下方单独一行，不带小字 -->
+    <view class="team-entry" bindtap="openTeamEntry" role="button">
+      <text class="team-entry-t">{{myTeamId ? '我的队伍' : '和同学一起参加'}}</text>
+      <text wx:if="{{!myTeamId}}" class="team-entry-go">发起组队</text>
+      <text class="team-entry-chev">›</text>
     </view>
 
     <view class="sec" wx:if="{{item.recommendationLevel}}">

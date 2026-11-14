@@ -1,0 +1,12 @@
+/* 选择比赛（2026-11-05）。颜色变量见 app.wxss */
+.tp-page { min-height: 100vh; padding: 20rpx 24rpx 48rpx; box-sizing: border-box; }
+.tp-search { display: flex; align-items: center; gap: 16rpx; height: 80rpx; padding: 0 24rpx; border-radius: 40rpx; background: var(--surface); }
+.tp-input { flex: 1; min-width: 0; font-size: 28rpx; }
+.tp-holder { color: var(--muted); }
+.tp-go { flex: none; font-size: 28rpx; font-weight: 600; color: var(--accent); }
+.tp-state { padding-top: 160rpx; text-align: center; font-size: 28rpx; color: var(--muted); }
+.tp-list { margin-top: 20rpx; border-radius: 28rpx; overflow: hidden; background: var(--surface); }
+.tp-row { padding: 24rpx 28rpx; }
+.tp-row + .tp-row { border-top: 1rpx solid var(--line); }
+.tp-name { font-size: 30rpx; font-weight: 600; line-height: 1.5; word-break: break-all; }
+.tp-meta { display: flex; flex-wrap: wrap; gap: 4rpx 20rpx; margin-top: 6rpx; font-size: 24rpx; color: var(--ink2); }

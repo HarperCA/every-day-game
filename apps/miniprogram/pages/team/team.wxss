@@ -1,0 +1,38 @@
+/* 组队页（2026-11-05）。颜色变量见 app.wxss；卡片圆角和阴影同首页 .ccard */
+.team-page { min-height: 100vh; padding: 8rpx 24rpx 48rpx; box-sizing: border-box; }
+/* 列表上面的两个方框按钮 */
+.team-actions { display: flex; gap: 20rpx; margin-top: 20rpx; }
+.team-box { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 12rpx; box-sizing: border-box; height: 96rpx; background: var(--surface); border: 2rpx solid var(--accent); border-radius: 20rpx; }
+.team-box-t { font-size: 30rpx; font-weight: 600; color: var(--accent); }
+.team-box-badge { min-width: 36rpx; height: 36rpx; line-height: 36rpx; padding: 0 8rpx; box-sizing: border-box; border-radius: 18rpx; background: #e5484d; color: #fff; text-align: center; font-size: 22rpx; font-weight: 600; }
+/* 筛选：下划线样式，同首页的报名状态 */
+.team-filter { display: flex; gap: 40rpx; margin: 28rpx 8rpx 20rpx; border-bottom: 1rpx solid var(--line); }
+.team-filter-item { position: relative; padding-bottom: 14rpx; font-size: 28rpx; color: var(--ink2); }
+.team-filter-item.on { font-weight: 700; color: var(--ink); }
+.team-filter-item.on::after { content: ""; position: absolute; left: 50%; bottom: -1rpx; width: 40rpx; height: 6rpx; margin-left: -20rpx; border-radius: 3rpx; background: var(--accent); }
+.team-filter-n { margin-left: 6rpx; font-size: 24rpx; color: var(--muted); }
+.team-filter-item.on .team-filter-n { color: var(--accent); }
+/* 队伍卡片 */
+.tcard { background: var(--surface); border-radius: 32rpx; padding: 28rpx 28rpx 26rpx; margin-bottom: 20rpx; box-shadow: 0 2rpx 4rpx rgba(23, 32, 51, .05), 0 12rpx 32rpx -20rpx rgba(23, 32, 51, .18); }
+.tcard-tag { display: inline-block; padding: 2rpx 14rpx; border-radius: 10rpx; font-size: 22rpx; line-height: 1.6; font-weight: 500; white-space: nowrap; }
+.status-review { background: var(--accent-soft); color: var(--accent); }
+.status-done { background: #e6f4ec; color: #1f8a55; }
+.status-wait { background: #fdf3e4; color: var(--amber); }
+.status-plain { background: var(--chip); color: var(--ink2); }
+.tcard-name { margin-top: 14rpx; font-size: 36rpx; font-weight: 700; line-height: 1.4; word-break: break-all; }
+.tcard-comp { margin-top: 6rpx; font-size: 28rpx; line-height: 1.5; color: var(--ink2); word-break: break-all; }
+/* 成员座位 */
+/* 卡片底部按钮 */
+.tcard-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.tcard-btn { flex: 1; margin: 0; padding: 0; height: 76rpx; line-height: 76rpx; border-radius: 20rpx; font-size: 26rpx; font-weight: 600; }
+.tcard-btn::after { border: 0; }
+.tcard-btn-plain { background: var(--chip); color: var(--ink2); }
+.tcard-btn-main { background: var(--accent); color: #fff; }
+.tcard-btn-soft { background: var(--accent-soft); color: var(--accent); }
+/* 没有队伍 */
+.team-empty { display: flex; flex-direction: column; align-items: center; padding: 160rpx 48rpx 0; text-align: center; }
+.team-empty-ico { width: 112rpx; height: 112rpx; }
+.team-empty-title { margin-top: 24rpx; font-size: 34rpx; font-weight: 700; }
+.team-empty-sub { margin-top: 12rpx; font-size: 26rpx; line-height: 1.6; color: var(--muted); }
+.team-retry { margin: 32rpx 0 0; padding: 0 40rpx; height: 72rpx; line-height: 72rpx; border-radius: 20rpx; background: var(--accent-soft); color: var(--accent); font-size: 28rpx; font-weight: 600; }
+.team-retry::after { border: 0; }

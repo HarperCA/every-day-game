@@ -1,0 +1,20 @@
+<!-- 选择比赛（2026-11-05）：顶部搜索，下面是结果；点一行选中并返回 -->
+<view class="tp-page">
+  <view class="tp-search">
+    <input class="tp-input" value="{{keyword}}" placeholder="搜索比赛名称" placeholder-class="tp-holder" confirm-type="search" bindinput="onKeyword" bindconfirm="search" />
+    <text class="tp-go" bindtap="search" role="button">搜索</text>
+  </view>
+  <view wx:if="{{loading}}" class="tp-state">正在加载…</view>
+  <view wx:elif="{{error}}" class="tp-state">{{error}}</view>
+  <view wx:elif="{{!items.length}}" class="tp-state">没有找到比赛</view>
+  <view wx:else class="tp-list">
+    <view class="tp-row" wx:for="{{items}}" wx:for-item="one" wx:key="id" bindtap="choose" data-id="{{one.id}}" role="button">
+      <view class="tp-name">{{one.name}}</view>
+      <view class="tp-meta">
+        <text wx:if="{{one.registrationStatus}}">{{one.registrationStatus}}</text>
+        <text wx:if="{{one.registrationEndDate}}">截止 {{one.registrationEndDate}}</text>
+        <text wx:if="{{one.eventLevel}}">{{one.eventLevel}}</text>
+      </view>
+    </view>
+  </view>
+</view>

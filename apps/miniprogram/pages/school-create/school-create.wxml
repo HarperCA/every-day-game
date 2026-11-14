@@ -1,0 +1,10 @@
+<view class="school-form">
+  <view>{{school}}</view>
+  <label>校赛名称<input data-field="title" bindinput="onField" maxlength="100" /></label>
+  <label>校赛简介<textarea data-field="content" bindinput="onField" maxlength="2000" /></label>
+  <label>报名方式<textarea data-field="signup" bindinput="onField" maxlength="500" /></label>
+  <label>开始日期<picker mode="date" data-field="startDate" bindchange="onField">{{startDate || '请选择'}}</picker></label>
+  <label>结束日期<picker mode="date" data-field="endDate" bindchange="onField">{{endDate || '请选择'}}</picker></label>
+  <view wx:if="{{error}}" class="school-error">{{error}}</view>
+  <button bindtap="submit" type="primary" loading="{{working}}" disabled="{{working}}">提交审核</button>
+</view>

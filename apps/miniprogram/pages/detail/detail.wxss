@@ -5,9 +5,16 @@
 /* 顶部 */
 .hero { background: var(--surface); padding: 32rpx 32rpx 36rpx; display: flex; flex-direction: column; gap: 16rpx; }
 .hero-row { display: flex; align-items: center; gap: 20rpx; font-size: 26rpx; }
+/* 转发按钮：靠右；去掉微信按钮默认的整行宽度、边距和边框 */
+.share-btn { flex: none; width: auto; margin: 0 0 0 auto; padding: 0 24rpx; height: 56rpx; line-height: 54rpx; font-size: 26rpx; font-weight: 500; color: var(--accent); background: var(--surface); border: 1rpx solid var(--accent); border-radius: 28rpx; }
+.share-btn::after { border: none; }
 .title { font-size: 42rpx; font-weight: 700; line-height: 1.4; letter-spacing: .4rpx; }
 .hero-meta { display: flex; flex-wrap: wrap; gap: 4rpx 28rpx; font-size: 27rpx; color: var(--ink2); }
 .hero-tags { display: flex; flex-wrap: wrap; gap: 12rpx; }
+/* 高校转发提示：浅黄底，和“以上日期未经确认”同一组颜色；窄屏时链接换到下一行 */
+.repost-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8rpx 24rpx; padding: 16rpx 24rpx; border-radius: 20rpx; background: #fdf3e4; font-size: 25rpx; line-height: 1.5; }
+.repost-text { color: #6d5718; }
+.repost-link { color: var(--accent); font-weight: 600; }
 .hero-tags text { font-size: 24rpx; padding: 4rpx 18rpx; border-radius: 12rpx; background: var(--chip); color: var(--ink2); }
 .verify-line { margin-top: 18rpx; font-size: 23rpx; color: #1f8a55; }
 
@@ -42,6 +49,12 @@
 .timing-unverified { background: #fdf3e4; }
 .timing-unverified .timing-head { color: #8a6a10; }
 .timing-unverified .timing-note { color: #6d5718; }
+
+/* 组队入口 */
+.team-entry { display: flex; align-items: center; gap: 12rpx; background: var(--surface); border-radius: 32rpx; padding: 28rpx 32rpx; }
+.team-entry-t { flex: 1; font-size: 30rpx; font-weight: 700; }
+.team-entry-go { font-size: 28rpx; font-weight: 600; color: var(--accent); }
+.team-entry-chev { color: var(--muted); font-size: 36rpx; line-height: 1; }
 
 /* 可折叠块：推荐理由、参赛与规则、官方信息 */
 .fold { display: flex; align-items: center; gap: 8rpx; min-height: 48rpx; }

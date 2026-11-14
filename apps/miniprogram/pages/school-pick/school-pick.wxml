@@ -1,0 +1,9 @@
+<view class="school-form">
+  <view wx:if="{{!code}}">请从校赛管理员发送的邀请卡片进入。</view>
+  <label>真实姓名<input data-field="realName" bindinput="onField" maxlength="50" /></label>
+  <label>所属学院<input data-field="college" bindinput="onField" maxlength="100" /></label>
+  <label>专业<input data-field="major" bindinput="onField" maxlength="100" /></label>
+  <label>学号<input data-field="studentNo" bindinput="onField" maxlength="40" /></label>
+  <view wx:if="{{error}}" class="school-error">{{error}}</view>
+  <button bindtap="submit" type="primary" loading="{{working}}" disabled="{{working}}">加入学校</button>
+</view>

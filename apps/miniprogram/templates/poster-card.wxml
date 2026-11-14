@@ -20,7 +20,11 @@
           <text wx:if="{{item.levelTag}}" class="pcard-level">{{item.levelTag}}</text>
           <text wx:if="{{item.recClass}}" class="pcard-rec rec {{item.recClass}}">{{item.recommendationLevel}}</text>
         </view>
-        <text class="pcard-dl {{item.deadlineTone}}">{{item.deadlineText}}</text>
+        <!-- 高校转发的（2026-11-12）：截止日期右边一个小标记，不另起一行，卡片高度不变 -->
+        <view class="pcard-dl-row">
+          <text class="pcard-dl {{item.deadlineTone}}">{{item.deadlineText}}</text>
+          <text wx:if="{{item.isSchoolRepost}}" class="pcard-src">高校转发</text>
+        </view>
       </block>
       <text wx:if="{{item.favoriteAt}}" class="pcard-since">收藏于 {{item.favoriteAt}}</text>
     </view>

@@ -1,0 +1,15 @@
+<!-- 组队页的队伍卡片（2026-11-05，设计来自用户给的稿子；2026-11-06 用户定主要显示队名和比赛，其余放到队伍页）。页面要有 openTeam、copyWechat、noop 三个方法和 onShareAppMessage；样式在 pages/team/team.wxss -->
+<template name="team-card">
+  <view class="tcard" bindtap="openTeam" data-id="{{team.id}}" role="button">
+    <view class="tcard-name">{{team.name}}</view>
+    <view class="tcard-comp">{{team.competitionName}}</view>
+    <view wx:if="{{team.role === 'captain'}}" class="tcard-actions">
+      <button class="tcard-btn tcard-btn-plain" catchtap="openTeam" data-id="{{team.id}}">管理队伍</button>
+      <button class="tcard-btn tcard-btn-main" open-type="share" data-id="{{team.id}}" catchtap="noop">微信转发招人</button>
+    </view>
+    <view wx:if="{{team.role === 'member'}}" class="tcard-actions">
+      <button class="tcard-btn tcard-btn-plain" catchtap="copyWechat" data-id="{{team.id}}">复制队长微信</button>
+      <button class="tcard-btn tcard-btn-soft" open-type="share" data-id="{{team.id}}" catchtap="noop">帮忙转发招人</button>
+    </view>
+  </view>
+</template>

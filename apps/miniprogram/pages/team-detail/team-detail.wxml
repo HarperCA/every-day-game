@@ -1,0 +1,108 @@
+<!-- 队伍页（2026-11-05；11-12 接后端、按用户定的规则改）：顶部比赛和队伍；中间按身份显示；能申请的人底部固定“发送申请”。
+     外人只看简版（比赛名、队名、人数上限、已有几人）；队员看队友和队长的昵称头像。 -->
+<import src="/templates/profile-sheet.wxml" />
+<view wx:if="{{team}}" class="td-page">
+  <view class="td-hero">
+    <view class="td-comp" bindtap="openCompetition"><text class="td-comp-name">{{team.competitionName}}</text><text wx:if="{{team.competitionId}}" class="td-chev">›</text></view>
+    <view class="td-name">{{team.name}}</view>
+    <view wx:if="{{!team.isMember}}" class="td-intro">已有 {{team.memberCount}} 人 · 最多 {{team.maxMembers}} 人</view>
+  </view>
+
+  <view class="td-body">
+    <view wx:if="{{team.role === 'member'}}" class="td-banner banner-done">组队成功，你已加入这支队伍</view>
+    <view wx:if="{{team.role === 'pending'}}" class="td-banner banner-wait">申请已发送，等队长审核</view>
+    <view wx:if="{{team.role === 'rejected'}}" class="td-banner banner-plain">队长未通过你的申请{{team.canApply ? '，可以重新申请' : ''}}</view>
+    <view wx:if="{{!team.isMember && team.full}}" class="td-banner banner-plain">队伍已满员</view>
+
+    <view wx:if="{{team.needWechat}}" class="td-sec td-need-wechat">
+      <view class="td-title td-title-tight">请填你的微信号</view>
+      <view class="td-tip">你现在是队长，填上后队员才能联系你</view>
+      <view class="td-edit-row">
+        <input class="td-input td-edit-input" value="{{edit.wechat}}" maxlength="50" placeholder="你的微信号" placeholder-class="td-holder" data-field="wechat" bindinput="onEdit" />
+        <button class="td-small td-small-main" bindtap="saveWechat">保存</button>
+      </view>
+    </view>
+
+    <view wx:if="{{team.role === 'member'}}" class="td-sec td-contact">
+      <view class="td-contact-text"><view class="td-title td-title-tight">队长微信</view><view class="td-wechat">{{team.captainWechat || '队长还没填'}}</view></view>
+      <button wx:if="{{team.captainWechat}}" class="td-small td-small-main" bindtap="copyWechat">复制</button>
+    </view>
+
+    <view wx:if="{{team.role === 'captain' && pendingCount}}" class="td-sec td-pending" bindtap="openApplications" role="button">
+      <text class="td-title td-title-tight">待审核申请 <text class="td-num">{{pendingCount}}</text></text><text class="td-chev">›</text>
+    </view>
+
+    <view wx:if="{{team.role === 'captain'}}" class="td-sec">
+      <view class="td-title">邀请卡片</view>
+      <view class="td-card">
+        <view class="td-card-title">组队邀请：「{{team.name}}」｜{{team.competitionName}}</view>
+        <image class="td-card-img" src="{{cardImage}}" mode="aspectFill" aria-hidden="true" />
+      </view>
+      <button class="td-share" open-type="share">转发到群</button>
+    </view>
+
+    <view wx:if="{{team.isMember}}" class="td-sec">
+      <view class="td-title">队员 <text class="td-num">{{team.memberCount}}/{{team.maxMembers}}</text></view>
+      <view class="td-member" wx:for="{{team.members}}" wx:for-item="person" wx:key="id">
+        <image wx:if="{{person.avatarUrl}}" class="td-ava td-ava-img" src="{{person.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="td-ava">{{person.initial}}</text>
+        <view class="td-member-text">
+          <text class="td-person-name">{{person.name}}</text>
+          <text wx:if="{{person.isCaptain}}" class="td-captain">队长</text>
+          <text wx:if="{{person.isMe}}" class="td-me" bindtap="editMyProfile">改头像昵称</text>
+        </view>
+        <block wx:if="{{team.role === 'captain' && !person.isCaptain}}">
+          <button class="td-small td-small-plain" bindtap="transfer" data-id="{{person.id}}" data-name="{{person.name}}">转让</button>
+          <button class="td-small td-small-plain" bindtap="removeMember" data-id="{{person.id}}">移出</button>
+        </block>
+      </view>
+      <button wx:if="{{team.role === 'member' && !team.full}}" class="td-toggle" open-type="share">帮忙转发招人</button>
+    </view>
+
+    <view wx:if="{{team.role === 'captain'}}" class="td-sec">
+      <view class="td-title">管理队伍</view>
+      <view class="td-label">队名</view>
+      <view class="td-edit-row">
+        <input class="td-input td-edit-input" value="{{edit.name}}" maxlength="20" placeholder="队伍名称" placeholder-class="td-holder" data-field="name" bindinput="onEdit" />
+        <button class="td-small td-small-plain" bindtap="saveName">保存</button>
+      </view>
+      <view class="td-label">队伍总人数（不能少于现有 {{team.memberCount}} 人）</view>
+      <picker mode="selector" range="{{sizeOptions}}" value="{{sizeIndex}}" bindchange="onSizeChange">
+        <view class="td-input td-picker"><text>{{team.maxMembers}} 人</text><text class="td-chev">›</text></view>
+      </picker>
+      <block wx:if="{{!team.needWechat}}">
+        <view class="td-label">我的微信号（入队的队员能看到）</view>
+        <view class="td-edit-row">
+          <input class="td-input td-edit-input" value="{{edit.wechat}}" maxlength="50" placeholder="你的微信号" placeholder-class="td-holder" data-field="wechat" bindinput="onEdit" />
+          <button class="td-small td-small-plain" bindtap="saveWechat">保存</button>
+        </view>
+      </block>
+    </view>
+
+    <button wx:if="{{team.role === 'pending'}}" class="td-withdraw" bindtap="withdraw">撤回申请</button>
+
+    <view wx:if="{{team.canApply}}" class="td-sec">
+      <view class="td-title">申请加入</view>
+      <view class="td-label">专业</view>
+      <input class="td-input" value="{{form.major}}" maxlength="30" placeholder="如：软件工程" placeholder-class="td-holder" data-field="major" bindinput="onField" />
+      <view class="td-label">年级</view>
+      <input class="td-input" value="{{form.grade}}" maxlength="20" placeholder="如：大三" placeholder-class="td-holder" data-field="grade" bindinput="onField" />
+      <view class="td-label">擅长方向（选填）</view>
+      <input class="td-input" value="{{form.strengths}}" maxlength="50" placeholder="如：建模、前端、写论文" placeholder-class="td-holder" data-field="strengths" bindinput="onField" />
+      <view class="td-label">介绍（选填）</view>
+      <textarea class="td-area" value="{{form.intro}}" maxlength="200" placeholder="介绍一下自己，比如做过的比赛、项目" placeholder-class="td-holder" data-field="intro" bindinput="onField" cursor-spacing="160" />
+      <view class="td-tip">队长会看到你的头像昵称和这里填的内容</view>
+    </view>
+
+    <button wx:if="{{team.role === 'member'}}" class="td-dissolve" bindtap="leave">退出队伍</button>
+    <button wx:if="{{team.role === 'captain'}}" class="td-dissolve" bindtap="dissolve">解散队伍</button>
+  </view>
+
+  <view wx:if="{{team.canApply}}" class="td-bar">
+    <button class="td-submit" bindtap="apply">{{team.role === 'rejected' ? '重新申请' : '发送申请'}}</button>
+  </view>
+</view>
+<view wx:elif="{{notFound}}" class="td-state-page">这支队伍已解散或打不开了</view>
+<view wx:elif="{{error}}" class="td-state-page">{{error}}<view><button class="td-small td-small-plain td-retry" bindtap="refresh">重试</button></view></view>
+<view wx:elif="{{loading}}" class="td-state-page">正在加载…</view>
+<template is="profile-sheet" data="{{...profileSheet}}" />

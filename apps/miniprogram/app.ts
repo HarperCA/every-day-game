@@ -18,7 +18,7 @@ App({
   },
   onLaunch() {
     this.globalData.userDataReady = Promise.resolve();
-    // 2026-10-09 起打开即用当前微信身份静默登录（微信云开发可静默取得身份，不弹窗），
+    // 2026-10-09 起打开即用当前微信身份静默登录（wx.login 不弹窗），
     // 问卷答案、收藏、提醒都直接存进账号。没有“不登录就不能用”：登录失败照样能浏览，需要时再重试。
     this.login().catch(() => undefined);
     // 访问异常上报：记下网络类型，补发上次没发出去的（clientLog.ts）

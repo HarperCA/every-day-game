@@ -1,0 +1,55 @@
+<brand-nav title="校赛" />
+<view class="sc-live">
+  <view wx:if="{{loading}}" class="sc-panel">正在加载校赛…</view>
+  <view wx:if="{{error}}" class="sc-panel">
+    <view>{{error}}</view>
+    <button size="mini" bindtap="retry">重试</button>
+  </view>
+  <block wx:if="{{status}}">
+    <view class="sc-panel" wx:if="{{!status.memberships.length && !status.adminSchools.length}}">
+      还没加入学校，请向校赛管理员索取邀请卡片。
+    </view>
+    <view class="sc-panel">
+      <button size="mini" bindtap="openApply">申请成为校赛管理员</button>
+      <view class="sc-row" wx:for="{{status.applications}}" wx:key="id">
+        <view>{{item.school}} · {{item.status}}</view>
+        <view wx:if="{{item.reviewNote}}">{{item.reviewNote}}</view>
+      </view>
+      <view class="sc-row" wx:for="{{status.memberships}}" wx:key="id">
+        <view>{{item.school}}</view>
+        <button size="mini" data-action="leave" data-school="{{item.school}}" bindtap="confirmChange" disabled="{{working}}">退出学校</button>
+      </view>
+    </view>
+    <view class="sc-panel" wx:if="{{adminSchool}}">
+      <picker range="{{status.adminSchools}}" bindchange="switchSchool" disabled="{{loading || working}}">
+        <view class="sc-title">{{adminSchool}} · 管理员工作台</view>
+      </picker>
+      <view class="sc-actions">
+        <button size="mini" bindtap="openCreate">提交校赛</button>
+        <button size="mini" bindtap="changeInvite" disabled="{{working}}">生成邀请</button>
+        <button size="mini" data-renew="yes" bindtap="changeInvite" disabled="{{working}}">更换邀请</button>
+        <button wx:if="{{inviteCode}}" size="mini" open-type="share" disabled="{{working}}">转发邀请</button>
+      </view>
+      <view class="sc-title">学生名单</view>
+      <view wx:if="{{!members.length && !loading}}">暂无学生</view>
+      <view class="sc-row" wx:for="{{members}}" wx:key="id">
+        <view>{{item.realName}} · {{item.college}} · {{item.major}} · {{item.studentNo}}</view>
+        <button size="mini" data-action="remove" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">移出</button>
+      </view>
+      <view class="sc-title">校赛及审核状态</view>
+      <view wx:if="{{!managed.length && !loading}}">暂无提交记录</view>
+      <view class="sc-row" wx:for="{{managed}}" wx:key="id">
+        <view>{{item.title}} · {{item.status}}</view>
+        <view wx:if="{{item.reviewNote}}">{{item.reviewNote}}</view>
+        <button wx:if="{{item.status === '已发布'}}" size="mini" data-action="withdraw" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">下架</button>
+      </view>
+    </view>
+    <view class="sc-panel" wx:if="{{status.memberships.length || status.adminSchools.length}}">
+      <view class="sc-title">本校已发布的校赛</view>
+      <view wx:if="{{!contests.length && !loading}}">暂时没有已发布的校赛</view>
+      <view class="sc-row" wx:for="{{contests}}" wx:key="id" data-id="{{item.id}}" bindtap="openContest">
+        <view>{{item.title}}</view><view>{{item.school}} {{item.endDate}}</view>
+      </view>
+    </view>
+  </block>
+</view>
