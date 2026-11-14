@@ -11,15 +11,18 @@
   background: linear-gradient(130deg, #14295c, #175bd6);
   color: #fff;
 }
-.sc-hero-school, .sc-hero-count {
+.sc-hero-count {
   display: inline-block;
   padding: 7rpx 15rpx;
   border-radius: 24rpx;
   background: rgba(255, 255, 255, 0.14);
   font-size: 24rpx;
 }
-.sc-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-top: 20rpx; }
+.sc-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
 .sc-hero-title { font-size: 44rpx; font-weight: 700; }
+.sc-school-picker { flex: 1; min-width: 0; }
+.sc-school-trigger { display: flex; align-items: center; gap: 14rpx; overflow-wrap: anywhere; }
+.sc-school-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
 .sc-hero-count { flex-shrink: 0; }
 .sc-hero-note { margin-top: 16rpx; font-size: 25rpx; color: #e5efff; }
 .sc-mode { margin: 20rpx 0 0; color: #16469c; background: #fff; }

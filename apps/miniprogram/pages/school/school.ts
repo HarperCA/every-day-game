@@ -3,22 +3,24 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: false,
-    schoolLabel: '',
+    schools: [] as string[], schoolIndex: 0, selectedSchool: '', schoolContests: [] as ContestView[],
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
   async refresh(school?: string) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], schoolContests: [], members: [], managed: [], inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
       const schools = [...new Set([...status.memberships.map(member => member.school), ...status.adminSchools])];
-      const schoolLabel = schools.length > 1 ? '我的学校' : schools[0] || '校赛专区';
-      this.setData({ status, contests, adminSchool, schoolLabel });
+      const schoolIndex = Math.max(0, schools.indexOf(this.data.selectedSchool));
+      const selectedSchool = schools[schoolIndex] || '';
+      const schoolContests = contests.filter(contest => contest.school === selectedSchool);
+      this.setData({ status, contests, adminSchool, schools, schoolIndex, selectedSchool, schoolContests });
       if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });
@@ -31,7 +33,7 @@ Page({
   },
   onHide() {
     this.schoolGeneration = (this.schoolGeneration || 0) + 1;
-    this.setData({ status: null, contests: [], members: [], managed: [], inviteCode: '' });
+    this.setData({ status: null, contests: [], schoolContests: [], members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
   toggleStudentView() {
@@ -45,6 +47,13 @@ Page({
   },
   switchSchool(event: WechatMiniprogram.PickerChange) {
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
+  },
+  selectContestSchool(event: WechatMiniprogram.PickerChange) {
+    const schoolIndex = Number(event.detail.value);
+    const selectedSchool = this.data.schools[schoolIndex];
+    if (!this.data.status || !selectedSchool) return;
+    const schoolContests = this.data.contests.filter(contest => contest.school === selectedSchool);
+    this.setData({ schoolIndex, selectedSchool, schoolContests });
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {
