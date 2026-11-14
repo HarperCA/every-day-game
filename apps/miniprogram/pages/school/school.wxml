@@ -9,7 +9,11 @@
     <view class="sc-panel" wx:if="{{!status.memberships.length && !status.adminSchools.length}}">
       还没加入学校，请向校赛管理员索取邀请卡片。
     </view>
-    <view class="sc-panel">
+    <view class="sc-panel" wx:if="{{adminSchool}}">
+      <view wx:if="{{studentView}}">当前为学生视角</view>
+      <button size="mini" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '返回管理员工作台' : '切换到学生视角'}}</button>
+    </view>
+    <view class="sc-panel" wx:if="{{!studentView || !adminSchool}}">
       <button size="mini" bindtap="openApply">申请成为校赛管理员</button>
       <view class="sc-row" wx:for="{{status.applications}}" wx:key="id">
         <view>{{item.school}} · {{item.status}}</view>
@@ -20,7 +24,7 @@
         <button size="mini" data-action="leave" data-school="{{item.school}}" bindtap="confirmChange" disabled="{{working}}">退出学校</button>
       </view>
     </view>
-    <view class="sc-panel" wx:if="{{adminSchool}}">
+    <view class="sc-panel" wx:if="{{adminSchool && !studentView}}">
       <picker range="{{status.adminSchools}}" bindchange="switchSchool" disabled="{{loading || working}}">
         <view class="sc-title">{{adminSchool}} · 管理员工作台</view>
       </picker>

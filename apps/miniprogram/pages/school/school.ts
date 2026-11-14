@@ -2,7 +2,7 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 
 Page({
   data: {
-    status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '',
+    status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: false,
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
@@ -16,7 +16,7 @@ Page({
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
       this.setData({ status, contests, adminSchool });
-      if (adminSchool) {
+      if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });
       }
@@ -31,6 +31,15 @@ Page({
     this.setData({ status: null, contests: [], members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
+  toggleStudentView() {
+    if (!this.data.adminSchool || this.data.loading || this.data.working) return;
+    if (this.data.studentView) {
+      this.setData({ studentView: false });
+      void this.refresh();
+    } else {
+      this.setData({ studentView: true, members: [], managed: [], inviteCode: '' });
+    }
+  },
   switchSchool(event: WechatMiniprogram.PickerChange) {
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
   },
@@ -42,7 +51,7 @@ Page({
     wx.navigateTo({ url: `/pages/school-detail/school-detail?id=${encodeURIComponent(String(event.currentTarget.dataset.id))}` });
   },
   async changeInvite(event: WechatMiniprogram.TouchEvent) {
-    if (this.data.working || !this.data.adminSchool) return;
+    if (this.data.working || this.data.studentView || !this.data.adminSchool) return;
     const school = this.data.adminSchool;
     const generation = this.schoolGeneration;
     this.setData({ working: true });
