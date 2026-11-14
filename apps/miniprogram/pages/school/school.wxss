@@ -20,9 +20,18 @@
 }
 .sc-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
 .sc-hero-title { font-size: 44rpx; font-weight: 700; }
-.sc-contest-picker { flex: 1; min-width: 0; }
-.sc-picker-trigger { display: flex; align-items: center; gap: 14rpx; overflow-wrap: anywhere; }
+.sc-picker-trigger {
+  display: flex; align-items: center; gap: 14rpx; min-width: 0; margin: 0;
+  padding: 4rpx 16rpx; border: 1rpx solid rgba(255, 255, 255, 0.32);
+  border-radius: 14rpx; line-height: 1.4; color: #fff; background: rgba(255, 255, 255, 0.12);
+}
+.sc-picker-trigger .sc-hero-title { font-size: 36rpx; }
 .sc-picker-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
+.sc-picker-menu { margin-top: 14rpx; border-radius: 14rpx; background: var(--surface, #fff); color: var(--text, #1b2842); overflow: hidden; }
+.sc-picker-list { max-height: 360rpx; }
+.sc-picker-option { padding: 16rpx 20rpx; line-height: 1.45; font-size: 28rpx; overflow-wrap: anywhere; }
+.sc-picker-option + .sc-picker-option { border-top: 1rpx solid var(--line, #ddd); }
+.sc-picker-empty { padding: 18rpx 20rpx; font-size: 26rpx; }
 .sc-hero-count { flex-shrink: 0; }
 .sc-mode-row { display: flex; justify-content: flex-end; margin-bottom: 16rpx; }
 .sc-mode { margin: 0; color: #fff; background: rgba(255, 255, 255, 0.18); }

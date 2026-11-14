@@ -3,21 +3,20 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
-    contestOptions: [] as string[],
+    contestPickerOpen: false,
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
   async refresh(school?: string) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], contestOptions: [], members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], contestPickerOpen: false, members: [], managed: [], inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
-      const contestOptions = ['请选择比赛', ...contests.map(contest => contest.title)];
-      this.setData({ status, contests, adminSchool, contestOptions });
+      this.setData({ status, contests, adminSchool });
       if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });
@@ -30,7 +29,7 @@ Page({
   },
   onHide() {
     this.schoolGeneration = (this.schoolGeneration || 0) + 1;
-    this.setData({ status: null, contests: [], contestOptions: [], members: [], managed: [], inviteCode: '' });
+    this.setData({ status: null, contests: [], contestPickerOpen: false, members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
   toggleStudentView() {
@@ -45,9 +44,8 @@ Page({
   switchSchool(event: WechatMiniprogram.PickerChange) {
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
   },
-  selectContest(event: WechatMiniprogram.PickerChange) {
-    const contest = this.data.contests[Number(event.detail.value) - 1];
-    if (contest) this.navigateToContest(contest.id);
+  toggleContestPicker() {
+    this.setData({ contestPickerOpen: !this.data.contestPickerOpen });
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {

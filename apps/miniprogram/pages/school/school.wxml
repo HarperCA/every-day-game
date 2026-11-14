@@ -11,16 +11,19 @@
         <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
       </view>
       <view wx:if="{{studentView || !adminSchool}}" class="sc-hero-row">
-        <picker wx:if="{{contests.length}}" class="sc-contest-picker" range="{{contestOptions}}" value="{{0}}" bindchange="selectContest">
-          <view class="sc-picker-trigger">
-            <text class="sc-hero-title">选择比赛</text>
-            <text class="sc-picker-chevron">▾</text>
-          </view>
-        </picker>
-        <view wx:else class="sc-hero-title">选择比赛</view>
+        <view class="sc-picker-trigger" role="button" aria-expanded="{{contestPickerOpen}}" bindtap="toggleContestPicker">
+          <text class="sc-hero-title">选择比赛</text>
+          <text class="sc-picker-chevron">{{contestPickerOpen ? '▴' : '▾'}}</text>
+        </view>
         <view class="sc-hero-count">{{contests.length}} 场校赛</view>
       </view>
       <view wx:else class="sc-hero-title">{{adminSchool}}</view>
+      <view wx:if="{{(studentView || !adminSchool) && contestPickerOpen}}" class="sc-picker-menu">
+        <scroll-view wx:if="{{contests.length}}" scroll-y class="sc-picker-list">
+          <view wx:for="{{contests}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="openContest">{{item.title}}</view>
+        </scroll-view>
+        <view wx:else class="sc-picker-empty">暂无可选比赛</view>
+      </view>
     </view>
     <view class="sc-panel" wx:if="{{adminSchool && !studentView}}">
       <picker range="{{status.adminSchools}}" bindchange="switchSchool" disabled="{{loading || working}}">
