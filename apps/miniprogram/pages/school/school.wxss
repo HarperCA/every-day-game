@@ -20,9 +20,9 @@
 }
 .sc-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
 .sc-hero-title { font-size: 44rpx; font-weight: 700; }
-.sc-school-picker { flex: 1; min-width: 0; }
-.sc-school-trigger { display: flex; align-items: center; gap: 14rpx; overflow-wrap: anywhere; }
-.sc-school-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
+.sc-contest-picker { flex: 1; min-width: 0; }
+.sc-picker-trigger { display: flex; align-items: center; gap: 14rpx; overflow-wrap: anywhere; }
+.sc-picker-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
 .sc-hero-count { flex-shrink: 0; }
 .sc-mode-row { display: flex; justify-content: flex-end; margin-bottom: 16rpx; }
 .sc-mode { margin: 0; color: #fff; background: rgba(255, 255, 255, 0.18); }

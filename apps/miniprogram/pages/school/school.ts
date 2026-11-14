@@ -3,24 +3,21 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 Page({
   data: {
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
-    schools: [] as string[], schoolIndex: 0, selectedSchool: '', schoolContests: [] as ContestView[],
+    contestOptions: [] as string[],
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
   async refresh(school?: string) {
     const generation = (this.schoolGeneration || 0) + 1;
     this.schoolGeneration = generation;
-    this.setData({ status: null, contests: [], schoolContests: [], members: [], managed: [], inviteCode: '', loading: true, error: '' });
+    this.setData({ status: null, contests: [], contestOptions: [], members: [], managed: [], inviteCode: '', loading: true, error: '' });
     try {
       const [status, contests] = await Promise.all([getSchoolStatus(), listContests()]);
       if (this.schoolGeneration !== generation) return;
       const preferred = school ?? this.data.adminSchool;
       const adminSchool = status.adminSchools.includes(preferred) ? preferred : status.adminSchools[0] || '';
-      const schools = [...new Set([...status.memberships.map(member => member.school), ...status.adminSchools])];
-      const schoolIndex = Math.max(0, schools.indexOf(this.data.selectedSchool));
-      const selectedSchool = schools[schoolIndex] || '';
-      const schoolContests = contests.filter(contest => contest.school === selectedSchool);
-      this.setData({ status, contests, adminSchool, schools, schoolIndex, selectedSchool, schoolContests });
+      const contestOptions = ['请选择比赛', ...contests.map(contest => contest.title)];
+      this.setData({ status, contests, adminSchool, contestOptions });
       if (adminSchool && !this.data.studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) this.setData({ members, managed });
@@ -33,7 +30,7 @@ Page({
   },
   onHide() {
     this.schoolGeneration = (this.schoolGeneration || 0) + 1;
-    this.setData({ status: null, contests: [], schoolContests: [], members: [], managed: [], inviteCode: '' });
+    this.setData({ status: null, contests: [], contestOptions: [], members: [], managed: [], inviteCode: '' });
   },
   retry() { void this.refresh(); },
   toggleStudentView() {
@@ -48,12 +45,9 @@ Page({
   switchSchool(event: WechatMiniprogram.PickerChange) {
     void this.refresh(this.data.status?.adminSchools[Number(event.detail.value)]);
   },
-  selectContestSchool(event: WechatMiniprogram.PickerChange) {
-    const schoolIndex = Number(event.detail.value);
-    const selectedSchool = this.data.schools[schoolIndex];
-    if (!this.data.status || !selectedSchool) return;
-    const schoolContests = this.data.contests.filter(contest => contest.school === selectedSchool);
-    this.setData({ schoolIndex, selectedSchool, schoolContests });
+  selectContest(event: WechatMiniprogram.PickerChange) {
+    const contest = this.data.contests[Number(event.detail.value) - 1];
+    if (contest) this.navigateToContest(contest.id);
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {
@@ -62,8 +56,11 @@ Page({
   openContest(event: WechatMiniprogram.TouchEvent) {
     const { id, signup } = event.currentTarget.dataset;
     if (!id) return;
-    const section = String(signup) === 'true' ? '&section=signup' : '';
-    wx.navigateTo({ url: `/pages/school-detail/school-detail?id=${encodeURIComponent(String(id))}${section}` });
+    this.navigateToContest(String(id), String(signup) === 'true');
+  },
+  navigateToContest(id: string, showSignup = false) {
+    const section = showSignup ? '&section=signup' : '';
+    wx.navigateTo({ url: `/pages/school-detail/school-detail?id=${encodeURIComponent(id)}${section}` });
   },
   async changeInvite(event: WechatMiniprogram.TouchEvent) {
     if (this.data.working || this.data.studentView || !this.data.adminSchool) return;

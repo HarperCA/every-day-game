@@ -3,7 +3,7 @@
   <view wx:if="{{error}}">{{error}}<button size="mini" bindtap="refresh">重试</button></view>
   <block wx:if="{{contest}}">
     <view class="school-detail-hero">
-      <view class="school-detail-campus">{{contest.school}}</view>
+      <view wx:if="{{contest.school && contest.school !== '官方的'}}" class="school-detail-campus">{{contest.school}}</view>
       <view class="school-heading">{{contest.title}}</view>
       <view wx:if="{{contest.startDate || contest.endDate}}">赛程 {{contest.startDate}}{{contest.startDate && contest.endDate ? ' 至 ' : ''}}{{contest.endDate}}</view>
     </view>

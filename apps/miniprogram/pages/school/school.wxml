@@ -11,14 +11,14 @@
         <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
       </view>
       <view wx:if="{{studentView || !adminSchool}}" class="sc-hero-row">
-        <picker wx:if="{{schools.length}}" class="sc-school-picker" range="{{schools}}" value="{{schoolIndex}}" bindchange="selectContestSchool">
-          <view class="sc-school-trigger">
-            <text class="sc-hero-title">{{selectedSchool}}</text>
-            <text class="sc-school-chevron">▾</text>
+        <picker wx:if="{{contests.length}}" class="sc-contest-picker" range="{{contestOptions}}" value="{{0}}" bindchange="selectContest">
+          <view class="sc-picker-trigger">
+            <text class="sc-hero-title">选择比赛</text>
+            <text class="sc-picker-chevron">▾</text>
           </view>
         </picker>
-        <view wx:else class="sc-hero-title">校赛专区</view>
-        <view class="sc-hero-count">{{schoolContests.length}} 场校赛</view>
+        <view wx:else class="sc-hero-title">选择比赛</view>
+        <view class="sc-hero-count">{{contests.length}} 场校赛</view>
       </view>
       <view wx:else class="sc-hero-title">{{adminSchool}}</view>
     </view>
@@ -46,15 +46,15 @@
         <button wx:if="{{item.status === '已发布'}}" size="mini" data-action="withdraw" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">下架</button>
       </view>
     </view>
-    <view wx:if="{{(studentView || !adminSchool) && schools.length}}">
+    <view wx:if="{{(studentView || !adminSchool) && (status.memberships.length || status.adminSchools.length)}}">
       <view class="sc-section-title">本校已发布的校赛</view>
-      <view wx:if="{{!schoolContests.length && !loading}}" class="sc-panel sc-empty">
-        <view class="sc-empty-title">暂时没有已发布的校赛</view>
+      <view wx:if="{{!contests.length && !loading}}" class="sc-panel sc-empty">
+        <view class="sc-empty-title">暂无可选比赛</view>
         <view class="sc-empty-note">本校发布新比赛后，会在这里显示。</view>
       </view>
-      <block wx:for="{{schoolContests}}" wx:key="id">
+      <block wx:for="{{contests}}" wx:key="id">
         <view class="sc-panel sc-contest" data-id="{{item.id}}" bindtap="openContest" hover-class="sc-contest-pressed">
-          <view class="sc-school-tag">{{item.school}}</view>
+          <view wx:if="{{item.school !== '官方的'}}" class="sc-school-tag">{{item.school}}</view>
           <view class="sc-contest-title">{{item.title}}</view>
           <view wx:if="{{item.startDate || item.endDate}}" class="sc-contest-date">赛程 {{item.startDate}}{{item.startDate && item.endDate ? ' 至 ' : ''}}{{item.endDate}}</view>
           <view class="sc-contest-actions">
@@ -64,7 +64,7 @@
         </view>
       </block>
     </view>
-    <view wx:elif="{{!schools.length}}" class="sc-panel sc-empty">
+    <view wx:elif="{{!status.memberships.length && !status.adminSchools.length}}" class="sc-panel sc-empty">
       <view class="sc-empty-title">还未加入学校</view>
       <view class="sc-empty-note">请向本校校赛管理员索取邀请卡片。</view>
     </view>
