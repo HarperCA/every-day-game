@@ -191,7 +191,7 @@ describe('入库指定网址', () => {
     });
     test('写入主库整体失败撤回：写入.error 交回，写进全为 false，改动为空', async () => {
       const db = 准备();
-      const 坏主库写入 = 参数 => 默认写入主库({ ...参数, 主库: { transaction() { throw new Error('磁盘满了'); } } });
+      const 坏主库写入 = 参数 => 默认写入主库({ ...参数, 主库: { list: (...args) => db.list(...args), transaction() { throw new Error('磁盘满了'); } } });
       const 回 = await 入库指定网址([{ 网址: 'https://zl.cn/n/2', 标题: 'x', 比赛名: '中联杯', 比赛编号: 'event-zl' }, { 网址: 'https://zl.cn/n/3', 标题: 'x', 比赛名: '中联杯', 比赛编号: 'event-zl' }],
         { 主库: db, 模块们: [过04, 审05, 真06], log: 静, now: () => now, 更新已有: true, 写入主库: 坏主库写入 });
       expect(回.写入.error).toBe('磁盘满了');

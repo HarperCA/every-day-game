@@ -20,7 +20,7 @@ const 每个来源最多字 = 8000;
 const 正文最少字 = 100;
 
 const 有效日期 = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v));
-const 记录摘要 = r => ({ name: r.name, organizer: r.organizer, participants: r.participants, eligibility: r.eligibility, format_and_rules: r.format_and_rules,
+const 记录摘要 = r => ({ name: r.name, track_name: r.track_name, organizer: r.organizer, participants: r.participants, eligibility: r.eligibility, format_and_rules: r.format_and_rules,
   registration_start: r.registration_start || null, registration_end: r.registration_end || null, registration_url: r.registration_url, sources: (r.sources || []).map(s => s.url) });
 
 export async function 三项核验(记录, ctx, { 摘录 = '' } = {}) {

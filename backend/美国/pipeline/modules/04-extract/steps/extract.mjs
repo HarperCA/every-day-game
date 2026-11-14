@@ -8,6 +8,7 @@
 //
 // 交回 { ok: true, fields, dropped, missing, promptVersion, 程序填了, AI填了 }
 //   或 { ok: false, status, reason }；status：page_is_boilerplate（交给重读）、ai_error（AI 出错）、ai_bad_response（交回的不是 JSON 对象，已报告问题）
+import { 比赛身份 } from '../../../common/届次与赛道.mjs';
 import { loadPrompt } from '../../../common/prompt.mjs';
 import { LIST_FIELDS, REGISTRATION_ORGANIZATIONS, RECOGNITION_LEVELS, RECOGNITION_PATHS, REWARD_HIGHLIGHTS, SINGLE_FIELDS } from '../schema.mjs';
 import { PAGE_TEXT_LIMIT, looksLikeContestPage, toStructuredText, verifyAgainstSource } from './原文核对.mjs';
@@ -22,15 +23,17 @@ const 中文名 = {
 
 export async function extractFields({ item, text }, ctx) {
   const 程序 = 程序填(text);
-  if (必要齐了(程序.fields)) return { ok: true, fields: 程序.fields, dropped: [], missing: [], promptVersion: null, 程序填了: 程序.填了, AI填了: [] };
+  const { 赛道, 赛道键 } = 比赛身份(item.data?.name, item.data?.track_name);
+  if (必要齐了(程序.fields) && !赛道 && !/赛道|专项赛/.test(text)) return { ok: true, fields: 程序.fields, dropped: [], missing: [], promptVersion: null, 程序填了: 程序.填了, AI填了: [] };
 
   const 名称 = String(item.data?.name || '');
+  const 目标 = 赛道 && !名称.includes(赛道) ? 名称 + '（' + 赛道 + '）' : 名称;
   const 正文 = toStructuredText(text, PAGE_TEXT_LIMIT);
-  if (!looksLikeContestPage(正文, 名称)) return { ok: false, status: 'page_is_boilerplate', reason: '正文里找不到这场比赛的名称，多半是只有导航的空壳页' };
+  if (!looksLikeContestPage(正文, 比赛身份(名称).名称)) return { ok: false, status: 'page_is_boilerplate', reason: '正文里找不到这场比赛的名称，多半是只有导航的空壳页' };
 
   const { version, text: 提示词 } = loadPrompt(提示词文件, {
     回报可选值: REWARD_HIGHLIGHTS.join('、'), 认可路径: RECOGNITION_PATHS.join('、'), 认可等级: RECOGNITION_LEVELS.join('、'),
-    报名组织可选值: REGISTRATION_ORGANIZATIONS.join('、'), 已填: 程序.填了.map(f => 中文名[f] || f).join('、') || '无', 比赛名: 名称, 正文,
+    报名组织可选值: REGISTRATION_ORGANIZATIONS.join('、'), 已填: 程序.填了.map(f => 中文名[f] || f).join('、') || '无', 比赛名: 目标, 正文,
   });
   let data;
   try {
@@ -44,10 +47,14 @@ export async function extractFields({ item, text }, ctx) {
   }
 
   const 核对 = verifyAgainstSource(data, 正文);
+  const 已核对赛道 = 比赛身份(核对.competition_name?.value, 核对.track_name?.value);
+  if (赛道键 && 已核对赛道.赛道键 !== 赛道键) {
+    return { ok: false, status: 'track_not_verified', reason: '正文未能核实候选对应的赛道：' + 赛道 };
+  }
   const fields = {};
   const AI填了 = [];
   for (const 名 of SINGLE_FIELDS) {
-    if (程序.fields[名]) fields[名] = 程序.fields[名];
+    if (!已核对赛道.赛道键 && 程序.fields[名]) fields[名] = 程序.fields[名];
     else if (核对[名]) { fields[名] = 核对[名]; AI填了.push(名); }
   }
   for (const 名 of Object.keys(LIST_FIELDS)) {

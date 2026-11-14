@@ -31,6 +31,7 @@ import * as codex from './providers/codex/index.mjs';
 import * as deepseek from './providers/deepseek/index.mjs';
 import * as jev from './providers/jev/index.mjs';
 import * as kimi from './providers/kimi/index.mjs';
+import * as tavily from './providers/tavily/index.mjs';
 
 export { AiError, ERROR_KINDS } from './common/errors.mjs';
 export const PURPOSES = DEFAULT_CONFIG.purposes;
@@ -38,7 +39,7 @@ export const PURPOSES = DEFAULT_CONFIG.purposes;
 export { DEFAULT_CONFIG };
 const AI_DIR = path.dirname(fileURLToPath(import.meta.url));
 
-export function createAi({ config = DEFAULT_CONFIG, providers = { deepseek, kimi, baidu, jev, codex }, keys = createKeyStore(),
+export function createAi({ config = DEFAULT_CONFIG, providers = { deepseek, kimi, baidu, jev, codex, tavily }, keys = createKeyStore(),
   usage = createUsageStore(process.env.AI_USAGE_DB || path.join(AI_DIR, 'usage.db')) } = {}) {
   const call = createCaller({ config, providers, keys, usage });
   return {

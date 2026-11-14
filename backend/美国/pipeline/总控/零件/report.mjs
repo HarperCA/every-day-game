@@ -35,6 +35,12 @@ export function writeReport(file, { runId, startedAt, finishedAt, dryRun, module
     lines.push(c.dryRun ? `- 试跑：可以写入 ${c.wouldWrite} 条，不提交 ${c.rejected} 条` :
       `- 写入 ${c.written} 条，冲突跳过 ${c.conflicts} 条，不提交 ${c.rejected} 条${c.error ? `；提交失败已撤回：${cell(c.error)}` : ''}`);
   }
+  if (result.commit?.入库复核?.length) {
+    lines.push('', '### 入库复核名单', '', '| 比赛 | 赛道 | 入库动作 | 复核结果 | 原因 |', '|---|---|---|---|---|');
+    for (const r of result.commit.入库复核) {
+      lines.push('| ' + [r.名称, r.赛道, r.decision, r.可入库 ? '可入库' : '暂缓', r.原因].map(cell).join(' | ') + ' |');
+    }
+  }
   const notWritten = rundb.changes().filter(c => !['已写入', '待提交'].includes(c.result));
   if (notWritten.length) {
     lines.push('', '### 没写进总库的改动', '', '| 表/行 | 提出的模块 | 结果 | 原因 |', '|---|---|---|---|');

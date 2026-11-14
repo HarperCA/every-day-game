@@ -5,7 +5,7 @@
 //   是网络问题(结果) → true / false
 //
 // 算网络问题的：超时；网络错误（连接被重置、连不上、域名解析失败、证书错误都在这里，下载那一步写成“fetch failed（错误码）”）；
-//   HTTP错误里对方回 403 或 5xx（有的网站挡国外 IP）。
+//   HTTP错误里对方回 403、405 或 5xx（有的网站挡国外 IP；405 是 2026-11-13 加的：“国际投资模拟仲裁大赛深圳杯”美国读返回 405）。
 // 不算的（不改走北京）：成功、没更新(304)、404 等其余 HTTP 错误、跳转太多、太大、不支持的类型、robots 不允许、内网地址、
 //   正文太短、读不出文字、内部错误——这些换个地方读结果也一样。调用方已经喊停（signal 已中止）也不请北京。
 // 北京给了不是网络问题的答复（成功、没更新、正文太短、404……）就用北京的，结果里加 经北京: true（维护过程里能看出来）；
@@ -16,7 +16,7 @@ const 网络类状态 = new Set(['超时', '网络错误']);
 export function 是网络问题(结果) {
   if (!结果 || typeof 结果 !== 'object') return false;
   if (网络类状态.has(结果.status)) return true;
-  return 结果.status === 'HTTP错误' && (结果.httpStatus === 403 || (结果.httpStatus >= 500 && 结果.httpStatus <= 599));
+  return 结果.status === 'HTTP错误' && (结果.httpStatus === 403 || 结果.httpStatus === 405 || (结果.httpStatus >= 500 && 结果.httpStatus <= 599));
 }
 
 export function 带北京兜底({ 读网页, 取源码, 代读 }) {

@@ -1,9 +1,12 @@
 // 拒过的网址：03 筛选、05 审核丢弃候选时，在返回的改动里顺带提一条，总控统一写进比赛库的 rejected_url；
 // 30 天内 02 对比去重遇到同一个网址就扔掉，不再白花额度。超过 30 天由每日清理删掉。
 //   拒过改动({ item, 原因, module, runId, now }) → 一条改动；网址不合规时交回 null（不提）
+import { 比赛身份 } from './届次与赛道.mjs';
 import { 网址键 } from './网址键.mjs';
 
 export function 拒过改动({ item, 原因, module, runId, now }) {
+  const { name, track_name, extraction } = item.data || {};
+  if (比赛身份(name, extraction?.fields?.track_name?.value || track_name).赛道键) return null;
   const url = item.data?.url || item.key;
   const key = 网址键(url);
   if (!key) return null;

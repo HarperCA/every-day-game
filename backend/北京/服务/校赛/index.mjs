@@ -2,6 +2,7 @@
 // 身份：入口校验令牌后交进 openid，这里按 openid 找账号；请求里自己写的 openid 不认。
 //
 //   handle({ action, ...参数 }, { 用户库, openid, now }) → { ok: true, data } 或 { ok: false, message }
+import { 检查内容 } from '../检查内容.mjs';
 import { 用户, 校赛 } from '../../副数据库/index.mjs';
 
 // ---- 输入校验 ----
@@ -52,10 +53,13 @@ function 要管理员(用户库, userId, school) {
 
 const 动作 = {
   // 申请管理员 → 待审核（同步到美国审核）
-  applyAdmin(e, { 用户库, userId, now }) {
-    const 申请 = 校赛.申请管理员(用户库, userId, {
+  async applyAdmin(e, { 用户库, userId, now, 微信, openid }) {
+    const 内容 = {
       school: 必填(e.school, 'school'), real_name: 必填(e.realName, 'realName'), contact: 必填(e.contact, 'contact'), proof: 必填(e.proof, 'proof'),
-    }, { now });
+    };
+    await 检查内容({ 微信, openid, scene: 2 }, 内容.real_name, 内容.contact, 内容.proof);
+    当前用户(用户库, openid);
+    const 申请 = 校赛.申请管理员(用户库, userId, 内容, { now });
     return { application: 申请给小程序(申请) };
   },
   myStatus(e, { 用户库, userId }) {
@@ -83,14 +87,18 @@ const 动作 = {
     const 学校 = 要管理员(用户库, userId, e.school);
     return { removed: 校赛.移出(用户库, 学校, 必填(e.memberId, 'memberId')).删了 };
   },
-  publishContest(e, { 用户库, userId, now }) {
+  async publishContest(e, { 用户库, userId, now, 微信, openid }) {
     const 学校 = 要管理员(用户库, userId, e.school);
     const start_date = 日期(e.startDate, 'startDate');
     const end_date = 日期(e.endDate, 'endDate');
     if (start_date && end_date && end_date < start_date) throw new Error('invalid_date_range');
-    const 赛 = 校赛.发布(用户库, userId, 学校, {
+    const 内容 = {
       title: 必填(e.title, 'title'), content: 必填(e.content, 'content'), signup: 选填(e.signup, 'signup'), start_date, end_date,
-    }, { now });
+    };
+    await 检查内容({ 微信, openid, scene: 3 }, 内容.title, 内容.content, 内容.signup);
+    当前用户(用户库, openid);
+    要管理员(用户库, userId, 学校);
+    const 赛 = 校赛.发布(用户库, userId, 学校, 内容, { now });
     return { contest: 校赛给管理员(赛) };
   },
   myContests(e, { 用户库, userId }) {
@@ -125,15 +133,15 @@ const 动作 = {
   },
 };
 
-const 不记日志 = ['unauthenticated', 'user_account_disabled', 'unsupported_action', 'not_school_admin', 'invite_invalid', 'school_admin_already_applied'];
+const 不记日志 = ['unauthenticated', 'user_account_disabled', 'unsupported_action', 'not_school_admin', 'invite_invalid', 'school_admin_already_applied', 'school_contest_not_found', 'content_not_allowed'];
 
-export async function handle(request = {}, { 用户库, openid, now = () => new Date() } = {}) {
+export async function handle(request = {}, { 用户库, openid, now = () => new Date(), 微信 } = {}) {
   const { action, ...event } = request;
   try {
     const userId = 当前用户(用户库, openid);
     const 这个 = Object.hasOwn(动作, action) ? 动作[action] : null;
     if (!这个) throw new Error('unsupported_action');
-    return { ok: true, data: 这个(event, { 用户库, userId, now: now() }) };
+    return { ok: true, data: await 这个(event, { 用户库, userId, now: now(), 微信, openid }) };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'school_failed';
     if (!不记日志.includes(message) && !/^invalid_|_too_long$/.test(message)) console.error('[校赛] 出错', { action, error: message });

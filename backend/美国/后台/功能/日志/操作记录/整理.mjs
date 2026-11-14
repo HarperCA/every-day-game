@@ -17,7 +17,7 @@ const 详情们 = {
     d.连带 && Object.keys(d.连带).length ? `连带删除：${Object.entries(d.连带).map(([表, n]) => `${表名中文[表] || 表} ${n}`).join('、')}` : null,
     d.断开的下级比赛?.length ? `断开的下级比赛：${d.断开的下级比赛.join('、')}` : null,
   ],
-  // 检查完成是检查项名称的列表，检查失败是 [{ name, error }]（db/维护/轮流.mjs 写的）
+  // 检查完成是检查项名称的列表，检查失败是 [{ name, error }]（旧的轮流维护写的，2026-11-12 已删；历史记录还在，照旧显示）
   维护比赛: d => {
     const 失败 = Array.isArray(d.检查失败) ? d.检查失败 : [];
     return [`检查完成 ${Array.isArray(d.检查完成) ? d.检查完成.length : 0} 项、失败 ${失败.length} 项${失败.length ? `（${失败.map(f => f.name).join('、')}）` : ''}`,

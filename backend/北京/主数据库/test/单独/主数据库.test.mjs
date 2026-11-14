@@ -56,6 +56,16 @@ describe('同步：收下美国推来的一批', () => {
     expect(db.count('public_edition')).toBe(1);
     expect(db.count('public_competition')).toBe(1);
   });
+  // 2026-11-12 用户定：追不到官方通知的新一届用“高校转发”发布，美国推来的届次多 info_source、info_source_url 两个字段。
+  // 届次的公开内容整份存在 data 里，不用改表；旧数据没有这两个字段，读出来就是没有（服务那边当 official）
+  test('高校转发的两个字段原样存下、读得出；旧数据没有这两个字段', () => {
+    const db = 准备();
+    const 转发 = { ...艺术26, version: 2, data: { ...艺术26.data, info_source: 'school_repost', info_source_url: 'https://jwc.example.edu.cn/notice/1' } };
+    expect(同步.收下(db, { 届次们: [转发] })).toMatchObject({ 更新: 1 });
+    expect(公开.届次(db, 'ed-art-2026')).toMatchObject({ info_source: 'school_repost', info_source_url: 'https://jwc.example.edu.cn/notice/1' });
+    expect(公开.全部条目(db).find(条 => 条.id === 'ed-art-2026')).toMatchObject({ info_source: 'school_repost' });
+    expect(公开.届次(db, 'ed-math-2026').info_source).toBeUndefined();
+  });
   test('只收已发布、已归档的；届次指向的比赛不在这一批也不在库里的，整批不收', () => {
     const db = open();
     expect(() => 同步.收下(db, { 比赛们: [数学], 届次们: [{ ...数学26, status: '待人工审核' }] })).toThrow(expect.objectContaining({ kind: '校验不通过' }));

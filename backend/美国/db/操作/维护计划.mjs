@@ -6,7 +6,7 @@
 //   正在报名中：每月      没有预计时间：每月
 // 预计报名时间看最新一届（ordinal 最大、没删的）：
 //   报名开始还没到 → 就是报名开始；
-//   已截止 → 存着的下一届预计（每日归档算的），没存就用报名开始（没有就比赛开始）往后推 365 天；
+//   已截止 → 先用历届报名间隔推算，样本不足时用归档时保存的预计，再退回报名或比赛开始往后推一年；
 //   最新一届一个时间都没有（刚建的新一届、待公布）→ 用上一届照上面推。
 // 日期规则同 ../../维护/归档/：按北京时间，只写日期的开始算 0 点、截止算当天 23:59:59.999；写错的当作没写。
 // 上次检查用比赛的 last_maintained_at。
@@ -14,6 +14,8 @@
 //   检查频率(届次们, now) → { 情况, 频率, 间隔天数, 预计报名 }
 //   下次检查(比赛, 届次们, now) → { ...检查频率, 上次检查, 下次检查, 到期 }   下次检查为 null 表示从没查过、马上查
 //   挑要查的(db, { now, 上限 }) → [{ 比赛, 名称, ...下次检查 }]   只要到期的；间隔短的先，同间隔越早该查的越先
+import { 认届次 } from '../../../共用/工具/届次数字.mjs';
+
 const 天 = 24 * 60 * 60 * 1000;
 const 一年 = 365 * 天;
 
@@ -36,25 +38,46 @@ function 时刻(值, 边界 = 'start') {
   return Number.isFinite(t) ? t : null;
 }
 
+// 用相邻届的报名开始日期推算周期。若知道真实届数差，可跳过库里缺失的中间届。
+function 历史周期(届, 更早的届) {
+  const 历史 = [届, ...更早的届].filter(x => 时刻(x.registration_start) !== null);
+  const 间隔 = [];
+  for (let i = 1; i < 历史.length; i += 1) {
+    const 新 = 历史[i - 1], 旧 = 历史[i];
+    const 新届数 = 认届次(新.edition_ordinal) ?? 认届次(新.edition_name);
+    const 旧届数 = 认届次(旧.edition_ordinal) ?? 认届次(旧.edition_name);
+    const 真实届数 = 旧届数 !== null && 新届数 > 旧届数 ? 新届数 - 旧届数 : 1;
+    const 周期 = (时刻(新.registration_start) - 时刻(旧.registration_start)) / 真实届数;
+    if (周期 >= 90 * 天 && 周期 <= 4 * 一年) 间隔.push(周期);
+  }
+  if (!间隔.length) return null;
+  间隔.sort((a, b) => a - b);
+  const 中间 = Math.floor(间隔.length / 2);
+  const 典型 = 间隔.length % 2 ? 间隔[中间] : (间隔[中间 - 1] + 间隔[中间]) / 2;
+  return Math.round(典型 / 天) * 天;
+}
+
 // 一届的报名情况：{ 报名中: true } / { 预计: 毫秒 } / { 已截止: true, 预计: 毫秒或 null } / null（一个时间都没有）
-function 这一届(届, t) {
+function 这一届(届, t, 更早的届) {
   const 开始 = 时刻(届.registration_start);
   const 截止 = 时刻(届.registration_end, 'end');
   const 比赛开始 = 时刻(届.competition_start);
   const 比赛结束 = 时刻(届.competition_end, 'end');
-  const 推一年 = () => {
+  const 推下一届 = () => {
+    const 周期 = 历史周期(届, 更早的届);
+    if (开始 !== null && 周期 !== null) return 开始 + 周期;
     const 存的 = 时刻(届.next_edition_estimate);
     if (存的 !== null) return 存的;
     const 基准 = 开始 ?? 比赛开始;
-    return 基准 === null ? null : 基准 + 一年;
+    return 基准 === null ? null : 基准 + (周期 ?? 一年);
   };
-  if (届.status_override === '已截止') return { 已截止: true, 预计: 推一年() };
   if (届.status_override === '报名中') return { 报名中: true };
+  if (届.status_override === '已截止' || 届.status === '已归档') return { 已截止: true, 预计: 推下一届() };
   if (开始 !== null && 开始 > t) return { 预计: 开始 };
-  if (截止 !== null) return t <= 截止 ? { 报名中: true } : { 已截止: true, 预计: 推一年() };
-  if (开始 !== null) return 比赛结束 !== null && t > 比赛结束 ? { 已截止: true, 预计: 推一年() } : { 报名中: true };
-  if (比赛结束 !== null && t > 比赛结束) return { 已截止: true, 预计: 推一年() };
-  if (时刻(届.next_edition_estimate) !== null) return { 已截止: true, 预计: 推一年() };
+  if (截止 !== null) return t <= 截止 ? { 报名中: true } : { 已截止: true, 预计: 推下一届() };
+  if (开始 !== null) return 比赛结束 !== null && t > 比赛结束 ? { 已截止: true, 预计: 推下一届() } : { 报名中: true };
+  if (比赛结束 !== null && t > 比赛结束) return { 已截止: true, 预计: 推下一届() };
+  if (时刻(届.next_edition_estimate) !== null) return { 已截止: true, 预计: 推下一届() };
   return null;
 }
 
@@ -74,11 +97,11 @@ function 分档(预计, t) {
 export function 检查频率(届次们, now = new Date()) {
   const t = now.getTime();
   const 从新到旧 = (届次们 || []).filter(e => !e.deleted_at).sort((a, b) => b.ordinal - a.ordinal);
-  for (const 届 of 从新到旧) {
-    const 情况 = 这一届(届, t);
+  for (let i = 0; i < 从新到旧.length; i += 1) {
+    const 情况 = 这一届(从新到旧[i], t, 从新到旧.slice(i + 1));
     if (!情况) continue;   // 一个时间都没有，看上一届
     if (情况.报名中) return { 情况: '报名中', ...档.每月, 预计报名: null };
-    if (情况.预计 === null) break;
+    if (情况.预计 === null) continue;
     return { ...分档(情况.预计, t), 预计报名: new Date(情况.预计).toISOString() };
   }
   return { 情况: '没有预计时间', ...档.每月, 预计报名: null };
@@ -86,10 +109,11 @@ export function 检查频率(届次们, now = new Date()) {
 
 export function 下次检查(比赛, 届次们, now = new Date()) {
   const 频率 = 检查频率(届次们, now);
+  const 距报名天数 = 频率.预计报名 === null ? null : Math.ceil((Date.parse(频率.预计报名) - now.getTime()) / 天);
   const 上次 = 时刻(比赛?.last_maintained_at);
-  if (上次 === null) return { ...频率, 上次检查: null, 下次检查: null, 到期: true };
+  if (上次 === null) return { ...频率, 距报名天数, 上次检查: null, 下次检查: null, 到期: true };
   const 下次 = 上次 + 频率.间隔天数 * 天;
-  return { ...频率, 上次检查: new Date(上次).toISOString(), 下次检查: new Date(下次).toISOString(), 到期: 下次 <= now.getTime() };
+  return { ...频率, 距报名天数, 上次检查: new Date(上次).toISOString(), 下次检查: new Date(下次).toISOString(), 到期: 下次 <= now.getTime() };
 }
 
 export function 挑要查的(db, { now = new Date(), 上限 = Infinity } = {}) {

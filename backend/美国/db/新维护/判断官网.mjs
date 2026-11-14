@@ -9,11 +9,16 @@
 //     去掉引号里的“××杯”、括号、通用词后，最长公共片段整段至少 6 个字、去掉通用词后至少 4 个字；纯英文片段至少 8 个字母。
 //     只和网页标题比，不和正文比（学校主页正文里常有某比赛的新闻，会误认）
 //   判断官网(网址, 比赛, { 读网页, 浏览器, 屏蔽, 库里最新年份 }) → { 是, 原因, 最终网址, 对上, 标题 }
-//     网址判断 → 读网页打开（空壳页且有浏览器就用无头浏览器再开一次）→ 跳转后的网址再判断 → 旧页面（标题+正文开头 300 字的年份）
+//     网址判断 → 读网页打开（空壳页且有浏览器就用无头浏览器再开一次；打不开——超时、网络错误、403/405/5xx——也换无头浏览器再开一次，
+//     2026-11-13 用户定；浏览器也打不开时原因是“打不开：…；无头浏览器也打不开：…”）→ 跳转后的网址再判断（含旧页面）
 //     → 标题或正文里有比赛全名（名称写法任一），或标题宽松对上
-//   来源候选(来源们, { 屏蔽, 域名比赛数 }) → { 候选: [{ 网址, 依据 }], 跳过: [原因] }
+//     往年旧页面只看网址（含跳转后的最终网址）里的年份（2026-11-13 用户定）：以前还看标题和正文开头 300 字的年份，
+//     实测把英语竞赛 chinaneccs.cn（“最新 1999 年”）、成图大赛 chengtudasai.com（“最新 2018 年”）这些真官网误判了。
+//   来源候选(来源们, { 屏蔽, 域名比赛数, 不算官网 }) → { 候选: [{ 网址, 依据 }], 跳过: [原因] }
 //     从这个比赛各届次的官方有效来源推起点候选：非平台取网站首页，平台（一个域名下挂 3 个以上不同比赛）留那一页本身
+//     不算官网：搜索记忆“不算官网的网址”那一节的条目（“网址（原因，日期）”，2026-11-13 用户定）——推出来的候选在里面就跳过（不分 www、结尾斜杠）
 //   算域名比赛数(db) → Map<主机名（去掉 www）, 不同比赛数>
+//   带浏览器读网页(读网页, 浏览器) → 读网页一样用的函数（打不开时换无头浏览器，见下）；浏览器读(网址, 浏览器) → 读网页那样的结果，打不开抛错
 import { 屏蔽网站 } from '../index.mjs';
 import { 名称写法, 规范名 } from './找官网/核实.mjs';
 
@@ -23,8 +28,6 @@ export const 学校部门前缀 = ['www', 'jwc', 'jw', 'jwb', 'jwch', 'news', 'x
 const 平台门槛 = 3;
 // 空壳页：看得到的字不到这么多，有浏览器就换无头浏览器再开一次
 const 空壳字数 = 200;
-// 旧页面只看正文开头这么多字（再往后常是往届回顾、页脚）
-const 正文开头 = 300;
 
 const 有内容的 = new Set(['成功', '正文太短']);
 const 类型序 = { official_website: 0, organizer_website: 0, organizer_notice: 1 };
@@ -101,21 +104,52 @@ export function 宽松有名(名称, 标题) {
 
 // ---- 打开网页 ----
 const 解实体 = s => s.replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+const 错 = e => String(e?.message || e).split('\n')[0].slice(0, 200);
+
+// 无头浏览器打开一页 → 读网页那样的结果（status 成功、title、text、finalUrl、用了浏览器）；打不开（起不来、打开抛错、对方回 4xx/5xx、没有文字）抛错
+export async function 浏览器读(网址, 浏览器) {
+  const { 页: 浏页, 关 } = await 浏览器.新页面();
+  try {
+    const 回 = await 浏页.打开(网址);
+    if (回?.httpStatus >= 400) throw new Error(`对方返回 ${回.httpStatus}`);
+    const html = String(await 浏页.源码() || '');
+    const 字 = 解实体(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+    const 题 = 解实体(/<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1] || '').trim();
+    if (!字 && !题) throw new Error('打开后没有文字');
+    return { url: 网址, finalUrl: 浏页.网址() || 网址, status: '成功', title: 题, text: 字, links: [], error: '', 用了浏览器: true };
+  } finally { await 关(); }
+}
+
+// 打不开、值得换无头浏览器再试的（2026-11-13 用户定）：超时、网络错误、内部错误、读网页抛错，HTTP 错误里的 403、405、5xx（没写状态码的也试）；
+// 404、robots 不允许、网址不安全、不支持的类型这些浏览器也帮不上，不试
+const 换浏览器的 = 页 => ['超时', '网络错误', '内部错误', '出错'].includes(页?.status)
+  || (页?.status === 'HTTP错误' && (页.httpStatus == null || [403, 405].includes(页.httpStatus) || (页.httpStatus >= 500 && 页.httpStatus <= 599)));
+
+async function 直接读(网址, 读网页) {
+  try { return (await 读网页(网址)) || { status: '出错', error: '读网页没有交回结果', title: '', text: '' }; } catch (e) { return { status: '出错', error: 错(e), title: '', text: '' }; }
+}
+
+// 带浏览器读网页(读网页, 浏览器) → 读网页一样用的函数：直接读打不开时换无头浏览器再开一次；浏览器也打不开就交回原来的结果，
+// error 后面补“；无头浏览器也打不开：…”。没给浏览器原样交回 读网页。给找官网核实页面用（判断官网自己也这样打开）。
+export function 带浏览器读网页(读网页, 浏览器) {
+  if (!浏览器) return 读网页;
+  return async 网址 => {
+    const 页 = await 直接读(网址, 读网页);
+    if (!换浏览器的(页)) return 页;
+    try { return await 浏览器读(网址, 浏览器); } catch (e) { return { ...页, error: `${页.error || 页.status}；无头浏览器也打不开：${错(e)}` }; }
+  };
+}
 
 async function 打开(网址, 读网页, 浏览器) {
-  let 页;
-  try { 页 = await 读网页(网址); } catch (e) { return { status: '出错', error: String(e?.message || e), title: '', text: '' }; }
-  页 = 页 || { status: '出错', error: '读网页没有交回结果' };
+  let 页 = await 直接读(网址, 读网页);
+  if (浏览器 && 换浏览器的(页)) {
+    try { return await 浏览器读(网址, 浏览器); } catch (e) { return { ...页, error: `${页.error || 页.status}；无头浏览器也打不开：${错(e)}` }; }
+  }
+  // 空壳页：看得到的字不到 200，换无头浏览器再开一次，字多了才用
   if (浏览器 && 有内容的.has(页.status) && String(页.text || '').length < 空壳字数) {
     try {
-      const { 页: 浏页, 关 } = await 浏览器.新页面();
-      try {
-        await 浏页.打开(网址);
-        const html = String(await 浏页.源码() || '');
-        const 字 = 解实体(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
-        const 题 = 解实体(/<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1] || '').trim() || 页.title || '';
-        if (字.length > String(页.text || '').length) 页 = { ...页, status: '成功', title: 题, text: 字, finalUrl: 浏页.网址() || 网址, 用了浏览器: true };
-      } finally { await 关(); }
+      const 浏 = await 浏览器读(网址, 浏览器);
+      if (浏.text.length > String(页.text || '').length) 页 = { ...页, ...浏, title: 浏.title || 页.title || '' };
     } catch { /* 浏览器也打不开就用直接下载的结果 */ }
   }
   return 页;
@@ -135,9 +169,6 @@ export async function 判断官网(网址, 比赛, { 读网页, 浏览器 = null
     const 再看 = 网址判断(最终网址, { 屏蔽, 库里最新年份 });
     if (!再看.可以) return 结果(false, `跳转后是${再看.原因}（${最终网址}）`, 最终网址, '', 标题);
   }
-  const 旧 = 旧页面原因(`${标题} ${正文.slice(0, 正文开头)}`, 库里最新年份);
-  if (旧) return 结果(false, 旧, 最终网址, '', 标题);
-
   const 浏 = 页.用了浏览器 ? '（无头浏览器）' : '';
   // 二级 edu.cn 只看标题：学校主页正文里常有某个比赛的新闻
   const 只看标题 = 是二级edu(去www(解析(最终网址)?.hostname?.toLowerCase() || ''));
@@ -150,7 +181,12 @@ export async function 判断官网(网址, 比赛, { 读网页, 浏览器 = null
 }
 
 // ---- 从来源表推起点候选 ----
-export function 来源候选(来源们, { 屏蔽 = [], 域名比赛数 = null } = {}) {
+// 搜索记忆条目“网址（说明）”拆成 { 键, 说明 }；键不分协议、www、结尾斜杠
+export const 不算官网键 = 网址 => String(网址 ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+const 拆条目 = 条 => { const 文 = String(条 ?? '').trim(); const i = 文.indexOf('（'); return { 键: 不算官网键(i >= 0 ? 文.slice(0, i) : 文), 说明: i >= 0 ? 文.slice(i + 1).replace(/）$/, '') : '' }; };
+
+export function 来源候选(来源们, { 屏蔽 = [], 域名比赛数 = null, 不算官网 = [] } = {}) {
+  const 名单 = new Map((不算官网 || []).map(拆条目).filter(x => x.键).map(x => [x.键, x.说明]));
   const 排 = (来源们 || [])
     .filter(源 => 源.source_type !== 'authority_notice')   // 权威名单由调用方另行处理
     .map((源, 序) => ({ 源, 序 }))
@@ -175,7 +211,14 @@ export function 来源候选(来源们, { 屏蔽 = [], 域名比赛数 = null } 
     }
   }
   const 见过 = new Set();
-  return { 候选: 候选.filter(x => !见过.has(x.网址) && 见过.add(x.网址)), 跳过 };
+  const 留 = [];
+  for (const x of 候选) {
+    if (见过.has(x.网址)) continue;
+    见过.add(x.网址);
+    if (名单.has(不算官网键(x.网址))) { const 说 = 名单.get(不算官网键(x.网址)); 跳过.push(`${x.网址}：以前判断过不算官网${说 ? `（${说}）` : ''}`); continue; }
+    留.push(x);
+  }
+  return { 候选: 留, 跳过 };
 }
 
 export function 算域名比赛数(db) {

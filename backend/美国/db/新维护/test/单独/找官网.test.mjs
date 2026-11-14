@@ -60,13 +60,17 @@ const 搜到 = [
   结果('关于举办2026年全国大学生数学建模竞赛的通知', 官网网址, { authority: 3 }),
 ];
 // 搜：一个列表（每次搜都交回它）、按搜索词查的对象、或 Error；答：一个回答（每次都一样）、回答列表（依次用）、或 Error
-function 假AI({ 搜 = 搜到, 答 = { 选: 2, 理由: '组委会发布的通知' } } = {}) {
+function 假AI({ 搜 = 搜到, 备用 = [], 答 = { 选: 2, 理由: '组委会发布的通知' } } = {}) {
   const 调用 = [];
   const 答们 = Array.isArray(答) ? [...答] : null;
   return {
     调用,
     async search(参数) {
       调用.push({ 搜索: 参数 });
+      if (参数.purpose === 'official_tavily') {
+        if (备用 instanceof Error) throw 备用;
+        return { references: 备用, provider: 'tavily' };
+      }
       if (搜 instanceof Error) throw 搜;
       return { references: Array.isArray(搜) ? 搜 : (搜[参数.query] || []), provider: 'deepseek' };
     },
@@ -124,20 +128,79 @@ describe('找官网', () => {
     ['DeepSeek 说都不是', { 答: { 选: 0, 理由: '都是学校转发' } }, {}, 'DeepSeek 认为前 2 条里没有官网：都是学校转发'],
     ['DeepSeek 选的序号不在列表里', { 答: { 选: 7, 理由: 'x' } }, {}, 'DeepSeek 选的序号不对：7'],
     ['页面和搜索结果里都没有比赛名称', { 搜: [结果('首页', 官网网址, { content: '欢迎' })], 答: { 选: 1, 理由: 'x' } }, { [官网网址]: { status: '成功', title: '首页', text: '欢迎' } }, '选的页面上没有比赛名称：mcm.edu.cn'],
-  ])('%s → 待审，写一条教训；只搜一次（2026-11-08 用户定：加搜效率低，不要）', async (_名, 设定, 页们, 原因) => {
+  ])('%s → Tavily 也没找到则待审，写一条教训', async (_名, 设定, 页们, 原因) => {
     const 回 = await 找官网(数模, { ai: 假AI(设定), 读网页: 假读网页(页们), 节: 节({ 教训: ['一', '二', '三'] }), 目标, 屏蔽: ['saikr.com'], 今天: '2026-11-07' });
-    expect(回).toMatchObject({ 结果: '待审', 官网: null, 原因, 调用: { 搜索: 1 } });
-    expect(回.记忆改动).toEqual({ 教训: ['二', '三', `2026-11-07 搜比赛名没找到官网：${原因}`] });
+    const 两家原因 = `${原因}；Tavily 搜索：搜比赛名没有结果`;
+    expect(回).toMatchObject({ 结果: '待审', 官网: null, 原因: 两家原因, 调用: { 搜索: 2 } });
+    expect(回.记忆改动).toEqual({ 教训: ['二', '三', `2026-11-07 搜比赛名没找到官网：${两家原因}`] });
   });
   test('选的网址打不开（美国、北京都读不到由 读网页 负责）：网络问题，记下网址', async () => {
     const ai = 假AI();
     const 回 = await 跑(ai, {});
-    expect(回).toMatchObject({ 结果: '网络问题', 官网: null, 打不开: [官网网址], 调用: { 搜索: 1 } });
+    expect(回).toMatchObject({ 结果: '网络问题', 官网: null, 打不开: [官网网址], 调用: { 搜索: 2 } });
     expect(回.记忆改动).toEqual({ 教训: ['2026-11-07 官网 mcm.edu.cn 打不开，按频率再读'] });
+  });
+  test('DeepSeek 搜索接口报错时，补搜同一个比赛名，验证成功后按 Tavily 记录', async () => {
+    const 限流 = Object.assign(new Error('搜索限流'), { kind: '请求太多', provider: 'deepseek' });
+    const ai = 假AI({ 搜: 限流, 备用: [搜到[2]], 答: { 选: 1 } });
+    const 回 = await 跑(ai);
+    expect(ai.调用.slice(0, 2)).toEqual([
+      { 搜索: { purpose: 'official_search', query: 第一词 } },
+      { 搜索: { purpose: 'official_tavily', query: 第一词 } },
+    ]);
+    expect(回).toMatchObject({ 结果: '找到', 官网: { 搜索来源: 'Tavily 搜索', 网址: 官网网址 },
+      记忆改动: { 成功过的搜索词: [`${第一词}（Tavily 搜索）`] } });
+  });
+  test('主搜索候选未通过维护侧核准时，使用通过核准的 Tavily 候选', async () => {
+    const 转发 = 搜到[1].url;
+    const ai = 假AI({ 答: { 选: 1 }, 备用: [搜到[2]] });
+    const 回 = await 找官网(数模, { ai, 目标, 屏蔽: ['saikr.com'],
+      读网页: 假读网页({ [转发]: 官网页, [官网网址]: 官网页 }),
+      核准官网: async 官网 => 官网.网址 === 转发 ? { 原因: '规则拒绝' } : { 起点: 官网.网址 },
+    });
+    expect(回).toMatchObject({ 结果: '找到', 官网: { 起点: 官网网址, 搜索来源: 'Tavily 搜索' },
+      调用: { 搜索: 2, DeepSeek: 2, 打开: 2 } });
+  });
+  // 2026-11-13 用户定：服务器没配 Tavily 密钥时，第一次失败后 AI 总管把 tavily 暂停，之后每个比赛都被抛成“出错”（45 个里 23 个）。
+  // 后备搜索 Tavily 失败（暂停、额度用完、缺密钥、接口出错）当成“后备搜索没结果”，按 DeepSeek 那一轮的结果收尾；tavily 自己的错不停批
+  test.each([
+    ['暂停中', '已暂停', 'tavily 暂停中，600 秒后恢复'],
+    ['额度用完', '额度用完', 'Tavily 返回 432'],
+    ['缺密钥', '密钥错误', '没有 tavily 的密钥（密钥目录或环境变量里都没找到）'],
+    ['接口出错', '对方出错', 'tavily 返回 502'],
+  ])('Tavily %s：当后备搜索没结果，按 DeepSeek 那一轮收尾（没找到 → 待审），不抛错；过程写明', async (_名, kind, message) => {
+    const 失败 = Object.assign(new Error(message), { kind, provider: 'tavily' });
+    const 回 = await 跑(假AI({ 答: { 选: 0, 理由: '都是转发' }, 备用: 失败 }));
+    const 原因 = `DeepSeek 认为前 2 条里没有官网：都是转发；Tavily 搜索：后备搜索失败（${message}），当没结果`;
+    expect(回).toMatchObject({ 结果: '待审', 原因, 调用: { 搜索: 2 } });
+    expect(回.记忆改动).toEqual({ 教训: [`2026-11-07 搜比赛名没找到官网：${原因}`] });
+    expect(回.过程).toContainEqual({ 步骤: '搜索', 说明: `Tavily 搜索失败：${message}，当后备搜索没结果` });
+  });
+  test('Tavily 失败、DeepSeek 选的官网打不开：照旧网络问题', async () => {
+    const 失败 = Object.assign(new Error('tavily 暂停中'), { kind: '已暂停', provider: 'tavily' });
+    expect(await 跑(假AI({ 备用: 失败 }), {})).toMatchObject({ 结果: '网络问题', 打不开: [官网网址] });
+  });
+  test('DeepSeek 搜索接口出错（不是没结果）、Tavily 也没找到或失败：结果“搜索出错”，不待审、不记教训（接口没完成检索，不能据此转待人工审核）', async () => {
+    const 限流 = Object.assign(new Error('deepseek 返回 503'), { kind: '对方出错', provider: 'deepseek' });
+    const 回 = await 跑(假AI({ 搜: 限流 }));
+    expect(回).toMatchObject({ 结果: '搜索出错', 官网: null, 原因: 'DeepSeek 搜索接口出错：deepseek 返回 503；Tavily 搜索：搜比赛名没有结果', 记忆改动: {} });
+    const 都坏 = await 跑(假AI({ 搜: 限流, 备用: Object.assign(new Error('tavily 暂停中'), { kind: '已暂停', provider: 'tavily' }) }));
+    expect(都坏).toMatchObject({ 结果: '搜索出错', 原因: 'DeepSeek 搜索接口出错：deepseek 返回 503；Tavily 搜索：后备搜索失败（tavily 暂停中），当没结果' });
+  });
+  test('DeepSeek 搜索额度类错误（额度用完、密钥错误、搜索超限、余额不足 402）：照旧往外抛停批，不再补搜 Tavily', async () => {
+    for (const 错 of [
+      Object.assign(new Error('deepseek 今天的自动调用已用 100/100 次'), { kind: '额度用完', provider: 'deepseek' }),
+      Object.assign(new Error('没有 deepseek 的密钥'), { kind: '密钥错误', provider: 'deepseek' }),
+      Object.assign(new Error('deepseek 返回 402：Insufficient Balance'), { kind: '请求有误', provider: 'deepseek' }),
+    ]) {
+      const ai = 假AI({ 搜: 错 });
+      await expect(跑(ai), 错.message).rejects.toBe(错);
+      expect(ai.调用.filter(x => x.搜索?.purpose === 'official_tavily')).toEqual([]);
+    }
   });
   test('DeepSeek 没按格式回答：待审；搜索或对话别的出错（额度用完、余额不足）照样报错，交给调用方顺延', async () => {
     const 格式 = Object.assign(new Error('试了 2 次都解析不出来'), { kind: '格式不对' });
-    expect(await 跑(假AI({ 答: 格式 }))).toMatchObject({ 结果: '待审', 原因: 'DeepSeek 没按格式回答', 调用: { 搜索: 1 } });
+    expect(await 跑(假AI({ 答: 格式 }))).toMatchObject({ 结果: '待审', 原因: 'DeepSeek 没按格式回答；Tavily 搜索：搜比赛名没有结果', 调用: { 搜索: 2 } });
     const 余额 = Object.assign(new Error('余额不足'), { kind: '额度用完' });
     await expect(跑(假AI({ 搜: 余额 }))).rejects.toThrow('余额不足');
     await expect(跑(假AI({ 答: 余额 }))).rejects.toThrow('余额不足');

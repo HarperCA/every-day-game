@@ -60,14 +60,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .页顶部 h2 { font-size: var(--字号中, 15px); margin: 0 0 4px; }
 .标签说明 { margin: 0 0 12px; color: var(--次要字); font-size: var(--字号小); }
 
-/* 总览的 AI 审核进度 */
-.审核进度 { margin-bottom: 16px; border: 1px solid var(--线); border-radius: 8px; }
-.审核进度 > summary { padding: 9px 12px; cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
-.审核进度内容 { padding: 0 12px 10px; overflow-wrap: anywhere; }
-.审核进度内容 h3 { font-size: var(--字号中); margin-top: 10px; }
-.审核进度内容 p, .审核进度内容 ul, .审核进度内容 ol { margin-block: 5px; }
-.审核步骤 time { margin-right: 8px; color: var(--次要字); font-variant-numeric: tabular-nums; }
-.审核步骤 [aria-current="step"] { color: var(--强调); font-weight: 600; }
+/* 总览的维护进度（新维护队列，2026-11-12 替换 AI 审核进度）；最近完成的比赛名按成功绿、失败红 */
+.维护进度 { margin-bottom: 16px; border: 1px solid var(--线); border-radius: 8px; }
+.维护进度 > summary { padding: 9px 12px; cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
+.维护进度内容 { padding: 0 12px 10px; overflow-wrap: anywhere; }
+.维护进度内容 h3 { font-size: var(--字号中); margin-top: 10px; }
+.维护进度内容 p, .维护进度内容 ul, .维护进度内容 ol { margin-block: 5px; }
+.维护进度内容 .成功 { color: var(--色1); }
+.维护进度内容 .失败 { color: var(--警示); }
 
 /* 状态：加载中、出错、空白、占位 */
 .状态 { padding: 28px; text-align: center; color: var(--弱字); }
@@ -173,6 +173,27 @@ table.表格 { width: 100%; border-collapse: collapse; font-size: var(--字号�
 .维护改动 .改前 { color: var(--弱字); text-decoration: line-through; text-decoration-color: var(--线); }
 .维护改动 .改后 { color: var(--字); }
 .改动依据 { white-space: normal; }
+
+/* 赛事助手聊天记录（2026-11-12）：这一天每人一块，账号 + 每句的时间和内容，每句下面是助手的回答
+   回答：缩进到和内容对齐、强调浅色底 + 左边一道强调色（颜色都用主题变量，深色模式跟着变）；全文显示、自动换行，不撑破卡片 */
+.聊天人们 { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 12px; }
+.聊天人 { border: 1px solid var(--线); border-radius: 8px; background: var(--面板浅); padding: 10px 12px; min-width: 0; }
+.聊天人头 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.聊天人头 .次要 { color: var(--弱字); font-size: var(--字号小); }
+.聊天账号 { font-family: ui-monospace, Consolas, monospace; font-weight: 600; overflow-wrap: anywhere; }
+.聊天输入们 { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.聊天一轮 { display: grid; gap: 4px; min-width: 0; }
+.聊天问 { display: flex; gap: 8px; min-width: 0; }
+.聊天时间 { flex: none; width: 40px; color: var(--弱字); font-size: var(--字号小); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.聊天内容 { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.聊天回答 {
+  margin-left: 48px; min-width: 0; padding: 6px 10px; border-radius: 6px;
+  background: var(--强调浅); border-left: 3px solid var(--强调); color: var(--次要字);
+  display: grid; gap: 2px;
+}
+.聊天回答文字 { white-space: pre-wrap; overflow-wrap: anywhere; }
+.聊天回答状态 { color: var(--弱字); font-size: var(--字号小); }
+.聊天回答.没有回答 { background: transparent; border-left: 3px dashed var(--线); }
 
 /* 编辑框 */
 .编辑框 { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 1px solid var(--线); border-radius: var(--圆角); background: var(--面板); color: var(--字); padding: 20px; }

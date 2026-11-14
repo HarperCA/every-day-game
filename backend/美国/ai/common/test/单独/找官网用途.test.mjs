@@ -23,3 +23,11 @@ test('用途里的 searchApi、count 交给接口', async () => {
 test('写爬虫脚本：crawl_script 用 Codex', () => {
   expect(PURPOSES.crawl_script).toMatchObject({ 能力: 'chat', provider: 'codex', model: 'gpt-6.1-sol' });
 });
+
+// 找新一届（2026-11-12 用户定）：搜“比赛名 + 下一年/下一届”用 DeepSeek 搜索 API；选择题单独一个用途，token 上限调大（11-12 试验 4000 被截断漏了蓝桥杯）
+test('找新一届：new_edition_search 用 DeepSeek 搜索 API；new_edition_pick 用 DeepSeek 对话、不联网、上限比找官网大', () => {
+  expect(PURPOSES.new_edition_search).toMatchObject({ 能力: 'search', provider: 'deepseek', searchApi: 'tools', count: 20 });
+  expect(PURPOSES.new_edition_pick).toMatchObject({ 能力: 'chat', provider: 'deepseek', thinking: true });
+  expect(PURPOSES.new_edition_pick.webSearch).toBeUndefined();
+  expect(PURPOSES.new_edition_pick.maxTokens).toBeGreaterThanOrEqual(12000);
+});

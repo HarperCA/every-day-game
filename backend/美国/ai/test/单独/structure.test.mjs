@@ -10,9 +10,10 @@ const AI_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 
 const rel = file => relTo(AI_DIR, file);
 
 describe('结构', () => {
-  const PROVIDERS = ['baidu', 'codex', 'deepseek', 'jev', 'kimi'];
+  // tavily：2026-11-13 正式接入（找官网的后备搜索，用途 official_tavily），服务器已配密钥
+  const PROVIDERS = ['baidu', 'codex', 'deepseek', 'jev', 'kimi', 'tavily'];
   const CAPS = ['chat', 'search', 'fetchPage', 'decide'];
-  test('providers/ 下正好是这 5 家，每家都有 README.md 和 index.mjs，至少会一种能力', async () => {
+  test('providers/ 下正好是这 6 家，每家都有 README.md 和 index.mjs，至少会一种能力', async () => {
     const dirs = fs.readdirSync(path.join(AI_DIR, 'providers'), { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort();
     expect(dirs).toEqual(PROVIDERS);
     for (const name of PROVIDERS) {

@@ -12,6 +12,7 @@ const 单项 = ['organizer', 'participants', 'eligibility', 'format_and_rules', 
 export function 合成记录(data = {}) {
   const fields = data.extraction?.fields || {};
   const 记录 = { name: fields.competition_name?.value || data.name || '' };
+  if (fields.track_name?.value) 记录.track_name = fields.track_name.value;
   for (const name of 单项) 记录[name] = fields[name]?.value || data[name] || '';
   const 通知 = data.extraction?.supplement?.notice?.used ? data.extraction.supplement.notice.url : '';
   return {

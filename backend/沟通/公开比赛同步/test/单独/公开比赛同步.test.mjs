@@ -39,13 +39,14 @@ describe('格式：按公开字段白名单整理', () => {
       recommendation: { recommendation: '值得参加', reasons: ['1', '2', '3'], suitable_for: '本科生', confidence: '中' },
       next_edition_estimate: '2027-09-01',
       sources: [{ id: 's1', source_type: 'organizer_website', url: 'https://org.cn/a' }],
+      info_source: 'official',   // 2026-11-12：信息来源（高校转发的见 信息来源.test.mjs）
     });
     const 发布中 = 整理届次({ id: 'e2', competition_id: 'c1', version: 1, edition_name: 'x', status: '已发布', poster: { file: '../x.jpg' }, legacy: { nextEditionEstimate: '2027-01-01' } }, []);
-    expect(发布中.data).toEqual({ edition_name: 'x' });
+    expect(发布中.data).toEqual({ edition_name: 'x', info_source: 'official' });
   });
   test('下一届预计：先用每日归档算出来存的 next_edition_estimate（2026-11-03），没有再用旧记录带来的；比赛库里这一列本身不当普通公开字段重复带', () => {
     const 新 = 整理届次({ id: 'e3', competition_id: 'c1', version: 1, edition_name: 'x', status: '已归档', next_edition_estimate: '2027-10-01T00:00:00.000Z', legacy: { nextEditionEstimate: '2027-01-01' } }, []);
-    expect(新.data).toEqual({ edition_name: 'x', next_edition_estimate: '2027-10-01T00:00:00.000Z' });
+    expect(新.data).toEqual({ edition_name: 'x', next_edition_estimate: '2027-10-01T00:00:00.000Z', info_source: 'official' });
     const 旧 = 整理届次({ id: 'e4', competition_id: 'c1', version: 1, edition_name: 'x', status: '已归档', next_edition_estimate: null, legacy: { nextEditionEstimate: '2027-01-01' } }, []);
     expect(旧.data.next_edition_estimate).toBe('2027-01-01');
   });

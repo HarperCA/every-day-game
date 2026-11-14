@@ -25,8 +25,8 @@ describe('目录', () => {
 describe('引用规矩', () => {
   const violations = [];
   // 比赛库本身（描述、操作、结构、导出、建库、入口）：不依赖任何人，只用 共用/db 和 共用/工具；也不引用维护
-  // 维护（维护/）：住在比赛库里，但像外人一样只经 db/index.mjs 用比赛库；另外只能用 AI 总管、抓网页、程序审核、补字段的入口和 共用/工具（2026-11-01 用户定；补字段 11-03 加）
-  const 维护可用 = ['index.mjs', '../ai/index.mjs', '../web/index.mjs', '../程序审核/index.mjs', '../补字段/index.mjs'];   // 补字段：2026-11-03 和每晚流程共用的 Codex 补字段
+  // 维护（维护/）：住在比赛库里，但像外人一样只经 db/index.mjs 用比赛库；另外只能用 AI 总管、抓网页、程序审核的入口和 共用/工具（2026-11-01 用户定；补字段 11-03 加、11-12 随旧 AI 审查一起删了）
+  const 维护可用 = ['index.mjs', '../ai/index.mjs', '../web/index.mjs', '../程序审核/index.mjs'];
   for (const file of walk(DB_DIR)) {
     const from = relTo(DB_DIR, file);
     for (const target of importsOf(file)) {

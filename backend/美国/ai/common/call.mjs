@@ -73,7 +73,7 @@ export function createCaller({ config, providers, keys, usage, now = () => Date.
         checkDailyLimit(name, identity);
         const key = provider.needsKey === false ? null : keys.get(name);
         const res = await provider[capability]({ ...request, model, effort: cfg.effort, codexSearch: cfg.codexSearch, codexSearchLimit: cfg.codexSearchLimit,
-          thinking: cfg.thinking, temperature: cfg.temperature, maxTokens: cfg.maxTokens,
+          thinking: cfg.thinking, ...(cfg.stream ? { stream: true } : {}), temperature: cfg.temperature, maxTokens: cfg.maxTokens,
           ...(cfg.searchApi ? { searchApi: cfg.searchApi, count: cfg.count } : {}), key, signal });
         const ms = now() - started;
         const cost = costOf(config.prices, name, model, res.tokensIn, res.tokensOut);

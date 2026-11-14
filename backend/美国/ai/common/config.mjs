@@ -14,16 +14,20 @@ export const PURPOSES = {
   admission: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-chat', thinking: true, maxTokens: 8000, note: '收录再判（美国/程序审核 的收录门槛，05 审核调用）；参数沿用旧收录判断' },
   arbitrate: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-flash', thinking: true, note: '判重裁决（02 对比去重）' },
   trace: { 能力: 'chat', provider: 'codex', model: 'gpt-6.1-sol', effort: 'xhigh', note: '通知追溯的每一步（03 筛选的 Codex 代理追踪）；模型和推理强度沿用 10-14 定的' },
-  fill: { 能力: 'chat', provider: 'codex', model: 'gpt-6.1-sol', effort: 'xhigh', note: '补缺失字段的每一步（美国/补字段/，05 审核和维护的缺失字段共用；2026-11-03 用户定用 Codex 代理）；模型同 trace' },
   audit: { 能力: 'chat', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high', codexSearch: true, codexSearchLimit: { 搜索: 1, 打开: 5 }, note: 'AI 审查（维护/审计/核对原文）：只用 Codex，开内置搜索，程序再读网页逐字核对；一次调用就是一轮，只搜 1 次（2026-11-06 用户定最多 3 轮）；提示词写最多打开 3 个，打开 5 个才硬停，给页内查找留余地' },
   review: { 能力: 'chat', provider: 'kimi', model: 'kimi-for-coding', note: '入库前审核（05 审核），沿用旧系统的 Kimi' },
   verify: { 能力: 'chat', provider: 'kimi', model: 'kimi-for-coding', note: '三项核验（05 审核的 三项核验/；以后维护也用），沿用旧系统的 Kimi' },
-  assistant: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-flash', thinking: false, temperature: 0.3, maxTokens: 800, note: '赛事助手（实时）；参数沿用旧助手' },
+  assistant: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-flash', thinking: false, stream: true, temperature: 0.3, maxTokens: 800, note: '赛事助手（实时）；参数沿用旧助手' },
   // 搜索
   search: { 能力: 'search', provider: ['baidu', 'kimi', 'deepseek'], models: { deepseek: 'deepseek-flash' }, note: '找通知、补读正式通知、01 搜索；依次补位' },
   // 2026-11-07 用户定改法：像人一样只搜比赛名、取前 10 条（官网多数在里面：方案三的搜索结果 11 个已知官网里 8 个有），DeepSeek 只做选择题
   official_search: { 能力: 'search', provider: 'deepseek', searchApi: 'tools', count: 20, note: '找官网：只搜比赛名，DeepSeek 搜索 API（每千次 0.75 美元，不按 token）；要 20 条，去掉屏蔽网站后留前 10 条' },
+  official_tavily: { 能力: 'search', provider: 'tavily', note: '找官网：DeepSeek 搜索未找到可用官网时补搜' },
   official_pick: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-flash', thinking: true, maxTokens: 4000, note: '找官网：从前 10 条里选官网（选择题），不联网；要 JSON 所以开思考' },
+  // 找新一届（2026-11-12 用户定）：已归档的比赛搜“比赛名 + 下一年/下一届”（搜索词里带 after:YYYY-MM-DD），DeepSeek 做选择题挑新一届的通知或转发，程序再核对。
+  // 选择题单独一个用途：11-12 试验用 official_pick 的 4000 上限，思考把 token 用完、回答被截断，漏了蓝桥杯；这里调大，调用方也每批最多交 10 条
+  new_edition_search: { 能力: 'search', provider: 'deepseek', searchApi: 'tools', count: 20, note: '找新一届：搜“比赛名 + 下一年/下一届 after:日期”，DeepSeek 搜索 API（按次计费）' },
+  new_edition_pick: { 能力: 'chat', provider: 'deepseek', model: 'deepseek-flash', thinking: true, maxTokens: 16000, note: '找新一届：从搜索结果里挑新一届的通知或转发（选择题，每批最多 10 条），不联网；要 JSON 所以开思考' },
   // 新维护写爬虫脚本（2026-11-08 用户定）：Codex 看官网页面（程序先压缩）写一串步骤，程序试跑；本地试跑时试跑程序把它换成 Kimi
   crawl_script: { 能力: 'chat', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high', note: '新维护：给比赛官网写爬虫脚本（打开、等待、点击、取列表的步骤），按 schema 交回 JSON；不联网、不跑命令' },
   // 读网页

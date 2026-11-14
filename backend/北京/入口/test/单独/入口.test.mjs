@@ -5,12 +5,20 @@
 //   POST /api/publicData  { action, ... }                             不要令牌；带了有效令牌的按这个用户排首页
 //   POST /api/clientLog   { events }                                  不要令牌，匿名
 // 发提醒不对外（它会交出 openid）。令牌也认请求头 Authorization: Bearer。服务真用，库用内存里的，微信是假的。
-import { describe, expect, test } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, test } from 'vitest';
 import { 签发令牌 } from '../../../../共用/工具/令牌.mjs';
+import { 假JPG, 假PNG } from '../../../../共用/test/复用/假图片.mjs';
 import { openMainDb, 同步 } from '../../../主数据库/index.mjs';
 import { openUserDb } from '../../../副数据库/index.mjs';
 import { 打开报错库 } from '../../../服务/收集报错/报错库.mjs';
-import { 处理请求, 请求上限 } from '../../接口.mjs';
+import { 头像上限 } from '../../../服务/用户数据/头像.mjs';
+import { 处理请求, 请求上限, 上传请求上限, 正文上限 } from '../../接口.mjs';
+
+const 目录们 = [];
+afterEach(() => { for (const 目录 of 目录们.splice(0)) fs.rmSync(目录, { recursive: true, force: true }); });
 
 const 密钥 = 'k'.repeat(32);
 const NOW = new Date('2026-11-02T02:00:00Z');
@@ -55,6 +63,95 @@ describe('登录和用户数据', () => {
       authorizationStatus: 'accepted', deliveryStatus: 'pending', scheduleChangeStatus: 'normal', createdAt: NOW.toISOString(), updatedAt: NOW.toISOString() };
     expect((await 发(env, '/api/userData', { action: 'mergeReminders', records: [提醒], userSessionToken: 令牌 })).内容.ok).toBe(true);
     expect(排了).toEqual(['r-1']);
+  });
+});
+
+// 组队（2026-11-08）：POST /api/team，要令牌，照 /api/userData
+describe('组队', () => {
+  test('没令牌 401；带令牌建队，交回 { ok, data }', async () => {
+    const { env } = 环境();
+    expect(await 发(env, '/api/team', { action: 'listMyTeams' })).toEqual({ 状态: 401, 内容: { ok: false, message: 'unauthenticated' } });
+    const 令牌 = await 登录(env);
+    const r = await 发(env, '/api/team', { action: 'createTeam', competitionId: 'event-math', maxMembers: 4, wechat: 'wx_a', userSessionToken: 令牌 });
+    expect(r).toMatchObject({ 状态: 200, 内容: { ok: true, data: { team: { competitionId: 'event-math', isLeader: true } } } });
+    expect((await 发(env, '/api/team', { action: 'listMyTeams' }, { authorization: `Bearer ${令牌}` })).内容.data.teams).toHaveLength(1);
+  });
+  // 2026-11-09：有人申请时给队长发订阅消息；入口把 发订阅消息、组队通知模板 交给组队服务
+  test('有人申请：经入口交进来的 发订阅消息 给队长发一条', async () => {
+    const 发过 = [];
+    const { env } = 环境({
+      微信: { appId: 'wx-app', exchangeCode: async code => ({ 'code-1': { openid: 'o-1' }, 'code-2': { openid: 'o-2' } })[code] || Promise.reject(new Error('40029')) },
+      发订阅消息: async payload => { 发过.push(payload); return { errcode: 0 }; },
+      组队通知模板: { id: 'tpl-x', 字段: { 队伍: 'thing2' } },
+    });
+    const 队长 = await 登录(env);
+    const 申请人 = (await 发(env, '/api/login', { code: 'code-2' })).内容.data.userSessionToken;
+    await 发(env, '/api/team', { action: 'addSubscribeQuota', userSessionToken: 队长 });
+    const 队 = (await 发(env, '/api/team', { action: 'createTeam', competitionId: 'event-math', maxMembers: 4, wechat: 'wx_a', name: '冲', userSessionToken: 队长 })).内容.data.team;
+    expect((await 发(env, '/api/team', { action: 'applyToTeam', teamId: 队.id, major: '数学', grade: '大三', userSessionToken: 申请人 })).内容.ok).toBe(true);
+    await new Promise(resolve => setImmediate(resolve));
+    expect(发过).toEqual([expect.objectContaining({ touser: 'o-1', template_id: 'tpl-x', data: { thing2: { value: '冲' } } })]);
+  });
+});
+
+// 校赛（2026-11-08）：POST /api/school，要令牌，照 /api/userData
+describe('校赛', () => {
+  test('没令牌 401；带令牌申请管理员、查身份，交回 { ok, data }', async () => {
+    const { env } = 环境();
+    expect(await 发(env, '/api/school', { action: 'myStatus' })).toEqual({ 状态: 401, 内容: { ok: false, message: 'unauthenticated' } });
+    const 令牌 = await 登录(env);
+    const r = await 发(env, '/api/school', { action: 'applyAdmin', school: '浙江大学', realName: '张老师', contact: '13800000000', proof: '团委老师', userSessionToken: 令牌 });
+    expect(r).toMatchObject({ 状态: 200, 内容: { ok: true, data: { application: { school: '浙江大学', status: '待审核' } } } });
+    expect((await 发(env, '/api/school', { action: 'myStatus' }, { authorization: `Bearer ${令牌}` })).内容.data.applications).toHaveLength(1);
+  });
+});
+
+// 上传头像（2026-11-12，小程序组队用）：POST /api/uploadAvatar，wx.uploadFile 传 multipart（字段 file），令牌放请求头 Authorization: Bearer
+describe('上传头像', () => {
+  const 头像环境 = () => {
+    const 目录 = fs.mkdtempSync(path.join(os.tmpdir(), '北京入口头像-'));
+    目录们.push(目录);
+    return { 目录, ...环境({ 头像地址: 'https://example.cn/avatars', 头像目录: 目录 }) };
+  };
+  async function 上传(env, 内容, 头 = {}) {
+    const fd = new FormData();
+    fd.append('file', new Blob([内容], { type: 'image/png' }), 'tmp.png');
+    const r = new Request('http://localhost/', { method: 'POST', body: fd });
+    return 处理请求({ 方法: 'POST', 路径: '/api/uploadAvatar', 头: { 'content-type': r.headers.get('content-type'), ...头 }, 正文: Buffer.from(await r.arrayBuffer()) }, env);
+  }
+  test('带 Bearer 令牌上传：交回 { ok, data: { avatarUrl } }，再查资料头像已经是它', async () => {
+    const { env } = 头像环境();
+    const 令牌 = await 登录(env);
+    const r = await 上传(env, 假PNG(100, 100), { authorization: `Bearer ${令牌}` });
+    expect(r.状态).toBe(200);
+    expect(r.内容).toEqual({ ok: true, data: { avatarUrl: expect.stringMatching(/^https:\/\/example\.cn\/avatars\/[0-9a-f-]+\.png$/) } });
+    expect((await 发(env, '/api/userData', { action: 'getProfile', userSessionToken: 令牌 })).内容.data.avatarUrl).toBe(r.内容.data.avatarUrl);
+  });
+  test('没令牌、签名不对 401 unauthenticated；过期 401 user_session_expired；不存文件', async () => {
+    const { env, 目录 } = 头像环境();
+    expect(await 上传(env, 假PNG(10, 10))).toEqual({ 状态: 401, 内容: { ok: false, message: 'unauthenticated' } });
+    expect((await 上传(env, 假PNG(10, 10), { authorization: 'Bearer a.b' })).状态).toBe(401);
+    await 登录(env);
+    const 旧令牌 = 签发令牌('o-1', 密钥, { now: NOW.getTime() - 3 * 3600 * 1000 });
+    expect(await 上传(env, 假PNG(10, 10), { authorization: `Bearer ${旧令牌}` })).toEqual({ 状态: 401, 内容: { ok: false, message: 'user_session_expired' } });
+    expect(fs.readdirSync(目录)).toEqual([]);
+  });
+  test('上传的正文上限比 JSON 接口大（能放下 1 MB 的图），超过 413；别的接口仍是 64 KB；不是 POST 405', async () => {
+    const { env } = 头像环境();
+    expect(上传请求上限).toBeGreaterThan(头像上限);
+    expect(正文上限('/api/uploadAvatar')).toBe(上传请求上限);
+    expect(正文上限('/api/userData')).toBe(请求上限);
+    expect(正文上限('/api/不认识')).toBe(请求上限);
+    const 令牌 = await 登录(env);
+    const 大图 = await 上传(env, 假JPG(100, 100, 头像上限), { authorization: `Bearer ${令牌}` });
+    expect(大图.内容.ok).toBe(true);
+    expect((await 处理请求({ 方法: 'POST', 路径: '/api/uploadAvatar', 头: { authorization: `Bearer ${令牌}` }, 正文: Buffer.alloc(上传请求上限 + 1) }, env)).状态).toBe(413);
+    expect((await 处理请求({ 方法: 'GET', 路径: '/api/uploadAvatar', 头: {}, 正文: '' }, env)).状态).toBe(405);
+  });
+  test('JSON 接口照旧：正文给 Buffer 也按 UTF-8 文字解析', async () => {
+    const { env } = 头像环境();
+    expect(await 处理请求({ 方法: 'POST', 路径: '/api/clientLog', 头: {}, 正文: Buffer.from(JSON.stringify({ events: [{ kind: 'slow', page: '首页' }] })) }, env))
+      .toEqual({ 状态: 200, 内容: { ok: true, saved: 1 } });
   });
 });
 

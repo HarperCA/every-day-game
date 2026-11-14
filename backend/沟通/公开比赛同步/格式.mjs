@@ -7,6 +7,10 @@
 //   整理届次(届次行, 来源们)     → { id, competition_id, version, registration_start, registration_end, status, data }
 //     推荐只留等级、理由（最多 3 条）、适合谁、局限、准备建议、把握；海报只带图片总库的文件名；
 //     下一届预计只给已归档的：先用每日归档算出存的 next_edition_estimate（2026-11-03 起），没有再用旧记录带过来的 legacy.nextEditionEstimate；来源只给官方、核验有效的 http(s) 网址
+//     信息来源（2026-11-12 用户定，和北京约定的字段名）：data.info_source 是 'official' 或 'school_repost'（高校转发），school_repost 时另带 data.info_source_url（转发页网址）。
+//       美国比赛库不另存，从来源们推：有官方、核验有效的 http(s) 来源 → official；没有、但有核验有效的高校转发来源（source_type school_repost）→ school_repost，
+//       网址取核对时间最新的那条（一样就取排在后面的）；都没有（旧数据）→ official。以后新维护找到官方通知补上官方来源，下次推送自动变回 official。
+//       来源们要把高校转发的也传进来（美国端读的是全部核验有效的来源，不只官方的）；data.sources 仍只给官方的。
 //
 // 二、签名：美国 → 北京每个请求带 x-sync-time（毫秒时间）和 x-sync-signature（HMAC-SHA256(时间.正文)，十六进制），
 //    用两台共用的同步秘钥（SYNC_SECRET，和登录令牌的密钥分开）。北京只认 5 分钟以内的，抓到的旧请求不能重放。
@@ -50,13 +54,23 @@ export function 整理届次(e, 来源们 = []) {
   if (海报文件名.test(e.poster?.file ?? '')) data.poster = { file: e.poster.file };
   const 预计 = e.next_edition_estimate || e.legacy?.nextEditionEstimate;
   if (e.status === '已归档' && 预计) data.next_edition_estimate = 预计;
-  const 来源 = 来源们.filter(s => s.is_official && s.validity_status === 'valid' && /^https?:\/\//i.test(s.url || ''))
-    .map(s => ({ id: s.id, source_type: s.source_type, url: s.url }));
+  const 有效 = 来源们.filter(s => s.validity_status === 'valid' && /^https?:\/\//i.test(s.url || ''));
+  const 来源 = 有效.filter(s => s.is_official).map(s => ({ id: s.id, source_type: s.source_type, url: s.url }));
   if (来源.length) data.sources = 来源;
+  Object.assign(data, 信息来源(来源.length ? [] : 有效.filter(s => s.source_type === 高校转发)));
   return {
     id: e.id, competition_id: e.competition_id, version: e.version,
     registration_start: e.registration_start ?? null, registration_end: e.registration_end ?? null, status: e.status, data,
   };
+}
+
+const 高校转发 = 'school_repost';
+const 核对时刻 = s => { const t = Date.parse(s.last_verified_at || ''); return Number.isFinite(t) ? t : -Infinity; };
+// 转发们为空 → official；否则 school_repost，网址取核对时间最新的（一样取排在后面的）
+function 信息来源(转发们) {
+  if (!转发们.length) return { info_source: 'official' };
+  const 最新 = 转发们.reduce((a, b) => (核对时刻(b) >= 核对时刻(a) ? b : a));
+  return { info_source: 高校转发, info_source_url: 最新.url };
 }
 
 function 检查秘钥(秘钥) {

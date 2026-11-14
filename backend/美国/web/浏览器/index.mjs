@@ -14,15 +14,36 @@
 //     中间几跳和最后一跳拦不到。所以听浏览环境的 request 事件，凡是跳转来的请求（redirectedFrom）都查，不安全就关掉整个浏览环境，
 //     之后的动作都抛错。注意：这时请求已经发出去了，只能保证读不到内容、页面不能接着用，挡不住“发出去”这一下。
 //   - routeWebSocket 是往页面里注入脚本替换 WebSocket 实现的，管不到 Worker 里的 WebSocket；WebRTC、WebTransport 也不走 route。
-//     所以页面加载前去掉 Worker、SharedWorker、RTCPeerConnection、WebTransport（爬通知列表用不到）。Service Worker 关掉。
+//     所以页面加载前把 Worker、SharedWorker 换成空壳，去掉 RTCPeerConnection、WebTransport（爬通知列表用不到）。Service Worker 关掉。
+//     空壳（2026-11-13 用户定）：以前直接删掉 Worker，用到 Worker 的官网（蓝桥杯 lanqiao.cn）脚本一 new Worker 就报错、整页空白。
+//     现在能 new、能 postMessage / addEventListener / terminate（SharedWorker 有 port），但什么都不做：不真的起线程、不请求 Worker 的脚本，
+//     所以 Worker 里的连接照样不会发生（Worker 里的网络请求本来就拦不住，不能让它真跑）。写法照线上试验 codex浏览器-20261112 的。
 import { createRequire } from 'node:module';
 
 const require = createRequire(new URL('../../../Environment/package.json', import.meta.url));
 const 不加载 = new Set(['image', 'media', 'font']);
 
-// 在页面（包括 iframe）里先于网站脚本运行，去掉拦不到的连接方式
+// 在页面（包括 iframe）里先于网站脚本运行：Worker、SharedWorker 换成什么都不做的空壳，去掉 WebRTC、WebTransport
+// （这个函数会被转成文字注入页面，只能用页面里有的东西，不能引用外面的变量）
 function 去掉拦不到的连接() {
-  for (const 名 of ['Worker', 'SharedWorker', 'RTCPeerConnection', 'webkitRTCPeerConnection', 'WebTransport']) {
+  class 空端口 extends EventTarget {
+    constructor() { super(); this.onmessage = null; this.onmessageerror = null; }
+    postMessage() {}
+    start() {}
+    close() {}
+  }
+  class 空Worker extends EventTarget {
+    constructor() { super(); this.onmessage = null; this.onmessageerror = null; this.onerror = null; }
+    postMessage() {}
+    terminate() {}
+  }
+  class 空SharedWorker extends EventTarget {
+    constructor() { super(); this.onerror = null; this.port = new 空端口(); }
+  }
+  for (const [名, 壳] of [['Worker', 空Worker], ['SharedWorker', 空SharedWorker]]) {
+    try { Object.defineProperty(globalThis, 名, { value: 壳, writable: true, configurable: true }); } catch { /* 换不掉就算了 */ }
+  }
+  for (const 名 of ['RTCPeerConnection', 'webkitRTCPeerConnection', 'WebTransport']) {
     try { delete globalThis[名]; } catch { /* 删不掉就算了 */ }
   }
 }

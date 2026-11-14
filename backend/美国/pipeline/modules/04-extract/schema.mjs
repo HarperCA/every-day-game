@@ -2,6 +2,7 @@
 // 字段名取自现有代码实际用到的（candidateToRecord.js、ingest-candidates.mjs 的 withExtraction）；
 // 搬提示词时（adminData/competitionExtract.js）再逐个核对。
 export const SINGLE_FIELDS = [
+  'track_name',                 // 正文明示、当前候选对应的独立赛道
   'competition_name',           // 正文里写明的比赛全称
   'organizer',                  // 主办方
   'registration_start',         // 报名开始

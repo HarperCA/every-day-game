@@ -53,45 +53,62 @@ describe('修改（2026-11-06 用户定：每行右边“修改”，给用户�
   });
 });
 
-describe('AI 维护（2026-11-06 用户定）', () => {
-  test('列表带比赛的最新维护时间和队列', async () => {
+describe('手动维护：多选的比赛排进维护队列，由新维护处理（2026-11-06 建，2026-11-12 用户定改走新维护、不限数量）', () => {
+  test('列表带比赛的最新维护时间和维护队列', async () => {
     const db = 准备();
     db.update('competition', 'event-art', { last_maintained_at: '2026-10-01T06:05:00.000Z' }, db.get('competition', 'event-art').version);
     const 回 = await 管理(db);
     expect(回.比赛们.find(c => c.id === 'event-art').last_maintained_at).toBe('2026-10-01T06:05:00.000Z');
     expect(回.比赛们.find(c => c.id === 'event-agent').last_maintained_at).toBeNull();
-    expect(回.AI维护).toEqual({ 排队: [], 正在: null });
+    expect(回.维护队列).toEqual({ 排队: [], 正在: [], 最近: [] });
+    expect(回).not.toHaveProperty('AI维护');
   });
-  test('启动AI维护：多选的比赛排进队列，马上能看到排队中；提示写明个数；记下操作人', async () => {
+  test('启动维护：多选的比赛排进队列，马上能看到排队中；提示写明个数、说的是新维护；记下操作人', async () => {
     const db = 准备();
-    const 回 = await 管理(db, { 动作: '启动AI维护', 编号们: ['event-art', 'event-math'] });
-    expect(回.AI维护.排队).toEqual(['event-art', 'event-math']);
-    expect(回.结果).toMatchObject({ 动作: '启动AI维护', 加入: 2 });
-    expect(整理(回, {}).提示).toContain('2 个比赛');
-    expect(db.find('audit_log', { action: '启动AI维护' })[0].detail.操作人).toBe('管理员甲');
+    const 回 = await 管理(db, { 动作: '启动维护', 编号们: ['event-art', 'event-math'] });
+    expect(回.维护队列.排队).toEqual(['event-art', 'event-math']);
+    expect(回.结果).toMatchObject({ 动作: '启动维护', 加入: 2 });
+    const 提示 = 整理(回, {}).提示;
+    expect(提示).toContain('2 个比赛');
+    expect(提示).toContain('维护队列');
+    expect(提示).not.toMatch(/AI 维护|Codex/);
+    expect(db.find('audit_log', { action: '启动维护' })[0].detail.操作人).toBe('管理员甲');
   });
-  test('启动AI维护：没选、不是列表、比赛不存在都报错', async () => {
+  test('不限数量：一次选 120 个也都排进去', async () => {
     const db = 准备();
-    await expect(管理(db, { 动作: '启动AI维护', 编号们: [] })).rejects.toThrow(/至少选一个/);
-    await expect(管理(db, { 动作: '启动AI维护', 编号们: 'event-art' })).rejects.toThrow(/至少选一个/);
-    await expect(管理(db, { 动作: '启动AI维护', 编号们: ['event-none'] })).rejects.toThrow(/没有这个比赛/);
+    db.transaction(tx => { for (let i = 0; i < 120; i += 1) tx.insert('competition', `event-n${i}`, { name: `比赛${i}`, level: '国家级' }); });
+    const 编号们 = Array.from({ length: 120 }, (_, i) => `event-n${i}`);
+    const 回 = await 管理(db, { 动作: '启动维护', 编号们 });
+    expect(回.结果.加入).toBe(120);
+    expect(回.维护队列.排队).toHaveLength(120);
+  });
+  test('旧动作名“启动AI维护”不认了', async () => {
+    const db = 准备();
+    await expect(管理(db, { 动作: '启动AI维护', 编号们: ['event-art'] })).rejects.toThrow(/不认识的动作/);
+  });
+  test('启动维护：没选、不是列表、比赛不存在都报错', async () => {
+    const db = 准备();
+    await expect(管理(db, { 动作: '启动维护', 编号们: [] })).rejects.toThrow(/至少选一个/);
+    await expect(管理(db, { 动作: '启动维护', 编号们: 'event-art' })).rejects.toThrow(/至少选一个/);
+    await expect(管理(db, { 动作: '启动维护', 编号们: ['event-none'] })).rejects.toThrow(/没有这个比赛/);
   });
   test('维护时间按北京时间显示；没维护过写未维护', () => {
     expect(维护时间文字('2026-11-06T06:05:00.000Z')).toBe('2026-11-06 14:05');
     expect(维护时间文字(null)).toBe('未维护');
     expect(维护时间文字('乱写')).toBe('未维护');
   });
-  test('维护状态：正在维护、排队中，其余没有', () => {
-    const 队列 = { 排队: ['a', 'b'], 正在: 'a' };
+  test('维护状态：正在维护（可以同时好几个）、排队中，其余没有', () => {
+    const 队列 = { 排队: ['b', 'c'], 正在: ['a', 'd'] };
     expect(维护状态('a', 队列)).toBe('维护中');
+    expect(维护状态('d', 队列)).toBe('维护中');
     expect(维护状态('b', 队列)).toBe('排队中');
-    expect(维护状态('c', 队列)).toBe('');
+    expect(维护状态('x', 队列)).toBe('');
     expect(维护状态('c', undefined)).toBe('');
   });
   test('整理把队列交给界面', async () => {
     const db = 准备();
-    const 回 = await 管理(db, { 动作: '启动AI维护', 编号们: ['event-art'] });
-    expect(整理(回, {}).AI维护.排队).toEqual(['event-art']);
+    const 回 = await 管理(db, { 动作: '启动维护', 编号们: ['event-art'] });
+    expect(整理(回, {}).维护队列.排队).toEqual(['event-art']);
   });
 });
 
@@ -488,7 +505,7 @@ const 等一下 = () => new Promise(好 => setTimeout(好, 0));
 describe('呈现：维护时间着色、点开才展开', () => {
   const 原始数据 = 记录们 => ({
     比赛们: 记录们.map(([id, last_maintained_at, 最新新维护]) => ({ id, name: `比赛${id}`, aliases: [], last_maintained_at, 最新新维护, 届次们: [] })),
-    字段表: { 比赛: [], 届次: [] }, 状态们: ['已发布', '已归档', '待人工审核'], 海报规格: {}, AI维护: { 排队: [], 正在: null }, 结果: null,
+    字段表: { 比赛: [], 届次: [] }, 状态们: ['已发布', '已归档', '待人工审核'], 海报规格: {}, 维护队列: { 排队: [], 正在: [], 最近: [] }, 结果: null,
   });
   function 画(原始, 发请求) {
     const 建 = 假建();
@@ -585,6 +602,59 @@ describe('呈现：维护时间着色、点开才展开', () => {
     expect(找元素(没改动, 有类('维护改动'))).toEqual([]);
     expect(没改动.textContent).toContain('核对无误');
     expect(有改动.textContent + 没改动.textContent).not.toContain('null');
+  });
+});
+
+describe('呈现：维护选中（2026-11-12 用户定：改走新维护，任意数量）', () => {
+  const 原始数据 = 个数 => ({
+    比赛们: Array.from({ length: 个数 }, (_, i) => ({ id: `m${i}`, name: `比赛${String(i).padStart(3, '0')}`, aliases: [], last_maintained_at: null, 最新新维护: null, 届次们: [] })),
+    字段表: { 比赛: [], 届次: [] }, 状态们: ['已发布', '已归档', '待人工审核'], 海报规格: {}, 维护队列: { 排队: ['m1'], 正在: ['m0'], 最近: [] }, 结果: null,
+  });
+  function 画(原始, 提交) {
+    const 建 = 假建();
+    const 容器 = 建('div');
+    const 重画 = () => { 容器.replaceChildren(); 呈现(容器, 整理(原始, {}), { 条件: {}, 改条件: 重画, 提交, 发请求: vi.fn(), 重新读取: 重画, 建 }); };
+    重画();
+    return 容器;
+  }
+  const 按钮 = (容器, 开头) => 找元素(容器, 节点 => 节点.标签 === 'button' && 节点.textContent.startsWith(开头))[0];
+
+  test('按钮叫“维护选中”；全选 120 个不拦；确认框说新维护、不提 Codex；提交 启动维护 带全部编号', async () => {
+    const 弹过 = [];
+    const 问过 = [];
+    globalThis.window = { alert: x => 弹过.push(x), confirm: x => { 问过.push(x); return true; } };
+    try {
+      const 提交 = vi.fn(async () => {});
+      const 容器 = 画(原始数据(120), 提交);
+      expect(按钮(容器, '维护选中').textContent).toBe('维护选中（0）');
+      expect(按钮(容器, 'AI 维护')).toBeUndefined();
+      按钮(容器, '全选本页').听.click();
+      expect(弹过).toEqual([]);
+      expect(按钮(容器, '维护选中').textContent).toBe('维护选中（120）');
+      按钮(容器, '维护选中').听.click();
+      await 等一下();
+      expect(问过).toHaveLength(1);
+      expect(问过[0]).toContain('120 个比赛');
+      expect(问过[0]).toContain('新维护');
+      expect(问过[0]).not.toMatch(/Codex|AI 维护/);
+      expect(提交).toHaveBeenCalledTimes(1);
+      const [{ 动作, 编号们 }] = 提交.mock.calls[0];
+      expect(动作).toBe('启动维护');
+      expect(new Set(编号们)).toEqual(new Set(Array.from({ length: 120 }, (_, i) => `m${i}`)));
+    } finally { delete globalThis.window; }
+  });
+  test('一个个勾也不限数量；比赛行照旧显示维护中、排队中', () => {
+    const 弹过 = [];
+    globalThis.window = { alert: x => 弹过.push(x), confirm: () => false };
+    try {
+      const 容器 = 画(原始数据(60), vi.fn());
+      for (const 框 of 找元素(容器, 有类('选比赛'))) 框.听.change({ target: { checked: true } });
+      expect(弹过).toEqual([]);
+      expect(按钮(容器, '维护选中').textContent).toBe('维护选中（60）');
+      const 状态们 = 找元素(容器, 有类('维护状态')).map(x => x.textContent);
+      expect(状态们).toEqual(['维护中', '排队中']);
+      按钮(容器, '全选本页').听.click();   // 全选了再点是全不选，清掉，免得影响别的测试
+    } finally { delete globalThis.window; }
   });
 });
 

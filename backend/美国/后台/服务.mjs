@@ -8,6 +8,8 @@ import { openDb, 用户副本 } from '../db/index.mjs';
 import { 回传 as 回传到北京 } from '../../沟通/审核结果回传/美国端.mjs';
 import { 列出几晚, 读一晚, 读最近失败 } from '../pipeline/小数据库/index.mjs';
 import { logRoot } from '../pipeline/shared/paths.mjs';
+import { 打开聊天记录, 聊天日期们, 某天聊天 } from '../赛事助手/聊天记录.mjs';
+import { 读取小程序统计 } from '../小程序统计/index.mjs';
 import { 建服务 } from './建服务.mjs';
 
 const PORT = Number(process.env.PORT || 4318);
@@ -25,7 +27,14 @@ let 副本库 = null;
 let 可写副本 = null;
 const 同步秘钥 = () => process.env.SYNC_SECRET || 读文件(process.env.SYNC_SECRET_FILE);
 const 回传 = 参数 => 回传到北京({ 地址: process.env.SYNC_REVIEW_ENDPOINT || '', 秘钥: 同步秘钥(), 副本库: (可写副本 ||= 用户副本.open()), ...参数 });
-const 环境 = () => ({ db: (db ||= openDb()), 用户副本库: (副本库 ||= 用户副本.open({ readOnly: true })), 回传, 每晚失败, AI问题, 每晚记录, AI用量 });
+// 赛事助手聊天记录（2026-11-12）：只调赛事助手给的接口；问答记录库（DB_DIR/问答记录.db，和赛事助手同一个文件）只读打开。
+// 库文件还不存在时是 null（接口交回空的，页面显示“还没有聊天记录”），下次再试着打开
+let 聊天库 = null;
+const 聊天记录 = {
+  日期们: 选项 => 聊天日期们((聊天库 ||= 打开聊天记录()), 选项),
+  某天: 日期 => 某天聊天((聊天库 ||= 打开聊天记录()), 日期),
+};
+const 环境 = () => ({ db: (db ||= openDb()), 用户副本库: (副本库 ||= 用户副本.open({ readOnly: true })), 回传, 每晚失败, AI问题, 每晚记录, AI用量, 聊天记录 });
 
 const 口令 = process.env.ADMIN_TOKEN || 读文件(process.env.ADMIN_TOKEN_FILE);
-建服务({ 口令, 环境 }).listen(PORT, '127.0.0.1', () => console.log(`后台界面：http://localhost:${PORT}${口令 ? '（要登录）' : '（本机预览，不用登录）'}`));
+建服务({ 口令, 环境: () => ({ ...环境(), 小程序统计: 读取小程序统计 }) }).listen(PORT, '127.0.0.1', () => console.log(`后台界面：http://localhost:${PORT}${口令 ? '（要登录）' : '（本机预览，不用登录）'}`));

@@ -1,0 +1,13 @@
+# 竞赛雷达 找新一届（2026-11-12 用户定）：已归档、预计报名时间已过或 60 天内、7 天内没找过的比赛，搜有没有新一届，发现就入库发布
+# （追不到官方通知的用高校转发发布、来源标高校转发）。最多 30 个、同时 4 个；和每日新维护共用维护锁，那边没跑完就等。
+# 报告写 /opt/competition-radar/logs/maintain-new/找新一届-日期-时分.json，过程进 journal。还没部署。
+[Unit]
+Description=竞赛雷达 找新一届（每天 14:00，最多 30 个）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/bin/bash -c "exec /usr/bin/env node ${BACKEND_DIR}/美国/db/新维护/运行.mjs --找新一届 --上限 30 --并发 4 --报告 /opt/competition-radar/logs/maintain-new/找新一届-$$(date +%%F-%%H%%M).json"
+TimeoutStartSec=3h

@@ -106,7 +106,7 @@ describe('新页面：安全检查', () => {
     expect(好.记).toEqual([['连']]);
     expect(查过).toEqual(['http://127.0.0.1:9000/x', 'https://a.cn/s']);
   });
-  test('页面里去掉 Worker、SharedWorker、WebRTC、WebTransport（这些连接拦不到）', async () => {
+  test('页面里 Worker、SharedWorker 换成空壳，去掉 WebRTC、WebTransport（这些连接拦不到）', async () => {
     const b = 假浏览器();
     await 新页面(b, { 安全检查: 内网检查 });
     const 脚本 = String(b.环境们[0].初始脚本[0]);
@@ -154,6 +154,7 @@ afterAll(async () => { await 真浏览器?.close().catch(() => {}); });
 describe.skipIf(!真浏览器)('真的 Chromium（没装浏览器就跳过）', () => {
   async function 起网站() {
     const 内网收到 = [];
+    const 外收到 = [];
     const 内网 = http.createServer((req, res) => { 内网收到.push(req.url); res.end('<html><body>SECRET</body></html>'); });
     内网.on('upgrade', (req, sock) => { 内网收到.push(`WS ${req.url}`); sock.destroy(); });
     await new Promise(r => 内网.listen(0, '127.0.0.1', r));
@@ -164,12 +165,20 @@ describe.skipIf(!真浏览器)('真的 Chromium（没装浏览器就跳过）', 
       if (req.url === '/redir') { res.writeHead(302, { location: `http://127.0.0.1:${内网口}/via-redirect` }); return res.end(); }
       if (req.url === '/ws') return res.end(页(`<script>const w = new WebSocket('ws://127.0.0.1:${内网口}/sock'); w.onclose = e => document.body.dataset.ws = 'closed ' + e.code; w.onopen = () => document.body.dataset.ws = 'open';</script>`));
       if (req.url === '/worker') return res.end(页(`<script>document.body.dataset.worker = typeof Worker + ',' + typeof SharedWorker + ',' + typeof RTCPeerConnection;</script>`));
+      // 像蓝桥杯 lanqiao.cn 那样页面脚本一上来就 new Worker：不报错、页面照常渲染；Worker 是空壳，脚本文件不会被请求
+      if (req.url === '/new-worker') return res.end(页(`<div id="app"></div><script>
+        const w = new Worker('/w.js'); w.addEventListener('message', () => {}); w.onmessage = () => {}; w.postMessage({ a: 1 }); w.terminate();
+        const s = new SharedWorker('/s.js'); s.port.start(); s.port.postMessage('x'); s.port.addEventListener('message', () => {});
+        document.getElementById('app').innerHTML = '<ul><li>脚本渲染的通知列表</li></ul>';
+        document.body.dataset.worker = typeof Worker + ',' + (w instanceof Worker) + ',' + typeof RTCPeerConnection + ',' + typeof WebTransport;
+      </script>`));
+      if (req.url === '/w.js' || req.url === '/s.js') { 外收到.push(req.url); return res.end(`fetch('http://127.0.0.1:${内网口}/from-worker')`); }
       return res.end(页('<ul><li>公网页面</li></ul>'));
     });
     await new Promise(r => 外.listen(0, '127.0.0.1', r));
     const 外址 = `http://127.0.0.1:${外.address().port}`;
     const 安全检查 = async u => (new URL(u).port === String(内网口) ? '不读内网地址' : null);
-    return { 内网收到, 外址, 安全检查, 关: () => { 内网.close(); 外.close(); } };
+    return { 内网收到, 外收到, 外址, 安全检查, 关: () => { 内网.close(); 外.close(); } };
   }
 
   test('公网页面照常打开、读源码；跳到内网：打开抛错，读不到内网的内容', async () => {
@@ -192,12 +201,25 @@ describe.skipIf(!真浏览器)('真的 Chromium（没装浏览器就跳过）', 
       expect(站.内网收到).toEqual([]);
     } finally { await 关(); 站.关(); }
   }, 30000);
-  test('页面里没有 Worker、SharedWorker、RTCPeerConnection', async () => {
+  test('Worker、SharedWorker 是空壳（能 new，但什么都不做）；页面里没有 RTCPeerConnection、WebTransport', async () => {
     const 站 = await 起网站();
     const { 页, 关 } = await 新页面(真浏览器, { 安全检查: 站.安全检查, 超时: 10000 });
     try {
       await 页.打开(`${站.外址}/worker`);
-      expect(await 页.源码()).toContain('data-worker="undefined,undefined,undefined"');
+      expect(await 页.源码()).toContain('data-worker="function,function,undefined"');
+    } finally { await 关(); 站.关(); }
+  }, 30000);
+  test('页面 new Worker 不报错、页面能渲染；Worker 不真的跑（脚本文件没被请求，内网收不到）', async () => {
+    const 站 = await 起网站();
+    const { 页, 关 } = await 新页面(真浏览器, { 安全检查: 站.安全检查, 超时: 10000 });
+    try {
+      await 页.打开(`${站.外址}/new-worker`);
+      await 页.等待({ 选择器: 'body[data-worker]' });
+      const 源码 = await 页.源码();
+      expect(源码).toContain('脚本渲染的通知列表');
+      expect(源码).toContain('data-worker="function,true,undefined,undefined"');
+      expect(站.外收到).toEqual([]);
+      expect(站.内网收到).toEqual([]);
     } finally { await 关(); 站.关(); }
   }, 30000);
 });

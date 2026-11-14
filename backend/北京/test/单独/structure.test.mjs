@@ -1,4 +1,4 @@
-// 北京：每项服务都有说明和入口；新增服务受登录保护；引用规矩。
+// 北京：每项服务都有说明和入口；还没实现的明确报错；引用规矩。
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,13 +11,17 @@ const SERVICES = path.join(BEIJING_DIR, '服务');
 
 describe('服务', () => {
   const folders = fs.readdirSync(SERVICES, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
-  test('北京自己的 7 项服务，每项都有 README.md 和 index.mjs（和美国来往的在 沟通/）', () => {
-    expect(folders.sort()).toEqual(['公开数据', '发提醒', '收集报错', '校赛', '用户数据', '登录', '组队'].sort());
+  test('北京自己的服务，每项都有 README.md 和 index.mjs（和美国来往的在 沟通/）', () => {
+    expect(folders.sort()).toEqual(['公开数据', '发提醒', '收集报错', '用户数据', '登录', '组队', '校赛'].sort());
     for (const f of folders) for (const file of ['README.md', 'index.mjs']) expect(fs.existsSync(path.join(SERVICES, f, file)), `${f}/${file}`).toBe(true);
   });
-  test.each(['校赛', '组队'])('%s 拒绝未登录的请求', async f => {
-    const { handle } = await import(`../../服务/${f}/index.mjs`);
-    await expect(handle({}, {})).resolves.toMatchObject({ ok: false, message: 'unauthenticated' });
+  // 已经搬好的服务各有自己的测试（服务/<名>/test/）；其余还是占位，调用要明确报错
+  const 已实现 = ['登录', '用户数据', '发提醒', '收集报错', '公开数据', '组队', '校赛'];
+  test('还没实现的服务会明确报错，不会悄悄返回假结果', async () => {
+    for (const f of folders.filter(f => !已实现.includes(f))) {
+      const { handle } = await import(`../../服务/${f}/index.mjs`);
+      await expect(handle({}, {}), f).rejects.toThrow('还没实现');
+    }
   });
 });
 

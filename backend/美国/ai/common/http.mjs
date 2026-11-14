@@ -2,7 +2,7 @@
 // 只管“怎么发”，不管发给谁、发什么；每家接口在自己的文件夹里拼地址和内容。
 import { AiError, kindFromStatus } from './errors.mjs';
 
-export async function postJson(url, { headers = {}, body, timeoutMs = 60000, signal, fetchImpl = globalThis.fetch, provider }) {
+export async function postJson(url, { headers = {}, body, timeoutMs = 60000, signal, fetchImpl = globalThis.fetch, provider, readStream }) {
   const timeout = AbortSignal.timeout(timeoutMs);
   const response = await fetchImpl(url, {
     method: 'POST',
@@ -10,6 +10,9 @@ export async function postJson(url, { headers = {}, body, timeoutMs = 60000, sig
     body: JSON.stringify(body),
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
+  if (response.ok && readStream) {
+    return { ok: true, status: response.status, payload: await readStream(response) };
+  }
   const raw = await response.text();
   let payload = null;
   try { payload = JSON.parse(raw); } catch { /* 出错时也可能返回网页 */ }

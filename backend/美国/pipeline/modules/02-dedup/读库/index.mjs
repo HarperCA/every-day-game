@@ -9,6 +9,7 @@
 //     拒过:    Map(网址键 → { 原因, 模块 })              30 天内寻找流程拒过的
 //     比赛名:  编号 → 名称
 //   }
+import { 库中届次 } from '../../../common/届次与赛道.mjs';
 import { 网址键 } from '../../../common/网址键.mjs';
 
 export const 拒过保留天数 = 30; // 和 db/操作/拒过的网址.mjs 的保留天数一致（到期后每日清理会删掉）
@@ -39,14 +40,25 @@ export function 读库(ctx) {
   const 界线 = ctx.now().getTime() - 拒过保留天数 * 86400000;
   const 拒过 = new Map();
   for (const { data } of ctx.list('rejected_url')) {
-    if (Date.parse(data.rejected_at) >= 界线 && !拒过.has(data.url_key)) 拒过.set(data.url_key, { 原因: data.reason, 模块: data.module });
+    if (Date.parse(data.rejected_at) >= 界线 && !拒过.has(data.url_key)) 拒过.set(data.url_key, { 原因: data.reason, 模块: data.module, 标题: data.title });
   }
 
   const 比赛们 = 比赛行.map(({ key, data }) => ({ 编号: key, 名称: data.name, 别名们: data.aliases || [], 级别: data.level || '', 地区: data.region || '' }));
+  const 已收录届次 = new Map();
+  const 比赛按编号 = new Map(比赛们.map(c => [c.编号, c]));
+  for (const { data } of 届次行) {
+    if (data.status === '待人工审核') continue;
+    const 比赛 = 比赛按编号.get(data.competition_id);
+    const 届次们 = 已收录届次.get(比赛.编号) || [];
+    const 届 = 库中届次(data, 比赛.名称);
+    if (届.年 != null || 届.第几届 != null) 届次们.push(届);
+    已收录届次.set(比赛.编号, 届次们);
+  }
   const 名称表 = new Map(比赛们.map(c => [c.编号, c.名称]));
   return {
     比赛们,
     网址们,
+    已收录届次,
     不收录: ctx.list('blocked_competition').map(({ data }) => ({ 名称们: [data.name, ...(data.aliases || [])], 网址键: 网址键(data.website), 原因: data.reason || '' })),
     拒过,
     比赛名: 编号 => 名称表.get(编号),

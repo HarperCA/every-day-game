@@ -10,6 +10,7 @@ import { describe, expect, test } from 'vitest';
 import { open, seed } from '../../../test/复用/样例数据.mjs';
 import { 搜索记忆, 爬虫脚本, 指纹 } from '../../../index.mjs';
 import { 维护一个 } from '../../维护一个.mjs';
+import { 挑通知 } from '../../挑通知.mjs';
 
 const 列表页 = 'https://www.mcm.edu.cn/tzgg/';
 const 条 = (标题, 链接) => ({ 标题, 链接, 日期: '2026-04-01' });
@@ -35,8 +36,9 @@ const 照旧挑 = ({ 条目们, 有比赛名 }) => ({ 核对: [], 新届: 条目
 const 在屏蔽里 = (网址, 屏蔽 = []) => { const 域 = new URL(网址).hostname.replace(/^www\./, ''); return 屏蔽.some(站 => 域 === 站 || 域.endsWith(`.${站}`)); };
 // 假的来源候选：除了权威名单，来源网址原样当候选，依据写来源种类
 const 照旧候选 = 来源们 => ({ 候选: 来源们.filter(s => s.source_type !== 'authority_notice').map(s => ({ 网址: s.url, 依据: s.source_type })), 跳过: [] });
-function 部件({ 跑 = [], 写 = [], 找 = null, 入库结果 = 通过, 写入 = { written: 3, error: null }, 挑 = 照旧挑, 判 = {}, 候选 = 照旧候选 } = {}) {
-  const 调用 = { 写脚本: [], 执行脚本: [], 入库: [], 找官网: [], 维护记录: [], 挑通知: [], 判断官网: [], 来源候选: [], 算域名比赛数: [] };
+// 假的第三方通知（真的在 找新一届/高校转发.mjs）：转发 是交回值（{ 条目们, 过程 }）或 Error，默认什么都没找到
+function 部件({ 跑 = [], 写 = [], 找 = null, 入库结果 = 通过, 写入 = { written: 3, error: null }, 挑 = 照旧挑, 判 = {}, 候选 = 照旧候选, 转发 = { 条目们: [], 过程: [] } } = {}) {
+  const 调用 = { 写脚本: [], 执行脚本: [], 入库: [], 找官网: [], 维护记录: [], 挑通知: [], 判断官网: [], 来源候选: [], 算域名比赛数: [], 第三方通知: [] };
   return {
     调用,
     判断官网: async (网址, 比赛, 参数) => {
@@ -51,6 +53,7 @@ function 部件({ 跑 = [], 写 = [], 找 = null, 入库结果 = 通过, 写入 
     写脚本: async (比赛, 参数) => { 调用.写脚本.push(参数); return 写.shift(); },
     执行脚本: async (s, 参数) => { 调用.执行脚本.push({ 脚本: s, ...参数 }); return 跑.shift(); },
     入库: async (网址们, 参数) => { 调用.入库.push({ 网址们, 试跑: 参数.试跑, 更新已有: 参数.更新已有, 放宽资料: 参数.放宽资料, 不审核: 参数.不审核 }); return { 条目们: 网址们.map(入库结果), 写入 }; },
+    第三方通知: async (编号, 参数) => { 调用.第三方通知.push({ 编号, ...参数 }); if (转发 instanceof Error) throw 转发; return 转发; },
     维护记录改动: (节, 一行) => { 调用.维护记录.push(一行); return {}; },
   };
 }
@@ -90,6 +93,31 @@ describe('维护一个比赛', () => {
     // 官方域名记原样主机名（带 www 的保留 www，审查 11-08）
     expect(搜索记忆.读(db, 'event-math').节).toMatchObject({ 官方域名: ['www.mcm.edu.cn'], 通知列表页: [列表页], 往年通知标题格式: ['关于举办{年份}年全国大学生数学建模竞赛的通知'] });
     expect(db.get('competition', 'event-math').data.last_maintained_at).toBe(时刻.toISOString());
+  });
+  test('手动查新届：指纹已见过的通知也对照现有届次，只交新届，不覆盖定时维护的指纹', async () => {
+    const db = 有脚本的库();
+    const 下一届 = 条('关于举办2027年全国大学生数学建模竞赛的通知', 'https://www.mcm.edu.cn/2027.html');
+    const 列表 = [...旧条目, 新通知, 下一届];
+    指纹.记(db, 'event-math', { 列表页, etag: '"v2"', 条目们: 列表, 时间: '2026-11-01T00:00:00.000Z' });
+    const 件 = 部件({ 跑: [跑(列表)], 挑: 挑通知 });
+    const 回 = await 维护一个('event-math', 选项(db, 件, { 仅查新届: true }));
+    expect(回).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
+    expect(件.调用.入库[0]).toMatchObject({ 更新已有: false,
+      网址们: [{ 比赛编号: 'event-math', 网址: 下一届.链接 }] });
+    expect(指纹.读(db, 'event-math').检查时间).toBe('2026-11-01T00:00:00.000Z');
+    db.close();
+  });
+  test('手动查新届：库里是赛项页时补搜总赛官网，从核准的新起点抓取', async () => {
+    const 赛项页 = 'https://sub.example.cn/events/race?track=3';
+    const db = 库({ 官网: 赛项页 });
+    const 官网 = { 首页: 'https://www.mcm.edu.cn/', 网址: 'https://www.mcm.edu.cn/' };
+    const 下一届 = 条('关于举办2027年全国大学生数学建模竞赛的通知', 'https://www.mcm.edu.cn/2027.html');
+    const 件 = 部件({ 找: { 结果: '找到', 官网 }, 写: [写好([下一届])], 挑: 挑通知 });
+    const 回 = await 维护一个('event-math', 选项(db, 件, { 仅查新届: true }));
+    expect(件.调用.找官网[0].屏蔽).toContain('sub.example.cn');
+    expect(件.调用.写脚本[0].起点网址).toBe(官网.首页);
+    expect(回).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
+    db.close();
   });
   test('有脚本、网站说没更新（304）：跳过，只改检查时间', async () => {
     const db = 库();
@@ -185,7 +213,7 @@ describe('维护一个比赛', () => {
     const 届 = db.get('edition', 'ed-math-2026').data;
     expect(届.status).toBe('待人工审核');
     expect(届.status_at).toBe(时刻.toISOString());
-    expect(届.status_reason.at(-1)).toBe('新维护 2026-11-08：找不到官网（DeepSeek 搜索「全国大学生数学建模竞赛」，DeepSeek 认为前 10 条里没有官网：都是学校转发），原来是已发布，转待人工审核');
+    expect(届.status_reason.at(-1)).toBe('新维护 2026-11-08：找不到官网（搜索「全国大学生数学建模竞赛」，DeepSeek 认为前 10 条里没有官网：都是学校转发），原来是已发布，转待人工审核');
     expect(届.manual_fields || []).not.toContain('status');
     expect(db.get('edition', 'ed-math-2025').data.status).toBe('待人工审核');   // 只动最新一届
     expect(db.find('audit_log', { action: '新维护转待人工审核' })).toHaveLength(1);
@@ -1095,5 +1123,247 @@ describe('审查：维护时比赛被删', () => {
     expect(回).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
     expect(后台记录(db)).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
     expect(db.get('competition', 'event-math', { 包括已删除: true }).data.last_maintained_at ?? null).toBeNull();
+  });
+});
+
+// ===================== 2026-11-13 用户定的几处改动 =====================
+describe('找官网搜索接口出错（2026-11-13）', () => {
+  test('找官网交回“搜索出错”（DeepSeek 搜索接口出错、Tavily 也没找到）：失败“出错”，下次再试；不转待人工审核、不记教训、不找第三方通知', async () => {
+    const db = 库({ 官网: null });
+    const 件 = 部件({ 找: { 结果: '搜索出错', 官网: null, 原因: 'DeepSeek 搜索接口出错：deepseek 返回 503；Tavily 搜索：后备搜索失败（tavily 暂停中），当没结果', 记忆改动: {} } });
+    const 回 = await 维护一个('event-math', 选项(db, 件));
+    expect(回).toMatchObject({ 成功: false, 摘要: '出错', 结果: '没找到官网（搜索接口出错，下次再试）', 原因: expect.stringContaining('DeepSeek 搜索接口出错') });
+    expect(db.get('edition', 'ed-math-2026').data.status).toBe('已发布');
+    expect(搜索记忆.读(db, 'event-math')?.节?.教训 ?? []).toEqual([]);
+    expect(件.调用.写脚本).toHaveLength(0);
+    expect(件.调用.第三方通知).toHaveLength(0);
+  });
+});
+
+describe('官网打不开：先无头浏览器，还不行用第三方通知（2026-11-13）', () => {
+  const 本届转发 = { 网址: 'https://jwc.abc.edu.cn/info/1/2.htm', 标题: '关于组织参加2026年全国大学生数学建模竞赛的通知', 比赛名: '全国大学生数学建模竞赛', 比赛编号: 'event-math', 届次: 'ed-math-2026', 来源类型: 'school_repost', 核对说明: '官网打不开，用高校转发' };
+  const 新届转发 = { 网址: 'https://jwc.def.edu.cn/info/3.htm', 标题: '关于组织参加2027年全国大学生数学建模竞赛的通知', 比赛名: '全国大学生数学建模竞赛', 比赛编号: 'event-math', 新届: { 年份: '2027', 届次: null }, 来源类型: 'school_repost', 核对说明: 'x' };
+  const 起点打不开 = () => ({ 判: { 'https://www.mcm.edu.cn/': { 是: false, 原因: '打不开：超时；无头浏览器也打不开：Timeout' } } });
+  test('找官网用的读网页带浏览器：直接读打不开时换无头浏览器再开一次', async () => {
+    const db = 库({ 官网: null });
+    const 件 = 部件({ 找: { 结果: '待审', 官网: null, 原因: 'x', 记忆改动: {} } });
+    const 浏览器 = { async 新页面() { return { 页: { async 打开() { return { httpStatus: 200 }; }, async 源码() { return '<title>全国大学生数学建模竞赛</title>'; }, 网址: () => 'https://a.cn/' }, async 关() {} }; } };
+    const 读网页 = async 网址 => ({ url: 网址, status: '超时', title: '', text: '', error: '20 秒没响应' });
+    await 维护一个('event-math', 选项(db, 件, { 工具: { 取源码: async () => ({}), 浏览器, 读网页 } }));
+    expect(await 件.调用.找官网[0].读网页('https://a.cn/')).toMatchObject({ status: '成功', title: '全国大学生数学建模竞赛', 用了浏览器: true });
+  });
+  test('起点候选打不开（浏览器也打不开）：找第三方通知；这一届的高校转发交给入库（比赛编号、高校转发、更新已有、不审核），改了字段 → 成功；不写脚本、不记指纹', async () => {
+    const db = 库();
+    const 件 = 部件({ ...起点打不开(), 转发: { 条目们: [本届转发], 过程: [{ 步骤: '高校转发', 说明: '交给入库 1 条' }] },
+      入库结果: 对上([{ 届次: 'ed-math-2026', 字段: 'registration_start', 改前: null, 改后: '2026-04-01' }]) });
+    const 回 = await 维护一个('event-math', 选项(db, 件));
+    expect(件.调用.找官网).toHaveLength(0);
+    expect(件.调用.第三方通知[0]).toMatchObject({ 编号: 'event-math', db, 屏蔽: [], 今天: '2026-11-08' });
+    expect(件.调用.入库[0]).toMatchObject({ 网址们: [本届转发], 更新已有: true, 不审核: true, 试跑: false });
+    expect(件.调用.写脚本).toHaveLength(0);
+    expect(指纹.读(db, 'event-math')).toBeNull();
+    expect(回).toMatchObject({ 成功: true, 摘要: '改了 1 处', 结果: '官网打不开，用高校转发通知入库' });
+    expect(回.原因).toContain('起点候选打不开');
+    expect(回.过程).toContainEqual({ 步骤: '高校转发', 说明: '交给入库 1 条' });
+    expect(后台记录(db)).toMatchObject({ 成功: true, 摘要: '改了 1 处' });
+  });
+  test('新一届的高校转发：新建发布 → 成功“入库 N 条”', async () => {
+    const db = 库();
+    const 件 = 部件({ ...起点打不开(), 转发: { 条目们: [新届转发], 过程: [] } });
+    expect(await 维护一个('event-math', 选项(db, 件))).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
+  });
+  test('高校转发入库只补了来源、没改字段，或被挡掉：失败“官网打不开”，原因带高校转发入库的情况', async () => {
+    const 回 = await 维护一个('event-math', 选项(库(), 部件({ ...起点打不开(), 转发: { 条目们: [本届转发], 过程: [] }, 入库结果: 对上() })));
+    expect(回).toMatchObject({ 成功: false, 摘要: '官网打不开' });
+    expect(回.原因).toContain('高校转发');
+    const 挡 = await 维护一个('event-math', 选项(库(), 部件({ ...起点打不开(), 转发: { 条目们: [本届转发], 过程: [] }, 入库结果: 挡掉 })));
+    expect(挡).toMatchObject({ 成功: false, 摘要: '官网打不开' });
+  });
+  test('第三方通知什么都没找到：照旧失败“官网打不开”，原因不变；找第三方通知出错也一样（额度类错误收尾后往外抛）', async () => {
+    const 回 = await 维护一个('event-math', 选项(库(), 部件(起点打不开())));
+    expect(回).toMatchObject({ 成功: false, 摘要: '官网打不开', 原因: '起点候选打不开：官网字段 https://www.mcm.edu.cn/ 打不开：超时；无头浏览器也打不开：Timeout' });
+    const 出错 = await 维护一个('event-math', 选项(库(), 部件({ ...起点打不开(), 转发: new Error('搜索崩了') })));
+    expect(出错).toMatchObject({ 成功: false, 摘要: '官网打不开' });
+    expect(出错.过程.map(x => x.说明).join('\n')).toContain('搜索崩了');
+    const db = 库();
+    await expect(维护一个('event-math', 选项(db, 部件({ ...起点打不开(), 转发: Object.assign(new Error('余额不足'), { kind: '额度用完' }) })))).rejects.toThrow('余额不足');
+    expect(后台记录(db)).toMatchObject({ 成功: false, 摘要: '官网打不开' });
+  });
+  test('找官网找到的官网打不开（网络问题）：也找第三方通知', async () => {
+    const db = 库({ 官网: null });
+    const 件 = 部件({ 找: { 结果: '网络问题', 官网: null, 打不开: ['https://a.cn/'], 原因: '官网打不开：超时', 记忆改动: {} }, 转发: { 条目们: [新届转发], 过程: [] } });
+    expect(await 维护一个('event-math', 选项(db, 件))).toMatchObject({ 成功: true, 摘要: '入库 1 条', 结果: '官网打不开，用高校转发通知入库' });
+    expect(件.调用.第三方通知).toHaveLength(1);
+  });
+  test('试跑：入库按试跑；手动查新届不找第三方通知', async () => {
+    const 件 = 部件({ ...起点打不开(), 转发: { 条目们: [新届转发], 过程: [] } });
+    await 维护一个('event-math', 选项(库(), 件, { 试跑: true }));
+    expect(件.调用.入库[0].试跑).toBe(true);
+    const db = 库({ 官网: null });
+    const 件2 = 部件({ 找: { 结果: '网络问题', 官网: null, 打不开: ['https://a.cn/'], 原因: '官网打不开：超时', 记忆改动: {} }, 转发: { 条目们: [新届转发], 过程: [] } });
+    await 维护一个('event-math', 选项(db, 件2, { 仅查新届: true }));
+    expect(件2.调用.第三方通知).toHaveLength(0);
+  });
+});
+
+// 2026-11-13 用户定：没找到官网（DeepSeek 搜索、Tavily 补搜都没有官网，候选也都不算）时也用高校转发补救（同一套搜索和三条规矩）
+describe('没找到官网：用高校转发补救（2026-11-13）', () => {
+  const 学校主站 = 'https://www.bift.edu.cn/';
+  const 没找到 = { 结果: '待审', 官网: null, 原因: 'DeepSeek 认为前 10 条里没有官网', 记忆改动: {} };
+  const 新届转发 = { 网址: 'https://jwc.def.edu.cn/info/3.htm', 标题: '关于组织参加2027年全国大学生数学建模竞赛的通知', 比赛名: '全国大学生数学建模竞赛', 比赛编号: 'event-math', 新届: { 年份: '2027', 届次: null }, 来源类型: 'school_repost', 核对说明: 'x' };
+  test('高校转发入库了：成功“入库 N 条”，结果“没找到官网，用高校转发通知入库”；不转待人工审核、不写脚本', async () => {
+    const db = 库({ 官网: 学校主站 });
+    const 件 = 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 找: 没找到, 转发: { 条目们: [新届转发], 过程: [{ 步骤: '高校转发', 说明: '交给入库 1 条' }] } });
+    const 回 = await 维护一个('event-math', 选项(db, 件));
+    expect(件.调用.第三方通知).toHaveLength(1);
+    expect(件.调用.第三方通知[0]).toMatchObject({ 编号: 'event-math', db, 今天: '2026-11-08' });
+    expect(件.调用.入库[0]).toMatchObject({ 网址们: [新届转发], 更新已有: true, 不审核: true });
+    expect(回).toMatchObject({ 成功: true, 摘要: '入库 1 条', 结果: '没找到官网，用高校转发通知入库' });
+    expect(回.原因).toContain('DeepSeek 认为前 10 条里没有官网');
+    expect(件.调用.写脚本).toHaveLength(0);
+    expect(db.get('edition', 'ed-math-2026').data.status).toBe('已发布');
+    expect(db.find('audit_log', { action: '新维护转待人工审核' })).toHaveLength(0);
+    expect(后台记录(db)).toMatchObject({ 成功: true, 摘要: '入库 1 条' });
+  });
+  test('高校转发什么都没找到：照旧——一点官方来源都没有就转待人工审核，原因不变', async () => {
+    const db = 库({ 官网: 学校主站 });
+    const 件 = 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 找: 没找到 });
+    const 回 = await 维护一个('event-math', 选项(db, 件));
+    expect(件.调用.第三方通知).toHaveLength(1);
+    expect(回).toMatchObject({ 结果: '没找到官网，转待人工审核', 成功: false, 摘要: '没找到官网', 原因: `DeepSeek 认为前 10 条里没有官网；起点候选都不算官网：官网字段 ${学校主站} 学校主站` });
+    expect(db.get('edition', 'ed-math-2026').data.status).toBe('待人工审核');
+  });
+  test('高校转发交了入库但一条都没写进（被挡掉）：照旧往下走（转待人工审核），原因带高校转发入库的情况', async () => {
+    const db = 库({ 官网: 学校主站 });
+    const 件 = 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 找: 没找到, 转发: { 条目们: [新届转发], 过程: [] }, 入库结果: 挡掉 });
+    const 回 = await 维护一个('event-math', 选项(db, 件));
+    expect(回).toMatchObject({ 结果: '没找到官网，转待人工审核', 成功: false, 摘要: '没找到官网' });
+    expect(回.原因).toContain('高校转发');
+  });
+  test('手动查新届不找高校转发', async () => {
+    const db = 库({ 官网: 学校主站 });
+    const 件 = 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 找: 没找到, 转发: { 条目们: [新届转发], 过程: [] } });
+    await 维护一个('event-math', 选项(db, 件, { 仅查新届: true }));
+    expect(件.调用.第三方通知).toHaveLength(0);
+  });
+});
+
+describe('找到的官网写回官网字段（2026-11-13）', () => {
+  const 学校主站 = 'https://www.bift.edu.cn/';
+  const 记住域名 = (db, 域名) => 搜索记忆.改节(db, 'event-math', { 官方域名: [`${域名}（DeepSeek 搜索，2026-11-01 核实）`] });
+  const 改官网记录 = db => db.find('audit_log', { action: '新维护改官网' });
+  test('官网字段被判断不是官网（非网络原因）：起点写进 website，后台记录写改前改后和依据', async () => {
+    const db = 库({ 官网: 学校主站 });
+    记住域名(db, 'mcm.edu.cn');
+    const 件 = 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 写: [写好([新通知])] });
+    await 维护一个('event-math', 选项(db, 件));
+    expect(db.get('competition', 'event-math').data.website).toBe('https://mcm.edu.cn/');
+    expect(改官网记录(db)).toHaveLength(1);
+    expect(改官网记录(db)[0].detail).toMatchObject({ 字段: 'website', 改前: 学校主站, 改后: 'https://mcm.edu.cn/',
+      依据: expect.stringContaining('搜索记忆里的官方域名 https://mcm.edu.cn/：标题有比赛全名') });
+    expect(改官网记录(db)[0].detail.依据).toContain('原官网字段不算官网：学校主站');
+  });
+  test('官网字段空着：找官网找到、判断通过的写进 website', async () => {
+    const db = 库({ 官网: null });
+    const 件 = 部件({ 找: { 结果: '找到', 官网: { 域名: 'mcm.edu.cn', 首页: 'https://www.mcm.edu.cn/', 网址: 'https://www.mcm.edu.cn/a.html' }, 记忆改动: {} }, 写: [写好([新通知])] });
+    await 维护一个('event-math', 选项(db, 件));
+    expect(db.get('competition', 'event-math').data.website).toBe('https://www.mcm.edu.cn/');
+    expect(改官网记录(db)[0].detail).toMatchObject({ 改前: null, 改后: 'https://www.mcm.edu.cn/', 依据: expect.stringContaining('原官网字段空着') });
+  });
+  test('不写的：官网字段本身就是起点、官网字段只是打不开、人工改过官网字段、试跑', async () => {
+    const 本身 = 库();
+    await 维护一个('event-math', 选项(本身, 部件({ 写: [写好([新通知])] })));
+    expect(改官网记录(本身)).toHaveLength(0);
+    const 打不开 = 库({ 官网: 学校主站 });
+    记住域名(打不开, 'mcm.edu.cn');
+    await 维护一个('event-math', 选项(打不开, 部件({ 判: { [学校主站]: { 是: false, 原因: '打不开：超时' } }, 写: [写好([新通知])] })));
+    expect(打不开.get('competition', 'event-math').data.website).toBe(学校主站);
+    const 人工 = 库({ 官网: 学校主站 });
+    记住域名(人工, 'mcm.edu.cn');
+    人工.transaction(tx => { const r = tx.get('competition', 'event-math'); tx.update('competition', 'event-math', { manual_fields: ['website'] }, r.version); });
+    const 回 = await 维护一个('event-math', 选项(人工, 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 写: [写好([新通知])] })));
+    expect(人工.get('competition', 'event-math').data.website).toBe(学校主站);
+    expect(回.过程.map(x => x.说明).join('\n')).toContain('人工改过官网字段');
+    const 试 = 库({ 官网: 学校主站 });
+    记住域名(试, 'mcm.edu.cn');
+    await 维护一个('event-math', 选项(试, 部件({ 判: { [学校主站]: { 是: false, 原因: '学校主站' } }, 写: [写好([新通知])] }), { 试跑: true }));
+    expect(试.get('competition', 'event-math').data.website).toBe(学校主站);
+  });
+});
+
+describe('来源表里不算官网的官方来源记进搜索记忆，以后不当起点候选（2026-11-13）', () => {
+  const 加来源 = (db, id, 改) => db.transaction(tx => tx.insert('source', id, { edition_id: 'ed-math-2026', is_official: true, validity_status: 'valid', ...改 }));
+  test('判断不算官网（非网络原因）的来源候选记进“不算官网的网址”（网址、原因、日期，最新在前）；打不开的不记；来源本身不动', async () => {
+    const db = 库({ 官网: null });
+    加来源(db, 'a', { url: 'https://a.org/n/1.html', source_type: 'organizer_notice' });
+    加来源(db, 'b', { url: 'https://b.org/n/1.html', source_type: 'organizer_notice' });
+    const 件 = 部件({ 判: { 'https://a.org/n/1.html': { 是: false, 原因: '页面上没有比赛名（标题：首页）' }, 'https://b.org/n/1.html': { 是: false, 原因: '打不开：超时' } }, 找: { 结果: '待审', 官网: null, 原因: 'x', 记忆改动: {} } });
+    await 维护一个('event-math', 选项(db, 件));
+    expect(搜索记忆.读(db, 'event-math').节.不算官网的网址).toEqual(['https://a.org/n/1.html（页面上没有比赛名（标题：首页），2026-11-08）']);
+    expect(db.get('source', 'a').data).toMatchObject({ is_official: true, validity_status: 'valid' });
+  });
+  test('来源候选拿到记忆里的不算官网的网址', async () => {
+    const db = 库({ 官网: null });
+    加来源(db, 'a', { url: 'https://a.org/n/1.html', source_type: 'organizer_notice' });
+    搜索记忆.改节(db, 'event-math', { 不算官网的网址: ['https://a.org/（学校主站，2026-11-01）'] });
+    const 件 = 部件({ 找: { 结果: '待审', 官网: null, 原因: 'x', 记忆改动: {} } });
+    await 维护一个('event-math', 选项(db, 件));
+    expect(件.调用.来源候选[0].不算官网).toEqual(['https://a.org/（学校主站，2026-11-01）']);
+  });
+});
+
+describe('写不出脚本（2026-11-13）', () => {
+  const 写不出 = 原因 => ({ 结果: '写不出', 脚本: null, 试跑: null, 轮们: [], 用量: {}, 原因 });
+  const 在 = 日期 => ({ now: () => new Date(`${日期}T02:00:00.000Z`) });
+  test.each([
+    ['起点超时', '起点打不开：超时 20 秒没响应'],
+    ['起点 HTTP 503', '起点打不开：HTTP错误 对方返回 503'],
+    ['起点连接错误', '起点打不开：网络错误 fetch failed（ECONNREFUSED）'],
+    ['浏览器也打不开起点', '做不到：要登录；浏览器也打不开起点：net::ERR_CONNECTION_TIMED_OUT'],
+    ['浏览器起不来', '起点打不开：浏览器打不开：browserType.launch: Executable does not exist'],
+  ])('起点打不开这类网络问题（%s）：失败“官网打不开”，不记教训、不算写不出的次数', async (_, 原因) => {
+    const db = 库();
+    const 回 = await 维护一个('event-math', 选项(db, 部件({ 写: [写不出(原因)] })));
+    expect(回).toMatchObject({ 成功: false, 摘要: '官网打不开', 原因 });
+    const 节 = 搜索记忆.读(db, 'event-math')?.节;
+    expect(节?.教训 ?? []).toEqual([]);
+    expect(节?.写不出脚本 ?? []).toEqual([]);
+  });
+  test('起点 HTTP 404：不算网络问题，照旧“写不出爬虫脚本”', async () => {
+    const 回 = await 维护一个('event-math', 选项(库(), 部件({ 写: [写不出('起点打不开：HTTP错误 对方返回 404')] })));
+    expect(回).toMatchObject({ 摘要: '写不出爬虫脚本' });
+  });
+  test('非网络原因连续写不出：记次数；到 3 次后 30 天内不调 AI 写，直接失败，原因写“连续 N 次写不出，YYYY-MM-DD 再试”；过了日子再写，还写不出接着加', async () => {
+    const db = 库();
+    const 跑一次 = async (日期, 写 = [写不出('3 轮都没写出能用的脚本')]) => { const 件 = 部件({ 写 }); const 回 = await 维护一个('event-math', 选项(db, 件, 在(日期))); return { 件, 回 }; };
+    await 跑一次('2026-11-08');
+    expect(搜索记忆.读(db, 'event-math').节.写不出脚本).toEqual(['连续 1 次写不出']);
+    await 跑一次('2026-11-09');
+    expect(搜索记忆.读(db, 'event-math').节.写不出脚本).toEqual(['连续 2 次写不出']);
+    const 三 = await 跑一次('2026-11-10');
+    expect(三.回).toMatchObject({ 摘要: '写不出爬虫脚本' });
+    expect(搜索记忆.读(db, 'event-math').节.写不出脚本).toEqual(['连续 3 次写不出，2026-12-10 再试']);
+    const 跳 = await 跑一次('2026-12-09');
+    expect(跳.件.调用.写脚本).toHaveLength(0);
+    expect(跳.回).toMatchObject({ 成功: false, 摘要: '写不出爬虫脚本', 结果: '写不出脚本', 原因: '连续 3 次写不出，2026-12-10 再试' });
+    const 再 = await 跑一次('2026-12-10');
+    expect(再.件.调用.写脚本).toHaveLength(1);
+    expect(搜索记忆.读(db, 'event-math').节.写不出脚本).toEqual(['连续 4 次写不出，2027-01-09 再试']);
+  });
+  test('写出脚本后清零；旧脚本跑不通要重写时也按 30 天跳过', async () => {
+    const db = 库();
+    搜索记忆.改节(db, 'event-math', { 写不出脚本: ['连续 2 次写不出'] });
+    await 维护一个('event-math', 选项(db, 部件({ 写: [写好([新通知])] })));
+    expect(搜索记忆.读(db, 'event-math').节.写不出脚本).toEqual([]);
+    const db2 = 有脚本的库();
+    搜索记忆.改节(db2, 'event-math', { 写不出脚本: ['连续 3 次写不出，2026-12-01 再试'] });
+    const 件 = 部件({ 跑: [{ 状态: '失败', 条目们: [], 错误: '取不到条目' }] });
+    expect(await 维护一个('event-math', 选项(db2, 件))).toMatchObject({ 摘要: '写不出爬虫脚本', 原因: '连续 3 次写不出，2026-12-01 再试' });
+    expect(件.调用.写脚本).toHaveLength(0);
+  });
+  test('试跑：次数不写进比赛库', async () => {
+    const db = 库();
+    await 维护一个('event-math', 选项(db, 部件({ 写: [写不出('3 轮都没写出')] }), { 试跑: true }));
+    expect(搜索记忆.读(db, 'event-math')).toBeNull();
   });
 });

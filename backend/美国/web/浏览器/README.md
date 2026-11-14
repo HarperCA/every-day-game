@@ -10,6 +10,6 @@
   - WebSocket：`route` 拦不到，用 `routeWebSocket` 拦所有 ws/wss，按 http/https 地址做同样检查，不安全的直接关掉（1008）。
   - 跳转：`route` 只在第一跳调用（Playwright 文档写明，试验也确认），中间几跳拦不到。所以听浏览环境的 `request` 事件，跳转来的请求都查，
     不安全就关掉整个浏览环境，之后打开、等待、点击、源码都抛“页面请求了不安全的地址：…”。**这时请求已经发出去了**，只能保证读不到内容、页面不能再用。
-  - `routeWebSocket` 管不到 Worker 里的 WebSocket，WebRTC、WebTransport 也不走 `route`：页面加载前去掉 Worker、SharedWorker、RTCPeerConnection、WebTransport。
+  - `routeWebSocket` 管不到 Worker 里的 WebSocket，WebRTC、WebTransport 也不走 `route`：页面加载前把 Worker、SharedWorker 换成空壳（能 new、能 postMessage / addEventListener / terminate，但不起线程、不请求脚本；2026-11-13 改：以前直接删掉，蓝桥杯 lanqiao.cn 这种一上来就 new Worker 的官网整页空白），去掉 RTCPeerConnection、WebTransport。
   - 没做：DNS 重新绑定（检查时解析一次、浏览器再解析一次）。要彻底挡住跳转和这类问题，得让浏览器走一个自己写的代理，在代理里查每个连接。
 - 浏览器程序要另外装：在 `backend/Environment` 里跑 `npx playwright install chromium-headless-shell`；服务器上可以用 `PLAYWRIGHT_BROWSERS_PATH` 指到已有的目录。

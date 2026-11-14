@@ -1,6 +1,9 @@
 // 发提醒：上海 sendReminders 的领取、回写（状态机）+ 美国 reminder-dispatcher 的排计划、发送，在北京合到一处（2026-11-02）。
 // 状态机的用例照旧测试 tests/reminder-worker-robustness.test.mjs 的场景重写：旧的跑在假的云开发数据库上，这里用真的用户库。
 // 旧的“没有调度密钥一律拒绝”：北京不再对外开这个入口，改成“用户身份直接调用一律拒绝”（同上海 assertScheduledInvocation 的第一条）。
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { openUserDb, 用户 } from '../../../../副数据库/index.mjs';
 import { handle, 启动发提醒 } from '../../index.mjs';
@@ -104,6 +107,47 @@ describe('启动发提醒：本机排计划、到点领取、发微信、回写'
 });
 
 // 2026-11-04：搬旧用户数据进北京后、正式切换前，旧系统还在发提醒。北京要是也发，用户会收到两遍、还白白消耗订阅授权，所以有开关。
+describe('旧系统还管着的提醒不发（切换前防重复，2026-11-05）', () => {
+  it('名单里的：对账列不出来，到点领取也跳过，状态不动；名单外的照常发', async () => {
+    const t = 准备();
+    t.用户库.insert('reminder', 'r-new', t.复制());
+    const 不发 = new Set(['r1']);
+    const 列表 = await t.call('listUpcoming', {}, { 不发 });
+    expect(列表.items.map(x => x.key)).toEqual(['r-new']);
+    expect(await t.call('claim', { key: 'r1' }, { 不发 })).toEqual({ status: 'skip', reason: 'old_system_owns' });
+    expect(t.读().delivery_status).toBe('pending');
+    expect((await t.call('claim', { key: 'r-new' }, { 不发 })).status).toBe('ready');
+  });
+
+  it('启动时从名单文件读；到点只发名单外的', async () => {
+    vi.useFakeTimers({ now: NOW });
+    try {
+      const t = 准备();
+      t.用户库.insert('reminder', 'r-new', t.复制());
+      const 文件 = path.join(fs.mkdtempSync(path.join(os.tmpdir(), '提醒名单-')), '名单.json');
+      fs.writeFileSync(文件, JSON.stringify(['r1']));
+      const 发了 = [];
+      const 发提醒 = 启动发提醒({ 用户库: t.用户库, 不发名单文件: 文件, sendSubscribe: async p => { 发了.push(p); return { errcode: 0 }; }, log: () => {}, 对账间隔: 0 });
+      await 发提醒.对账();
+      expect(发提醒.排上([t.读()])).toBe(1);   // 保存时排上的也走领取，一样被挡
+      await vi.advanceTimersByTimeAsync(10);
+      await 发提醒.dispatcher.idle();
+      expect(发了).toHaveLength(1);
+      expect(t.用户库.get('reminder', 'r-new').data.delivery_status).toBe('sent');
+      expect(t.读().delivery_status).toBe('pending');
+      发提醒.停();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('配了名单文件但读不出来：整体关着，宁可不发也不重复发', () => {
+    const t = 准备();
+    const 发提醒 = 启动发提醒({ 用户库: t.用户库, 不发名单文件: path.join(os.tmpdir(), '没有这个名单.json'), sendSubscribe: async () => ({ errcode: 0 }), log: () => {}, 对账间隔: 0 });
+    expect(发提醒.关着).toBe(true);
+  });
+});
+
 describe('发提醒的开关（REMINDER_DISPATCH=off）', () => {
   it('关着：不对账、不排计划、不发微信；保存提醒时的 排上 什么都不做', async () => {
     const t = 准备();

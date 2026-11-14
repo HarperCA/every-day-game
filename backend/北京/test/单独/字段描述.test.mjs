@@ -5,14 +5,15 @@ import { TABLES as 主 } from '../../主数据库/index.mjs';
 import { TABLES as 副 } from '../../副数据库/index.mjs';
 
 describe('两个库各管各的表', () => {
-  test('主数据库只有公开副本；副数据库含用户、校赛和组队表', () => {
+  test('主数据库只有公开副本；副数据库是用户和挂在用户下的五张表', () => {
     expect(Object.keys(主)).toEqual(['public_competition', 'public_edition']);
-    const 用户功能 = ['favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference'];
-    expect(Object.keys(副)).toEqual([
-      'user_account', ...用户功能, 'school_admin', 'school_member', 'school_invite', 'school_contest',
-      'team', 'team_member', 'team_application', 'team_notify_quota',
-    ]);
-    for (const 表名 of 用户功能) expect(副[表名].字段.user_id.指向, 表名).toBe('user_account');
+    expect(Object.keys(副).slice(0, 6)).toEqual(['user_account', 'favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference']);
+    // 上线后新增的表排在后面：组队（2026-11-08，002-组队.sql）
+    expect(Object.keys(副)).toEqual(expect.arrayContaining(['team', 'team_member', 'team_application']));
+    // 校赛（2026-11-08，003-校赛.sql）：和美国审核的接口，挂用户的字段叫 user（申请、学生）或 admin（邀请、校赛）
+    expect(Object.keys(副)).toEqual(expect.arrayContaining(['school_admin', 'school_member', 'school_invite', 'school_contest']));
+    const 校赛挂用户 = { school_admin: 'user', school_member: 'user', school_invite: 'admin', school_contest: 'admin' };
+    for (const 表 of Object.values(副)) if (表.表名 !== 'user_account') expect(表.字段[校赛挂用户[表.表名] || 'user_id']?.指向, 表.表名).toBe('user_account');
   });
   test('收藏挂比赛，提醒、纠错挂届次；比赛、届次在别的库，所以写“对应”，数据库不查', () => {
     expect(副.favorite.字段.competition_id).toMatchObject({ 对应: 'competition' });

@@ -15,3 +15,4 @@ export function 假WebP(宽, 高) {
   b.writeUIntLE(宽 - 1, 24, 3); b.writeUIntLE(高 - 1, 27, 3);
   return b;
 }
+

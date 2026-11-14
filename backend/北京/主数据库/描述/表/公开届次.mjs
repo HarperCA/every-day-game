@@ -11,7 +11,7 @@ export default {
     registration_end: { 说明: '报名截止（原文只写日期的只存日期，和美国一样）', 必填: false, 类型: '日期或时间' },
     status: { 说明: '公开状态：已发布、已归档（美国的待人工审核、已删除的不推过来；删除后这里下架）', 必填: true, 类型: '文字', 可选值: ['已发布', '已归档'] },
     source_version: { 说明: '美国比赛库里这一条的版本号，同步时用来判断要不要覆盖', 必填: true, 类型: '整数' },
-    data: { 说明: '其余公开内容（按公开字段白名单整理）', 必填: true, 类型: '对象' },
+    data: { 说明: '其余公开内容（按公开字段白名单整理）；含信息来源 info_source（official 或 school_repost 高校转发，旧数据没有当 official）、info_source_url（转发页网址），2026-11-12 起', 必填: true, 类型: '对象' },
     synced_at: { 说明: '最后一次同步过来的时间', 必填: true, 类型: '时间' },
   },
   索引: [['competition_id'], ['registration_end'], ['status']],

@@ -10,6 +10,8 @@
 import { AiError } from '../../common/errors.mjs';
 import { failIfNotOk, normalizeReferences, postJson } from '../../common/http.mjs';
 
+import { readChatStream } from './stream.mjs';
+
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
 
 export function createDeepseek({ baseUrl = process.env.AI_DEEPSEEK_BASE_URL || DEFAULT_BASE_URL, fetchImpl = globalThis.fetch,
@@ -27,14 +29,21 @@ export function createDeepseek({ baseUrl = process.env.AI_DEEPSEEK_BASE_URL || D
 
   return {
     name: 'deepseek',
-    async chat({ model, messages, json = false, tools = null, toolChoice = null, thinking = false, temperature, maxTokens, key, signal }) {
+    async chat({ model, messages, json = false, tools = null, toolChoice = null, thinking = false, stream = false, temperature, maxTokens, key, signal }) {
       const body = { model, messages, thinking: { type: thinking ? 'enabled' : 'disabled' } };
       if (temperature != null) body.temperature = temperature;
       if (maxTokens) body.max_tokens = maxTokens;
       if (tools) body.tools = tools;
       if (tools && toolChoice) body.tool_choice = toolChoice;
       if (json) body.response_format = { type: 'json_object' };
-      const res = await postJson(`${root}/chat/completions`, { headers: { Authorization: `Bearer ${key}` }, body, timeoutMs, signal, fetchImpl, provider: 'deepseek' });
+      if (stream) {
+        body.stream = true;
+        body.stream_options = { include_usage: true };
+      }
+      const res = await postJson(`${root}/chat/completions`, {
+        headers: { Authorization: `Bearer ${key}` }, body, timeoutMs, signal, fetchImpl, provider: 'deepseek',
+        readStream: stream ? readChatStream : undefined,
+      });
       failIfNotOk(res, 'deepseek');
       const message = res.payload?.choices?.[0]?.message;
       if (!message) throw new AiError('对方出错', 'DeepSeek 返回里没有回答', { provider: 'deepseek', status: res.status });

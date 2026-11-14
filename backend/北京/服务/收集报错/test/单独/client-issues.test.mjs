@@ -23,3 +23,4 @@ describe('上海 clientLog 收到上报时的清洗', () => {
     expect(sanitizeEvents(Array.from({ length:30 }, () => ({ kind:'slow' })), at)).toHaveLength(20);
   });
 });
+

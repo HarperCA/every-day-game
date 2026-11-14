@@ -1,12 +1,12 @@
 // 判断官网（2026-11-08 用户定）：维护一个比赛前，先判断拿到的起点网址是不是这个比赛的官网，是才往下维护。全部由程序判断，不调 AI。
 //   网址判断：不用打开就能否掉的（附件、学校主站/部门、政府、云存储、公众号、屏蔽、单篇通知、往年旧网址）
 //   宽松有名：页面标题和比赛名的宽松比对（只和标题比）
-//   判断官网：网址判断 → 打开（空壳页换无头浏览器）→ 跳转后再判断 → 旧页面 → 比名字
+//   判断官网：网址判断 → 打开（空壳页换无头浏览器）→ 跳转后再判断 → 比名字（旧页面只看网址里的年份，2026-11-13）
 //   来源候选、算域名比赛数：从来源表的官方来源推起点候选
 // 网址例子来自补官网和 DeepSeek 试跑里的真实网址。读网页、浏览器都用假的；比赛库用内存库。
 import { describe, expect, test } from 'vitest';
 import { open, seed } from '../../../test/复用/样例数据.mjs';
-import { 网址判断, 宽松有名, 判断官网, 来源候选, 算域名比赛数, 学校部门前缀 } from '../../判断官网.mjs';
+import { 网址判断, 宽松有名, 判断官网, 来源候选, 算域名比赛数, 学校部门前缀, 带浏览器读网页 } from '../../判断官网.mjs';
 
 describe('网址判断（不用打开）', () => {
   const 否 = (网址, 原因, 选项) => expect(网址判断(网址, 选项), 网址).toEqual({ 可以: false, 原因 });
@@ -204,18 +204,15 @@ describe('判断官网', () => {
     expect(await 判断官网('https://jsds.abc.cn/', 金融, { 读网页 })).toEqual({ 是: false, 原因: '跳转后是学校部门网站（https://jwc.bift.edu.cn/）', 最终网址: 'https://jwc.bift.edu.cn/', 对上: '', 标题: '全国大学生金融创意设计大赛' });
     expect(await 判断官网('https://d.org/', 金融, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: false, 原因: '跳转后是往年旧页面（最新 2021 年，库里最新 2026 年）（https://d.org/2021/index.html）' });
   });
-  test('往年旧页面：标题加正文开头 300 字里的年份，最新的那个比库里最新一届还早；300 字以后的不看', async () => {
+  test('往年旧页面只看网址（含跳转后的最终网址）里的年份，不看标题和正文（2026-11-13：实测把“最新 1999 年”的英语竞赛官网、“最新 2018 年”的成图大赛官网误判）', async () => {
     const 读网页 = 假读网页({
       'https://www.chinagdf.com.cn/': 页('https://www.chinagdf.com.cn/', '2021年健威杯全国大学生家具设计大赛', `2019年回顾${长文}2026年报名`),
-      'https://new.org/': 页('https://new.org/', '健威杯全国大学生家具设计大赛', `2021年回顾；2026年报名开始${长文}`),
-      'https://none.org/': 页('https://none.org/', '健威杯全国大学生家具设计大赛'),
+      'https://www.chinaneccs.cn/': 页('https://www.chinaneccs.cn/', '全国大学生英语竞赛', `1999年创办${长文}`),
+      'https://www.chengtudasai.com/': 页('https://www.chengtudasai.com/', '全国大学生先进成图技术与产品信息建模创新大赛', `2018年第十一届${长文}`),
     });
-    const 健威杯 = { name: '健威杯全国大学生家具设计大赛' };
-    expect(await 判断官网('https://www.chinagdf.com.cn/', 健威杯, { 读网页, 库里最新年份: 2026 }))
-      .toMatchObject({ 是: false, 原因: '往年旧页面（最新 2021 年，库里最新 2026 年）', 标题: '2021年健威杯全国大学生家具设计大赛' });
-    expect(await 判断官网('https://new.org/', 健威杯, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: true });
-    expect(await 判断官网('https://none.org/', 健威杯, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: true });
-    expect(await 判断官网('https://www.chinagdf.com.cn/', 健威杯, { 读网页 })).toMatchObject({ 是: true });   // 不知道库里最新年份就不比
+    expect(await 判断官网('https://www.chinagdf.com.cn/', { name: '健威杯全国大学生家具设计大赛' }, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: true });
+    expect(await 判断官网('https://www.chinaneccs.cn/', { name: '全国大学生英语竞赛' }, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: true });
+    expect(await 判断官网('https://www.chengtudasai.com/', { name: '全国大学生先进成图技术与产品信息建模创新大赛' }, { 读网页, 库里最新年份: 2026 })).toMatchObject({ 是: true });
   });
 });
 
@@ -253,6 +250,12 @@ describe('来源候选', () => {
     ]);
     expect(候选.some(x => x.网址.includes('hubei'))).toBe(false);
   });
+  test('搜索记忆里“不算官网的网址”（2026-11-13）：推出来的候选在名单里就跳过（不分 www、结尾斜杠），写进跳过', () => {
+    const { 候选, 跳过 } = 来源候选(来源们, { 屏蔽: ['saikr.com'], 域名比赛数, 不算官网: ['https://jienengjianpai.org（页面上没有比赛名，2026-11-13）', 'https://www.boxuegu.com/matchTrack/detail/?id=10042（学校主站，2026-11-12）'] });
+    expect(候选.map(x => x.网址)).toEqual(['https://www.cmes.org/', 'https://12umic.hit.edu.cn/']);
+    expect(跳过).toContain('https://www.jienengjianpai.org/：以前判断过不算官网（页面上没有比赛名，2026-11-13）');
+    expect(跳过).toContain('https://www.boxuegu.com/matchTrack/detail/?id=10042：以前判断过不算官网（学校主站，2026-11-12）');
+  });
   test('没给域名比赛数就都不算平台；没有来源就空', () => {
     expect(来源候选([{ url: 'https://www.boxuegu.com/matchTrack/detail/?id=10042', source_type: 'organizer_website', ordinal: 1 }]).候选)
       .toEqual([{ 网址: 'https://www.boxuegu.com/', 依据: 'organizer_website https://www.boxuegu.com/matchTrack/detail/?id=10042' }]);
@@ -277,5 +280,56 @@ describe('算域名比赛数', () => {
     const 数 = 算域名比赛数(db);
     expect(Object.fromEntries(数)).toEqual({ 'a.org': 2, 'b.org': 1 });
     db.close();
+  });
+});
+
+// 2026-11-13 用户定：起点候选、找到的官网“打不开”（超时、连接错误、5xx、403/405 等）时，先用无头浏览器再打开一次判断
+describe('打不开时换无头浏览器再开一次（2026-11-13）', () => {
+  const 打不开 = (网址, status, error, 改 = {}) => ({ url: 网址, finalUrl: 网址, status, title: '', text: '', links: [], error, ...改 });
+  const 官网html = `<html><head><title>全国大学生金融创意设计大赛</title></head><body><div>${长文}</div></body></html>`;
+  test('超时、网络错误、HTTP 5xx/403/405、读网页抛错：浏览器能打开就照常判断，原因注明无头浏览器', async () => {
+    const 读网页 = 假读网页({
+      'https://a.org/': 打不开('https://a.org/', '超时', '20 秒没响应'),
+      'https://b.org/': 打不开('https://b.org/', 'HTTP错误', '对方返回 503', { httpStatus: 503 }),
+      'https://c.org/': 打不开('https://c.org/', 'HTTP错误', '对方返回 403', { httpStatus: 403 }),
+      'https://d.org/': new Error('读网页崩了'),
+    });
+    const 浏览器 = 假浏览器(Object.fromEntries(['https://a.org/', 'https://b.org/', 'https://c.org/', 'https://d.org/', 'https://e.org/'].map(u => [u, { html: 官网html }])));
+    for (const 网址 of ['https://a.org/', 'https://b.org/', 'https://c.org/', 'https://d.org/', 'https://e.org/']) {
+      expect(await 判断官网(网址, 金融, { 读网页, 浏览器 }), 网址).toMatchObject({ 是: true, 原因: '页面上有比赛名（无头浏览器）', 标题: '全国大学生金融创意设计大赛' });
+    }
+    expect(浏览器.记.打开).toHaveLength(5);
+    expect(浏览器.记.关).toBe(5);
+  });
+  test('浏览器也打不开（起不来、打开抛错、对方返回 4xx/5xx、没有文字）：还是“打不开”，原因写两次都打不开', async () => {
+    const 读网页 = 假读网页({ 'https://a.org/': 打不开('https://a.org/', '超时', '20 秒没响应') });
+    const 坏 = { async 新页面() { throw new Error('浏览器起不来'); } };
+    expect(await 判断官网('https://a.org/', 金融, { 读网页, 浏览器: 坏 })).toMatchObject({ 是: false, 原因: '打不开：20 秒没响应；无头浏览器也打不开：浏览器起不来' });
+    const 回503 = { async 新页面() { return { 页: { async 打开() { return { httpStatus: 503 }; }, async 源码() { return 官网html; }, 网址: () => 'https://a.org/' }, async 关() {} }; } };
+    expect(await 判断官网('https://a.org/', 金融, { 读网页, 浏览器: 回503 })).toMatchObject({ 是: false, 原因: '打不开：20 秒没响应；无头浏览器也打不开：对方返回 503' });
+    const 空 = 假浏览器({ 'https://a.org/': { html: '<html><body></body></html>' } });
+    expect(await 判断官网('https://a.org/', 金融, { 读网页, 浏览器: 空 })).toMatchObject({ 是: false, 原因: '打不开：20 秒没响应；无头浏览器也打不开：打开后没有文字' });
+  });
+  test('HTTP 404、robots 不允许、网址不安全、不支持的类型：不换浏览器', async () => {
+    const 读网页 = 假读网页({
+      'https://a.org/': 打不开('https://a.org/', 'HTTP错误', '对方返回 404', { httpStatus: 404 }),
+      'https://b.org/': 打不开('https://b.org/', 'robots不允许', 'robots 不允许'),
+      'https://c.org/': 打不开('https://c.org/', '网址不安全', '内网地址'),
+      'https://d.org/': 打不开('https://d.org/', '不支持的类型', 'image/png'),
+    });
+    const 浏览器 = 假浏览器({});
+    for (const 网址 of ['https://a.org/', 'https://b.org/', 'https://c.org/', 'https://d.org/']) {
+      expect((await 判断官网(网址, 金融, { 读网页, 浏览器 })).原因, 网址).toMatch(/^打不开：/);
+    }
+    expect(浏览器.记.打开).toEqual([]);
+  });
+  test('带浏览器读网页：给找官网核实用的读网页，打不开时换浏览器（交回读网页那样的结果），没给浏览器原样交回', async () => {
+    const 读网页 = 假读网页({ 'https://a.org/': 打不开('https://a.org/', '网络错误', '连接被拒绝'), 'https://ok.org/': 页('https://ok.org/', '首页') });
+    expect(带浏览器读网页(读网页, null)).toBe(读网页);
+    const 读 = 带浏览器读网页(读网页, 假浏览器({ 'https://a.org/': { html: 官网html, 网址: 'https://a.org/home' } }));
+    expect(await 读('https://a.org/')).toMatchObject({ status: '成功', title: '全国大学生金融创意设计大赛', finalUrl: 'https://a.org/home', 用了浏览器: true });
+    expect(await 读('https://ok.org/')).toMatchObject({ status: '成功', title: '首页' });
+    const 坏 = 带浏览器读网页(读网页, { async 新页面() { throw new Error('起不来'); } });
+    expect(await 坏('https://a.org/')).toMatchObject({ status: '网络错误', error: '连接被拒绝；无头浏览器也打不开：起不来' });
   });
 });

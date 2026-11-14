@@ -26,12 +26,11 @@ describe('依赖方向', () => {
         const own = from.split('/').slice(0, 2).join('/');
         // 流程内复用：common/ 根下的文件（prompt、quotes、candidate）；抓网页、AI 总管、程序审核只能经入口
         const allowed = to.startsWith(own + '/') || to.startsWith('shared/') || /^common\/[^/]+\.mjs$/.test(to)
-          || to === '../web/index.mjs' || to === '../ai/index.mjs' || to === '../程序审核/index.mjs' || to === '../补字段/index.mjs' || backendCommon;   // 补字段：2026-11-03 和维护共用
-        if (!allowed) violations.push(`${from} 引用了 ${to}（模块只能引用自己文件夹、shared/、common/ 下的文件、../web/index.mjs、../ai/index.mjs、../程序审核/index.mjs、../补字段/index.mjs 和 backend/共用/工具）`);
+          || to === '../web/index.mjs' || to === '../ai/index.mjs' || to === '../程序审核/index.mjs' || backendCommon;   // 补字段 2026-11-12 删了
+        if (!allowed) violations.push(`${from} 引用了 ${to}（模块只能引用自己文件夹、shared/、common/ 下的文件、../web/index.mjs、../ai/index.mjs、../程序审核/index.mjs 和 backend/共用/工具）`);
       }
       if (to.startsWith('../ai/') && to !== '../ai/index.mjs') violations.push(`${from} 直接引用了 AI 总管内部的 ${to}`);
       if (to.startsWith('../程序审核/') && to !== '../程序审核/index.mjs') violations.push(`${from} 直接引用了程序审核内部的 ${to}（要通过 ../程序审核/index.mjs）`);
-      if (to.startsWith('../补字段/') && to !== '../补字段/index.mjs') violations.push(`${from} 直接引用了补字段内部的 ${to}（要通过 ../补字段/index.mjs）`);
       if (to.startsWith('../web/') && to !== '../web/index.mjs') violations.push(`${from} 直接引用了抓网页内部的 ${to}（要通过 ../web/index.mjs）`);
       if (to.startsWith('../db/维护/')) violations.push(`${from} 引用了维护已有记录的 ${to}（两边只通过比赛库来往）`);
       if (to.startsWith('小数据库/') && !from.startsWith('小数据库/')) {

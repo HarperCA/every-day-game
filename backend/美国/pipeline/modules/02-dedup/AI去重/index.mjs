@@ -3,7 +3,7 @@
 //
 //   AI去重(候选们, 库, ctx) → { 扔: [{ key, 原因 }], 问题们 }
 //
-// 扔掉：库里已有且把握 ≥ 0.6；和同批前面一条是同一个比赛且把握 ≥ 0.6。拿不准、新的、把握不够的留下，06 入库时还会再对照。
+// 扔掉：把握达到阈值且届次、赛道能核对，06 入库还会再对照。
 // 出错就抛错，截断流程（2026-10-31 用户定）：
 //   额度不够这一晚要的批数   一次都不调，直接抛错
 //   接口调用出错             AI 总管已经自己记下，直接抛错
@@ -12,6 +12,8 @@
 // 库里的比赛给 AI 看短号（库1、库2……），AI 回短号，程序换回真正的编号（2026-11-04：线上试跑时 AI 把 event-agent-followup-xxx 抄成 event-xxx，判断是对的，整晚却停了）。
 // AI 原样交回真正的编号也认；别的（抄漏的、编的）照旧算用不了，报告并截断。
 import { loadPrompt } from '../../../common/prompt.mjs';
+import { 比届次 } from '../../../common/届次与赛道.mjs';
+import { 候选身份, 已有同赛道旧届 } from '../程序去重/index.mjs';
 import { 检查结果 } from './schema.mjs';
 
 export const 每批 = 20;
@@ -30,7 +32,9 @@ export async function AI去重(候选们, 库, ctx) {
 
   const 短号表 = new Map(库.比赛们.map((c, i) => [`库${i + 1}`, c.编号]));
   const 真编号 = 给的 => 短号表.get(给的) ?? 给的;
-  const 名单 = 库.比赛们.map((c, i) => [`库${i + 1}`, 一行(c.名称, 200), c.别名们.map(a => 一行(a, 60)).join('、'), c.级别, c.地区].join('｜')).join('\n');
+  const 名单 = 库.比赛们.map((c, i) => [`库${i + 1}`, 一行(c.名称, 200), c.别名们.map(a => 一行(a, 60)).join('、'), c.级别, c.地区,
+    (库.已收录届次?.get(c.编号) || []).map(x => [x.年, x.第几届 == null ? null : '第' + x.第几届 + '届', x.赛道 || '总赛事'].filter(Boolean).join(' ')).join('；'),
+  ].join('｜')).join('\n');
   const 扔 = [];
   for (const 批 of 批们) {
     const 候选行 = 批.map((c, i) => [i + 1, 一行(c.data.name, 200), 一行(c.data.url || c.key, 300), 一行(c.data.snippet, 200)].join('｜')).join('\n');
@@ -45,11 +49,18 @@ export async function AI去重(候选们, 库, ctx) {
     for (const r of data.结果) {
       const 候选 = 批[r.编号 - 1];
       if (r.把握 < 最低把握) continue;
+      const 身份 = 候选身份(候选);
       if (r.结论 === '库里已有') {
         const 编号 = 真编号(r.比赛编号);
+        if (!已有同赛道旧届(身份, 库.已收录届次?.get(编号))) continue;
         扔.push({ key: 候选.key, 原因: `AI 判为库里已有：${库.比赛名(编号)}（${编号}）：${r.理由}` });
       }
-      else if (r.重复于 != null) 扔.push({ key: 候选.key, 原因: `AI 判为和今晚另一条候选是同一个比赛（${批[r.重复于 - 1].key}）：${r.理由}` });
+      else if (r.重复于 != null) {
+        const 前项 = 批[r.重复于 - 1];
+        const 前身份 = 候选身份(前项);
+        if (身份.赛道不明确 || 前身份.赛道不明确 || 身份.赛道键 !== 前身份.赛道键 || 比届次(身份, 前身份) !== 0) continue;
+        扔.push({ key: 候选.key, 原因: `AI 判为和今晚另一条候选是同一届同一赛道（${前项.key}）：${r.理由}` });
+      }
     }
   }
   扔.sort((a, b) => 候选们.findIndex(c => c.key === a.key) - 候选们.findIndex(c => c.key === b.key));

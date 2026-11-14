@@ -15,8 +15,8 @@ import { 届次 } from '../../index.mjs';
 
 const 一年 = 365 * 24 * 60 * 60 * 1000;
 
-// 旧 registrationInstant：没填 → null；格式不对、日期不存在 → NaN
-function 时刻(值, 边界) {
+// 旧 registrationInstant：没填 → null；格式不对、日期不存在 → NaN（批量归档 ../批量归档/ 也用）
+export function 时刻(值, 边界) {
   if (typeof 值 !== 'string' || !值.trim()) return null;
   const 日期 = 值.slice(0, 10);
   const 对 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(日期);

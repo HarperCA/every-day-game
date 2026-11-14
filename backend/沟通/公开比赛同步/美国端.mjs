@@ -29,7 +29,8 @@ export function 公开内容(db) {
   const 比赛们 = new Map(db.find('competition', {}).map(c => [c.id, c]));
   const 届次们 = db.find('edition', { status: { in: 公开状态 } }, { orderBy: 'id' }).filter(e => 比赛们.has(e.competition_id));
   const 来源按届次 = new Map();
-  for (const s of db.find('source', { is_official: true, validity_status: 'valid' })) {
+  // 核验有效的来源都读（官方的给 data.sources；高校转发的用来标信息来源 info_source，2026-11-12）
+  for (const s of db.find('source', { validity_status: 'valid' })) {
     if (!来源按届次.has(s.edition_id)) 来源按届次.set(s.edition_id, []);
     来源按届次.get(s.edition_id).push(s);
   }

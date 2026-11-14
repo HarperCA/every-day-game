@@ -80,6 +80,16 @@ describe('检查频率：已截止的届次怎么推下一届', () => {
     expect(检查频率([届({ registration_start: '2025-11-20', registration_end: '2025-12-20' })], NOW))
       .toEqual({ 情况: '半个月内', 频率: '每周', 间隔天数: 7, 预计报名: '2026-11-19T16:00:00.000Z' });
   });
+  test('已归档但缺截止：用历届报名周期推算，按实际届数处理缺失届次', () => {
+    const 届次们 = [
+      届({ registration_start: 天后(-540), edition_ordinal: '第十届', status: '已归档' }, 1),
+      届({ registration_start: 天后(-170), edition_ordinal: '第十二届', status: '已归档',
+        next_edition_estimate: 天后(195) }, 2),
+    ];
+    expect(下次检查({ last_maintained_at: 天后(-8) }, 届次们, NOW)).toMatchObject({
+      预计报名: 天后(15), 距报名天数: 15, 频率: '每周', 到期: true,
+    });
+  });
   test('没有报名开始用比赛开始推', () => {
     expect(检查频率([届({ registration_end: '2025-12-20', competition_start: '2025-11-20' })], NOW).预计报名).toBe('2026-11-19T16:00:00.000Z');
   });
@@ -144,7 +154,7 @@ describe('挑要查的（读比赛库）', () => {
   test('每项带名称和频率', () => {
     expect(挑要查的(准备(), { now: NOW })[0]).toEqual({
       比赛: 'f-周更久', 名称: '比赛f-周更久', 情况: '过期半个月内', 频率: '每周', 间隔天数: 7,
-      预计报名: 天后(-3), 上次检查: 天后(-20), 下次检查: 天后(-13), 到期: true,
+      预计报名: 天后(-3), 距报名天数: -3, 上次检查: 天后(-20), 下次检查: 天后(-13), 到期: true,
     });
   });
 });

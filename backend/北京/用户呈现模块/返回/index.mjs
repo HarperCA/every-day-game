@@ -6,6 +6,15 @@
 // poster_url 每张卡片都带（和旧版一样）：海报链接(文件名) 给出链接，没有海报或北京还没收到这张图时是空的，小程序显示文字封面。
 import { 报名状态 } from '../../../共用/推荐排序/index.mjs';
 
+// 信息来源（2026-11-12 用户定）：追不到官方通知的新一届用“高校转发”发布，小程序详情页标“信息来自高校转发，以官方通知为准”并附转发链接。
+// 美国推来 info_source（'official' 或 'school_repost'）、info_source_url；没有这两个字段的旧数据、不认识的值都当 official。
+// 转发链接只给 http(s) 的，别的给空（小程序只复制链接，不显示）。详情（服务/公开数据）也用这一个。
+export function 信息来源(item) {
+  if (item?.info_source !== 'school_repost') return { infoSource: 'official', infoSourceUrl: '' };
+  const 链接 = String(item.info_source_url || '').trim();
+  return { infoSource: 'school_repost', infoSourceUrl: /^https?:\/\//i.test(链接) ? 链接 : '' };
+}
+
 function 卡片(item, now, 海报链接) {
   const 推荐 = item.recommendation;
   const 卡 = {
@@ -21,6 +30,9 @@ function 卡片(item, now, 海报链接) {
     recommendation_reasons: typeof 推荐 === 'object' && 推荐 ? 推荐.reasons : undefined,
   };
   const 留下 = Object.fromEntries(Object.entries(卡).filter(([, 值]) => 值 !== undefined && 值 !== null));
+  // 高校转发的卡片才带信息来源（卡片角上标“高校转发”）；官方的不带，小程序默认 official
+  const 来源 = 信息来源(item);
+  if (来源.infoSource === 'school_repost') Object.assign(留下, 来源);
   return { ...留下, poster_url: item.poster?.file ? 海报链接(item.poster.file) : '', list_group: item.列表分组 };
 }
 

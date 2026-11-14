@@ -9,7 +9,8 @@
 | `budget.mjs` | 额度：每家接口能用多少，用完就不再派发 | `createBudget({ deepseek: 1000 })`，`budget.use('deepseek')` 返回 `false` 表示用完 |
 | `提示词.mjs` | 读文件夹里的 prompt.md：第一行是版本号，把 {{变量}} 换成实际内容 | `loadPrompt(new URL('./prompt.md', import.meta.url), { 候选: '…' })` → `{ version, text }` |
 | `log.mjs` | 统一日志：每行带时间、模块名、级别 | `createLogger(file).child('04-extract').info('…')` |
-| `sqlite.mjs` | 打开 SQLite（better-sqlite3） | `openSqlite(file)`；库装在 `backend/Environment/` |
+| `sqlite.mjs` | 打开 SQLite（better-sqlite3） | `openSqlite(file)`；库装在 `backend/Environment/`；`{ wal: false }` 不切换 WAL（运行锁用） |
+| `运行锁.mjs` | 维护锁和每晚流程锁（2026-11-11）：`拿锁(目录)` 在目录下的 `.维护中.sqlite` 开写事务占住，拿不到交回 `null`，进程退出系统自动放；`流程在跑(锁文件)` 看每晚流程的锁文件在、没超过 12 小时 | `const 放锁 = 拿锁(目录)`，用完 `放锁()` |
 | `微信.mjs` | 直接对接微信接口：小程序 code 换 openid、access_token（缓存复用）、订阅消息、内容安全；搬自旧服务器 apps/server/src/wechat.mjs，原样 | `new WeChatClient(readWeChatConfig())`，`.exchangeCode(code)` → `{ openid, unionid }` |
 | `令牌.mjs` | 登录令牌：北京登录时签发，美国收到请求时校验，两边共用密钥 SESSION_SIGNING_KEY；默认 2 小时有效 | `签发令牌(openid, 密钥)`；`校验令牌(令牌, 密钥)` → `{ ok, openid }` 或 `{ ok:false, 原因 }` |
 

@@ -112,9 +112,14 @@ describe('入库总管（流程里这一步）', () => {
     expect(out.changes.find(c => c.table === 'edition').payload.status).toBe('已归档');
   });
   test('发布门槛没过：不放进待写入，标已丢弃写明“06 入库·发布门槛”', async () => {
-    const out = await ingest.run({ items: [审过('https://a.cn', 记录('全国大学生某某竞赛', { registration_url: null }))] }, ctx装主库(主库()));
+    const 没核过 = [{ ...来源('https://a.cn'), validity_status: 'unchecked' }];
+    const out = await ingest.run({ items: [审过('https://a.cn', 记录('全国大学生某某竞赛', { registration_url: null }), 没核过)] }, ctx装主库(主库()));
     expect(out.changes).toEqual([]);
-    expect(out.items[0]).toMatchObject({ status: '已丢弃', reason: expect.stringMatching(/^06 入库·发布门槛：.*报名网址/) });
+    expect(out.items[0]).toMatchObject({ status: '已丢弃', reason: expect.stringMatching(/^06 入库·发布门槛：.*报名网址.*官方来源/) });
+  });
+  test('缺报名网址、有核验过的官方来源：照样发布，报名网址用这条官方通知页顶上（2026-11-12 用户定）', async () => {
+    const out = await ingest.run({ items: [审过('https://a.cn', 记录('全国大学生某某竞赛', { registration_url: null }), [来源('https://xh.org.cn/n/9')])] }, ctx装主库(主库()));
+    expect(out.changes.find(c => c.table === 'edition').payload).toMatchObject({ status: '已发布', registration_url: 'https://xh.org.cn/n/9' });
   });
   test('同一晚两条是同一个新比赛的不同届：第二条不再新建比赛；没审核通过、已入库过的不处理', async () => {
     const out = await ingest.run({ items: [审过('https://a.cn', 记录('2026年全国大学生某某竞赛')), 审过('https://b.cn', 记录('2027年全国大学生某某竞赛'), [来源('https://b.cn')]),
@@ -292,12 +297,12 @@ describe('入库总管：更新已有（对上已有届次时按这条通知改�
   test('同一次两条改同一届：第二条在第一条改过的基础上比，改动不互相覆盖', async () => {
     const out = await ingest.run({ 更新已有: true, items: [
       审过('https://xh.org.cn/n/1', 记录('2026年全国大学生某某竞赛')),
-      审过('https://b.cn', 记录('2026年全国大学生某某竞赛', { fees: '免费', format_and_rules: '提交作品，专家评审' }), [来源('https://b.cn')]),
+      审过('https://b.cn', 记录('2026年全国大学生某某竞赛', { registration_url: 'https://reg2.xh.org.cn/', format_and_rules: '提交作品，专家评审' }), [来源('https://b.cn')]),
     ] }, ctx装主库(有旧届次()));
-    expect(out.items[1].data.ingest.改动).toEqual([{ 届次: 'edition-cmp009-2026', 字段: 'fees', 改前: '每队 100 元', 改后: '免费' }]);
+    expect(out.items[1].data.ingest.改动).toEqual([{ 届次: 'edition-cmp009-2026', 字段: 'registration_url', 改前: 'https://reg.xh.org.cn/', 改后: 'https://reg2.xh.org.cn/' }]);
     const 改们 = out.changes.filter(c => c.table === 'edition');
     expect(改们.map(c => c.baseVersion)).toEqual([1, 1]);
-    expect(改们[1].payload).toMatchObject({ fees: '免费', format_and_rules: '提交作品，专家评审', registration_end: '2026-12-01' });
+    expect(改们[1].payload).toMatchObject({ registration_url: 'https://reg2.xh.org.cn/', format_and_rules: '提交作品，专家评审', registration_end: '2026-12-01' });
   });
   test('条目带比赛编号：名字写法不同也改的是这个比赛的届次，不另建比赛', async () => {
     const item = 审过('https://xh.org.cn/n/1', 记录('2026年中联杯'));
@@ -453,18 +458,32 @@ describe('比对届次：确定事实直接改，长文字和其他字段只补�
       { 字段: 'competition_end', 改前: '2027-01-12', 改后: '2027-01-15' }]);
     expect(比对届次({}, { competition_start: '2027-01-10' })).toEqual([{ 字段: 'competition_start', 改前: null, 改后: '2027-01-10' }]);
   });
-  test('报名网址、费用不同 → 改；新值空 → 不覆盖', () => {
-    expect(比对届次({ registration_url: 'https://old.cn/reg', fees: '每队 100 元' }, { registration_url: 'https://new.cn/reg', fees: '免费' })).toEqual([
-      { 字段: 'registration_url', 改前: 'https://old.cn/reg', 改后: 'https://new.cn/reg' }, { 字段: 'fees', 改前: '每队 100 元', 改后: '免费' }]);
+  test('报名网址不同 → 改；新值空 → 不覆盖', () => {
+    expect(比对届次({ registration_url: 'https://old.cn/reg', fees: '每队 100 元' }, { registration_url: 'https://new.cn/reg', fees: '每队 100 元' })).toEqual([
+      { 字段: 'registration_url', 改前: 'https://old.cn/reg', 改后: 'https://new.cn/reg' }]);
     expect(比对届次({ registration_url: 'https://old.cn/reg', fees: '每队 100 元' }, { registration_url: null, fees: ' ' })).toEqual([]);
   });
-  test('人工改过的字段（manual_fields）照同样规则：确定事实照改，长文字只补空', () => {
+  test('费用只补空（2026-11-13 用户定：两次实测把完整费用说明换成截断的“…其中：”、丢了缴费截止）', () => {
+    const 完整 = '每队报名费 300 元，其中：初赛 100 元、决赛 200 元；缴费截止 2026-12-01';
+    expect(比对届次({ fees: 完整 }, { fees: '每队报名费 300 元，其中：' })).toEqual([]);
+    expect(比对届次({ fees: null }, { fees: '免费' })).toEqual([{ 字段: 'fees', 改前: null, 改后: '免费' }]);
+    expect(比对届次({ fees: '  ' }, { fees: '免费' })).toEqual([{ 字段: 'fees', 改前: '  ', 改后: '免费' }]);
+  });
+  test('人工改过的字段（manual_fields）照同样规则：确定事实照改，长文字和费用只补空', () => {
     const 旧 = { format_and_rules: 长赛制, eligibility: null, fees: '每队 100 元', registration_end: '2026-12-04', manual_fields: ['format_and_rules', 'eligibility', 'fees', 'registration_end'] };
     const 新 = { format_and_rules: '（一）主体赛事', eligibility: '本科生', fees: '免费', registration_end: '2026-12-10' };
     expect(比对届次(旧, 新)).toEqual([
       { 字段: 'eligibility', 改前: null, 改后: '本科生' },
-      { 字段: 'fees', 改前: '每队 100 元', 改后: '免费' },
       { 字段: 'registration_end', 改前: '2026-12-04', 改后: '2026-12-10' }]);
+  });
+});
+
+describe('比对届次：只补空（高校转发用，2026-11-13）', () => {
+  test('给了 只补空：确定事实（日期、报名网址）也只在库里空着时补，有值不改', () => {
+    const 旧 = { registration_end: '2026-12-01', registration_url: 'https://reg.a.cn/', registration_start: null };
+    const 新 = { registration_end: '2026-12-20', registration_url: 'https://reg.b.cn/', registration_start: '2026-11-10' };
+    expect(比对届次(旧, 新, { 只补空: true })).toEqual([{ 字段: 'registration_start', 改前: null, 改后: '2026-11-10' }]);
+    expect(比对届次(旧, 新).map(x => x.字段).sort()).toEqual(['registration_end', 'registration_start', 'registration_url'].sort());
   });
 });
 
@@ -563,6 +582,23 @@ describe('入库总管：不审核（新维护用，2026-11-08）', () => {
     const out = await 跑(db, [抽过('https://xh.org.cn/n/1', { 名: '2026年全国大学生某某竞赛' })]);
     expect(out.items[0]).toMatchObject({ status: '已丢弃', reason: expect.stringContaining('来源也都有了') });
     expect(out.changes).toEqual([]);
+  });
+  // 2026-11-13 用户定：官网打不开时新维护改用高校转发的通知（来源类型 school_repost）。对上已有届次时高校转发不覆盖已有值，只补空
+  test('高校转发对上已有届次：确定事实也只补空（库里有值的报名截止不改，空着的报名开始补上）；来源写成高校转发、不算官方', async () => {
+    const db = 有一个比赛();
+    db.update('edition', 'edition-cmp009-2026', { registration_end: '2026-12-01' }, 1);
+    const out = await 跑(db, [抽过('https://jwc.abc.edu.cn/info/1/2.htm', { 名: '2026年全国大学生某某竞赛', data: { 届次编号: 'edition-cmp009-2026', 来源类型: 'school_repost', 核对说明: '新维护：官网打不开，用高校转发' } })]);
+    expect(out.items[0]).toMatchObject({ status: '进行中', result: '补来源' });
+    const 改 = out.items[0].data.ingest.改动;
+    expect(改.map(x => x.字段).sort()).toEqual(['organizer', 'registration_start'].sort());
+    expect(out.changes.find(c => c.table === 'edition').payload).toMatchObject({ registration_end: '2026-12-01', registration_start: '2026-11-10', format_and_rules: '旧规则', status: '已发布' });
+    expect(out.changes.find(c => c.table === 'source').payload).toMatchObject({ url: 'https://jwc.abc.edu.cn/info/1/2.htm', source_type: 'school_repost', is_official: false, validity_status: 'valid', review_reason: '新维护：官网打不开，用高校转发' });
+  });
+  test('官方通知对上已有届次（对照）：确定事实照旧不同就改', async () => {
+    const db = 有一个比赛();
+    db.update('edition', 'edition-cmp009-2026', { registration_end: '2026-12-01' }, 1);
+    const out = await 跑(db, [抽过('https://xh.org.cn/n/2', { 名: '2026年全国大学生某某竞赛', data: { 届次编号: 'edition-cmp009-2026' } })]);
+    expect(out.changes.find(c => c.table === 'edition').payload).toMatchObject({ registration_end: '2026-12-20' });
   });
   test('维护不新建比赛：没带比赛编号、名字也对不上已有比赛的，丢弃并写明原因', async () => {
     const db = 有一个比赛();

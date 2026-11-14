@@ -1,6 +1,7 @@
 // 比赛管理 · 呈现（浏览器里跑）：左上角新建、搜索、状态筛选；一级比赛一行，届次缩进列在下面，每行只有名称和状态。
 // 每行右边“修改”（弹出给用户看的字段，点确定经 比赛.编辑、届次.编辑 写进比赛库）、“删除”（进回收站）；一级比赛右边还有“新建”（在它下面加一届）；届次的状态在列表里直接改
-// 一级比赛显示最新维护时间，左边的勾选框多选后点“AI 维护选中”排进队列（2026-11-06 用户定）。
+// 一级比赛显示最新维护时间，左边的勾选框多选后点“维护选中”排进维护队列（2026-11-06 建）；2026-11-12 用户定改由新维护处理，选多少个都行（不设上限，“全选本页”就是当前搜索、筛选出的全部）。
+// 排着的比赛行上显示“排队中”，正在维护的显示“维护中”（可以同时好几个），做完看维护时间的红绿和详情。
 // 动作都经 控制.提交 交给 数据库.mjs；失败时编辑框不关，把原因写在框里。
 // 届次的编辑框里还有“封面海报”一栏：选了图先经 控制.发请求 存进图片总库，海报、候选图随“确定”一起保存。
 // 点一级比赛的名称展开、再点收起，展开时在比赛行下面显示它的搜索记忆（2026-11-07）：第一次展开时经 控制.发请求 取，之后用取到的，点“刷新”重取；只看不改。
@@ -10,7 +11,6 @@ import { 表单初值, 表单转改动, 是海报比例, 描述比例, 压到上
 
 let 正在搜索 = false;   // 边打字边筛会重画整块，重画后把光标放回搜索框
 const 已选 = new Set();   // 勾选的比赛：搜索、筛选重画后还留着
-const 一次最多 = 50;
 const 展开了 = new Set();   // 展开看搜索记忆的比赛：搜索、筛选、保存后重画还展开着
 const 记忆缓存 = new Map();   // 比赛编号 → 取到的搜索记忆；收起时扔掉，下次展开重取
 const 维护展开了 = new Set();   // 点开维护时间看详情的比赛：重画后还展开着
@@ -22,15 +22,15 @@ export function 呈现(容器, 数据, { 条件, 改条件, 提交, 发请求, �
     try { await 做(); } catch (错误) { window.alert(错误?.message || 错误); 重新读取(); }
   };
   const 本页比赛 = 数据.组们.map(g => g.比赛.id);
-  const AI按钮 = 建('button', { type: 'button', class: '主按钮', disabled: !已选.size, onclick: () => {
+  const 维护按钮 = 建('button', { type: 'button', class: '主按钮', disabled: !已选.size, onclick: () => {
     const 编号们 = [...已选];
-    if (!window.confirm(`让 AI 维护选中的 ${编号们.length} 个比赛？每个比赛约几分钟，会调用 Codex 额度。`)) return;
+    if (!window.confirm(`把选中的 ${编号们.length} 个比赛排进维护队列，用新维护逐个处理（找官网、看通知、核对报名和比赛时间等）？约 2 分钟内开始，同时维护 4 个，每个约几分钟。`)) return;
     已选.clear();   // 提交成功后整块会重画，先清掉；失败了放回去
     出错就提示(async () => {
-      try { await 提交({ 动作: '启动AI维护', 编号们 }); } catch (错误) { 编号们.forEach(编号 => 已选.add(编号)); throw 错误; }
+      try { await 提交({ 动作: '启动维护', 编号们 }); } catch (错误) { 编号们.forEach(编号 => 已选.add(编号)); throw 错误; }
     });
-  } }, `AI 维护选中（${已选.size}）`);
-  const 更新AI按钮 = () => { AI按钮.textContent = `AI 维护选中（${已选.size}）`; AI按钮.disabled = !已选.size; };
+  } }, `维护选中（${已选.size}）`);
+  const 更新维护按钮 = () => { 维护按钮.textContent = `维护选中（${已选.size}）`; 维护按钮.disabled = !已选.size; };
   const 搜索 = 建('input', { type: 'search', placeholder: '搜比赛名称、别名、届次', value: 数据.关键词 || '', 'aria-label': '搜索' });
   搜索.addEventListener('input', () => { 正在搜索 = true; 改条件({ 关键词: 搜索.value }); });
   const 筛选 = 建('select', { 'aria-label': '按状态筛选', onchange: 事件 => 改条件({ 状态: 事件.target.value }) },
@@ -43,14 +43,14 @@ export function 呈现(容器, 数据, { 条件, 改条件, 提交, 发请求, �
   容器.append(建('div', { class: '工具栏' },
     建('button', { type: 'button', class: '主按钮', onclick: () => 打开编辑框(容器, 建, { 标题: '新建比赛', 字段们: 数据.字段表.比赛, 原: {}, 提交: 内容 => 提交({ 动作: '新建比赛', 内容 }) }) }, '新建'),
     搜索, 筛选, 本周筛选,
+    建('span', { class: '次要', role: 'status' }, `当前结果 ${本页比赛.length} 场比赛`),
     建('button', { type: 'button', onclick: () => {
       const 全选了 = 本页比赛.length && 本页比赛.every(编号 => 已选.has(编号));
       if (全选了) 本页比赛.forEach(编号 => 已选.delete(编号));
-      else if (new Set([...已选, ...本页比赛]).size > 一次最多) { window.alert(`一次最多选 ${一次最多} 个比赛，这一页有 ${本页比赛.length} 个，先用搜索或筛选缩小范围`); return; }
       else 本页比赛.forEach(编号 => 已选.add(编号));
       重新读取();
     } }, '全选本页'),
-    AI按钮));
+    维护按钮));
   if (正在搜索) { 正在搜索 = false; 搜索.focus(); 搜索.setSelectionRange(搜索.value.length, 搜索.value.length); }
   if (数据.提示) 容器.append(建('div', { class: '提示条' }, 数据.提示));
 
@@ -61,15 +61,14 @@ export function 呈现(容器, 数据, { 条件, 改条件, 提交, 发请求, �
   const 行们 = 数据.组们.flatMap(({ 比赛, 届次们 }) => [
     建('div', { class: '一级行' },
       建('input', { type: 'checkbox', class: '选比赛', 'aria-label': `选中${比赛.name}`, checked: 已选.has(比赛.id), onchange: 事件 => {
-        if (事件.target.checked && 已选.size >= 一次最多) { 事件.target.checked = false; window.alert(`一次最多选 ${一次最多} 个比赛`); return; }
         if (事件.target.checked) 已选.add(比赛.id); else 已选.delete(比赛.id);
-        更新AI按钮();
+        更新维护按钮();
       } }),
       建('button', { type: 'button', class: '名称 展开', 'aria-expanded': 展开了.has(比赛.id) ? 'true' : 'false', title: '展开看搜索记忆', onclick: () => {
         if (展开了.has(比赛.id)) { 展开了.delete(比赛.id); 记忆缓存.delete(比赛.id); } else 展开了.add(比赛.id);
         改条件({});   // 只重画，不重新取整个列表
       } }, 建('span', { class: '展开符', 'aria-hidden': 'true' }, 展开了.has(比赛.id) ? '▾' : '▸'), 比赛.name),
-      维护状态(比赛.id, 数据.AI维护) ? 建('span', { class: '维护状态' }, 维护状态(比赛.id, 数据.AI维护)) : null,
+      维护状态(比赛.id, 数据.维护队列) ? 建('span', { class: '维护状态' }, 维护状态(比赛.id, 数据.维护队列)) : null,
       画维护时间(建, 比赛, () => 改条件({})),
       建('span', { class: '行尾' },
         建('button', { type: 'button', onclick: () => 打开编辑框(容器, 建, { 标题: `修改比赛“${比赛.name}”`, 字段们: 数据.字段表.比赛, 原: 比赛,
@@ -104,7 +103,7 @@ const 换内容 = (块, ...子) => 块.replaceChildren(...子.flat().filter(项 
 // 没有新维护记录、没写成功、没维护过的照旧是灰色文字，不能点。
 function 画维护时间(建, 比赛, 重画) {
   const 标记 = 维护标记(比赛);
-  if (!标记.可展开) return 建('span', { class: '维护时间', title: '上次 AI 维护的时间（北京时间）' }, 标记.文字);
+  if (!标记.可展开) return 建('span', { class: '维护时间', title: '上次维护的时间（北京时间）' }, 标记.文字);
   const 开着 = 维护展开了.has(比赛.id);
   return 建('button', { type: 'button', class: `维护时间 可展开 ${标记.颜色}`, title: '点开看维护详情', 'aria-expanded': 开着 ? 'true' : 'false', onclick: () => {
     if (开着) 维护展开了.delete(比赛.id); else 维护展开了.add(比赛.id);

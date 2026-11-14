@@ -26,7 +26,8 @@
 //     getSubscribeQuota   {}                               → { quota, templateId }（templateId 没配是 null，小程序据此决定要不要弹订阅）
 import { createRequire } from 'node:module';
 import { 公开 } from '../../主数据库/index.mjs';
-import { 用户, 组队 } from '../../副数据库/index.mjs';
+import { 检查内容 } from '../检查内容.mjs';
+import { 用户, 组队, 校赛 } from '../../副数据库/index.mjs';
 
 const require = createRequire(import.meta.url);
 // 北京时间格式和提醒的订阅消息共用（“2026年11月08日 10:00”）
@@ -81,14 +82,28 @@ function 当前用户(用户库, openid) {
 }
 
 // ---- 交回小程序的格式 ----
-const 比赛名 = (主库, id) => 公开.比赛(主库, id)?.name ?? null;
+const 是校赛编号 = id => id.startsWith('school-contest-');
+function 比赛名(env, id) {
+  if (!是校赛编号(id)) return 公开.比赛(env.主库, id)?.name ?? null;
+  const 赛事 = 校赛.读校赛(env.用户库, id);
+  return 赛事?.status === '已发布' ? 赛事.title : '校赛已下架';
+}
+
+function 核对校赛组队资格(db, id, userId) {
+  if (!是校赛编号(id)) return;
+  const 赛事 = 校赛.读校赛(db, id);
+  if (赛事?.status !== '已发布') throw new Error('competition_not_found');
+  const 同校 = 校赛.是管理员(db, userId, 赛事.school)
+    || 校赛.我的学校(db, userId).some(m => m.school === 赛事.school);
+  if (!同校) throw new Error('not_school_member');
+}
 
 // 队伍：队员看全部（微信号、队员列表带昵称头像）；非队员只看简版
 function 队伍给看(env, 队, userId) {
   const 队员 = 组队.队员们(env.用户库, 队.id);
   const 我 = 队员.find(m => m.user_id === userId);
   const 简版 = {
-    id: 队.id, competitionId: 队.competition_id, competitionName: 比赛名(env.主库, 队.competition_id), name: 队.name || '',
+    id: 队.id, competitionId: 队.competition_id, competitionName: 比赛名(env, 队.competition_id), name: 队.name || '',
     maxMembers: 队.max_members, memberCount: 队员.length, createdAt: 队.created_at,
     isMember: Boolean(我), isLeader: 我?.role === 'leader',
   };
@@ -142,7 +157,7 @@ function 通知队长(env, 队, 申) {
   if (!队长?.openid || 队长.status !== 'active') return;
   if (!组队.扣通知次数(用户库, 队长.id, { now: env.now })) return;
   const 截 = (v, n = 20) => [...String(v || '')].slice(0, n).join('');
-  const 值 = { 比赛: 截(比赛名(env.主库, 队.competition_id) || '大学生竞赛'), 队伍: 截(队.name || '未命名队伍'),
+  const 值 = { 比赛: 截(比赛名(env, 队.competition_id) || '大学生竞赛'), 队伍: 截(队.name || '未命名队伍'),
     申请人: 截(`${申.grade} ${申.major}`), 时间: formatShanghaiTime(申.created_at) };
   const payload = {
     touser: 队长.openid, template_id: 通知模板.id, page: 通知落地页, miniprogram_state: process.env.MINIPROGRAM_STATE || 'formal', lang: 'zh_CN',
@@ -163,12 +178,16 @@ function 通知队长(env, 队, 申) {
 
 // ---- 动作 ----
 const 动作 = {
-  createTeam(event, env) {
+  async createTeam(event, env) {
     const competitionId = 编号(event.competitionId, 'competition_id');
-    if (!公开.比赛(env.主库, competitionId)) throw new Error('competition_not_found');
+    if (!是校赛编号(competitionId) && !公开.比赛(env.主库, competitionId)) throw new Error('competition_not_found');
     const n = 人数上限(event.maxMembers);
     const wechat = 文字(event.wechat, 'wechat', { 必填: true });
     const name = 文字(event.name, 'name');
+    核对校赛组队资格(env.用户库, competitionId, env.userId);
+    await 检查内容({ ...env, scene: 2 }, name);
+    当前用户(env.用户库, env.openid);
+    核对校赛组队资格(env.用户库, competitionId, env.userId);
     if (env.用户库.count('team', { user_id: env.userId }) >= 每人最多当队长的队) throw new Error('team_limit_exceeded');
     const 队 = 组队.建队(env.用户库, env.userId, { competition_id: competitionId, max_members: n, leader_wechat: wechat, name: name || null }, { now: env.now });
     return { team: 队伍给看(env, 队, env.userId) };
@@ -182,11 +201,16 @@ const 动作 = {
     return { teams: 组队.我参加的(env.用户库, env.userId).map(队 => 队伍给看(env, 队, env.userId)) };
   },
 
-  applyToTeam(event, env) {
+  async applyToTeam(event, env) {
     const 内容 = { major: 文字(event.major, 'major', { 必填: true }), grade: 文字(event.grade, 'grade', { 必填: true }),
       intro: 文字(event.intro, 'intro'), strengths: 文字(event.strengths, 'strengths') };
+    const 目标 = 找队(env.用户库, event.teamId);
+    核对校赛组队资格(env.用户库, 目标.competition_id, env.userId);
+    await 检查内容({ ...env, scene: 2 }, 内容.intro, 内容.strengths);
+    当前用户(env.用户库, env.openid);
     const { 申, 队 } = env.用户库.transaction(db => {
       const 队 = 找队(db, event.teamId);
+      核对校赛组队资格(db, 队.competition_id, env.userId);
       if (组队.是队员(db, 队.id, env.userId)) throw new Error('already_member');
       if (组队.队员们(db, 队.id).length >= 队.max_members) throw new Error('team_full');
       if (组队.申请们(db, { team_id: 队.id, user_id: env.userId, status: 'pending' }).length) throw new Error('duplicate_application');
@@ -237,6 +261,7 @@ const 动作 = {
       const 队 = 我当队长的队(db, 原.team_id, env.userId);
       待审(原);
       if (decision === 'approve') {
+        核对校赛组队资格(db, 队.competition_id, 原.user_id);
         if (组队.队员们(db, 队.id).length >= 队.max_members) throw new Error('team_full');
         if (!组队.是队员(db, 队.id, 原.user_id)) 组队.加队员(db, 队.id, 原.user_id, { now: env.now });
       }
@@ -246,8 +271,11 @@ const 动作 = {
     return { application: 申请给看(env, 申, env.userId, { 给队长: true }), team: 队伍给看(env, 队, env.userId) };
   },
 
-  renameTeam(event, env) {
+  async renameTeam(event, env) {
     const name = 文字(event.name, 'name');
+    我当队长的队(env.用户库, event.teamId, env.userId);
+    await 检查内容({ ...env, scene: 2 }, name);
+    当前用户(env.用户库, env.openid);
     const 队 = env.用户库.transaction(db => {
       const 原 = 我当队长的队(db, event.teamId, env.userId);
       return 组队.改队(db, 原.id, { name: name || null }, 原.version);
@@ -329,14 +357,14 @@ const 动作 = {
 };
 
 // 这些是正常的业务拒绝，不记日志
-const 业务拒绝 = /^(unauthenticated|user_account_disabled|unsupported_action|invalid_\w+|\w+_not_found|team_\w+|application_\w+|already_\w+|duplicate_application|not_team_\w+|leader_\w+|max_members_below_current|cannot_remove_self)$/;
+const 业务拒绝 = /^(unauthenticated|user_account_disabled|unsupported_action|invalid_\w+|\w+_not_found|team_\w+|application_\w+|already_\w+|duplicate_application|not_team_\w+|leader_\w+|max_members_below_current|cannot_remove_self|not_school_member|content_not_allowed)$/;
 
-export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 发订阅消息 = null, 通知模板 = 读通知模板(), log = console.log } = {}) {
+export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 发订阅消息 = null, 通知模板 = 读通知模板(), log = console.log, 微信 } = {}) {
   const { action, ...event } = request;
   try {
     const userId = 当前用户(用户库, openid);
     if (!Object.hasOwn(动作, action)) throw new Error('unsupported_action');
-    return { ok: true, data: 动作[action](event, { 用户库, 主库, userId, now: now(), 发订阅消息, 通知模板, log }) };
+    return { ok: true, data: await 动作[action](event, { 用户库, 主库, userId, openid, now: now(), 发订阅消息, 通知模板, log, 微信 }) };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'team_failed';
     // 同时改同一个队（版本冲突）也交回固定的词，不把数据库细节给小程序

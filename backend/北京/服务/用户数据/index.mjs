@@ -7,10 +7,14 @@
 //
 //   handle({ action, ...参数 }, { 用户库, 主库, openid, now, 排提醒 }) → { ok: true, data } 或 { ok: false, message }
 // 2026-11-09 加昵称头像（上海没有，组队里给队友看）：getProfile {} → { nickname, avatarUrl }；saveProfile { nickname?, avatarUrl? } → 同上
-//   只改给了的那一项，给空字符串清掉；昵称最多 30 字；头像只存网址、只收 https、最长 500（小程序上传图片存哪以后定）
+//   只改给了的那一项，给空字符串清掉；昵称最多 30 字；头像只存网址、只收 https、最长 500
+// 2026-11-12 加上传头像（不走 handle：正文是 multipart 图片，入口 POST /api/uploadAvatar 直接调 上传头像），见 头像.mjs；上传成功顺带写进 avatar_url
+import { 检查内容 } from '../检查内容.mjs';
 import { createRequire } from 'node:module';
 import { 公开 } from '../../主数据库/index.mjs';
 import { 用户, 收藏, 提醒, 偏好, 纠错, 意见反馈 } from '../../副数据库/index.mjs';
+
+export { 上传头像 } from './头像.mjs';
 
 const require = createRequire(import.meta.url);
 const { validateFeedbackInput } = require('./feedbackValidation.js');
@@ -161,7 +165,7 @@ function normalizeProfileInput(event) {
   return 改动;
 }
 
-async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 }) {
+async function 做(action, event, { 用户库, 主库, userId, now, 排提醒, 微信, openid }) {
   // 存好的提醒交给发提醒排计划（两小时内到期的才排上，其余每小时对账）；排计划出错不影响保存
   const 交去排 = ids => { try { 排提醒?.(ids.map(id => 用户库.get('reminder', id)?.data).filter(Boolean)); } catch (error) { console.error('[用户数据] 排提醒失败', error?.message); } };
   if (action === 'submitGeneralFeedback') {
@@ -191,7 +195,14 @@ async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 })
     return preferenceToClient(saved);
   }
   if (action === 'getProfile') return profileToClient(用户.读取(用户库, userId));
-  if (action === 'saveProfile') return profileToClient(用户.改资料(用户库, userId, normalizeProfileInput(event), { now }));
+  if (action === 'saveProfile') {
+    const 改动 = normalizeProfileInput(event);
+    if (改动.nickname) {
+      await 检查内容({ 微信, openid, scene: 1 }, 改动.nickname);
+      当前用户(用户库, openid);
+    }
+    return profileToClient(用户.改资料(用户库, userId, 改动, { now }));
+  }
   if (action === 'listFeedback') return 纠错.列出(用户库, userId).slice(0, MAX_FEEDBACK_LIST).map(feedbackToClient);
   if (action === 'listFavorites') {
     return 收藏.列出(用户库, userId).slice(0, MAX_FAVORITES)
@@ -255,13 +266,13 @@ async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 })
   throw new Error('unsupported_action');
 }
 
-export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 排提醒 } = {}) {
+export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 排提醒, 微信 } = {}) {
   const { action, ...event } = request;
   try {
     const userId = 当前用户(用户库, openid);
-    return { ok: true, data: await 做(action, event, { 用户库, 主库, userId, now: now(), 排提醒 }) };
+    return { ok: true, data: await 做(action, event, { 用户库, 主库, userId, now: now(), 排提醒, 微信, openid }) };
   } catch (error) {
-    if (!['unauthenticated', 'user_account_disabled', 'unsupported_action'].includes(error?.message)) console.error('[用户数据] 出错', { action, error: error?.message });
+    if (!['unauthenticated', 'user_account_disabled', 'unsupported_action', 'content_not_allowed'].includes(error?.message)) console.error('[用户数据] 出错', { action, error: error?.message });
     return { ok: false, message: error instanceof Error ? error.message : 'user_data_failed' };
   }
 }
