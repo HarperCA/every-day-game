@@ -7,7 +7,7 @@ import { 查标题, 是通知标题, 不是比赛的标题, 要追溯通知 } fr
 import { 查范围, 明显不是大学生 } from '../../范围闸/index.mjs';
 import { 查资料 } from '../../资料齐不齐/index.mjs';
 import { 查门槛, 收录门槛, 只在本校, 提示词文件 } from '../../收录门槛/index.mjs';
-import { 查发布, 名称混了年份届次, 报名时间问题 } from '../../发布门槛/index.mjs';
+import { 查发布, 名称混了年份届次, 报名时间问题, 有核验过的官方来源, 报名网址顶上 } from '../../发布门槛/index.mjs';
 import { loadPrompt } from '../../../../共用/工具/提示词.mjs';
 
 const 齐全 = { name: '全国大学生电子设计竞赛', organizer: '中国电子学会', participants: '高校在校生', eligibility: '高校在校生', format_and_rules: '电子设计作品评审', professions: ['电子信息'], sources: [{ url: 'https://example.org/competition' }] };
@@ -186,6 +186,26 @@ describe('发布门槛', () => {
     expect(报名时间问题({ registration_start: null, registration_end: null })).toEqual(['报名起止时间均缺失，请核实或说明尚未公布']);
     expect(报名时间问题({ registration_start: null, registration_end: null, pending_announcement: true })).toEqual([]);
     expect(报名时间问题({ registration_end: '2026/12/01' })).toEqual(['报名截止时间格式无效']);
+  });
+  // 2026-11-12 用户定放宽两条：核过一次的官方来源就算（不要求发布前 24 小时内复核）；缺报名网址时用核验过的官方通知页顶上
+  test('官方来源核过一次就算，不要求发布前 24 小时内复核', () => {
+    const 早就核过 = { ...可发布, sources: [{ ...可发布.sources[0], last_verified_at: '2025-03-01T00:00:00Z' }] };
+    expect(查发布(早就核过)).toEqual({ 结果: '通过', 原因们: [] });
+    expect(有核验过的官方来源(早就核过)).toBe(true);
+  });
+  test('缺报名网址：有核验过的官方来源就不拦；没有核验过的官方来源照旧拦（报名网址、官方来源两条）', () => {
+    expect(查发布({ ...可发布, registration_url: '' })).toEqual({ 结果: '通过', 原因们: [] });
+    expect(查发布({ ...可发布, registration_url: null })).toEqual({ 结果: '通过', 原因们: [] });
+    const 没核过 = 查发布({ ...可发布, registration_url: '', sources: [{ ...可发布.sources[0], validity_status: 'unchecked' }] });
+    expect(没核过.原因们).toEqual(['没有报名网址', '没有核验过的官方来源']);
+  });
+  test('报名网址顶上：有报名网址用它；没有就用核验过的官方来源（主办方通知优先）；都没有给空', () => {
+    const 官网 = { ...可发布.sources[0], id: 's0', url: 'https://example.org/home', source_type: 'organizer_website' };
+    expect(报名网址顶上(可发布)).toBe('https://reg.example.org');
+    expect(报名网址顶上({ ...可发布, registration_url: '' })).toBe('https://example.org/n');
+    expect(报名网址顶上({ ...可发布, registration_url: null, sources: [官网, ...可发布.sources] })).toBe('https://example.org/n');
+    expect(报名网址顶上({ ...可发布, registration_url: null, sources: [官网] })).toBe('https://example.org/home');
+    expect(报名网址顶上({ ...可发布, registration_url: '', sources: [{ ...可发布.sources[0], is_official: false }] })).toBe('');
   });
   test('归档只查标题、范围、名称（报不上名了，报名网址、来源不再要求）', () => {
     expect(查发布({ ...齐全, registration_url: '' }, { 归档: true }).结果).toBe('通过');

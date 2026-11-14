@@ -1,6 +1,6 @@
 // 总览 · 取数据（美国服务器上跑）：从比赛库取每一届的状态和级别（届次没填级别的用比赛的）。已删除的不算（在回收站里）。
 // 比赛库还没建（旧数据还没搬进来）时，交回 2026-10-22 线上 343 条的快照，并标明是示例。
-import { 届次 } from '../../../db/index.mjs';
+import { 届次, 维护队列 } from '../../../db/index.mjs';
 
 // 10-22 快照：reports/student-competition-enrichment-2026-10-15/work/live-competitions-detail-20261022.json 的实际分布（当时的草稿 13 条按新状态算待人工审核）
 const 快照 = {
@@ -9,7 +9,13 @@ const 快照 = {
   按级别: { 国家级: 164, '省级/区域级': 94, '其他/未明确': 84, 国际级: 1 },
 };
 
-export async function 取(参数, { db }) {
+// POST /api/后台/总览 { 动作: '维护进度' }：新维护队列的进度（正在维护哪几个、排队几个、最近完成的），从维护队列读（2026-11-12 替换旧的 AI 审核进度）。
+export async function 取({ 动作, 日期, 天数 } = {}, { db, now = () => new Date(), 小程序统计 }) {
+  if (动作 === '小程序统计') {
+    if (!小程序统计) throw new Error('小程序统计服务尚未接入');
+    return 小程序统计({ 日期, 天数 }, { now: now() });
+  }
+  if (动作 === '维护进度') return 维护队列.读进度(db, { now: now() });
   const 行们 = 届次.search(db, {}, { limit: 100000 });
   if (!行们.length) return { 示例: true, 快照 };
   return {

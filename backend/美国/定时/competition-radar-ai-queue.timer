@@ -1,0 +1,11 @@
+# 竞赛雷达 后台多选的维护：每 2 分钟看一眼维护队列（新维护的队列模式）。上一次还没跑完不会再起一个。错过了不补跑。
+[Unit]
+Description=竞赛雷达 后台多选的维护（每 2 分钟看一眼维护队列）
+
+[Timer]
+OnCalendar=*-*-* *:00/2:00
+Persistent=false
+Unit=competition-radar-ai-queue.service
+
+[Install]
+WantedBy=timers.target

@@ -2,6 +2,8 @@
 //   新建或登录(db, { openid, appid, unionid }, 选项)  有账号就记登录时间，没有就建一个 → 账号；停用的报错
 //   读取(db, id)、按openid(db, openid)                 → 账号或 null
 //   停用(db, id, 选项)
+//   改资料(db, id, { nickname, avatar_url }, 选项)     昵称、头像网址（2026-11-09，组队里给队友看）；给 null 清掉；只改给了的键 → 账号
+//   资料们(db, 编号们)                                 → Map(编号 → { nickname, avatarUrl })，没有的编号不出现（队员列表一次取）
 //   全部(db, id)                                       → { 账号, 收藏, 提醒, 意见反馈, 纠错, 偏好 }
 //   删除(db, id)                                       注销：账号和它下面五张表的记录一起删 → { 连带: { 表: 条数 } }
 // openid 只能由服务端向微信换来后传进来，不收客户端传的。
@@ -29,6 +31,20 @@ export const 按openid = (db, openid) => db.find('user_account', { openid })[0] 
 
 export function 停用(db, id, { now = new Date() } = {}) {
   return db.update('user_account', id, { status: 'disabled', updated_at: now.toISOString() }).data;
+}
+
+export function 改资料(db, id, 资料, { now = new Date() } = {}) {
+  const 改动 = Object.fromEntries(['nickname', 'avatar_url'].filter(k => k in 资料).map(k => [k, 资料[k] || null]));
+  return db.update('user_account', id, { ...改动, updated_at: now.toISOString() }).data;
+}
+
+export function 资料们(db, 编号们) {
+  const 资料 = new Map();
+  for (const id of new Set(编号们)) {
+    const 账号 = 读取(db, id);
+    if (账号) 资料.set(id, { nickname: 账号.nickname ?? null, avatarUrl: 账号.avatar_url ?? null });
+  }
+  return 资料;
 }
 
 export function 全部(db, id) {

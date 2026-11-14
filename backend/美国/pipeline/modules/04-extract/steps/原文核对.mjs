@@ -252,6 +252,11 @@ function verifyAgainstSource(parsed, sourceText) {
     if (nameInSource) competitionName = keepWithQuote({ ...parsed.competition_name, value:nameValue }, 'competition_name');
     else dropped.push({ field:'competition_name', value:nameValue, quote:String(parsed.competition_name.anchor || '').slice(0, 120) });
   }
+  const track = keepWithQuote(parsed.track_name, 'track_name');
+  const trackValue = typeof track?.value === 'string' ? track.value.trim() : '';
+  const verifiedTrack = trackValue && trackValue.length <= 60
+    && normalizeForQuoteMatch(track.quote).includes(normalizeForQuoteMatch(trackValue))
+    ? { ...track, value: trackValue } : null;
   const organizer = keepWithQuote(parsed.organizer, 'organizer');
   const participants = keepWithQuote(parsed.participants, 'participants');
   const eligibility = keepWithQuote(parsed.eligibility, 'eligibility');
@@ -294,6 +299,7 @@ function verifyAgainstSource(parsed, sourceText) {
 
   return {
     competition_name:competitionName,
+    ...(parsed.track_name && { track_name: verifiedTrack }),
     organizer,
     participants,
     eligibility,

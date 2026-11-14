@@ -8,9 +8,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(path.join(HERE, '..', '..', 'Environment', 'package.json'));
 const Database = require('better-sqlite3');
 
-export function openSqlite(file, options = {}) {
+// wal：默认开 WAL；运行锁.mjs 只拿它当文件锁用，传 wal: false 不切换日志模式（2026-11-11 线上加）
+export function openSqlite(file, { wal = true, ...options } = {}) {
   const db = new Database(file, options);
-  if (file !== ':memory:' && !options.readonly) db.pragma('journal_mode = WAL');
+  if (wal && file !== ':memory:' && !options.readonly) db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   return db;
 }

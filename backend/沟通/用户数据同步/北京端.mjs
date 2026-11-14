@@ -23,12 +23,20 @@ const 每批最多条数 = 200;
 const 报错每次最多 = 2000;
 const 哈希 = 内容 => crypto.createHash('sha256').update(JSON.stringify(内容)).digest('hex').slice(0, 16);
 
+// 北京库里还没有这张表（比如校赛表：先部署美国、后部署北京）当成没有行，别的表照常同步
+function 读表(用户库, 表) {
+  try { return 用户库.find(表, {}); } catch (错误) {
+    if (String(错误?.message || '').includes('没有这张表')) return [];
+    throw 错误;
+  }
+}
+
 // 北京现在的全部行（报错日志除外，它按编号接着推），整理好
 export function 现在内容(用户库, 报错库) {
   const 行们 = [];
   for (const { 表, 主键 } of 同步的表) {
     if (表 === 'client_issues') continue;
-    const 全部 = 表 === 'client_stats' ? 报错库.全部统计() : 用户库.find(表, {});
+    const 全部 = 表 === 'client_stats' ? 报错库.全部统计() : 读表(用户库, 表);
     for (const 行 of 全部) 行们.push({ 表, 编号: String(行[主键]), data: 整理行(表, 行) });
   }
   return 行们;

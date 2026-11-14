@@ -87,6 +87,35 @@ describe('详情（get）', () => {
     expect(await 看('ed-either')).toEqual([true, 'unverified', `可自行报名，也可能由学校统一组织，两条路的截止时间不一定相同。${去问}`]);
     expect(await 看('ed-blank')).toEqual([true, 'unverified', `报名组织方式尚未确认，官方日期可能不是你实际要赶的时间。${去问}`]);
   });
+  // 2026-11-12 用户定：追不到官方通知的新一届用“高校转发”发布，详情页标“信息来自高校转发，以官方通知为准”并附转发链接。
+  // 美国推来 info_source（official 或 school_repost）、info_source_url；交给小程序用 infoSource、infoSourceUrl
+  test('高校转发：详情带 infoSource=school_repost 和转发链接；旧数据没有这两个字段的当 official、链接为空', async () => {
+    const env = 环境();
+    同步.收下(env.主库, { 届次们: [{ id: 'ed-art-2027', competition_id: 'event-art', version: 1, registration_end: '2026-12-20', status: '已发布',
+      data: { edition_name: '第九届', info_source: 'school_repost', info_source_url: 'https://jwc.example.edu.cn/notice/9' } }] });
+    expect((await handle({ action: 'get', id: 'ed-art-2027' }, env)).data).toMatchObject({ infoSource: 'school_repost', infoSourceUrl: 'https://jwc.example.edu.cn/notice/9' });
+    expect((await handle({ action: 'get', id: 'ed-math-2026' }, env)).data).toMatchObject({ infoSource: 'official', infoSourceUrl: '' });
+  });
+  test('高校转发：转发链接不是 http(s) 的不给；不认识的来源值当 official', async () => {
+    const env = 环境();
+    const 届 = (id, data) => ({ id, competition_id: 'event-art', version: 1, registration_end: '2026-12-20', status: '已发布', data: { edition_name: id, ...data } });
+    同步.收下(env.主库, { 届次们: [
+      届('ed-bad-url', { info_source: 'school_repost', info_source_url: 'javascript:alert(1)' }),
+      届('ed-odd', { info_source: '别的', info_source_url: 'https://x.example.cn' }),
+    ] });
+    expect((await handle({ action: 'get', id: 'ed-bad-url' }, env)).data).toMatchObject({ infoSource: 'school_repost', infoSourceUrl: '' });
+    expect((await handle({ action: 'get', id: 'ed-odd' }, env)).data).toMatchObject({ infoSource: 'official', infoSourceUrl: '' });
+  });
+  test('高校转发：首页卡片也带 infoSource、infoSourceUrl（卡片上标小标记）；官方的卡片不加这两个字段（省流量，小程序默认 official）', async () => {
+    const env = 环境();
+    同步.收下(env.主库, { 届次们: [{ id: 'ed-art-2027', competition_id: 'event-art', version: 1, registration_start: '2026-11-01', registration_end: '2026-12-20', status: '已发布',
+      data: { edition_name: '第九届', info_source: 'school_repost', info_source_url: 'https://jwc.example.edu.cn/notice/9' } }] });
+    const items = (await handle({ action: 'list', query: {} }, env)).data.items;
+    expect(items.find(x => x.id === 'ed-art-2027')).toMatchObject({ infoSource: 'school_repost', infoSourceUrl: 'https://jwc.example.edu.cn/notice/9' });
+    const 官方卡 = items.find(x => x.id === 'ed-math-2026');
+    expect(官方卡.infoSource).toBeUndefined();
+    expect(官方卡.infoSourceUrl).toBeUndefined();
+  });
   test('找不到、编号不对：public_record_not_found（和上海一样）；不认识的动作：unsupported_action', async () => {
     expect(await handle({ action: 'get', id: 'ed-没有' }, 环境())).toEqual({ ok: false, message: 'public_record_not_found' });
     expect(await handle({ action: 'get', id: { $ne: '' } }, 环境())).toEqual({ ok: false, message: 'public_record_not_found' });

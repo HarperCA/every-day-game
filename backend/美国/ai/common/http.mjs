@@ -2,7 +2,7 @@
 // 只管“怎么发”，不管发给谁、发什么；每家接口在自己的文件夹里拼地址和内容。
 import { AiError, kindFromStatus } from './errors.mjs';
 
-export async function postJson(url, { headers = {}, body, timeoutMs = 60000, signal, fetchImpl = globalThis.fetch, provider }) {
+export async function postJson(url, { headers = {}, body, timeoutMs = 60000, signal, fetchImpl = globalThis.fetch, provider, readStream }) {
   const timeout = AbortSignal.timeout(timeoutMs);
   const response = await fetchImpl(url, {
     method: 'POST',
@@ -10,6 +10,9 @@ export async function postJson(url, { headers = {}, body, timeoutMs = 60000, sig
     body: JSON.stringify(body),
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
+  if (response.ok && readStream) {
+    return { ok: true, status: response.status, payload: await readStream(response) };
+  }
   const raw = await response.text();
   let payload = null;
   try { payload = JSON.parse(raw); } catch { /* 出错时也可能返回网页 */ }
@@ -24,11 +27,16 @@ export function failIfNotOk({ ok, status, raw, payload }, provider) {
   throw new AiError(kind, `${provider} 返回 ${status}：${String(detail).slice(0, 200)}`, { provider, status });
 }
 
-// 搜索结果统一成 { title, url, content, date }，去掉空网址，最多 limit 条
+// 搜索结果统一成 { title, url, content, date }，去掉空网址，最多 limit 条。
+// 百度另给的权威性评分（authority_score）、相关性评分（rerank_score）、网站名（website）有就带上：authority、rerank、website（2026-11-07，新流程找官网打分用）
 const clip = (value, n) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, n);
+const 有数 = value => typeof value === 'number' && Number.isFinite(value);
 export function normalizeReferences(items, limit = 10) {
   return (items || [])
-    .map(item => ({ title: clip(item?.title, 200), url: String(item?.url || ''), content: clip(item?.content || item?.snippet, 600), date: clip(item?.date || item?.publishedAt, 20) }))
+    .map(item => ({ title: clip(item?.title, 200), url: String(item?.url || ''), content: clip(item?.content || item?.snippet, 600), date: clip(item?.date || item?.publishedAt, 20),
+      ...(有数(item?.authority_score) ? { authority: item.authority_score } : {}),
+      ...(有数(item?.rerank_score) ? { rerank: item.rerank_score } : {}),
+      ...(item?.website ? { website: clip(item.website, 100) } : {}) }))
     .filter(item => item.url)
     .slice(0, limit);
 }

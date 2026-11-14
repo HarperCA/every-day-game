@@ -4,19 +4,30 @@
 //   POST /api/userData    用户数据     要令牌：没有、签名不对 401 unauthenticated；过期 401 user_session_expired（小程序据此重新登录再试一次）
 //   POST /api/publicData  公开数据     不要令牌；带了有效令牌的按这个用户排首页，无效的当没登录
 //   POST /api/clientLog   收集报错     不要令牌，匿名
+//   POST /api/team        组队         要令牌，同 /api/userData（2026-11-08）；有人申请时用 发订阅消息 给队长发订阅消息（2026-11-09）
+//   POST /api/school      校赛         要令牌，同 /api/userData（2026-11-08）
+//   POST /api/uploadAvatar 上传头像    要令牌，只认请求头 Authorization: Bearer（2026-11-12，小程序组队用）：正文是 wx.uploadFile 发的 multipart/form-data（字段 file），
+//                                      不按 JSON 解析，原样（二进制）交给 用户数据/头像.mjs；正文上限 上传请求上限（1 MB 图 + 64 KB 余量），别的接口仍是 64 KB
 // 发提醒不对外（它会交出 openid），只在本机由 服务.mjs 启动的调度调用。
 // 令牌放在请求内容的 userSessionToken 里（小程序这样发），也认请求头 Authorization: Bearer；转交给服务前去掉。
 // 服务里抛错回 500 internal_error，不把细节回给小程序；服务自己交回的 { ok: false } 照常回 200（小程序看 ok）。
 //
-//   处理请求({ 方法, 路径, 头, 正文 }, { 主库, 用户库, 报错库, 微信, 密钥, now, 排提醒, 海报地址, 海报目录 }) → { 状态, 内容 }
+//   处理请求({ 方法, 路径, 头, 正文 }, { 主库, 用户库, 报错库, 微信, 密钥, now, 排提醒, 海报地址, 海报目录, 头像地址, 头像目录, 发订阅消息, 组队通知模板 }) → { 状态, 内容 }
+//     正文：文字或 Buffer（服务.mjs 交 Buffer；JSON 接口按 UTF-8 转成文字再解析）
+//   正文上限(路径) → 字节数：服务.mjs 读正文前按路径定上限
+//     发订阅消息(payload)：组队通知队长用（服务.mjs 接 发提醒/调度.mjs 的 createWeChatSender）；组队通知模板 不给就由组队服务按环境变量读
 import { 校验令牌 } from '../../共用/工具/令牌.mjs';
 import { handle as 登录 } from '../服务/登录/index.mjs';
-import { handle as 用户数据 } from '../服务/用户数据/index.mjs';
+import { handle as 用户数据, 上传头像 } from '../服务/用户数据/index.mjs';
 import { handle as 公开数据 } from '../服务/公开数据/index.mjs';
 import { handle as 收集报错 } from '../服务/收集报错/index.mjs';
+import { handle as 组队 } from '../服务/组队/index.mjs';
+import { handle as 校赛 } from '../服务/校赛/index.mjs';
 
 // 一次最多 50 条收藏或 10 条提醒、20 条报错，64 KB 足够
 export const 请求上限 = 64 * 1024;
+// 上传头像：图最大 1 MB（用户数据/头像.mjs 的 头像上限），加上 multipart 的分隔和字段头留 64 KB
+export const 上传请求上限 = 1024 * 1024 + 64 * 1024;
 const 拒 = (状态, message) => ({ 状态, 内容: { ok: false, message } });
 
 // 令牌：没带 → null；交回 { ok, openid } 或 { ok: false, 原因 }
@@ -29,19 +40,29 @@ function 认令牌(请求, 头, 密钥, now) {
 
 const 路由 = {
   '/api/login': { 令牌: '不要', 服务: (请求, env) => 登录(请求, { 用户库: env.用户库, 微信: env.微信, 密钥: env.密钥, now: env.now }) },
-  '/api/userData': { 令牌: '要', 服务: (请求, env, openid) => 用户数据(请求, { 用户库: env.用户库, 主库: env.主库, openid, now: env.now, 排提醒: env.排提醒 }) },
+  '/api/userData': { 令牌: '要', 服务: (请求, env, openid) => 用户数据(请求, { 用户库: env.用户库, 主库: env.主库, openid, now: env.now, 排提醒: env.排提醒, 微信: env.微信 }) },
   '/api/publicData': { 令牌: '可以带', 服务: (请求, env, openid) => 公开数据(请求, { 主库: env.主库, 用户库: env.用户库, 报错库: env.报错库, openid, now: env.now, 海报地址: env.海报地址, 海报目录: env.海报目录 }) },
   '/api/clientLog': { 令牌: '不要', 服务: (请求, env) => 收集报错(请求, { 报错库: env.报错库, now: env.now }) },
+  '/api/team': { 令牌: '要', 服务: (请求, env, openid) => 组队(请求, { 用户库: env.用户库, 主库: env.主库, openid, now: env.now, 发订阅消息: env.发订阅消息, 通知模板: env.组队通知模板, 微信: env.微信 }) },
+  '/api/school': { 令牌: '要', 服务: (请求, env, openid) => 校赛(请求, { 用户库: env.用户库, openid, now: env.now, 微信: env.微信 }) },
+  '/api/uploadAvatar': { 令牌: '要', 上传: true, 服务: (请求, env, openid) => 上传头像(请求, { 用户库: env.用户库, openid, now: env.now, 头像地址: env.头像地址, 头像目录: env.头像目录, 密钥: env.密钥 }) },
 };
+
+export const 正文上限 = 路径 => (Object.hasOwn(路由, 路径) && 路由[路径].上传 ? 上传请求上限 : 请求上限);
 
 export async function 处理请求({ 方法, 路径, 头 = {}, 正文 = '' }, env) {
   const 这条 = Object.hasOwn(路由, 路径) ? 路由[路径] : null;
   if (!这条) return 拒(404, 'not_found');
   if (方法 !== 'POST') return 拒(405, 'method_not_allowed');
-  if (正文.length > 请求上限) return 拒(413, 'request_too_large');
+  if (正文.length > 正文上限(路径)) return 拒(413, 'request_too_large');
   let 请求;
-  try { 请求 = JSON.parse(正文); } catch { return 拒(400, 'bad_request'); }
-  if (!请求 || typeof 请求 !== 'object' || Array.isArray(请求)) return 拒(400, 'bad_request');
+  if (这条.上传) {
+    // multipart 正文里不放令牌，只认请求头；内容原样交给服务
+    请求 = { 内容类型: 头['content-type'] || '', 正文: Buffer.isBuffer(正文) ? 正文 : Buffer.from(正文) };
+  } else {
+    try { 请求 = JSON.parse(Buffer.isBuffer(正文) ? 正文.toString('utf8') : 正文); } catch { return 拒(400, 'bad_request'); }
+    if (!请求 || typeof 请求 !== 'object' || Array.isArray(请求)) return 拒(400, 'bad_request');
+  }
   const now = env.now || (() => new Date());
 
   let openid = null;

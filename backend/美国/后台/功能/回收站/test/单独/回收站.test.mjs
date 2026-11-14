@@ -70,6 +70,16 @@ describe('恢复', () => {
     expect(db.count('blocked_competition')).toBe(0);
     expect(日志(db, '恢复比赛')[0].detail).toMatchObject({ 名称: '全国大学生数学建模竞赛', 届次: 1, 操作人: '管理员甲' });
   });
+  test('列表带上进回收站的理由（status_reason 最后一条）；人工恢复后状态算人工定的，AI 不再把它删回去', async () => {
+    const db = 准备();
+    db.update('edition', 'ed-art-2026', { status_reason: ['等人看', '[维护·核对原文] 查不到：官网打不开'] }, db.get('edition', 'ed-art-2026').version);
+    db.标记删除('edition', 'ed-art-2026', { by: '维护·核对原文', at: '2026-10-01T00:00:00.000Z' });
+    const 列表 = await 回收站(db, {}, '2026-10-02T00:00:00.000Z');
+    expect(列表.届次们.find(e => e.id === 'ed-art-2026').理由).toContain('官网打不开');
+    await 回收站(db, { 动作: '恢复届次', 编号: 'ed-art-2026' });
+    expect(db.get('edition', 'ed-art-2026').data.manual_fields).toContain('status');
+    db.close();
+  });
   test('恢复届次：比赛还在回收站时不能单独恢复，要先恢复比赛', async () => {
     const db = 准备();
     await 删(db, { 动作: '删除届次', 编号: 'ed-math-2025' });

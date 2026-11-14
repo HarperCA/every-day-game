@@ -8,6 +8,9 @@ import 后台记录 from './表/后台/后台记录.mjs';
 import 不收录 from './表/后台/不收录.mjs';
 import 拒过的网址 from './表/寻找流程/拒过的网址.mjs';
 import 后台状态 from './表/后台/后台状态.mjs';
+import 搜索记忆 from './表/比赛数据/搜索记忆.mjs';
+import 爬虫脚本 from './表/比赛数据/爬虫脚本.mjs';
+import 指纹记录 from './表/比赛数据/指纹记录.mjs';
 
 export { FIELD_TYPES, LIMITS } from '../../../共用/db/字段类型.mjs';
-export const TABLES = Object.fromEntries([比赛, 届次, 来源, 处理记录, 后台记录, 不收录, 拒过的网址, 后台状态].map(t => [t.表名, t]));
+export const TABLES = Object.fromEntries([比赛, 届次, 来源, 处理记录, 后台记录, 不收录, 拒过的网址, 后台状态, 搜索记忆, 爬虫脚本, 指纹记录].map(t => [t.表名, t]));

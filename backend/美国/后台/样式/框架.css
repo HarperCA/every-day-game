@@ -60,6 +60,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .页顶部 h2 { font-size: var(--字号中, 15px); margin: 0 0 4px; }
 .标签说明 { margin: 0 0 12px; color: var(--次要字); font-size: var(--字号小); }
 
+/* 总览的维护进度（新维护队列，2026-11-12 替换 AI 审核进度）；最近完成的比赛名按成功绿、失败红 */
+.维护进度 { margin-bottom: 16px; border: 1px solid var(--线); border-radius: 8px; }
+.维护进度 > summary { padding: 9px 12px; cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
+.维护进度内容 { padding: 0 12px 10px; overflow-wrap: anywhere; }
+.维护进度内容 h3 { font-size: var(--字号中); margin-top: 10px; }
+.维护进度内容 p, .维护进度内容 ul, .维护进度内容 ol { margin-block: 5px; }
+.维护进度内容 .成功 { color: var(--色1); }
+.维护进度内容 .失败 { color: var(--警示); }
+
 /* 状态：加载中、出错、空白、占位 */
 .状态 { padding: 28px; text-align: center; color: var(--弱字); }
 .状态.出错 { color: var(--警示); background: var(--警示浅); border-radius: 8px; }
@@ -118,12 +127,73 @@ table.表格 { width: 100%; border-collapse: collapse; font-size: var(--字号�
 .二级行 { padding-left: calc(12px + 2em); border-top-style: dashed; }
 .一级行 .名称, .二级行 .名称 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .行尾 { display: flex; gap: 6px; flex: none; }
+.选比赛 { flex: none; width: 16px; height: 16px; margin: 0; }
+.维护时间 { flex: none; color: var(--弱字); font-size: var(--字号小); font-weight: 400; white-space: nowrap; }
+.维护状态 { flex: none; padding: 1px 8px; border-radius: 999px; background: var(--面板); border: 1px solid var(--线); font-size: var(--字号小); font-weight: 400; white-space: nowrap; }
 .两级列表 button { border: 1px solid var(--线); background: var(--面板); padding: 2px 10px; border-radius: 6px; font-size: var(--字号小); font-weight: 400; flex: none; }
 .两级列表 button.危险 { color: var(--警示); }
+/* 点比赛名称展开看搜索记忆（2026-11-07） */
+.两级列表 button.名称.展开 { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: inherit; text-align: left; cursor: pointer; display: flex; gap: 6px; align-items: baseline; }
+.两级列表 button.名称.展开:hover { color: var(--强调); }
+.展开符 { flex: none; width: 1em; color: var(--弱字); }
+.两级列表 button.名称.展开 { flex: 1 1 auto; min-width: 8em; }
+@media (max-width: 600px) { .一级行 { flex-wrap: wrap; } .一级行 .行尾 { margin-left: auto; } }
+.搜索记忆 { padding: 10px 12px 12px calc(12px + 2em); border-top: 1px dashed var(--线); background: var(--面板); display: grid; gap: 10px; min-width: 0; }
+.搜索记忆 .次要 { color: var(--弱字); font-size: var(--字号小); }
+.记忆头 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.记忆节们 { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 20px; }
+.记忆节 { min-width: 0; }
+.记忆节 h4 { margin: 0 0 4px; font-size: var(--字号小); color: var(--次要字); font-weight: 600; }
+.记忆节 ul { margin: 0; padding-left: 1.2em; font-size: var(--字号小); }
+.记忆节 li { overflow-wrap: anywhere; }
+.记忆节 a { color: var(--强调); }
 .状态标签 { flex: none; font: inherit; font-size: var(--字号小); border-radius: 999px; padding: 1px 8px; border: 1px solid currentColor; background: var(--面板); }
 .状态标签.已发布 { color: var(--色1); }
 .状态标签.已归档 { color: var(--色3); }
 .状态标签.待人工审核 { color: var(--色2); }
+/* 维护时间按最新一条新维护着色（成功绿、失败红，颜色取主题变量，深色模式跟着变），点开在比赛行下面看维护详情（2026-11-08） */
+.两级列表 button.维护时间.可展开 { border: 0; background: none; padding: 0; font: inherit; font-size: var(--字号小); font-weight: 400; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.两级列表 button.维护时间.可展开:focus-visible { outline: 2px solid var(--强调); outline-offset: 2px; border-radius: 4px; }
+.维护时间.成功, .维护详情 .成功 { color: var(--色1); }
+.维护时间.失败, .维护详情 .失败 { color: var(--警示); }
+.维护详情 { padding: 10px 12px 12px calc(12px + 2em); border-top: 1px dashed var(--线); background: var(--面板); display: grid; gap: 6px; min-width: 0; font-size: var(--字号小); overflow-wrap: anywhere; }
+.维护详情 .次要 { color: var(--弱字); }
+.详情头 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; font-size: var(--字号); }
+.详情项 { display: flex; gap: 8px; min-width: 0; }
+.详情名 { flex: none; color: var(--次要字); }
+.详情值 { min-width: 0; white-space: pre-wrap; }
+.维护详情 h4 { margin: 4px 0 2px; font-size: var(--字号小); color: var(--次要字); font-weight: 600; }
+.维护详情 ul, .维护详情 ol { margin: 0; padding-left: 1.4em; }
+.维护详情 li { white-space: pre-wrap; }
+.维护详情 a { color: var(--强调); }
+/* 维护详情里的改动：按届次分组，每条“字段：改前 → 改后”，下面一行是依据的通知（2026-11-08） */
+.维护改动 { display: grid; gap: 4px; min-width: 0; }
+.改动组 { display: grid; gap: 2px; min-width: 0; }
+.改动届次 { font-weight: 600; color: var(--字); }
+.维护改动 .改前 { color: var(--弱字); text-decoration: line-through; text-decoration-color: var(--线); }
+.维护改动 .改后 { color: var(--字); }
+.改动依据 { white-space: normal; }
+
+/* 赛事助手聊天记录（2026-11-12）：这一天每人一块，账号 + 每句的时间和内容，每句下面是助手的回答
+   回答：缩进到和内容对齐、强调浅色底 + 左边一道强调色（颜色都用主题变量，深色模式跟着变）；全文显示、自动换行，不撑破卡片 */
+.聊天人们 { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 12px; }
+.聊天人 { border: 1px solid var(--线); border-radius: 8px; background: var(--面板浅); padding: 10px 12px; min-width: 0; }
+.聊天人头 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.聊天人头 .次要 { color: var(--弱字); font-size: var(--字号小); }
+.聊天账号 { font-family: ui-monospace, Consolas, monospace; font-weight: 600; overflow-wrap: anywhere; }
+.聊天输入们 { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.聊天一轮 { display: grid; gap: 4px; min-width: 0; }
+.聊天问 { display: flex; gap: 8px; min-width: 0; }
+.聊天时间 { flex: none; width: 40px; color: var(--弱字); font-size: var(--字号小); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.聊天内容 { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.聊天回答 {
+  margin-left: 48px; min-width: 0; padding: 6px 10px; border-radius: 6px;
+  background: var(--强调浅); border-left: 3px solid var(--强调); color: var(--次要字);
+  display: grid; gap: 2px;
+}
+.聊天回答文字 { white-space: pre-wrap; overflow-wrap: anywhere; }
+.聊天回答状态 { color: var(--弱字); font-size: var(--字号小); }
+.聊天回答.没有回答 { background: transparent; border-left: 3px dashed var(--线); }
 
 /* 编辑框 */
 .编辑框 { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 1px solid var(--线); border-radius: var(--圆角); background: var(--面板); color: var(--字); padding: 20px; }

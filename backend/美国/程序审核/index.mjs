@@ -19,7 +19,7 @@ export { 查标题, 是通知标题, 不是比赛的标题, 要追溯通知, 含
 export { 查范围, 明显不是大学生, 大学生对象 } from './范围闸/index.mjs';
 export { 查资料 } from './资料齐不齐/index.mjs';
 export { 查门槛, 收录门槛, 只在本校 } from './收录门槛/index.mjs';
-export { 查发布, 报名时间问题, 名称混了年份届次, 有核验过的官方来源 } from './发布门槛/index.mjs';
+export { 查发布, 报名时间问题, 名称混了年份届次, 有核验过的官方来源, 报名网址顶上, 有高校转发来源, 信息来源, 高校转发类型 } from './发布门槛/index.mjs';
 
 const 各关 = {
   标题闸: async 记录 => 查标题(记录),

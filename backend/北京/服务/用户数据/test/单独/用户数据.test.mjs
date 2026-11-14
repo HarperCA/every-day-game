@@ -145,3 +145,36 @@ describe('意见反馈', () => {
     expect(await 做(env, 'submitGeneralFeedback', { type: 'praise', content: 'x' })).toEqual({ ok: false, message: 'invalid_feedback_type' });
   });
 });
+
+// 昵称头像（2026-11-09）：组队里给队友看。头像只存网址、只收 https（小程序上传图片存哪以后定，先存微信给的头像地址或我们以后的图片地址）
+describe('昵称和头像', () => {
+  test('没填过是空的；保存后读回来；空的清掉', async () => {
+    const env = 环境();
+    expect((await 做(env, 'getProfile')).data).toEqual({ nickname: '', avatarUrl: '' });
+    expect((await 做(env, 'saveProfile', { nickname: ' 小黄 ', avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/a/132' })).data)
+      .toEqual({ nickname: '小黄', avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/a/132' });
+    expect((await 做(env, 'getProfile')).data).toEqual({ nickname: '小黄', avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/a/132' });
+    expect((await 做(env, 'saveProfile', { nickname: '', avatarUrl: '' })).data).toEqual({ nickname: '', avatarUrl: '' });
+  });
+  test('只改给了的那一项；昵称最多 30 字；头像只收 https、最长 500', async () => {
+    const env = 环境();
+    await 做(env, 'saveProfile', { nickname: '小黄', avatarUrl: 'https://a.cn/1.png' });
+    expect((await 做(env, 'saveProfile', { nickname: '老黄' })).data).toEqual({ nickname: '老黄', avatarUrl: 'https://a.cn/1.png' });
+    expect((await 做(env, 'saveProfile', { avatarUrl: 'https://a.cn/2.png' })).data).toEqual({ nickname: '老黄', avatarUrl: 'https://a.cn/2.png' });
+    expect((await 做(env, 'saveProfile', { nickname: '名'.repeat(31) })).message).toBe('invalid_nickname');
+    expect((await 做(env, 'saveProfile', { nickname: 123 })).message).toBe('invalid_nickname');
+    for (const avatarUrl of ['http://a.cn/1.png', 'wxfile://tmp/1.png', 'javascript:alert(1)', `https://a.cn/${'x'.repeat(500)}`, 7]) {
+      expect((await 做(env, 'saveProfile', { avatarUrl })).message, String(avatarUrl).slice(0, 30)).toBe('invalid_avatar_url');
+    }
+    expect((await 做(env, 'saveProfile', {})).message).toBe('invalid_profile');
+    expect((await 做(env, 'getProfile')).data).toEqual({ nickname: '老黄', avatarUrl: 'https://a.cn/2.png' });
+  });
+});
+
+test('微信明确拦截昵称时保留已有昵称', async () => {
+  const env = 环境();
+  await 做(env, 'saveProfile', { nickname: '原昵称' });
+  const 微信 = { msgSecCheck: async () => ({ result: { suggest: 'risky' } }) };
+  expect(await 做({ ...env, 微信 }, 'saveProfile', { nickname: '新昵称' })).toEqual({ ok: false, message: 'content_not_allowed' });
+  expect((await 做(env, 'getProfile')).data.nickname).toBe('原昵称');
+});

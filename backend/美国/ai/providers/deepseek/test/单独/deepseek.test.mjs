@@ -59,3 +59,28 @@ describe('DeepSeek 对话参数', () => {
     expect(r.message.reasoning_content).toBe('想一想');
   });
 });
+
+describe('DeepSeek 搜索 API（/v1/tools/search，按次计费；2026-11-07 找官网用）', () => {
+  test('searchApi 为 tools：POST /v1/tools/search，Bearer 密钥，带 query、count；site 拼成 site: 写在搜索词后面', async () => {
+    let sent;
+    const client = createDeepseek({ fetchImpl: async (url, init) => { sent = { url, body: JSON.parse(init.body), auth: init.headers.Authorization };
+      return new Response(JSON.stringify({ results: [
+        { rerank_score: 2.4, title: '关于举办2026年全国大学生数学建模竞赛的通知', url: 'https://www.mcm.edu.cn/a.html', snippet: '短', summary: '长摘要', content: '', site_name: '数模组委会', date: '2026-04-01T00:00:00+00:00', authority: 3 },
+        { title: '没网址' }] })); } });
+    const r = await client.search({ searchApi: 'tools', count: 20, query: '全国大学生数学建模竞赛', site: 'mcm.edu.cn', key: 'k' });
+    expect(sent.url).toBe('https://api.deepseek.com/v1/tools/search');
+    expect(sent.auth).toBe('Bearer k');
+    expect(sent.body).toEqual({ query: '全国大学生数学建模竞赛 site:mcm.edu.cn', count: 20 });
+    expect(r.references).toEqual([{ title: '关于举办2026年全国大学生数学建模竞赛的通知', url: 'https://www.mcm.edu.cn/a.html', content: '长摘要', date: '2026-04-01', authority: 3, rerank: 2.4, website: '数模组委会' }]);
+    expect(r).toMatchObject({ tokensIn: null, tokensOut: null });
+  });
+  test('搜索词超过 128 个字截掉；没结果交回空列表；HTTP 错误照常归类', async () => {
+    let sent;
+    const client = createDeepseek({ fetchImpl: async (url, init) => { sent = JSON.parse(init.body); return new Response(JSON.stringify({ results: [] })); } });
+    expect((await client.search({ searchApi: 'tools', query: '赛'.repeat(200), key: 'k' })).references).toEqual([]);
+    expect(sent.query).toHaveLength(128);
+    expect(sent.count).toBe(10);
+    const 坏 = createDeepseek({ fetchImpl: async () => new Response('{"error":{"message":"Insufficient Balance"}}', { status: 402 }) });
+    await expect(坏.search({ searchApi: 'tools', query: 'x', key: 'k' })).rejects.toMatchObject({ status: 402 });
+  });
+});

@@ -1,4 +1,5 @@
 # 竞赛雷达 北京入口：小程序的请求（/api/login、userData、publicData、clientLog）都从这里进；发提醒的调度也在这个进程里（2026-11-03）。
+# UMask=0077 保护库文件；上传头像（2026-11-12）写的文件代码里显式改成 644，nginx 能读，不用改这里。
 # 只听本机 4330，nginx 把 https://xiaohuiworks.cn/api/ 转进来。环境变量见同目录 README.md。
 [Unit]
 Description=竞赛雷达 北京入口（小程序接口 + 发提醒）

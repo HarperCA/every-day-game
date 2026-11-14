@@ -152,6 +152,25 @@ describe('总审核', () => {
     expect(删过).toEqual([{ key: 'https://xh.org.cn/n/1', 原因: '05 审核·三项核验：调用出错：Kimi 超时' }]);
     expect(out.changes).toEqual([]);
   });
+  test('放宽资料（只给维护用，2026-11-08 用户定“这些资料不一定要有，没有就算了”）：资料齐不齐缺字段、范围闸“缺少依据”的待定不挡，接着过收录门槛和三项核验；明确不收的照挡', async () => {
+    const ctx = fakeCtx({ now });
+    const 删过 = 装(ctx, { web: { 'https://a.cn/1': 正文 }, 候选们: [
+      抽过('https://a.cn/1', {}, { competition_name: { value: '全国某某设计竞赛', quote: '全国某某设计竞赛' }, organizer: { value: '', quote: '' }, participants: { value: '', quote: '' } }),
+      抽过('https://w.cn/1', {}, { competition_name: { value: '2026中小学智能未来邀请赛', quote: 'x' } }),
+    ] });
+    ctx.ai = { calls: [], 报告问题() {}, chat: async req => { ctx.ai.calls.push(req); return { data: req.purpose === 'admission' ? 收录再判 : 核对() }; } };
+    const out = await review.run({ runId: '2026-11-08', 放宽资料: true }, ctx);
+    expect(删过).toEqual([{ key: 'https://w.cn/1', 原因: '05 审核·范围闸：非大学生专业赛事' }]);
+    expect(out.items.map(x => x.key)).toEqual(['https://a.cn/1']);
+    expect(out.items[0].data.review.过程.join('；')).toMatch(/范围闸：缺少大学生参赛资格依据（放宽，不挡）/);
+    expect(out.items[0].data.review.过程.join('；')).toMatch(/资料齐不齐：缺少主办方.*（放宽，不挡）/);
+  });
+  test('不放宽（每晚流程）：同样缺资料的照旧挡在范围闸', async () => {
+    const ctx = fakeCtx({ now });
+    const 删过 = 装(ctx, { 候选们: [抽过('https://a.cn/1', {}, { competition_name: { value: '全国某某设计竞赛', quote: '全国某某设计竞赛' }, organizer: { value: '', quote: '' }, participants: { value: '', quote: '' } })] });
+    await review.run({ runId: '2026-11-08' }, ctx);
+    expect(删过).toEqual([{ key: 'https://a.cn/1', 原因: '05 审核·范围闸：缺少大学生参赛资格依据' }]);
+  });
   test('没有要审核的：什么都不调', async () => {
     const ctx = fakeCtx({ now });
     装(ctx, {});

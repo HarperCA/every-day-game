@@ -10,6 +10,7 @@
   backend -> releases/<时间>   当前用的那份；回退就把链接指回上一份，重启服务
   data/                主数据库、用户管理中心、报错日志三个库，同步状态（700，只有 ubuntu 能读）
   posters/             海报（nginx 直接给，所以单独放、755）
+  avatars/             用户上传的头像（2026-11-12，nginx 直接给，同海报单独放、755；入口服务要能写）
   secrets/             session.env（SESSION_SIGNING_KEY）、sync-secret、wechat-appsecret（700）
   beijing.env          其余环境变量，见 beijing.env.example
 ```
@@ -25,8 +26,8 @@
 | competition-radar-beijing.service | 小程序入口（登录、用户数据、首页和详情、收报错）+ 发提醒调度 | 4330 |
 | competition-radar-public-sync-receiver.service | 收美国推来的公开比赛和海报 | 4331 |
 | competition-radar-review-receiver.service | 收美国后台的审核结果 | 4333 |
-| competition-radar-user-sync.service / .timer | 每 10 分钟把用户数据推到美国（美国接收端部署好以后再开） | — |
-| nginx-competition-radar.conf | `/api/` → 4330；`/sync/public`、`/sync/review` 只放美国 IP；`/posters/` 给海报 | — |
+| competition-radar-user-sync.service / .timer | 每分钟把用户数据推到美国（2026-11-06 用户定） | — |
+| nginx-competition-radar.conf | `/api/` → 4330（`/api/uploadAvatar` 单独放 2m）；`/sync/public`、`/sync/review` 只放美国 IP；`/posters/` 给海报、`/avatars/` 给头像 | — |
 
 ## 更新代码
 

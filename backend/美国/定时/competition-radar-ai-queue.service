@@ -1,0 +1,13 @@
+# 竞赛雷达 后台多选的维护：看维护队列，有就用新维护的队列模式处理（数量不限，一直做到队列空），空的马上退出。见 美国/db/新维护/运行.mjs。
+# 2026-11-12 用户定：旧 AI 审查（Codex 核对原文，美国/db/维护/ 里的旧入口）删掉，改成新维护。名字沿用 ai-queue，线上不用换定时器。
+# 和每天 10:00 的新维护共用一把维护锁：那边在跑、或每晚流程在跑就跳过这一轮，下次再看。AI 额度用完、余额不足就停批，剩下的留在队列，暂停 2 小时。
+# 报告和每日那次放一起（文件名带“队列-”），只在真跑了比赛时写；过程进 journal。环境变量写在服务器上的 /etc/competition-radar/env。
+[Unit]
+Description=竞赛雷达 后台多选的维护（新维护队列模式，每 2 分钟看一眼）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/bin/bash -c "exec /usr/bin/env node ${BACKEND_DIR}/美国/db/新维护/运行.mjs --队列 --并发 4 --报告 /opt/competition-radar/logs/maintain-new/队列-$$(date +%%F-%%H%%M).json"

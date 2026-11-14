@@ -13,7 +13,10 @@ export default {
     final_url: { 说明: '跳转后的最终网址', 必填: false, 类型: '网址', 最长: LIMITS.网址, 旧: 'final_url' },
     // 旧数据里有 20 种写法（official_website、organizer_website、organizer_official_website……），
     // 建库时归并成下面几类；可选值等你定。
-    source_type: { 说明: '来源种类', 必填: true, 类型: '文字', 可选值: null, 旧: 'source_type' },
+    // 新流程写的：organizer_notice（主办方通知）、authority_notice（权威名单）、
+    // school_repost（高校转发，2026-11-12 用户定：找新一届追不到官方通知时用高校转发的通知发布；is_official 为假、validity_status 为 valid；
+    //   公开同步按它标 info_source='school_repost'，以后补上官方来源就自动算官方）。
+    source_type: { 说明: '来源种类（新流程写 organizer_notice 主办方通知、authority_notice 权威名单、school_repost 高校转发）', 必填: true, 类型: '文字', 可选值: null, 旧: 'source_type' },
     is_official: { 说明: '是不是官方来源', 必填: true, 类型: '是否', 默认: false, 旧: 'is_official' },
     validity_status: { 说明: '核验结果', 必填: true, 类型: '文字', 可选值: ['unchecked', 'valid', 'valid_auxiliary', 'valid_as_lead', 'invalid', 'content_unavailable'], 默认: 'unchecked', 旧: 'validity_status' },
     title: { 说明: '网页标题', 必填: false, 类型: '文字', 最长: LIMITS.短, 旧: 'title' },

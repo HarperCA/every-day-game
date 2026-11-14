@@ -61,3 +61,74 @@ describe('北京端拒收', () => {
     expect((await 发(JSON.stringify({ 种类: '纠错', 编号: 'feedback-没有', 改动: { status: 'accepted' }, 读到的更新时间: 'x' }))).状态).toBe(404);
   });
 });
+
+// 校赛（2026-11-08 用户定：校赛在美国审核通过才能在小程序发布）：后台审核管理员申请、校赛，结果写回北京正本。
+// 北京副数据库的 校赛.处理管理员申请、校赛.处理校赛 另一个智能体在写，这里注入假的（照约好的参数：(db, 编号, { status, review_note }, { 读到的更新时间, now })）。
+function 假校赛操作() {
+  const 行们 = {
+    school_admin: new Map([['sa-1', { id: 'sa-1', user: 'user-1', school: '福州大学', real_name: '张老师', status: '待审核', review_note: null, updated_at: 'T-1', version: 1 }]]),
+    school_contest: new Map([['sc-1', { id: 'sc-1', school: '福州大学', title: '校数学竞赛', status: '待审核', review_note: null, updated_at: 'T-1', version: 1 }]]),
+  };
+  const 调用 = [];
+  const 处理 = 表 => (db, 编号, 改动, 选项) => {
+    调用.push({ 表, 编号, 改动, 读到的更新时间: 选项.读到的更新时间 });
+    const 原 = 行们[表].get(编号);
+    if (!原) throw new Error(`${表}_not_found`);
+    if (原.updated_at !== 选项.读到的更新时间) throw new Error('feedback_conflict');
+    const 新 = { ...原, ...改动, updated_at: 选项.now.toISOString(), version: 原.version + 1 };
+    行们[表].set(编号, 新);
+    return 新;
+  };
+  return { 操作: { 处理管理员申请: 处理('school_admin'), 处理校赛: 处理('school_contest') }, 调用 };
+}
+
+describe('校赛：美国审核、北京改正本', () => {
+  function 准备校赛() {
+    const 假 = 假校赛操作();
+    const 用户库 = openUserDb({ file: ':memory:', now: () => T0 });
+    const 副本库 = 用户副本.open({ file: ':memory:', now: () => T0 });
+    const fetch = async (地址, init) => {
+      const 头 = Object.fromEntries(Object.entries(init.headers).map(([k, v]) => [k.toLowerCase(), v]));
+      const { 状态, 内容 } = await 接收({ 方法: 'POST', 头, 正文: init.body }, { 用户库, 秘钥, now: new Date(Number(头[时间头])), 校赛操作: 假.操作 });
+      return { ok: 状态 < 300, status: 状态, json: async () => 内容 };
+    };
+    const 传 = 参数 => 回传({ 地址: 'https://bj.example/sync/review', 秘钥, 副本库, fetch, now: T0, ...参数 });
+    return { 假, 副本库, 传 };
+  }
+  test('管理员申请通过：调 处理管理员申请，美国副本马上跟上', async () => {
+    const t = 准备校赛();
+    const 行 = await t.传({ 种类: '校赛管理员', 编号: 'sa-1', 改动: { status: '已通过', review_note: '' }, 读到的更新时间: 'T-1' });
+    expect(行).toMatchObject({ id: 'sa-1', status: '已通过' });
+    expect(t.假.调用).toEqual([{ 表: 'school_admin', 编号: 'sa-1', 改动: { status: '已通过', review_note: '' }, 读到的更新时间: 'T-1' }]);
+    expect(用户副本.一条(t.副本库, 'school_admin', 'sa-1')).toMatchObject({ status: '已通过' });
+  });
+  test('校赛发布、下架：调 处理校赛，美国副本跟上；读到的是旧的报冲突', async () => {
+    const t = 准备校赛();
+    expect(await t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已发布' }, 读到的更新时间: 'T-1' })).toMatchObject({ status: '已发布' });
+    expect(用户副本.一条(t.副本库, 'school_contest', 'sc-1')).toMatchObject({ status: '已发布' });
+    await expect(t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已下架', review_note: '信息有误' }, 读到的更新时间: 'T-1' })).rejects.toThrow('feedback_conflict');
+    const 下架 = await t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已下架', review_note: '信息有误' }, 读到的更新时间: T0.toISOString() });
+    expect(下架).toMatchObject({ status: '已下架', review_note: '信息有误' });
+  });
+  test('状态只能是约好的那几个；拒绝、下架要写说明；不能改别的字段——都不调北京的操作', async () => {
+    const t = 准备校赛();
+    await expect(t.传({ 种类: '校赛管理员', 编号: 'sa-1', 改动: { status: '已发布' }, 读到的更新时间: 'T-1' })).rejects.toThrow('invalid_school_status');
+    await expect(t.传({ 种类: '校赛管理员', 编号: 'sa-1', 改动: { status: '待审核' }, 读到的更新时间: 'T-1' })).rejects.toThrow('invalid_school_status');
+    await expect(t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已通过' }, 读到的更新时间: 'T-1' })).rejects.toThrow('invalid_school_status');
+    await expect(t.传({ 种类: '校赛管理员', 编号: 'sa-1', 改动: { status: '已拒绝', review_note: '  ' }, 读到的更新时间: 'T-1' })).rejects.toThrow('review_note_required');
+    await expect(t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已下架' }, 读到的更新时间: 'T-1' })).rejects.toThrow('review_note_required');
+    await expect(t.传({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已发布', title: '改标题' }, 读到的更新时间: 'T-1' })).rejects.toThrow('field_not_editable');
+    expect(t.假.调用).toEqual([]);
+    expect(用户副本.条数(t.副本库)).toEqual({});
+  });
+  test('找不到 404、冲突 409；北京还没有校赛操作时明确拒收', async () => {
+    const 假 = 假校赛操作();
+    const 发 = (请求, 校赛操作 = 假.操作) => {
+      const 正文 = JSON.stringify(请求); const 时间 = String(Date.now());
+      return 接收({ 方法: 'POST', 头: { [时间头]: 时间, [签名头]: 签名(秘钥, 时间, 正文) }, 正文 }, { 用户库: openUserDb({ file: ':memory:' }), 秘钥, now: new Date(), 校赛操作 });
+    };
+    expect((await 发({ 种类: '校赛', 编号: 'sc-没有', 改动: { status: '已发布' }, 读到的更新时间: 'T-1' })).状态).toBe(404);
+    expect((await 发({ 种类: '校赛管理员', 编号: 'sa-1', 改动: { status: '已通过' }, 读到的更新时间: '旧的' })).状态).toBe(409);
+    expect(await 发({ 种类: '校赛', 编号: 'sc-1', 改动: { status: '已发布' }, 读到的更新时间: 'T-1' }, null)).toMatchObject({ 状态: 422, 内容: { message: 'school_review_not_ready' } });
+  });
+});

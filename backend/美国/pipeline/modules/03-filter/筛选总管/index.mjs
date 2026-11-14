@@ -15,6 +15,7 @@
 import { 标题筛选 } from '../标题筛选/index.mjs';
 import { Jev筛选 } from '../Jev筛选/index.mjs';
 import { Codex代理追踪 } from '../Codex代理追踪/index.mjs';
+import { 比赛身份, 搜索候选键 } from '../../../common/届次与赛道.mjs';
 import { 拒过改动 } from '../../../common/拒过.mjs';
 import { 读不了 } from './读不了的网站.mjs';
 
@@ -79,10 +80,13 @@ export function createRun(parts = DEFAULT_PARTS) {
       if (r.结果 !== '找到官方来源') { 线索.push({ key: 通知.key, 原因: 写明('Codex代理追踪', `${r.结果}：${r.原因}`) }); continue; }
       const 来源 = r.官方来源[0];
       删.push({ key: 通知.key, 原因: 写明('Codex代理追踪', `已追溯到官方来源 ${来源.网址}，官方来源作为新候选往下走`) });
-      if (新候选.has(来源.网址) || ctx.item(来源.网址)) continue;   // 今晚已经是候选了，不重复加
-      新候选.add(来源.网址);
-      items.push({ key: 来源.网址, kind: 'candidate', status: '进行中', result: '追溯到的官方来源', reason: `由 ${通知.key} 追溯而来：${r.原因}`,
-        data: { name: r.比赛名 || 通知.data.name, url: 来源.网址, snippet: 来源.摘录, 渠道们: ['Codex 代理追踪'], 追溯自: 通知.key,
+      const 名称 = r.比赛名 || 通知.data.name;
+      const 赛道 = 比赛身份(通知.data.name, 通知.data.track_name).赛道 || 比赛身份(名称).赛道;
+      const key = 搜索候选键(来源.网址, 名称, 赛道);
+      if (新候选.has(key) || ctx.item(key)) continue;   // 今晚已经是候选了，不重复加
+      新候选.add(key);
+      items.push({ key, kind: 'candidate', status: '进行中', result: '追溯到的官方来源', reason: `由 ${通知.key} 追溯而来：${r.原因}`,
+        data: { name: 名称, ...(赛道 && { track_name: 赛道 }), url: 来源.网址, snippet: 来源.摘录, 渠道们: ['Codex 代理追踪'], 追溯自: 通知.key,
           追溯: { 结果: r.结果, 理由: r.原因, 官方来源: r.官方来源 }, 筛选: { 去向: '读详情', 类别: 'traced_official', 原因: 'Codex 代理追踪追到的官方来源' } } });
     }
 

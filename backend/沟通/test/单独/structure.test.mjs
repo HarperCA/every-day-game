@@ -15,13 +15,7 @@ describe('来往', () => {
     expect(folders.sort()).toEqual([...CHANNELS].sort());
     for (const c of CHANNELS) for (const f of ['README.md', '美国端.mjs', '北京端.mjs']) expect(fs.existsSync(path.join(TALK_DIR, c, f)), `${c}/${f}`).toBe(true);
   });
-  test('还没实现的两端会明确报错，不会悄悄返回假结果（只剩代读网页没实现）', async () => {
-    for (const c of CHANNELS.filter(名 => 名 === '代读网页')) for (const side of ['美国端', '北京端']) {
-      const mod = await import(`../../${c}/${side}.mjs`);
-      const [fn] = Object.values(mod);
-      await expect(fn({}, {}), `${c}/${side}`).rejects.toThrow('还没实现');
-    }
-  });
+  // 2026-11-09 代读网页做完，四条来往都能用了；各自的行为测试在每个文件夹的 test/ 里
 });
 
 describe('引用规矩', () => {
@@ -30,7 +24,10 @@ describe('引用规矩', () => {
     for (const target of importsOf(file)) {
       const to = relTo(BACKEND_DIR, target);
       // 报错库是北京收集报错自己的库文件（匿名，不进副数据库），用户数据同步要读它（2026-11-02）
-      const allowed = to.startsWith('沟通/') || to.startsWith('共用/工具/') || ['共用/db/index.mjs', '美国/db/index.mjs', '北京/主数据库/index.mjs', '北京/副数据库/index.mjs', '北京/服务/收集报错/报错库.mjs'].includes(to);
+      // 代读网页的北京端直接用 美国/web 的 读网页、取源码（2026-11-09）：安全检查、robots、爬虫身份、读正文和美国是同一份代码；
+      // 北京打包时要带上 美国/web（不带 test），见 代读网页/README.md。只放 代读网页/ 这一个文件夹、只放 web 的入口
+      const 代读用web = relTo(BACKEND_DIR, file).startsWith('沟通/代读网页/') && to === '美国/web/index.mjs';
+      const allowed = 代读用web || to.startsWith('沟通/') || to.startsWith('共用/工具/') || ['共用/db/index.mjs', '美国/db/index.mjs', '北京/主数据库/index.mjs', '北京/副数据库/index.mjs', '北京/服务/收集报错/报错库.mjs'].includes(to);
       if (!allowed) violations.push(`${relTo(BACKEND_DIR, file)} 引用了 ${to}`);
     }
   }

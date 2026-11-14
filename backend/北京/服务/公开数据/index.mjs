@@ -9,7 +9,7 @@
 import { 报名状态, 时间可靠度 } from '../../../共用/推荐排序/index.mjs';
 import { 公开 } from '../../主数据库/index.mjs';
 import { 用户 } from '../../副数据库/index.mjs';
-import { 呈现首页 } from '../../用户呈现模块/index.mjs';
+import { 信息来源, 呈现首页 } from '../../用户呈现模块/index.mjs';
 
 const 编号格式 = /^[\w.:-]{1,200}$/;
 const 北京日期 = t => new Date(t.getTime() + 8 * 3600 * 1000).toISOString().slice(0, 10);
@@ -59,6 +59,8 @@ function 详情(item, now) {
     registration_status: 报名状态(item, now),
     ...推荐字段(item.recommendation),
     ...学校时间提示(item),
+    // 高校转发（2026-11-12）：infoSource 'official' | 'school_repost'，infoSourceUrl 转发页网址；旧数据当 official
+    ...信息来源(item),
   };
 }
 

@@ -31,12 +31,15 @@ import * as codex from './providers/codex/index.mjs';
 import * as deepseek from './providers/deepseek/index.mjs';
 import * as jev from './providers/jev/index.mjs';
 import * as kimi from './providers/kimi/index.mjs';
+import * as tavily from './providers/tavily/index.mjs';
 
 export { AiError, ERROR_KINDS } from './common/errors.mjs';
 export const PURPOSES = DEFAULT_CONFIG.purposes;
+// 默认配置：本地试跑临时换某个用途的接口时，拿它改一份交给 createAi（2026-11-08 新维护本地试跑把写爬虫脚本换成 Kimi）
+export { DEFAULT_CONFIG };
 const AI_DIR = path.dirname(fileURLToPath(import.meta.url));
 
-export function createAi({ config = DEFAULT_CONFIG, providers = { deepseek, kimi, baidu, jev, codex }, keys = createKeyStore(),
+export function createAi({ config = DEFAULT_CONFIG, providers = { deepseek, kimi, baidu, jev, codex, tavily }, keys = createKeyStore(),
   usage = createUsageStore(process.env.AI_USAGE_DB || path.join(AI_DIR, 'usage.db')) } = {}) {
   const call = createCaller({ config, providers, keys, usage });
   return {

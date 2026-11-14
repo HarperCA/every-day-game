@@ -1,6 +1,6 @@
 // 建库：用几条样例旧记录跑一遍 排计划 → 写进内存里的库 → 核对，覆盖合并、拆开、重复届次、规整、状态对应、不丢数据。
 import { describe, expect, test } from 'vitest';
-import { openDb } from '../../../index.mjs';
+import { openDb, 搜索记忆 } from '../../../index.mjs';
 import { 核对 } from '../../核对.mjs';
 import { 排计划 } from '../../转换.mjs';
 import { 搬比赛 } from '../../搬比赛.mjs';
@@ -86,7 +86,8 @@ describe('建库', () => {
   test('写进库、再核对：每个有值的旧字段都找得到', () => {
     const db = openDb({ file: ':memory:' });
     const 写入 = 搬比赛(计划, db);
-    expect(写入).toMatchObject({ 比赛: 3, 届次: 5 });
+    expect(写入).toMatchObject({ 比赛: 3, 届次: 5, 搜索记忆: 3 });   // 每个比赛一份初始的搜索记忆（2026-11-07）
+    for (const c of db.list('competition')) expect(搜索记忆.读(db, c.id).内容).toBe(搜索记忆.初始(c.data));
     const 结果 = 核对(样例, db);
     expect(结果.找不到).toEqual([]);
     expect(结果.检查了).toBeGreaterThan(50);

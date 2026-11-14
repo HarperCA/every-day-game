@@ -28,7 +28,7 @@ function 列出(db, 现在) {
   const 删了的比赛编号 = new Set(删了的比赛.map(c => c.id));
   const 届次们 = db.find('edition', { deleted_at: { isNull: false } }, { orderBy: 'deleted_at', ...全部 })
     .filter(e => !删了的比赛编号.has(e.competition_id))
-    .map(e => ({ id: e.id, edition_name: e.edition_name, competition_id: e.competition_id, deleted_at: e.deleted_at, deleted_by: e.deleted_by, 还剩天数: 还剩(e.deleted_at, 现在) }));
+    .map(e => ({ id: e.id, edition_name: e.edition_name, competition_id: e.competition_id, deleted_at: e.deleted_at, deleted_by: e.deleted_by, 理由: e.deleted_by?.startsWith('维护') ? (e.status_reason || []).at(-1) ?? '' : '', 还剩天数: 还剩(e.deleted_at, 现在) }));
   return { 比赛们, 届次们 };
 }
 

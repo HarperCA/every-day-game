@@ -1,0 +1,13 @@
+# 竞赛雷达 新维护（2026-11-09 上线）：按调度挑到期的比赛，最多 45 个、同时 4 个；只改确定事实（报名/比赛时间、报名网址、费用），其余只补空。
+# 报告写 /opt/competition-radar/logs/maintain-new/日期-时分.json，过程进 journal。旧的 competition-radar-maintain 保持关着。
+# 2026-11-12 照线上的 /etc/systemd/system/ 补进仓库。
+[Unit]
+Description=竞赛雷达 新维护（每天 10:00，最多 45 个）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/competition-radar/env
+ExecStart=/bin/bash -c "exec /usr/bin/env node ${BACKEND_DIR}/美国/db/新维护/运行.mjs --上限 45 --并发 4 --报告 /opt/competition-radar/logs/maintain-new/$$(date +%%F-%%H%%M).json"
+TimeoutStartSec=3h

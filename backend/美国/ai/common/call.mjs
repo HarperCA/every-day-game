@@ -72,8 +72,9 @@ export function createCaller({ config, providers, keys, usage, now = () => Date.
         }
         checkDailyLimit(name, identity);
         const key = provider.needsKey === false ? null : keys.get(name);
-        const res = await provider[capability]({ ...request, model, effort: cfg.effort, codexSearch: cfg.codexSearch,
-          thinking: cfg.thinking, temperature: cfg.temperature, maxTokens: cfg.maxTokens, key, signal });
+        const res = await provider[capability]({ ...request, model, effort: cfg.effort, codexSearch: cfg.codexSearch, codexSearchLimit: cfg.codexSearchLimit,
+          thinking: cfg.thinking, ...(cfg.stream ? { stream: true } : {}), temperature: cfg.temperature, maxTokens: cfg.maxTokens,
+          ...(cfg.searchApi ? { searchApi: cfg.searchApi, count: cfg.count } : {}), key, signal });
         const ms = now() - started;
         const cost = costOf(config.prices, name, model, res.tokensIn, res.tokensOut);
         usage.recordCall({ ...base, tokensIn: res.tokensIn ?? null, tokensOut: res.tokensOut ?? null, cost, ms, ok: true });
@@ -83,7 +84,7 @@ export function createCaller({ config, providers, keys, usage, now = () => Date.
         const error = raw instanceof AiError ? raw : (provider.classifyError?.(raw) || toAiError(raw, name));
         error.message = keys.mask(error.message);
         usage.recordCall({ ...base, ms: now() - started, ok: false, errorKind: error.kind, error: error.message });
-        if (!['已暂停', '额度用完'].includes(error.kind)) {
+        if (!['已暂停', '额度用完', '搜索超限'].includes(error.kind)) {
           state.fails += 1;
           if (error.kind === '密钥错误' || state.fails >= config.breaker.failures) {
             state.pausedUntil = now() + config.breaker.pauseMs;

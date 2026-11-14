@@ -18,6 +18,7 @@
 //   新建(db, 比赛id, 内容, 选项)             挂在没删的比赛下，顺序接着最大的往下排（删了的也算），状态默认待人工审核
 //   编辑(db, id, 改动, 版本号, 选项)          只写真正变了的字段，并进 manual_fields → { id, version, data, 改了 }
 //   改状态(db, id, 状态, 版本号, 选项)        已发布、已归档、待人工审核；人工改成待人工审核又没理由的补一条理由
+//   待审归档(db, id, 版本号, { 理由 }, 选项)  批量归档用：待人工审核 → 已归档，理由接在原来的后面；人工定过状态的不动
 //   删除(db, id, 选项)                      只标这一届（进回收站）
 //   恢复(db, id, 选项)                      比赛还在回收站时不能单独恢复
 //   彻底删除(db, id, { at })                 回收站到期清理用：来源、处理记录连带删
@@ -163,6 +164,22 @@ export function 归档(db, id, 版本号, { 下一届预计 = null } = {}, 选�
   });
 }
 
+// 批量归档（维护/批量归档/，2026-11-12）：待人工审核 → 已归档，记状态时间，理由接在原来的后面，留一条“批量归档”后台记录。
+// 人工定过状态的（manual_fields 含 status）不动。哪些要归由维护/批量归档/定。
+export function 待审归档(db, id, 版本号, { 理由 } = {}, 选项) {
+  const { 操作人, at } = 默认选项(选项);
+  if (typeof 理由 !== 'string' || !理由.trim()) throw new DbError('请求有误', `批量归档要写理由：${id}`, { table: 'edition', id });
+  return db.transaction(tx => {
+    const 原 = 现有(tx, 'edition', id, '届次');
+    版本要对(原, 版本号, id);
+    if (原.data.status !== '待人工审核') throw new DbError('请求有误', `只归档待人工审核的届次：${id} 现在是${原.data.status}`, { table: 'edition', id });
+    if ((原.data.manual_fields || []).includes('status')) throw new DbError('请求有误', `${id} 的状态是人工定的，不批量归档`, { table: 'edition', id });
+    const 回 = tx.update('edition', id, { status: '已归档', status_at: at, status_reason: [...(原.data.status_reason || []), 理由], updated_by: 操作人 }, 版本号);
+    记日志(tx, '批量归档', 'edition', id, { 名称: 原.data.edition_name, 从: '待人工审核', 改成: '已归档', 理由, 操作人 }, at);
+    return 回;
+  });
+}
+
 export function 删除(db, id, 选项) {
   const { 操作人, at } = 默认选项(选项);
   return db.transaction(tx => {
@@ -182,6 +199,9 @@ export function 恢复(db, id, 选项) {
       throw new DbError('请求有误', `这一届所在的比赛 ${届次.data.competition_id} 也在回收站里，先恢复比赛`, { table: 'edition', id });
     }
     tx.取消删除('edition', id);
+    // 人工从回收站恢复的待审届次，算人工定的，AI 审查不再把它删回去（2026-11-07）
+    const 恢复后 = tx.get('edition', id);
+    if (恢复后.data.status === '待人工审核') tx.update('edition', id, { manual_fields: 并进人工字段(恢复后.data.manual_fields, ['status']) }, 恢复后.version);
     记日志(tx, '恢复届次', 'edition', id, { 名称: 届次.data.edition_name, 比赛: 届次.data.competition_id, 操作人 }, at);
     return {};
   });

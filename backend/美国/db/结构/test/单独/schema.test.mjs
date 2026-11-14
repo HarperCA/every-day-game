@@ -31,4 +31,16 @@ describe('建库', () => {
     const db = openDb({ file: ':memory:' });
     expect(db[RAW].prepare('PRAGMA table_info(edition)').all().map(c => c.name)).toContain('next_edition_estimate');
   });
+  test('003：搜索记忆表，每个比赛一份 Markdown（新维护用，2026-11-07）', () => {
+    const db = openDb({ file: ':memory:' });
+    expect(db[RAW].prepare('PRAGMA table_info(search_memory)').all().map(c => c.name).sort()).toEqual(['content', 'created_at', 'id', 'updated_at', 'updated_by', 'version']);
+    expect(db[RAW].prepare('PRAGMA foreign_key_list(search_memory)').all().map(k => `${k.from}→${k.table}.${k.to}`)).toEqual(['id→competition.id']);
+  });
+  test('004：爬虫脚本表、指纹记录表，每个比赛一行（新维护用，2026-11-08）', () => {
+    const db = openDb({ file: ':memory:' });
+    const 列 = 表 => db[RAW].prepare(`PRAGMA table_info(${表})`).all().map(c => c.name).sort();
+    expect(列('crawl_script')).toEqual(['created_at', 'fail_count', 'id', 'last_error', 'last_ok_at', 'list_url', 'needs_browser', 'prompt_version', 'steps', 'updated_at', 'updated_by', 'version', 'written_by']);
+    expect(列('page_fingerprint')).toEqual(['changed_at', 'checked_at', 'created_at', 'etag', 'hash', 'id', 'items', 'last_modified', 'list_url', 'updated_at', 'version']);
+    for (const 表 of ['crawl_script', 'page_fingerprint']) expect(db[RAW].prepare(`PRAGMA foreign_key_list(${表})`).all().map(k => `${k.from}→${k.table}.${k.to}`)).toEqual(['id→competition.id']);
+  });
 });

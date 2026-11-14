@@ -10,7 +10,8 @@
 //   → 正文太短（默认不到 300 字，多半是脚本加载的空壳页）
 // 只用自己的程序读，不交给 Kimi（2026-11-01 用户定：先做最简单的，按记下的状态看空壳和读不通的多不多再说）。
 //
-// 选项：signal（停止信号）、最少字数；fetchImpl、限速、安全检查、robots 只给测试换假的
+// 选项：signal（停止信号）、最少字数；超时、最大字节、最多跳转 不给就用下载的默认（北京代读用 15 秒、3MB、5 次，2026-11-09）；
+//       fetchImpl、限速、安全检查、robots 只给测试换假的
 import { 下载 } from '../下载/index.mjs';
 import { robots允许, 建robots检查 } from '../下载/robots.mjs';
 import { 转文字 } from '../编码/index.mjs';
@@ -31,7 +32,10 @@ export function 内容类型(contentType = '', body = Buffer.alloc(0), url = '')
   return 'unsupported';
 }
 
-export async function 读网页(网址, { signal, 最少字数 = MIN_TEXT_CHARS, fetchImpl, 限速 = 默认限速, 安全检查 = checkUrlSafety, robots } = {}) {
+// 只把给了的上限传给下载，没给的用下载自己的默认（取源码也用）
+export const 下载上限 = ({ 超时, 最大字节, 最多跳转 }) => Object.fromEntries(Object.entries({ 超时, 最大字节, 最多跳转 }).filter(([, v]) => v != null));
+
+export async function 读网页(网址, { signal, 最少字数 = MIN_TEXT_CHARS, fetchImpl, 限速 = 默认限速, 安全检查 = checkUrlSafety, robots, 超时, 最大字节, 最多跳转 } = {}) {
   const 开始 = Date.now();
   const 交回 = fields => makeResult({ ...fields, ms: Date.now() - 开始 });
   const 查robots = robots || (fetchImpl ? 建robots检查({ fetchImpl }) : robots允许);
@@ -45,7 +49,7 @@ export async function 读网页(网址, { signal, 最少字数 = MIN_TEXT_CHARS,
     await 限速.等候(hostOf(url));
     let page;
     try {
-      page = await 下载(url, { signal, ...(fetchImpl ? { fetchImpl } : {}),
+      page = await 下载(url, { signal, ...下载上限({ 超时, 最大字节, 最多跳转 }), ...(fetchImpl ? { fetchImpl } : {}),
         跳转前检查: async next => (await 安全检查(next)) || ((await 查robots(next)) ? null : 'robots.txt 不允许抓取') });
     } catch (error) {
       if (error?.kind) return 交回({ url, status: error.kind, error: error.message, httpStatus: error.httpStatus });

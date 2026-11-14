@@ -4,6 +4,8 @@
 //   openUserDb({ file, readOnly })   打开副数据库（默认 DB_DIR/用户管理中心.db），补执行 结构/ 里没执行过的文件
 //                                    readOnly：美国那份同步过来的副本用只读方式打开
 //   用户.*  收藏.*  提醒.*  意见反馈.*  纠错.*  偏好.*     新建、写入、读取工具（操作/，每张表一个文件）
+//   组队.*                           队伍、队员、组队申请（2026-11-08，操作/组队.mjs）
+//   校赛.*                           校赛管理员申请、邀请码、本校学生、校赛（2026-11-08，操作/校赛.mjs）
 //   TABLES                           副数据库的表
 // 只管存取，不做业务判断：身份由服务端核验（不收客户端传的 openid）、提交频率限制、提醒什么时候发，都在 服务/。
 import path from 'node:path';
@@ -18,6 +20,12 @@ import * as 纠错 from './操作/纠错.mjs';
 import * as 偏好 from './操作/偏好.mjs';
 
 export { TABLES, 用户, 收藏, 提醒, 意见反馈, 纠错, 偏好 };
+// 组队（2026-11-08）：队伍、队员、组队申请的存取（操作/组队.mjs）
+import * as 组队 from './操作/组队.mjs';
+export { 组队 };
+// 校赛（2026-11-08）：管理员申请、邀请、本校学生、校赛的存取（操作/校赛.mjs）；处理管理员申请、处理校赛 给美国审核结果回传用
+import * as 校赛 from './操作/校赛.mjs';
+export { 校赛 };
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const STRUCTURE_DIR = path.join(HERE, '结构');

@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import * as web from '../../index.mjs';
 import { 读网页, 内容类型 } from '../../读网页/index.mjs';
+import { 取源码 } from '../../读网页/源码.mjs';
+import { 包装页面 } from '../../浏览器/index.mjs';
 import { checkResult, isRetryable, STATUSES } from '../../读网页/结果.mjs';
 import { normalizeUrl } from '../../读网页/网址.mjs';
 import { checkUrlSafety } from '../../读网页/安全.mjs';
@@ -30,7 +32,8 @@ function 假fetch(表) {
     const r = typeof 表[url] === 'function' ? 表[url](init) : 表[url];
     if (!r) return new Response('not found', { status: 404, headers: { 'content-type': 'text/html' } });
     if (r instanceof Error) throw r;
-    return new Response(r.body ?? '', { status: r.status ?? 200, headers: r.headers ?? { 'content-type': 'text/html; charset=utf-8' } });
+    const 无正文 = [204, 304].includes(r.status);   // 这两种状态不能带正文，否则 Response 报错
+    return new Response(无正文 ? null : (r.body ?? ''), { status: r.status ?? 200, headers: r.headers ?? { 'content-type': 'text/html; charset=utf-8' } });
   };
   fn.calls = calls;
   return fn;
@@ -221,17 +224,65 @@ describe('读网页（总函数）', () => {
   });
 });
 
+// 2026-11-08 新维护：爬虫脚本要网页源码（取选择器），并且先问网站有没有更新（ETag、Last-Modified，没更新回 304）
+describe('取源码', () => {
+  const 无限速 = 建限速({ 间隔: 0 });
+  const 选项 = (表, extra = {}) => ({ fetchImpl: 假fetch(表), 限速: 无限速, 安全检查: async () => null, robots: async () => true, ...extra });
+  test('交回源码（按编码转好）和网站给的 ETag、最后修改时间', async () => {
+    const html = iconv.encode('<html><body><ul><li><a href="/a">通知</a></li></ul></body></html>', 'gbk');
+    const r = await 取源码('https://a.cn/list', 选项({ 'https://a.cn/list': { body: html, headers: { 'content-type': 'text/html; charset=gbk', etag: '"v1"', 'last-modified': 'Sat, 01 Nov 2026 00:00:00 GMT' } } }));
+    expect(r).toMatchObject({ url: 'https://a.cn/list', finalUrl: 'https://a.cn/list', status: '成功', httpStatus: 200, etag: '"v1"', 最后修改: 'Sat, 01 Nov 2026 00:00:00 GMT' });
+    expect(r.html).toContain('<a href="/a">通知</a>');
+  });
+  test('带上次的 ETag、最后修改时间去问；网站回 304 就是“没更新”，不下载正文', async () => {
+    let 头;
+    const r = await 取源码('https://a.cn/list', 选项({ 'https://a.cn/list': init => { 头 = init.headers; return { status: 304, headers: { etag: '"v1"' } }; } }, { etag: '"v1"', 最后修改: 'Sat, 01 Nov 2026 00:00:00 GMT' }));
+    expect(头).toMatchObject({ 'if-none-match': '"v1"', 'if-modified-since': 'Sat, 01 Nov 2026 00:00:00 GMT' });
+    expect(r).toMatchObject({ status: '没更新', httpStatus: 304, html: '', etag: '"v1"' });
+  });
+  test('不是网页（PDF 等）交回不支持的类型；网址不安全、robots 不允许、HTTP 错误照读网页的状态交回', async () => {
+    expect((await 取源码('https://a.cn/f', 选项({ 'https://a.cn/f': { body: 做pdf('x'), headers: { 'content-type': 'application/pdf' } } }))).status).toBe('不支持的类型');
+    expect((await 取源码('https://a.cn/x', 选项({}, { 安全检查: async () => '不读内网地址' }))).status).toBe('网址不安全');
+    expect((await 取源码('https://a.cn/x', 选项({}, { robots: async () => false }))).status).toBe('robots不允许');
+    expect((await 取源码('https://a.cn/x', 选项({})))).toMatchObject({ status: 'HTTP错误', httpStatus: 404 });
+  });
+});
+
+describe('浏览器（包装 Playwright 的页面，只开放打开、等待、点击、源码）', () => {
+  function 假页面() {
+    const 记 = [];
+    return { 记, page: {
+      goto: async (url, o) => { 记.push(['goto', url, o.waitUntil]); return { status: () => 200 }; },
+      waitForLoadState: async () => {}, waitForSelector: async (sel, o) => { 记.push(['wait', sel, o.timeout]); },
+      waitForTimeout: async ms => { 记.push(['sleep', ms]); }, click: async (sel, o) => { 记.push(['click', sel, o.timeout]); },
+      content: async () => '<html><body>ok</body></html>', url: () => 'https://a.cn/final',
+    } };
+  }
+  test('打开前查网址安全，不安全不打开；打开、等待、点击、源码照转给 Playwright，限时', async () => {
+    const { 记, page } = 假页面();
+    const 页 = 包装页面(page, { 安全检查: async u => (u.includes('10.0.0.1') ? '不读内网地址' : null), 超时: 20000 });
+    await expect(页.打开('http://10.0.0.1/')).rejects.toThrow('不读内网地址');
+    expect(await 页.打开('https://a.cn/')).toEqual({ httpStatus: 200, 网址: 'https://a.cn/final' });
+    await 页.等待({ 选择器: 'ul li' });
+    await 页.等待({ 毫秒: 500 });
+    await 页.点击('a.more');
+    expect(await 页.源码()).toBe('<html><body>ok</body></html>');
+    expect(页.网址()).toBe('https://a.cn/final');
+    expect(记).toEqual([['goto', 'https://a.cn/', 'domcontentloaded'], ['wait', 'ul li', 20000], ['sleep', 500], ['click', 'a.more', 20000]]);
+  });
+});
+
 describe('入口和结构', () => {
   test('入口只给 读网页（外加网址规范化、结果的状态和检查）', () => {
-    expect(Object.keys(web).sort()).toEqual(['LINK_KINDS', 'MIN_TEXT_CHARS', 'STATUSES', 'checkResult', 'isRetryable', 'normalizeUrl', '读网页'].sort());
+    expect(Object.keys(web).sort()).toEqual(['LINK_KINDS', 'MIN_TEXT_CHARS', 'STATUSES', 'checkResult', 'isRetryable', 'normalizeUrl', '读网页', '取源码', '建浏览器', '带北京兜底', '代读'].sort());
   });
   test('文件夹：读网页（总函数）、下载、编码、正文、pdf、word、test，各有 README', () => {
     const dirs = fs.readdirSync(WEB, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort();
-    expect(dirs).toEqual(['pdf', 'test', 'word', '下载', '正文', '编码', '读网页'].sort());
+    expect(dirs).toEqual(['pdf', 'test', 'word', '下载', '正文', '编码', '读网页', '浏览器'].sort());
     for (const d of dirs.filter(d => d !== 'test')) expect(fs.existsSync(path.join(WEB, d, 'README.md')), d).toBe(true);
   });
   test('引用规矩：只有 读网页 调其他几块；其他几块互不引用，只用自己的文件、Environment 里的库和 共用/工具', () => {
-    const 块们 = ['下载', '编码', '正文', 'pdf', 'word'];
+    const 块们 = ['下载', '编码', '正文', 'pdf', 'word', '浏览器'];
     const 问题 = [];
     for (const 块 of 块们) {
       for (const f of fs.readdirSync(path.join(WEB, 块)).filter(f => f.endsWith('.mjs'))) {

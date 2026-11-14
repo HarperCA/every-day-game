@@ -43,8 +43,11 @@ function 准备() {
 
 describe('格式', () => {
   test('同步哪些表；账号去掉 openid、appid、unionid', () => {
-    expect(同步的表.map(t => t.表)).toEqual(['user_account', 'favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference', 'client_stats', 'client_issues']);
+    expect(同步的表.map(t => t.表)).toEqual(['user_account', 'favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference', 'client_stats', 'client_issues', 'school_admin', 'school_contest']);
+    expect(同步的表.map(t => t.表)).toEqual(用户副本.同步来的表);   // 两边一致，美国才收
     expect(整理行('user_account', { id: 'u1', openid: 'o', appid: 'a', unionid: 'x', status: 'active' })).toEqual({ id: 'u1', status: 'active' });
+    // 2026-11-09：昵称头像只给北京的组队用，不传美国（后台用不到，少一份个人信息出境；账号行和以前一样，美国不用跟着改）
+    expect(整理行('user_account', { id: 'u1', status: 'active', nickname: '小黄', avatar_url: 'https://a.cn/1.png' })).toEqual({ id: 'u1', status: 'active' });
     expect(整理行('favorite', { id: 'f1', user_id: 'u1' })).toEqual({ id: 'f1', user_id: 'u1' });
   });
 });
@@ -95,6 +98,37 @@ describe('北京推、美国收', () => {
     expect(await t.推({ 试跑: true })).toMatchObject({ 写: 4, 报错: 1, 试跑: true });
     expect(t.请求数()).toBe(0);
     expect(await t.推()).toMatchObject({ 写: 4 });
+  });
+});
+
+// 校赛（2026-11-08 用户定：校赛在美国审核通过才能在小程序发布）：管理员申请、校赛两张表传美国给后台审核；学生名单、邀请不传。
+describe('校赛两张表', () => {
+  const 申请 = { id: 'sa-1', user: 'user-1', school: '福州大学', real_name: '张老师', contact: '13800000000', proof: '团委老师', status: '待审核', review_note: null, created_at: T0.toISOString(), updated_at: T0.toISOString(), version: 1, openid: '不该出境' };
+  const 校赛行 = { id: 'sc-1', school: '福州大学', admin: 'sa-1', title: '校数学竞赛', content: '简介', signup: '扫码报名', start_date: '2026-12-01', end_date: '2026-12-02', status: '待审核', review_note: null, created_at: T0.toISOString(), updated_at: T0.toISOString(), version: 1 };
+  // 北京副数据库的校赛表另一个智能体在写：这里在真的用户库外面包一层，假装已经有这两张表（学生名单也放一张，看它传不传）
+  const 包一层 = (用户库, 假表) => new Proxy(用户库, { get: (目标, 名) => 名 === 'find' ? (表, 条件) => (表 in 假表 ? 假表[表] : 目标.find(表, 条件)) : 目标[名] });
+
+  test('管理员申请、校赛推到美国；不带 openid；学生名单不传', async () => {
+    const t = 准备();
+    const 用户库 = 包一层(t.用户库, { school_admin: [申请], school_contest: [校赛行], school_member: [{ id: 'm-1', name: '学生' }] });
+    expect(await t.推({ 用户库 })).toMatchObject({ 写: 6 });
+    expect(用户副本.一条(t.副本, 'school_admin', 'sa-1')).toMatchObject({ school: '福州大学', real_name: '张老师', status: '待审核' });
+    expect(用户副本.一条(t.副本, 'school_admin', 'sa-1')).not.toHaveProperty('openid');
+    expect(用户副本.一条(t.副本, 'school_contest', 'sc-1')).toMatchObject({ title: '校数学竞赛', status: '待审核' });
+    expect(用户副本.条数(t.副本).school_member).toBeUndefined();
+  });
+  test('北京还没建校赛表（先部署美国、后部署北京）：当成没有，照常同步别的表', async () => {
+    const t = 准备();
+    expect(await t.推()).toMatchObject({ 写: 4 });
+    expect(用户副本.条数(t.副本).school_admin).toBeUndefined();
+  });
+  test('美国不收学生名单、邀请', async () => {
+    const t = 准备();
+    for (const 表 of ['school_member', 'school_invite']) {
+      const 正文 = JSON.stringify({ 写们: [{ 表, 编号: 'x', data: {} }] });
+      const 时间 = String(T0.getTime());
+      expect((await 接收({ 方法: 'POST', 头: { [时间头]: 时间, [签名头]: 签名(秘钥, 时间, 正文) }, 正文 }, { 副本库: t.副本, 秘钥, now: T0 })).状态).toBe(422);
+    }
   });
 });
 

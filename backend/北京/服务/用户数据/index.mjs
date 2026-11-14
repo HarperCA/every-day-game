@@ -6,9 +6,15 @@
 // 不再把快到期的提醒推给美国（上海的 reminderPush）：存好后交给北京自己的发提醒排计划（环境里的 排提醒，即 发提醒 的 排上）。
 //
 //   handle({ action, ...参数 }, { 用户库, 主库, openid, now, 排提醒 }) → { ok: true, data } 或 { ok: false, message }
+// 2026-11-09 加昵称头像（上海没有，组队里给队友看）：getProfile {} → { nickname, avatarUrl }；saveProfile { nickname?, avatarUrl? } → 同上
+//   只改给了的那一项，给空字符串清掉；昵称最多 30 字；头像只存网址、只收 https、最长 500
+// 2026-11-12 加上传头像（不走 handle：正文是 multipart 图片，入口 POST /api/uploadAvatar 直接调 上传头像），见 头像.mjs；上传成功顺带写进 avatar_url
+import { 检查内容 } from '../检查内容.mjs';
 import { createRequire } from 'node:module';
 import { 公开 } from '../../主数据库/index.mjs';
 import { 用户, 收藏, 提醒, 偏好, 纠错, 意见反馈 } from '../../副数据库/index.mjs';
+
+export { 上传头像 } from './头像.mjs';
 
 const require = createRequire(import.meta.url);
 const { validateFeedbackInput } = require('./feedbackValidation.js');
@@ -27,6 +33,8 @@ const MAX_EXISTING_EVENT_REMINDERS = 50;
 const MAX_FEEDBACKS_PER_DAY = 20;
 const MAX_FEEDBACK_LIST = 50;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_NICKNAME = 30;
+const MAX_AVATAR_URL = 500;
 
 // ---- 搬自上海 index.js ----
 function requireString(value, field) {
@@ -135,7 +143,29 @@ function 存提醒们(用户库, userId, records, now) {
   return preserved;
 }
 
-async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 }) {
+// ---- 昵称头像（2026-11-09）----
+const profileToClient = 账号 => ({ nickname: 账号?.nickname || '', avatarUrl: 账号?.avatar_url || '' });
+function normalizeProfileInput(event) {
+  const 改动 = {};
+  if ('nickname' in event) {
+    if (typeof event.nickname !== 'string' || [...event.nickname.trim()].length > MAX_NICKNAME) throw new Error('invalid_nickname');
+    改动.nickname = event.nickname.trim() || null;
+  }
+  if ('avatarUrl' in event) {
+    const url = typeof event.avatarUrl === 'string' ? event.avatarUrl.trim() : null;
+    if (url === null || url.length > MAX_AVATAR_URL) throw new Error('invalid_avatar_url');
+    if (url) {
+      let ok = false;
+      try { ok = new URL(url).protocol === 'https:'; } catch { ok = false; }
+      if (!ok) throw new Error('invalid_avatar_url');
+    }
+    改动.avatar_url = url || null;
+  }
+  if (!Object.keys(改动).length) throw new Error('invalid_profile');
+  return 改动;
+}
+
+async function 做(action, event, { 用户库, 主库, userId, now, 排提醒, 微信, openid }) {
   // 存好的提醒交给发提醒排计划（两小时内到期的才排上，其余每小时对账）；排计划出错不影响保存
   const 交去排 = ids => { try { 排提醒?.(ids.map(id => 用户库.get('reminder', id)?.data).filter(Boolean)); } catch (error) { console.error('[用户数据] 排提醒失败', error?.message); } };
   if (action === 'submitGeneralFeedback') {
@@ -163,6 +193,15 @@ async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 })
     const saved = 偏好.保存(用户库, userId, { profession: item.profession, categories: item.categories, province: item.province,
       survey_status: item.surveyStatus, dont_show_again: item.dontShowAgain }, { now });
     return preferenceToClient(saved);
+  }
+  if (action === 'getProfile') return profileToClient(用户.读取(用户库, userId));
+  if (action === 'saveProfile') {
+    const 改动 = normalizeProfileInput(event);
+    if (改动.nickname) {
+      await 检查内容({ 微信, openid, scene: 1 }, 改动.nickname);
+      当前用户(用户库, openid);
+    }
+    return profileToClient(用户.改资料(用户库, userId, 改动, { now }));
   }
   if (action === 'listFeedback') return 纠错.列出(用户库, userId).slice(0, MAX_FEEDBACK_LIST).map(feedbackToClient);
   if (action === 'listFavorites') {
@@ -227,13 +266,13 @@ async function 做(action, event, { 用户库, 主库, userId, now, 排提醒 })
   throw new Error('unsupported_action');
 }
 
-export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 排提醒 } = {}) {
+export async function handle(request = {}, { 用户库, 主库, openid, now = () => new Date(), 排提醒, 微信 } = {}) {
   const { action, ...event } = request;
   try {
     const userId = 当前用户(用户库, openid);
-    return { ok: true, data: await 做(action, event, { 用户库, 主库, userId, now: now(), 排提醒 }) };
+    return { ok: true, data: await 做(action, event, { 用户库, 主库, userId, now: now(), 排提醒, 微信, openid }) };
   } catch (error) {
-    if (!['unauthenticated', 'user_account_disabled', 'unsupported_action'].includes(error?.message)) console.error('[用户数据] 出错', { action, error: error?.message });
+    if (!['unauthenticated', 'user_account_disabled', 'unsupported_action', 'content_not_allowed'].includes(error?.message)) console.error('[用户数据] 出错', { action, error: error?.message });
     return { ok: false, message: error instanceof Error ? error.message : 'user_data_failed' };
   }
 }

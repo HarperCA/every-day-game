@@ -1,9 +1,10 @@
 // 北京副数据库（用户管理中心）：用户是一级，下面五张表都挂在用户编号上：收藏、提醒、意见反馈、纠错、偏好。
 // 字段沿用旧的上海云开发（userData、login 云函数和 database/schemas），收藏改挂比赛。用内存里的库跑，不碰任何真实库文件。
 import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { openUserDb, 用户, 收藏, 提醒, 意见反馈, 纠错, 偏好 } from '../../index.mjs';
-import { buildUserSql, FIRST_FILE } from '../../结构/生成.mjs';
+import { openUserDb, STRUCTURE_DIR, 用户, 收藏, 提醒, 意见反馈, 纠错, 偏好 } from '../../index.mjs';
+import { buildFileSql, buildUserSql, FIRST_FILE, 文件们 } from '../../结构/生成.mjs';
 
 const at = '2026-11-01T04:00:00.000Z';
 const 选项 = { now: new Date(at) };
@@ -181,5 +182,37 @@ describe('后台处理结果写回', () => {
     const 再 = 意见反馈.处理(db, 条.id, { status: 'processing', public_reply: '再看看', 读到的更新时间: 后.updated_at }, 选项);
     expect(再).toMatchObject({ status: 'processing', resolved_at: null });
     expect(() => 意见反馈.处理(db, 条.id, { status: 'resolved', public_reply: '好', 读到的更新时间: 条.updated_at }, 选项)).toThrow('feedback_conflict');
+  });
+});
+
+// 昵称头像（2026-11-09，组队里给队友看）：001 已部署不能改，字段在 004-用户昵称头像.sql 里用 ALTER TABLE 加；头像只存网址（只收 https，服务里查）
+describe('用户的昵称和头像（004）', () => {
+  test('001 不带这两个字段；004 只给 user_account 加 nickname、avatar_url 两列，和按描述生成的一致', () => {
+    expect(buildUserSql()).not.toContain('nickname');
+    const sql = buildFileSql('004-用户昵称头像.sql');
+    expect(fs.readFileSync(path.join(STRUCTURE_DIR, '004-用户昵称头像.sql'), 'utf8')).toBe(sql);
+    expect(sql).not.toContain('CREATE TABLE');
+    expect(sql.match(/ALTER TABLE .+;/g)).toEqual(['ALTER TABLE user_account ADD COLUMN nickname TEXT;', 'ALTER TABLE user_account ADD COLUMN avatar_url TEXT;']);
+    expect(文件们()).toContain('004-用户昵称头像.sql');
+  });
+  test('改资料：存昵称和头像网址，空的存 null；超长的数据库拒绝；新账号两项都是 null', () => {
+    const db = open();
+    const 我 = 一个用户(db);
+    expect(我).toMatchObject({ nickname: null, avatar_url: null });
+    expect(用户.改资料(db, 我.id, { nickname: '小黄', avatar_url: 'https://thirdwx.qlogo.cn/a.png' }, 第二天()))
+      .toMatchObject({ nickname: '小黄', avatar_url: 'https://thirdwx.qlogo.cn/a.png', updated_at: '2026-11-02T00:00:00.000Z' });
+    expect(用户.改资料(db, 我.id, { nickname: null, avatar_url: null }, 选项)).toMatchObject({ nickname: null, avatar_url: null });
+    expect(() => 用户.改资料(db, 我.id, { nickname: '名'.repeat(31), avatar_url: null }, 选项)).toThrow(expect.objectContaining({ kind: '校验不通过' }));
+    expect(() => 用户.改资料(db, 我.id, { nickname: null, avatar_url: `https://a.cn/${'x'.repeat(500)}` }, 选项)).toThrow(expect.objectContaining({ kind: '校验不通过' }));
+  });
+  test('资料们：按编号一次取出昵称头像（队员列表用），没有的编号不出现', () => {
+    const db = open();
+    const 甲 = 一个用户(db);
+    const 乙 = 用户.新建或登录(db, { openid: 'o-2' }, 选项);
+    用户.改资料(db, 甲.id, { nickname: '甲', avatar_url: null }, 选项);
+    const 资料 = 用户.资料们(db, [甲.id, 乙.id, 'user-none']);
+    expect(资料.get(甲.id)).toEqual({ nickname: '甲', avatarUrl: null });
+    expect(资料.get(乙.id)).toEqual({ nickname: null, avatarUrl: null });
+    expect(资料.has('user-none')).toBe(false);
   });
 });

@@ -128,7 +128,7 @@ export async function runPipeline({
       if (!await runOne(entry)) break;
     }
     if (!result.stoppedAt) {
-      result.commit = 写入主库({ 小数据库: rundb, 主库: mainDb, log: logger.child('写入主库'), 试跑: dryRun });
+      result.commit = 写入主库({ 小数据库: rundb, 主库: mainDb, log: logger.child('写入主库'), 试跑: dryRun, 复核: true, now: now() });
     } else {
       logger.warn('流程没跑完，这一晚不提交，修好后可以从停下的模块接着跑');
     }

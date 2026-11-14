@@ -1,5 +1,5 @@
 // 写入主库：06 入库给总控提供的调取函数。整条流程跑完后，总控调它，把小数据库里待写入的改动用主库的事务写进主库。
-// 没有验收：写进主库就是发布（2026-11-01 用户定）。搬自原来 总控/零件/commit.mjs，改成由 06 提供，并加上两条：
+// 每晚流程先复核候选身份、届次、来源，再写入通过的候选。
 //   一条候选的改动一组写：主库按字段规则校验（必填、可选值、长度……），有一项不合格，这条候选的改动全都不写（不会只写进一半），
 //   候选在小数据库里标已丢弃，原因写“06 入库·写入主库：字段不合格：……”；别的候选照写；
 //   拒过的网址（03 筛选、05 审核记的）不看所属条目的状态：本来就是丢弃的条目才记。
@@ -10,22 +10,29 @@
 //   1. 所属条目还在“进行中”（已丢弃、顺延、失败的条目，它的改动一律不写；拒过的网址除外）；
 //   2. 过得了主库的字段校验；
 //   3. 没有和人工修改冲突：修改时，主库这一行的版本号要和模块读取时一样，不一样说明流程开始后有人改过，跳过不覆盖。
+//      同一组里记这一行的后台记录（audit_log，table_name + record_id 指着它）跟着跳过，免得记下没发生的修改（2026-11-08）。
 // 出了预料之外的错就整个撤回，主库保持原样。每条改动的结果写回小数据库，当晚报告从这里生成。
+import { 复核待入库 } from './复核.mjs';
+
 const 模块名 = '06-ingest';
 const 校验类错误 = new Set(['校验不通过', '指向的记录不存在', '已存在', '请求有误']);
 
-export function 写入主库({ 小数据库, 主库, log, 试跑 = false }) {
+export function 写入主库({ 小数据库, 主库, log, 试跑 = false, 复核 = false, now = new Date() }) {
   const pending = 小数据库.changes().filter(c => c.result === '待提交');
+  const 入库复核 = 复核 ? 复核待入库({ 小数据库, 主库, now }) : [];
+  const 暂缓 = new Map(入库复核.filter(r => !r.可入库).map(r => [r.key, r.原因]));
+  if (入库复核.length) log.info('入库复核：通过 ' + (入库复核.length - 暂缓.size) + ' 条，暂缓 ' + 暂缓.size + ' 条');
   const decisions = [];
   for (const c of pending) {
     const item = c.item_key ? 小数据库.item(c.item_key) : null;
     if (c.tbl === 'rejected_url') decisions.push([c, '准备写入', '']);
+    else if (暂缓.has(c.item_key)) decisions.push([c, '不提交', '入库复核：' + 暂缓.get(c.item_key)]);
     else if (c.item_key && !item) decisions.push([c, '不提交', `找不到所属条目 ${c.item_key}`]);
     else if (item && item.status !== '进行中') decisions.push([c, '不提交', `所属条目已${item.status}`]);
     else decisions.push([c, '准备写入', '']);
   }
   const toWrite = decisions.filter(([, result]) => result === '准备写入').map(([c]) => c);
-  const summary = { total: pending.length, written: 0, conflicts: 0, rejected: decisions.length - toWrite.length, dryRun: 试跑, error: null };
+  const summary = { total: pending.length, written: 0, conflicts: 0, rejected: decisions.length - toWrite.length, dryRun: 试跑, error: null, ...(入库复核.length && { 入库复核 }) };
 
   if (试跑) {
     log.info(`试跑：不写主库。可以写入 ${toWrite.length} 条，不提交 ${summary.rejected} 条`);
@@ -47,6 +54,7 @@ export function 写入主库({ 小数据库, 主库, log, 试跑 = false }) {
       const touched = new Map();
       for (const [组, 改动们] of 组们) {
         const 这组 = new Map();
+        const 没写的行 = new Set();
         let 写了 = 0;
         try {
           tx.transaction(t => {
@@ -54,15 +62,16 @@ export function 写入主库({ 小数据库, 主库, log, 试跑 = false }) {
               const id = `${c.tbl}/${c.row_key}`;
               const current = t.get(c.tbl, c.row_key);
               const seen = touched.get(id);
+              if (c.tbl === 'audit_log' && 没写的行.has(`${c.payload?.table_name}/${c.payload?.record_id}`)) { 这组.set(c.id, ['跳过', '记的那一行这次没写进去，后台记录也不写']); continue; }
               if (c.op === 'insert') {
                 if (current && !seen) { 这组.set(c.id, ['跳过', '主库已有这一行']); continue; }
                 if (current) t.update(c.tbl, c.row_key, c.payload, current.version);
                 else t.insert(c.tbl, c.row_key, c.payload);
                 if (!seen) touched.set(id, { originalVersion: current?.version ?? null });
               } else {
-                if (!current) { 这组.set(c.id, ['跳过', '主库没有这一行']); continue; }
+                if (!current) { 这组.set(c.id, ['跳过', '主库没有这一行']); 没写的行.add(id); continue; }
                 const expected = seen ? seen.originalVersion : current.version;
-                if (c.base_version !== expected) { 这组.set(c.id, ['跳过', '流程开始后这一行被改过（版本号不一致），不覆盖']); continue; }
+                if (c.base_version !== expected) { 这组.set(c.id, ['跳过', '流程开始后这一行被改过（版本号不一致），不覆盖']); 没写的行.add(id); continue; }
                 t.update(c.tbl, c.row_key, c.payload, current.version);
                 if (!seen) touched.set(id, { originalVersion: current.version });
               }

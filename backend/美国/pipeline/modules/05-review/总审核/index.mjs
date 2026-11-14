@@ -23,13 +23,28 @@ const 出错 = error => String(error?.message || error).slice(0, 200);
 // 抽取时逐字引证过的原文，核验通过后作为来源的原文摘录
 const 摘录 = data => Object.values(data.extraction?.fields || {}).filter(f => f && typeof f.quote === 'string' && f.quote).map(f => f.quote).join(' / ');
 
-async function 审一条(item, ctx, parts) {
+// 放宽资料（只给维护用，2026-11-08 用户定“这些资料不一定要有，没有就算了”）：范围闸、资料齐不齐判“待定”（缺字段、缺依据）的不挡，
+// 记一笔接着往下；判“不收”的（中小学、通知、喜报、不是比赛）照挡。收录门槛、三项核验不变。每晚流程不传，照旧。
+async function 放宽审核(记录, ctx, parts) {
+  const 每关 = [];
+  let 档 = null;
+  for (const 关 of ['范围闸', '资料齐不齐', '收录门槛']) {
+    const r = await parts.程序审核(记录, { 关们: [关], ai: ctx.ai, 允许专业待定: true });
+    const 这关 = r.每关?.[0] || { 关, 结果: r.结果, 原因: r.原因 };
+    if (关 === '收录门槛') 档 = r.档;
+    if (r.结果 === '不收' || (r.结果 !== '通过' && 关 === '收录门槛')) return { 结果: r.结果, 停在: 关, 原因: r.原因, 档, 每关: [...每关, 这关] };
+    每关.push(r.结果 === '通过' ? 这关 : { ...这关, 原因: `${r.原因}（放宽，不挡）` });
+  }
+  return { 结果: '通过', 停在: null, 原因: '', 档, 每关 };
+}
+
+async function 审一条(item, ctx, parts, { 放宽资料 = false } = {}) {
   const 记录 = 合成记录(item.data);
   const 图片 = item.data.extraction?.imageEvidenceFields || [];
   if (图片.length) return { 丢弃: `${前缀('图片依据')}${图片.join('、')}的依据来自官网图片的文字识别，没法逐字核对原网页` };
   let 程序;
   try {
-    程序 = await parts.程序审核(记录, { 关们: ['范围闸', '资料齐不齐', '收录门槛'], ai: ctx.ai, 允许专业待定: true });
+    程序 = 放宽资料 ? await 放宽审核(记录, ctx, parts) : await parts.程序审核(记录, { 关们: ['范围闸', '资料齐不齐', '收录门槛'], ai: ctx.ai, 允许专业待定: true });
   } catch (error) {
     return { 丢弃: `${前缀('收录门槛')}AI 再判出错：${出错(error)}` };
   }
@@ -55,7 +70,7 @@ export function createRun(parts = DEFAULT_PARTS) {
       return { items: [], changes: [], problems: [] };
     }
     const pool = createPool({ limit: parts.并发 ?? 4, signal: ctx.signal });
-    const 回来 = await pool.map(todo, item => 审一条(item, ctx, parts));
+    const 回来 = await pool.map(todo, item => 审一条(item, ctx, parts, { 放宽资料: input?.放宽资料 === true }));
     const 删 = [];
     const changes = [];
     const items = [];

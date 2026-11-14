@@ -10,7 +10,7 @@
   `/etc/systemd/system/daily-contest-*.service.d/baidu-limit.conf`（旧后端 `daily-contest-api`、发提醒服务没加，没重启）。改前备份在 `/root/backup/systemd-daily-contest-before-baidu15-*.tar.gz`。
   切换后：删掉旧的附加配置（旧系统停了也就不用了），新系统删掉 `BAIDU_DAILY_LIMIT` 回到 30。
 - **开着的定时器**：每晚流程（1:00，和旧系统的抓取同一时间）、每日归档（2:00，和旧系统同时）、公开比赛同步、回收站清理、建议屏蔽网站。
-- **维护先关着**：五项审计和“查找”还没写（`美国/db/维护/审计/*`），跑起来什么都不做，却会把比赛记成“已维护”、之后 7 天跳过。写好再开：`systemctl enable --now competition-radar-maintain.timer`。
+- **维护用新维护**：`competition-radar-maintain-new`（每天 10:00）和 `competition-radar-ai-queue`（后台多选的维护队列，每 2 分钟，2026-11-12 改成新维护的队列模式）。旧的轮流维护 `competition-radar-maintain` 和 AI 审查 `competition-radar-ai-review` 2026-11-12 删了，线上要停用并删掉 unit 文件（见 `../定时/README.md`）。
 
 ## 放在哪
 
@@ -23,7 +23,7 @@
   posters/             图片总库（海报、候选图）
   logs/                每晚流程、维护的日志
   secrets/             session.env（和北京同一把 SESSION_SIGNING_KEY）、sync-secret（和北京同一把）、
-                       ai/（deepseek.key、kimi.key、baidu.key、jev.key 软链接到旧系统的密钥文件）、wechat-appsecret、admin-token（软链接）
+                       ai/（deepseek.key、kimi.key、baidu.key、jev.key）、wechat-appsecret、admin-token（2026-11-05 起都是新系统自己的文件，权限 600，不再依赖旧目录）
 /etc/competition-radar/env   环境变量，见 env.example
 ```
 
@@ -37,14 +37,14 @@
 | nginx-sync-user.conf | `/sync/user` 只放北京 IP | — |
 | nginx-new-admin.conf | `/new-admin/` 转新后台 | — |
 | nginx-new-assistant.conf | `/new-api/assistant` 转新赛事助手（小程序直连，带北京签的令牌；旧路径 `/api/assistant` 还归旧服务器） | — |
-| ../定时/ 的五个 | 每晚流程、维护、回收站清理、建议屏蔽网站、公开比赛同步 | — |
+| ../定时/ 的七组 | 每晚流程、每日归档、新维护（每天 10:00）、后台多选的维护队列（新维护队列模式）、回收站清理、建议屏蔽网站、公开比赛同步 | — |
 
 都以 root 运行（旧系统也是 root，AI 密钥文件、Codex 的登录都在 root 下）。
 
 ## 看新后台
 
 浏览器开 https://107-175-111-18.sslip.io/new-admin/ ，输口令（和旧后台一样）。登录后 12 小时内不用再输；口令连错 5 次，10 分钟内不让再试。
-口令文件：`/opt/competition-radar/secrets/admin-token`（软链接到旧后台的 `/opt/daily-contest/.admin-token`），`/etc/competition-radar/env` 里 `ADMIN_TOKEN_FILE` 指向它。
+口令文件：`/opt/competition-radar/secrets/admin-token`（2026-11-05 起是自己的文件，内容和旧后台口令相同），`/etc/competition-radar/env` 里 `ADMIN_TOKEN_FILE` 指向它。
 
 ## 打包（别按文件夹名排除）
 

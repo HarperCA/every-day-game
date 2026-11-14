@@ -4,6 +4,7 @@
 //                                                                             toolChoice：带工具时让模型 auto/none/required（不给由接口默认）
 //   search({ purpose = 'search', query, site, recent, blocked, signal })     搜索 → { references: [{ title, url, content, date }], provider, tried }
 //                                                                             blocked：不要的网站（屏蔽名单由调用方给，目前只有百度认）
+//                                                                             rewrite：false 时关掉百度的改写查询（不给按百度默认开着；别家不认）
 //   fetchPage({ purpose = 'reread', url, signal })                            读网页 → { markdown, images, provider }
 //   decide({ purpose, state, questions, signal })                             判断 → { answers: { 题号: { choice, probabilities } } }
 //   budgetLeft()                                                              这个会话还剩多少次调用
@@ -27,9 +28,9 @@ export function createSession({ source, runId = null, module = null, lane = 'bat
       take();
       return call({ purpose, capability: 'chat', request: { messages, json, tools, toolChoice, schema }, json, promptVersion, identity, lane, signal });
     },
-    async search({ purpose = 'search', query, site = '', recent = '', blocked = [], signal } = {}) {
+    async search({ purpose = 'search', query, site = '', recent = '', blocked = [], rewrite, signal } = {}) {
       take();
-      return call({ purpose, capability: 'search', request: { query, site, recent, blocked }, identity, lane, signal });
+      return call({ purpose, capability: 'search', request: { query, site, recent, blocked, ...(rewrite === false ? { rewrite } : {}) }, identity, lane, signal });
     },
     async fetchPage({ purpose = 'reread', url, signal } = {}) {
       take();

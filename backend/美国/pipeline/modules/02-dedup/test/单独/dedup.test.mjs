@@ -17,7 +17,8 @@ const 表 = {
     { key: 'event-gone', version: 1, data: { id: 'event-gone', name: '已删除的比赛', level: '国家级', deleted_at: 天前(1) } },
   ],
   edition: [
-    { key: 'ed-math-2026', version: 1, data: { id: 'ed-math-2026', competition_id: 'event-math', registration_url: 'https://reg.mcm.cn/2026', discovery_notice_url: 'https://school.cn/n/1' } },
+    { key: 'ed-art-2026', version: 1, data: { competition_id: 'event-art', edition_year: '2026' } },
+    { key: 'ed-math-2026', version: 1, data: { id: 'ed-math-2026', competition_id: 'event-math', edition_year: '2026', edition_ordinal: '第十届', registration_url: 'https://reg.mcm.cn/2026', discovery_notice_url: 'https://school.cn/n/1' } },
   ],
   source: [{ key: 's1', version: 1, data: { id: 's1', edition_id: 'ed-math-2026', url: 'http://mcm.edu.cn/notice/2026', final_url: 'https://mcm.edu.cn/notice/2026-final' } }],
   blocked_competition: [{ key: 'b1', version: 1, data: { id: 'b1', name: '某某杯营销挑战赛', aliases: ['营销杯'], website: 'https://ying.cn' } }],
@@ -41,12 +42,46 @@ describe('读库（统一的查询）', () => {
   });
 });
 
+describe('读库：全部届次都在待人工审核的比赛不算“库里已有”（2026-11-04 用户定）', () => {
+  const 待审表 = {
+    competition: [
+      { key: 'event-pending', version: 1, data: { id: 'event-pending', name: '全部待审杯', level: '国家级', website: 'https://pending.cn' } },
+      { key: 'event-mixed', version: 1, data: { id: 'event-mixed', name: '部分已审杯', level: '国家级', website: 'https://mixed.cn' } },
+      { key: 'event-empty', version: 1, data: { id: 'event-empty', name: '没有届次杯', level: '国家级' } },
+    ],
+    edition: [
+      { key: 'ed-p1', version: 1, data: { id: 'ed-p1', competition_id: 'event-pending', status: '待人工审核', registration_url: 'https://pending.cn/reg', discovery_notice_url: 'https://pending.cn/n' } },
+      { key: 'ed-p2', version: 1, data: { id: 'ed-p2', competition_id: 'event-pending', status: '待人工审核' } },
+      { key: 'ed-m1', version: 1, data: { id: 'ed-m1', competition_id: 'event-mixed', edition_year: '2026', status: '已归档' } },
+      { key: 'ed-m2', version: 1, data: { id: 'ed-m2', competition_id: 'event-mixed', status: '待人工审核', registration_url: 'https://mixed.cn/reg' } },
+    ],
+    source: [
+      { key: 's-p', version: 1, data: { id: 's-p', edition_id: 'ed-p1', url: 'https://pending.cn/source' } },
+      { key: 's-m', version: 1, data: { id: 's-m', edition_id: 'ed-m2', url: 'https://mixed.cn/source' } },
+    ],
+  };
+  const 库 = () => 读库(fakeCtx({ now, list: table => 待审表[table] || [] }));
+
+  test('这种比赛的名称和网址都不进对比名单，新通知才能继续往下走', () => {
+    expect(库().比赛们.map(c => c.编号)).toEqual(['event-mixed', 'event-empty']);
+    expect([...库().网址们.keys()].some(k => k.startsWith('pending.cn'))).toBe(false);
+  });
+  test('只要有一届已发布或已归档，整个比赛照旧算库里已有', () => {
+    expect([...库().网址们.keys()].sort()).toEqual(['mixed.cn', 'mixed.cn/reg', 'mixed.cn/source']);
+  });
+  test('程序去重放过全部待审的比赛，AI 去重的名单里也没有它', () => {
+    const { 扔, 留 } = 程序去重([候选('k1', '2027年全部待审杯', 'https://pending.cn/source'), 候选('k2', '2026年部分已审杯', 'https://z.cn/2')], 库());
+    expect(留.map(x => x.key)).toEqual(['k1']);
+    expect(扔.map(x => x.key)).toEqual(['k2']);
+  });
+});
+
 describe('程序去重', () => {
   test('规范名称：去掉年份、第几届、引号括号空白，结尾的竞赛/大赛/比赛/挑战赛', () => {
     expect(规范名称('2026年第十二届“全国大学生数学建模竞赛”')).toBe('全国大学生数学建模');
     expect(规范名称('全国大学生数学建模 大赛')).toBe('全国大学生数学建模');
   });
-  test('一样就扔：30 天内拒过、网址和库里一样、在不收录名单里、名称和库里比赛或别名一样；别的留下', () => {
+  test('一样就扔：30 天内拒过、在不收录名单里、同赛道的旧届或同届；别的留下', () => {
     const 库 = 读库(带库());
     const { 扔, 留 } = 程序去重([
       候选('k1', '无关页面', 'https://bad.cn/1/'),
@@ -55,17 +90,21 @@ describe('程序去重', () => {
       候选('k3b', '某页面', 'https://ying.cn/'),
       候选('k4', '2026年全国大学生数学建模竞赛', 'https://y.cn/4'),
       候选('k5', '国赛数模', 'https://y.cn/5'),
+      候选('older', '2025年国赛数模'),
+      候选('newer', '2027年全国大学生数学建模竞赛', 'https://mcm.edu.cn'),
+      候选('new-ordinal', '2026年第十一届全国大学生数学建模竞赛'),
+      候选('track', '2026年全国大学生数学建模竞赛（本科组）', 'https://mcm.edu.cn/notice/2026'),
+      候选('ambiguous', '2026年全国大学生数学建模竞赛', 'https://mcm.edu.cn', '数学建模赛道报名通知'),
       候选('k6', '第三届全国大学生数学建模挑战营通知', 'https://y.cn/6'),
     ], 库);
     expect(扔).toEqual([
       { key: 'k1', 原因: '30 天内拒过（03-filter：不是比赛）' },
-      { key: 'k2', 原因: '网址和库里一样：库里届次 ed-math-2026 的来源' },
       { key: 'k3', 原因: '在不收录名单里：营销杯' },
       { key: 'k3b', 原因: '在不收录名单里：某某杯营销挑战赛' },
-      { key: 'k4', 原因: '名称和库里比赛一样：全国大学生数学建模竞赛（event-math）' },
-      { key: 'k5', 原因: '名称和库里比赛一样：全国大学生数学建模竞赛（event-math）' },
+      { key: 'k4', 原因: '同一比赛和赛道的旧届或同届：全国大学生数学建模竞赛（event-math）' },
+      { key: 'older', 原因: '同一比赛和赛道的旧届或同届：全国大学生数学建模竞赛（event-math）' },
     ]);
-    expect(留.map(c => c.key)).toEqual(['k6']);
+    expect(留.map(c => c.key)).toEqual(['k2', 'k5', 'newer', 'new-ordinal', 'track', 'ambiguous', 'k6']);
   });
   test('不收录名单只认名称一样或标题里写着这个名称，不认相似', () => {
     const { 扔 } = 程序去重([候选('k', '营销大赛', 'https://z.cn')], 读库(带库()));
@@ -112,19 +151,35 @@ describe('AI 去重', () => {
       结果(4, '新的'),
       结果(5, '新的', { 重复于: 4, 理由: '同一个比赛' }),
     ] })]);
-    const 候选们 = [候选('a', '数模通知'), 候选('b', '数模？'), 候选('c', '某赛'), 候选('d', '新赛'), 候选('e', '新赛报名')];
+    const 候选们 = [候选('a', '2026年数模通知'), 候选('b', '2026年数模？'), 候选('c', '某赛'), 候选('d', '2026年新赛'), 候选('e', '2026年新赛报名')];
     expect((await AI去重(候选们, 读库(ctx), ctx)).扔).toEqual([
       { key: 'a', 原因: 'AI 判为库里已有：全国大学生数学建模竞赛（event-math）：是数模国赛的通知' },
-      { key: 'e', 原因: 'AI 判为和今晚另一条候选是同一个比赛（d）：同一个比赛' },
+      { key: 'e', 原因: 'AI 判为和今晚另一条候选是同一届同一赛道（d）：同一个比赛' },
     ]);
   });
   test('AI 交回短号或原样的编号都认；抄漏的长编号（11-04 线上：event-agent-followup-xxx 抄成 event-xxx）不认，照规矩截断', async () => {
     const ctx = 带库();
     ctx.ai = 假AI([{ 结果: [结果(1, '库里已有', { 比赛编号: 'event-math' })] }]);
-    expect((await AI去重([候选('a', 't')], 读库(ctx), ctx)).扔[0].原因).toMatch('全国大学生数学建模竞赛（event-math）');
+    expect((await AI去重([候选('a', '2026年数模')], 读库(ctx), ctx)).扔[0].原因).toMatch('全国大学生数学建模竞赛（event-math）');
     const 坏 = 带库();
     坏.ai = 假AI([{ 结果: [结果(1, '库里已有', { 比赛编号: 'event-ath' })] }]);
     await expect(AI去重([候选('a', 't')], 读库(坏), 坏)).rejects.toThrow('不在库里');
+  });
+  test('AI 把新一届或不同赛道误判为已有或同批重复时，候选仍然保留', async () => {
+    const ctx = 带库();
+    ctx.ai = 假AI([{ 结果: [
+      结果(1, '库里已有', { 比赛编号: 'event-math' }),
+      结果(2, '库里已有', { 比赛编号: 'event-math' }),
+      结果(3, '新的', { 重复于: 2 }),
+      结果(4, '新的', { 重复于: 2 }),
+    ] }]);
+    const 候选们 = [
+      候选('newer', '2026年第十一届国赛数模'),
+      候选('track-a', '2026年第十届国赛数模（本科组）'),
+      候选('track-b', '2026年第十届国赛数模（专科组）'),
+      候选('different-edition', '2026年第十一届国赛数模（本科组）'),
+    ];
+    expect((await AI去重(候选们, 读库(ctx), ctx)).扔).toEqual([]);
   });
   test('没有候选：不调接口', async () => {
     const ctx = 带库();
@@ -173,11 +228,11 @@ function 带小数据库(ctx, 候选们) {
 describe('主运行文件', () => {
   test('按顺序：查找候选 → 读库 → 程序去重并删除 → AI 去重（只看程序留下的）并删除；原因写明是“02 对比去重·哪一步”', async () => {
     const ctx = 带库();
-    const 删过 = 带小数据库(ctx, [候选('k1', '2026年全国大学生数学建模竞赛', 'https://y.cn/1'), 候选('k2', '新赛', 'https://y.cn/2'), { ...候选('r', 'x'), kind: 'record' }]);
+    const 删过 = 带小数据库(ctx, [候选('k1', '2026年全国大学生数学建模竞赛', 'https://y.cn/1'), 候选('k2', '2026年湖南大学生艺术比赛', 'https://y.cn/2'), { ...候选('r', 'x'), kind: 'record' }]);
     ctx.ai = 假AI([req => { expect(req.messages.map(m => m.content).join()).not.toContain('y.cn/1'); return { 结果: [结果(1, '库里已有', { 比赛编号: 库号(req, '湖南省大学生艺术展演'), 理由: '同一个' })] }; }]);
     const out = await dedup.run({ runId: '2026-10-31' }, ctx);
     expect(删过).toEqual([
-      { key: 'k1', 原因: '02 对比去重·程序去重：名称和库里比赛一样：全国大学生数学建模竞赛（event-math）' },
+      { key: 'k1', 原因: '02 对比去重·程序去重：同一比赛和赛道的旧届或同届：全国大学生数学建模竞赛（event-math）' },
       { key: 'k2', 原因: '02 对比去重·AI去重：AI 判为库里已有：湖南省大学生艺术展演（event-art）：同一个' },
     ]);
     expect(out).toEqual({ items: [], changes: [], problems: [] });

@@ -5,6 +5,16 @@
 //
 //   查发布(记录, { 归档 }) → { 结果: '通过' | '不通过', 原因们: [..] }   列出所有没过的地方
 //   归档：报不上名了，只查标题、范围、名称，报名网址、来源不再要求（旧注释：只是留着给学生看下一届大概什么时候）
+//   2026-11-12 用户定放宽两条：
+//     官方来源核过一次就算（有核对时间就行），不要求发布前 24 小时内复核；
+//     缺报名网址时，有核验过的官方来源就不拦。门槛只判断，不改记录；发布、写入的地方用 报名网址顶上(记录) 把报名网址填成那条官方通知页。
+//   报名网址顶上(记录) → 记录里的报名网址；没有就是核验过的官方来源的网址（主办方通知 organizer_notice 优先）；都没有给 ''
+//   2026-11-12 用户定（找新一届）：发现新一届就发布，追不到官方通知的用高校转发发布、标明来源。
+//     高校转发来源：source_type 'school_repost'、is_official 为假、validity_status 'valid'、http(s) 网址（属于这一届）。
+//     没有核验过的官方来源、但有高校转发来源的届次：“没有核验过的官方来源”“没有报名网址”两条放行，标题、范围、名称、报名时间照查；
+//     报名网址顶上不拿转发页（转发页不是报名入口）。
+//   有高校转发来源(记录) → 是否
+//   信息来源(记录) → 'official'（有核验过的官方来源）| 'school_repost'（没有官方的、有高校转发的）| null（都没有）
 import { 查标题, 要追溯通知 } from '../标题闸/index.mjs';
 import { 查范围 } from '../范围闸/index.mjs';
 
@@ -37,14 +47,37 @@ export function 报名时间问题(记录 = {}) {
 }
 
 // 核验过的官方来源：不是发现线索、学校通知、搜索候选；是官方的、有效的，核对时间、标题、摘要、原文、核对理由、支持哪些字段都写了
-export function 有核验过的官方来源(记录 = {}) {
-  return (记录.sources || []).some(s => s?.id && s.source_type
+const 是核验过的官方来源 = 记录 => s => Boolean(s?.id && s.source_type
     && !['discovery_notice', 'university_notice', 'search_candidate'].includes(s.source_type)
     && s.is_official === true && s.validity_status === 'valid' && /^https?:\/\//i.test(s.url || '')
     && (!s.edition_id || !记录.id || s.edition_id === 记录.id)
     && Number.isFinite(Date.parse(s.last_verified_at || ''))
     && ['title', 'content_summary', 'evidence_excerpt', 'review_reason'].every(f => typeof s[f] === 'string' && s[f].trim())
     && Array.isArray(s.supports_fields) && s.supports_fields.some(f => typeof f === 'string' && f.trim()));
+
+export function 有核验过的官方来源(记录 = {}) {
+  return (记录.sources || []).some(是核验过的官方来源(记录));
+}
+
+export const 高校转发类型 = 'school_repost';
+const 是高校转发来源 = 记录 => s => Boolean(s?.source_type === 高校转发类型 && s.validity_status === 'valid' && /^https?:\/\//i.test(s.url || '')
+    && (!s.edition_id || !记录.id || s.edition_id === 记录.id));
+
+export function 有高校转发来源(记录 = {}) {
+  return (记录.sources || []).some(是高校转发来源(记录));
+}
+
+export function 信息来源(记录 = {}) {
+  if (有核验过的官方来源(记录)) return 'official';
+  return 有高校转发来源(记录) ? 高校转发类型 : null;
+}
+
+const 是网址 = 值 => /^https?:\/\//i.test(值 || '');
+
+export function 报名网址顶上(记录 = {}) {
+  if (是网址(记录.registration_url)) return 记录.registration_url;
+  const 核过的 = (记录.sources || []).filter(是核验过的官方来源(记录));
+  return (核过的.find(s => s.source_type === 'organizer_notice') || 核过的[0])?.url || '';
 }
 
 export function 查发布(记录 = {}, { 归档 = false } = {}) {
@@ -57,8 +90,11 @@ export function 查发布(记录 = {}, { 归档 = false } = {}) {
   if (名称混了年份届次(记录.name)) 原因们.push('名称里混了年份或届次，要单独填');
   if (!归档) {
     原因们.push(...报名时间问题(记录));
-    if (!/^https?:\/\//i.test(记录.registration_url || '')) 原因们.push('没有报名网址');
-    if (!有核验过的官方来源(记录)) 原因们.push('没有核验过的官方来源');
+    // 高校转发（2026-11-12 用户定）：没有官方来源时，有效的高校转发来源也放行这两条
+    const 有官方来源 = 有核验过的官方来源(记录) || 有高校转发来源(记录);
+    // 缺报名网址：有核验过的官方来源（主办方通知页）就不拦，发布时拿它顶上（2026-11-12）；高校转发的不顶，报名网址留空
+    if (!是网址(记录.registration_url) && !有官方来源) 原因们.push('没有报名网址');
+    if (!有官方来源) 原因们.push('没有核验过的官方来源');
   }
   return { 结果: 原因们.length ? '不通过' : '通过', 原因们 };
 }

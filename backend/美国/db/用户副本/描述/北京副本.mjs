@@ -1,6 +1,7 @@
 // 用户副本的唯一一张表：北京用户库（和报错库）每张表的每一行在这里存一行，按“表:编号”找。
 // 不照抄北京的表结构：北京改了表美国不用跟着改，后台按表读出来自己整理。可选的表和 沟通/用户数据同步/格式.mjs 的 同步的表 一致。
-export const 同步来的表 = ['user_account', 'favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference', 'client_stats', 'client_issues'];
+// 2026-11-08 加校赛两张：school_admin（校赛管理员申请）、school_contest（校赛），给后台校赛审核；学生名单、邀请不传。
+export const 同步来的表 = ['user_account', 'favorite', 'reminder', 'general_feedback', 'feedback', 'user_preference', 'client_stats', 'client_issues', 'school_admin', 'school_contest'];
 
 export default {
   表名: 'beijing_copy',

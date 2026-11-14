@@ -13,6 +13,9 @@
       届次.mjs         edition       二级：届次，挂在比赛下
       来源.mjs         source        每条信息出自哪个网址、原文摘录
       处理记录.mjs      process_log   AI 和系统对某一届做过什么（旧记录里挂在每届身上）
+      搜索记忆.mjs      search_memory 每个比赛一份 Markdown 的搜索记忆，新维护用（2026-11-07）
+      爬虫脚本.mjs      crawl_script 每个比赛一份爬虫脚本（步骤），新维护用（2026-11-08）
+      指纹记录.mjs      page_fingerprint 每个比赛一份通知列表指纹，新维护用（2026-11-08）
     后台/
       后台记录.mjs      audit_log     后台的操作记录
   test/               测这个文件夹：字段写得对不对、旧字段都有去处

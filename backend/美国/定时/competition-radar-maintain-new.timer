@@ -1,0 +1,10 @@
+[Unit]
+Description=竞赛雷达 新维护（每天北京时间 10:00）
+
+[Timer]
+OnCalendar=*-*-* 10:00:00 Asia/Shanghai
+Persistent=false
+Unit=competition-radar-maintain-new.service
+
+[Install]
+WantedBy=timers.target

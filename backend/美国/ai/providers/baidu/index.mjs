@@ -15,14 +15,15 @@ export function normalizeSite(value) {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) ? host : '';
 }
 
-export function searchBody(query, { site = '', recent = '', blocked = [], limit = 10 } = {}) {
+// rewrite：百度改写查询，默认开着（每晚流程原样）；新流程找官网传 false 关掉，搜索词按原样搜（2026-11-07）
+export function searchBody(query, { site = '', recent = '', blocked = [], limit = 10, rewrite = true } = {}) {
   const host = normalizeSite(site);
   return {
     messages: [{ content: query, role: 'user' }],
     search_source: 'baidu_search_v2',
     resource_type_filter: [{ type: 'web', top_k: limit }],
     ...(blocked.length ? { block_websites: blocked } : {}),
-    query_policy: { enable_rewrite: true },
+    query_policy: { enable_rewrite: rewrite !== false },
     ...(host ? { search_filter: { match: { site: [host] } } } : {}),
     ...(RECENCY.includes(recent) ? { search_recency_filter: recent } : {}),
   };
@@ -31,8 +32,8 @@ export function searchBody(query, { site = '', recent = '', blocked = [], limit 
 export function createBaidu({ fetchImpl = globalThis.fetch, timeoutMs = 20000 } = {}) {
   return {
     name: 'baidu',
-    async search({ query, site = '', recent = '', blocked = [], key, signal }) {
-      const res = await postJson(ENDPOINT, { headers: { 'X-Appbuilder-Authorization': `Bearer ${key}` }, body: searchBody(query, { site, recent, blocked }),
+    async search({ query, site = '', recent = '', blocked = [], rewrite = true, key, signal }) {
+      const res = await postJson(ENDPOINT, { headers: { 'X-Appbuilder-Authorization': `Bearer ${key}` }, body: searchBody(query, { site, recent, blocked, rewrite }),
         timeoutMs, signal, fetchImpl, provider: 'baidu' });
       failIfNotOk(res, 'baidu');
       return { references: normalizeReferences(res.payload?.references) };
