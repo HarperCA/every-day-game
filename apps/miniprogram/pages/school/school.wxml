@@ -7,7 +7,10 @@
   </view>
   <block wx:if="{{status}}">
     <view class="sc-hero">
-      <view class="sc-hero-row">
+      <view class="sc-mode-row" wx:if="{{adminSchool}}">
+        <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
+      </view>
+      <view wx:if="{{studentView || !adminSchool}}" class="sc-hero-row">
         <picker wx:if="{{schools.length}}" class="sc-school-picker" range="{{schools}}" value="{{schoolIndex}}" bindchange="selectContestSchool">
           <view class="sc-school-trigger">
             <text class="sc-hero-title">{{selectedSchool}}</text>
@@ -17,19 +20,7 @@
         <view wx:else class="sc-hero-title">校赛专区</view>
         <view class="sc-hero-count">{{schoolContests.length}} 场校赛</view>
       </view>
-      <view wx:if="{{!status.memberships.length && !status.adminSchools.length}}" class="sc-hero-note">请向校赛管理员索取邀请卡片，加入后查看本校赛事。</view>
-      <button wx:if="{{adminSchool}}" size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '返回管理员工作台' : '切换到学生视角'}}</button>
-    </view>
-    <view class="sc-panel" wx:if="{{!studentView || !adminSchool}}">
-      <button size="mini" bindtap="openApply">申请成为校赛管理员</button>
-      <view class="sc-row" wx:for="{{status.applications}}" wx:key="id">
-        <view>{{item.school}} · {{item.status}}</view>
-        <view wx:if="{{item.reviewNote}}">{{item.reviewNote}}</view>
-      </view>
-      <view class="sc-row" wx:for="{{status.memberships}}" wx:key="id">
-        <view>{{item.school}}</view>
-        <button size="mini" data-action="leave" data-school="{{item.school}}" bindtap="confirmChange" disabled="{{working}}">退出学校</button>
-      </view>
+      <view wx:else class="sc-hero-title">{{adminSchool}}</view>
     </view>
     <view class="sc-panel" wx:if="{{adminSchool && !studentView}}">
       <picker range="{{status.adminSchools}}" bindchange="switchSchool" disabled="{{loading || working}}">
@@ -55,17 +46,38 @@
         <button wx:if="{{item.status === '已发布'}}" size="mini" data-action="withdraw" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">下架</button>
       </view>
     </view>
-    <view wx:if="{{status.memberships.length || status.adminSchools.length}}">
+    <view wx:if="{{(studentView || !adminSchool) && schools.length}}">
       <view class="sc-section-title">本校已发布的校赛</view>
-      <view wx:if="{{!schoolContests.length && !loading}}" class="sc-panel sc-empty">暂时没有已发布的校赛</view>
+      <view wx:if="{{!schoolContests.length && !loading}}" class="sc-panel sc-empty">
+        <view class="sc-empty-title">暂时没有已发布的校赛</view>
+        <view class="sc-empty-note">本校发布新比赛后，会在这里显示。</view>
+      </view>
       <block wx:for="{{schoolContests}}" wx:key="id">
         <view class="sc-panel sc-contest" data-id="{{item.id}}" bindtap="openContest" hover-class="sc-contest-pressed">
           <view class="sc-school-tag">{{item.school}}</view>
           <view class="sc-contest-title">{{item.title}}</view>
-          <view wx:if="{{item.endDate}}" class="sc-contest-date">报名截止 {{item.endDate}}</view>
-          <button wx:if="{{item.signup}}" size="mini" class="sc-signup" data-id="{{item.id}}" data-signup="true" catchtap="openContest">查看报名方式</button>
+          <view wx:if="{{item.startDate || item.endDate}}" class="sc-contest-date">赛程 {{item.startDate}}{{item.startDate && item.endDate ? ' 至 ' : ''}}{{item.endDate}}</view>
+          <view class="sc-contest-actions">
+            <text class="sc-detail-label">查看详情 ›</text>
+            <button wx:if="{{item.signup}}" size="mini" class="sc-signup" data-id="{{item.id}}" data-signup="true" catchtap="openContest">查看报名方式</button>
+          </view>
         </view>
       </block>
+    </view>
+    <view wx:elif="{{!schools.length}}" class="sc-panel sc-empty">
+      <view class="sc-empty-title">还未加入学校</view>
+      <view class="sc-empty-note">请向本校校赛管理员索取邀请卡片。</view>
+    </view>
+    <view class="sc-panel sc-account" wx:if="{{!studentView || !adminSchool}}">
+      <button size="mini" bindtap="openApply">申请成为校赛管理员</button>
+      <view class="sc-row" wx:for="{{status.applications}}" wx:key="id">
+        <view>{{item.school}} · {{item.status}}</view>
+        <view wx:if="{{item.reviewNote}}">{{item.reviewNote}}</view>
+      </view>
+      <view class="sc-row" wx:for="{{status.memberships}}" wx:key="id">
+        <view>{{item.school}}</view>
+        <button size="mini" data-action="leave" data-school="{{item.school}}" bindtap="confirmChange" disabled="{{working}}">退出学校</button>
+      </view>
     </view>
   </block>
 </view>

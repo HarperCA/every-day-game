@@ -1,4 +1,6 @@
 .school-detail { padding: 28rpx; line-height: 1.55; overflow-wrap: anywhere; }
+.school-detail-hero { padding: 28rpx; border-radius: 24rpx; color: #fff; background: linear-gradient(130deg, #14295c, #175bd6); }
+.school-detail-campus { margin-bottom: 12rpx; color: #e5efff; font-size: 26rpx; }
 .school-heading { font-size: 36rpx; font-weight: 700; margin-bottom: 16rpx; }
 .school-content { margin: 20rpx 0; white-space: pre-wrap; }
 .school-detail button { margin-top: 16rpx; }

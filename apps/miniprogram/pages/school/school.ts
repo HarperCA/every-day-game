@@ -2,7 +2,7 @@ import { ContestView, SchoolMember, SchoolStatus, confirmSchoolAction, createInv
 
 Page({
   data: {
-    status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: false,
+    status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
     schools: [] as string[], schoolIndex: 0, selectedSchool: '', schoolContests: [] as ContestView[],
     members: [] as SchoolMember[], managed: [] as ContestView[], loading: false, working: false, error: '',
   },

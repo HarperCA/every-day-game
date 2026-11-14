@@ -24,12 +24,18 @@
 .sc-school-trigger { display: flex; align-items: center; gap: 14rpx; overflow-wrap: anywhere; }
 .sc-school-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
 .sc-hero-count { flex-shrink: 0; }
-.sc-hero-note { margin-top: 16rpx; font-size: 25rpx; color: #e5efff; }
-.sc-mode { margin: 20rpx 0 0; color: #16469c; background: #fff; }
+.sc-mode-row { display: flex; justify-content: flex-end; margin-bottom: 16rpx; }
+.sc-mode { margin: 0; color: #fff; background: rgba(255, 255, 255, 0.18); }
+.sc-mode::after { border: 0; }
 .sc-section-title { margin: 24rpx 4rpx 16rpx; font-size: 30rpx; font-weight: 700; }
 .sc-empty { padding: 52rpx 20rpx; text-align: center; color: var(--muted, #59677e); font-size: 27rpx; }
+.sc-empty-title { color: var(--text, #1b2842); font-size: 29rpx; font-weight: 700; }
+.sc-empty-note { margin-top: 12rpx; }
 .sc-school-tag { display: inline-block; padding: 5rpx 14rpx; border-radius: 24rpx; background: #e7efff; color: #174da6; font-size: 23rpx; }
 .sc-contest-title { margin-top: 12rpx; font-size: 32rpx; font-weight: 700; }
 .sc-contest-date { margin-top: 10rpx; color: var(--muted, #59677e); font-size: 25rpx; }
 .sc-contest-pressed { opacity: 0.85; }
-.sc-panel .sc-signup { margin-top: 18rpx; padding: 0 20rpx; background: #e7efff; color: #174da6; }
+.sc-contest-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12rpx; margin-top: 18rpx; }
+.sc-detail-label { color: #174da6; font-size: 26rpx; }
+.sc-panel .sc-signup { margin: 0; padding: 0 20rpx; background: #e7efff; color: #174da6; }
+.sc-account { margin-top: 24rpx; }
