@@ -10,6 +10,7 @@ Page({
     status: null as SchoolStatus | null, contests: [] as ContestView[], adminSchool: '', inviteCode: '', studentView: true,
     pickerStep: '' as '' | 'school' | 'contest', schoolQuery: '', schoolOptions: [] as string[],
     moreSchools: false, selectedSchool: '', schoolLabel: ALL_SCHOOLS, visibleContests: [] as ContestView[],
+    universitySelected: false, selectedAdminUniversity: '',
     members: [] as SchoolMember[], managed: [] as ContestView[], selectedManagedId: '', loading: false, working: false, error: '',
   },
   onShow() { void this.refresh(); },
@@ -25,7 +26,8 @@ Page({
       const { selectedSchool } = this.data;
       const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
       const studentView = this.data.studentView || !adminSchool;
-      this.setData({ status, contests, visibleContests, adminSchool, studentView });
+      const selectedAdminUniversity = this.data.selectedAdminUniversity === adminSchool ? adminSchool : '';
+      this.setData({ status, contests, visibleContests, adminSchool, studentView, selectedAdminUniversity });
       if (!studentView) {
         const [members, managed] = await Promise.all([listMembers(adminSchool), listManagedContests(adminSchool)]);
         if (this.schoolGeneration === generation) {
@@ -77,13 +79,14 @@ Page({
     const selectedSchool = event.currentTarget.dataset.school || '';
     if (!this.data.studentView) {
       if (this.data.loading || this.data.working || !this.data.status?.adminSchools.includes(selectedSchool)) return;
+      this.setData({ selectedAdminUniversity: selectedSchool });
       if (selectedSchool === this.data.adminSchool) this.setData({ pickerStep: 'contest', selectedManagedId: '' });
       else void this.refresh(selectedSchool, true);
       return;
     }
     const { contests } = this.data;
     const visibleContests = selectedSchool ? contests.filter(contest => contest.school === selectedSchool) : contests;
-    this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, visibleContests, pickerStep: 'contest' });
+    this.setData({ selectedSchool, schoolLabel: selectedSchool || ALL_SCHOOLS, universitySelected: true, visibleContests, pickerStep: 'contest' });
   },
   openApply() { wx.navigateTo({ url: '/pages/school-apply/school-apply' }); },
   openCreate() {

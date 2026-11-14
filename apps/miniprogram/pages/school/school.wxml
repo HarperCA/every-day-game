@@ -6,16 +6,18 @@
     <button size="mini" bindtap="retry">重试</button>
   </view>
   <block wx:if="{{status}}">
-    <view class="sc-hero">
-      <view class="sc-mode-row" wx:if="{{adminSchool}}">
-        <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
-      </view>
-      <view class="sc-hero-row">
-        <view class="sc-picker-trigger" role="button" aria-expanded="{{!!pickerStep}}" bindtap="toggleContestPicker">
-          <text class="sc-hero-title">选择比赛</text>
-          <text class="sc-picker-chevron">{{pickerStep ? '▴' : '▾'}}</text>
+    <view class="sc-university-picker">
+      <view class="sc-hero">
+        <view class="sc-mode-row" wx:if="{{adminSchool}}">
+          <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
         </view>
-        <view class="sc-hero-count">{{studentView ? visibleContests.length : managed.length}} 场校赛</view>
+        <view class="sc-hero-row">
+          <view class="sc-picker-trigger" role="button" aria-expanded="{{!!pickerStep}}" bindtap="toggleContestPicker">
+            <text class="sc-hero-title">{{studentView ? (universitySelected ? schoolLabel : '选择你的大学') : (selectedAdminUniversity || '选择你的大学')}}</text>
+            <text class="sc-picker-chevron">{{pickerStep ? '▴' : '▾'}}</text>
+          </view>
+          <view class="sc-hero-count">{{studentView ? visibleContests.length : managed.length}} 场校赛</view>
+        </view>
       </view>
       <block>
         <view wx:if="{{pickerStep === 'school'}}" class="sc-picker-menu">

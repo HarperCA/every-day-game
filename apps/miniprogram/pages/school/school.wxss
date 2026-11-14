@@ -4,8 +4,8 @@
 .sc-row { padding: 16rpx 0; border-bottom: 1rpx solid var(--line, #ddd); }
 .sc-actions { display: flex; flex-wrap: wrap; gap: 12rpx; }
 .sc-row button, .sc-panel button { margin: 10rpx 10rpx 0 0; }
+.sc-university-picker { position: relative; z-index: 2; margin-bottom: 24rpx; }
 .sc-hero {
-  margin-bottom: 24rpx;
   padding: 30rpx 28rpx;
   border-radius: 24rpx;
   background: linear-gradient(130deg, #14295c, #175bd6);
@@ -25,9 +25,9 @@
   padding: 4rpx 16rpx; border: 1rpx solid rgba(255, 255, 255, 0.32);
   border-radius: 14rpx; line-height: 1.4; color: #fff; background: rgba(255, 255, 255, 0.12);
 }
-.sc-picker-trigger .sc-hero-title { font-size: 36rpx; }
+.sc-picker-trigger .sc-hero-title { min-width: 0; font-size: 36rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sc-picker-chevron { flex-shrink: 0; font-size: 30rpx; color: #e5efff; }
-.sc-picker-menu { margin-top: 14rpx; border-radius: 14rpx; background: var(--surface, #fff); color: var(--text, #1b2842); overflow: hidden; }
+.sc-picker-menu { position: absolute; top: 100%; left: 0; right: 0; margin-top: 10rpx; border: 1rpx solid var(--line, #ddd); border-radius: 14rpx; background: var(--surface, #fff); color: var(--text, #1b2842); box-shadow: 0 12rpx 32rpx rgba(20, 41, 92, 0.16); overflow: hidden; }
 .sc-picker-list { max-height: 360rpx; }
 .sc-picker-option { padding: 16rpx 20rpx; line-height: 1.45; font-size: 28rpx; overflow-wrap: anywhere; }
 .sc-picker-option + .sc-picker-option { border-top: 1rpx solid var(--line, #ddd); }
