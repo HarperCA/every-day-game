@@ -12,15 +12,14 @@
           <button size="mini" class="sc-mode" bindtap="toggleStudentView" disabled="{{loading || working}}">{{studentView ? '管理员工作台' : '返回校赛列表'}}</button>
         </view>
         <view class="sc-hero-row">
-          <view class="sc-picker-trigger" role="button" aria-expanded="{{!!pickerStep}}" bindtap="toggleContestPicker">
+          <view class="sc-picker-trigger" role="button" aria-expanded="{{schoolPickerOpen}}" bindtap="toggleSchoolPicker">
             <text class="sc-hero-title">{{studentView ? (universitySelected ? schoolLabel : '选择你的大学') : (selectedAdminUniversity || '选择你的大学')}}</text>
-            <text class="sc-picker-chevron">{{pickerStep ? '▴' : '▾'}}</text>
+            <text class="sc-picker-chevron">{{schoolPickerOpen ? '▴' : '▾'}}</text>
           </view>
           <view class="sc-hero-count">{{studentView ? visibleContests.length : selectedAdminUniversity && selectedAdminUniversity !== adminSchool ? adminBrowseContests.length : managed.length}} 场校赛</view>
         </view>
       </view>
-      <block>
-        <view wx:if="{{pickerStep === 'school'}}" class="sc-picker-menu">
+        <view wx:if="{{schoolPickerOpen}}" class="sc-picker-menu">
           <input class="sc-school-search" placeholder="搜索学校名称" value="{{schoolQuery}}" bindinput="searchSchools" />
           <scroll-view scroll-y class="sc-picker-list" bindscrolltolower="showMoreSchools">
             <view wx:if="{{studentView}}" class="sc-picker-option" role="button" bindtap="selectSchoolFilter">全部学校</view>
@@ -28,14 +27,6 @@
             <view wx:if="{{!schoolOptions.length}}" class="sc-picker-empty">未找到匹配的学校</view>
           </scroll-view>
         </view>
-        <view wx:elif="{{pickerStep === 'contest'}}" class="sc-picker-menu">
-          <view class="sc-picker-option sc-picker-back" role="button" bindtap="openSchoolChoices">‹ {{studentView ? schoolLabel : selectedAdminUniversity}} · 更换学校</view>
-          <scroll-view wx:if="{{studentView ? visibleContests.length : selectedAdminUniversity !== adminSchool ? adminBrowseContests.length : managed.length}}" scroll-y class="sc-picker-list">
-            <view wx:for="{{studentView ? visibleContests : selectedAdminUniversity !== adminSchool ? adminBrowseContests : managed}}" wx:key="id" class="sc-picker-option" role="button" data-id="{{item.id}}" bindtap="selectPickerContest">{{item.title}}{{!studentView && item.status ? ' · ' + item.status : ''}}</view>
-          </scroll-view>
-          <view wx:else class="sc-picker-empty">暂无可选比赛</view>
-        </view>
-      </block>
     </view>
     <view class="sc-panel" wx:if="{{adminSchool && !studentView && (!selectedAdminUniversity || selectedAdminUniversity === adminSchool)}}">
       <view class="sc-title">{{adminSchool}} · 管理员工作台</view>
@@ -53,7 +44,7 @@
       </view>
       <view class="sc-title">校赛及审核状态</view>
       <view wx:if="{{!managed.length && !loading}}">暂无提交记录</view>
-      <view class="sc-row {{selectedManagedId === item.id ? 'sc-selected-managed' : ''}}" id="{{selectedManagedId === item.id ? 'sc-selected-managed' : ''}}" wx:for="{{managed}}" wx:key="id">
+      <view class="sc-row" wx:for="{{managed}}" wx:key="id">
         <view>{{item.title}} · {{item.status}}</view>
         <view wx:if="{{item.reviewNote}}">{{item.reviewNote}}</view>
         <button wx:if="{{item.status === '已发布'}}" size="mini" data-action="withdraw" data-id="{{item.id}}" bindtap="confirmChange" disabled="{{working}}">下架</button>
