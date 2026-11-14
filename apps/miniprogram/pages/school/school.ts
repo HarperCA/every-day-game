@@ -60,7 +60,10 @@ Page({
     wx.navigateTo({ url: `/pages/school-create/school-create?school=${encodeURIComponent(this.data.adminSchool)}` });
   },
   openContest(event: WechatMiniprogram.TouchEvent) {
-    wx.navigateTo({ url: `/pages/school-detail/school-detail?id=${encodeURIComponent(String(event.currentTarget.dataset.id))}` });
+    const { id, signup } = event.currentTarget.dataset;
+    if (!id) return;
+    const section = String(signup) === 'true' ? '&section=signup' : '';
+    wx.navigateTo({ url: `/pages/school-detail/school-detail?id=${encodeURIComponent(String(id))}${section}` });
   },
   async changeInvite(event: WechatMiniprogram.TouchEvent) {
     if (this.data.working || this.data.studentView || !this.data.adminSchool) return;

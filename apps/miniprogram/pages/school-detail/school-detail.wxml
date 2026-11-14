@@ -6,7 +6,12 @@
     <view>{{contest.school}}</view>
     <view wx:if="{{contest.startDate || contest.endDate}}">赛程 {{contest.startDate}} ～ {{contest.endDate}}</view>
     <view class="school-content">{{contest.content}}</view>
-    <view wx:if="{{contest.signup}}" class="school-content" selectable="true">报名方式 {{contest.signup}}</view>
+    <view id="school-signup" class="school-signup">
+      <view class="school-signup-title">报名方式</view>
+      <text wx:if="{{contest.signup}}" class="school-signup-text" user-select="{{true}}">{{contest.signup}}</text>
+      <view wx:else class="school-content">主办方暂未提供报名方式。</view>
+      <button wx:if="{{contest.signup}}" bindtap="copySignup" size="mini">复制报名信息</button>
+    </view>
     <button bindtap="createTeam" type="primary">创建校赛队伍</button>
     <button open-type="share">转发校赛</button>
   </block>

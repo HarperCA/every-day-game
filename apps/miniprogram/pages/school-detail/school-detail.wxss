@@ -2,3 +2,6 @@
 .school-heading { font-size: 36rpx; font-weight: 700; margin-bottom: 16rpx; }
 .school-content { margin: 20rpx 0; white-space: pre-wrap; }
 .school-detail button { margin-top: 16rpx; }
+.school-signup { margin: 24rpx 0; padding: 24rpx; border-radius: 20rpx; background: var(--surface, #fff); }
+.school-signup-title { margin-bottom: 12rpx; font-weight: 700; }
+.school-signup-text { display: block; white-space: pre-wrap; }
